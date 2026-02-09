@@ -8,29 +8,59 @@ import platform
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+def get_xdg_config_home() -> Path:
+    """Get XDG config directory on Linux."""
+    return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
 
 def get_claude_config_path() -> Optional[Path]:
-    """Get the Claude Desktop config path based on OS."""
     system = platform.system()
 
-    if system == "Darwin":  # macOS
+    if system == "Darwin":
         return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
     elif system == "Windows":
         return Path(os.environ.get("APPDATA", "")) / "Claude" / "claude_desktop_config.json"
     elif system == "Linux":
-        return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
+        return get_xdg_config_home() / "Claude" / "claude_desktop_config.json"
 
     return None
 
 
+
 def get_cursor_config_path() -> Path:
     """Get the Cursor MCP config path."""
+    system = platform.system()
+
+    if system == "Windows":
+        return (
+            Path(os.environ.get("APPDATA", ""))
+            / "Cursor"
+            / "User"
+            / "globalStorage"
+            / "mcp.json"
+        )
+    elif system == "Linux":
+        return get_xdg_config_home() / "cursor" / "mcp.json"
+
     return Path.home() / ".cursor" / "mcp.json"
+
 
 
 def get_windsurf_config_path() -> Path:
     """Get the Windsurf MCP config path."""
+    system = platform.system()
+
+    if system == "Windows":
+        return (
+            Path(os.environ.get("APPDATA", ""))
+            / "Codeium"
+            / "windsurf"
+            / "mcp_config.json"
+        )
+    elif system == "Linux":
+        return get_xdg_config_home() / "codeium" / "windsurf" / "mcp_config.json"
+
     return Path.home() / ".codeium" / "windsurf" / "mcp_config.json"
+
 
 
 def create_brain_structure(brain_path: Path) -> None:
