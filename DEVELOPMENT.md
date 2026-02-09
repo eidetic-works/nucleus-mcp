@@ -84,7 +84,7 @@ ruff check src/
 - Standard files (README, LICENSE, etc.)
 
 ### What Stays Local (NEVER COMMIT)
-- Launch strategy docs → `/Users/lokeshgarg/ai-mvp-backend/nucleus-launch-internal/`
+- Launch strategy docs (keep in a separate local folder, NOT in this repo)
 - Internal roadmaps
 - GTM documents
 - Outreach plans
