@@ -112,8 +112,10 @@ security:
 
 def get_nucleus_config_block(brain_path: Path) -> Dict[str, Any]:
     """Generate the Nucleus MCP server config block."""
+    python_cmd = "python" if platform.system() == "Windows" else "python3"
+
     return {
-        "command": "python3",
+        "command": python_cmd,
         "args": ["-m", "mcp_server_nucleus"],
         "env": {
             "NUCLEAR_BRAIN_PATH": str(brain_path.absolute())
