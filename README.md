@@ -15,9 +15,9 @@ You use **multiple AI tools** daily:
 - **Cursor** for coding
 - **Claude Desktop** for thinking
 - **Windsurf** for exploration
-- **ChatGPT** for quick answers
+- **ChatGPT** for quick reasoning
 
-**But they don't share memory.**
+**But they don't share memory. (Until now).**
 
 Every time you switch tools, you lose context. You re-explain decisions. You repeat yourself constantly.
 
@@ -60,10 +60,10 @@ pip install nucleus-mcp
 ### 2. Initialize
 
 ```bash
-nucleus-init
+nucleus-init --scan
 ```
 
-This creates your `.brain/` folder and auto-configures Claude Desktop.
+This creates your `.brain/` folder, auto-configures Claude Desktop, and **automatically ingests your README.md** to seed the brain with initial context.
 
 ### 3. Restart Claude Desktop
 
@@ -129,6 +129,14 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
   }
 }
 ```
+
+### ChatGPT (Web)
+
+1. Go to **Settings** → **Apps** → **Advanced** → **Developer Mode**.
+2. Run the Nucleus SSE Bridge: `python scripts/sse_bridge.py`.
+3. Add `http://localhost:8000/sse` as your MCP endpoint.
+
+See the [Community FAQ](docs/COMMUNITY_FAQ.md) for more details.
 
 ---
 

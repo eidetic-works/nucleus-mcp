@@ -12,6 +12,7 @@ This roadmap reflects our commitment to **Sovereign Intelligence** and the trans
 - **Guardian Network**: Delegate sub-module ownership (Linux, macOS, Security).
 - **Federated Memory**: Cross-machine engram syncing for individual users.
 - **Hypervisor L4/L5**: Advanced hard-locks for agentic file/process control.
+- **Nucleus Bridge (ChatGPT)**: Secure tunnel for cloud-hosted agents (ChatGPT/OpenAI) to access local brain.
 - **Public API**: Stable standard for external MCP server mounting.
 
 ## 🔴 Q3 2026+: Autonomy & Scale

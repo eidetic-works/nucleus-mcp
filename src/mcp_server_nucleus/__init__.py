@@ -6,7 +6,7 @@ Cross-platform memory sync for Cursor, Claude Desktop, Windsurf, and any MCP-com
 MIT License - https://github.com/eidetic-works/nucleus-mcp
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 import json
 import logging
@@ -53,17 +53,7 @@ except ImportError:
 # MEMORY TOOLS (V2 SCHEMA)
 # =============================================================================
 
-@mcp.tool()
-def brain_write_engram(key: str, value: str, context: str = "Decision", intensity: int = 5) -> str:
-    """
-    Store persistent knowledge in the brain using the Key/Value schema.
-
-    Args:
-        key: Unique identifier for the engram (alpha-numeric)
-        value: The knowledge or decision to store
-        context: Contextual boundary (e.g., 'Decision', 'Architecture', 'Strategy')
-        intensity: Importance level (1-10)
-    """
+def _brain_write_engram_impl(key: str, value: str, context: str = "Decision", intensity: int = 5) -> str:
     try:
         engram_path = get_brain_path() / "engrams" / "ledger.jsonl"
         engram_path.parent.mkdir(parents=True, exist_ok=True)
@@ -85,10 +75,12 @@ def brain_write_engram(key: str, value: str, context: str = "Decision", intensit
         return make_response(False, error=str(e))
 
 @mcp.tool()
-def brain_query_engrams(context: Optional[str] = None, min_intensity: int = 1) -> str:
-    """
-    Query stored knowledge from the brain.
-    """
+def brain_write_engram(key: str, value: str, context: str = "Decision", intensity: int = 5) -> str:
+    """Store persistent knowledge in the brain."""
+    return _brain_write_engram_impl(key, value, context, intensity)
+
+
+def _brain_query_engrams_impl(query: Optional[str] = None, context: Optional[str] = None, min_intensity: int = 1) -> str:
     try:
         engram_path = get_brain_path() / "engrams" / "ledger.jsonl"
         if not engram_path.exists():
@@ -103,11 +95,23 @@ def brain_query_engrams(context: Optional[str] = None, min_intensity: int = 1) -
         filtered = [r for r in records if r.get("intensity", 5) >= min_intensity]
         if context:
             filtered = [r for r in filtered if r.get("context") == context]
+            
+        if query:
+            q = query.lower()
+            filtered = [
+                r for r in filtered 
+                if q in r.get("key", "").lower() or q in r.get("value", "").lower()
+            ]
 
         filtered.sort(key=lambda x: x.get("intensity", 5), reverse=True)
         return make_response(True, data={"engrams": filtered, "count": len(filtered)})
     except Exception as e:
         return make_response(False, error=str(e))
+
+@mcp.tool()
+def brain_query_engrams(query: Optional[str] = None, context: Optional[str] = None, min_intensity: int = 1) -> str:
+    """Query stored knowledge from the brain."""
+    return _brain_query_engrams_impl(query, context, min_intensity)
 
 @mcp.tool()
 def brain_governance_status() -> str:
@@ -126,6 +130,18 @@ def brain_governance_status() -> str:
             "status": "ENFORCED"
         }
         return make_response(True, data=status)
+    except Exception as e:
+        return make_response(False, error=str(e))
+
+@mcp.tool()
+def brain_audit_log(limit: int = 10) -> str:
+    """
+    [GOVERNANCE] View the cryptographic interaction log for trust verification.
+    """
+    try:
+        from .runtime.event_ops import _read_events
+        events = _read_events(limit)
+        return make_response(True, data={"entries": events, "count": len(events)})
     except Exception as e:
         return make_response(False, error=str(e))
 

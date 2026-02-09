@@ -7,6 +7,7 @@ import os
 import platform
 from pathlib import Path
 from typing import Any, Dict, Optional
+from datetime import datetime
 
 def get_xdg_config_home() -> Path:
     """Get XDG config directory on Linux."""
@@ -18,7 +19,10 @@ def get_claude_config_path() -> Optional[Path]:
     if system == "Darwin":
         return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
     elif system == "Windows":
-        return Path(os.environ.get("APPDATA", "")) / "Claude" / "claude_desktop_config.json"
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            return Path(appdata) / "Claude" / "claude_desktop_config.json"
+        return Path.home() / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json"
     elif system == "Linux":
         return get_xdg_config_home() / "Claude" / "claude_desktop_config.json"
 
@@ -31,13 +35,9 @@ def get_cursor_config_path() -> Path:
     system = platform.system()
 
     if system == "Windows":
-        return (
-            Path(os.environ.get("APPDATA", ""))
-            / "Cursor"
-            / "User"
-            / "globalStorage"
-            / "mcp.json"
-        )
+        appdata = os.environ.get("APPDATA")
+        base = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+        return base / "Cursor" / "User" / "globalStorage" / "mcp.json"
     elif system == "Linux":
         return get_xdg_config_home() / "cursor" / "mcp.json"
 
@@ -50,12 +50,9 @@ def get_windsurf_config_path() -> Path:
     system = platform.system()
 
     if system == "Windows":
-        return (
-            Path(os.environ.get("APPDATA", ""))
-            / "Codeium"
-            / "windsurf"
-            / "mcp_config.json"
-        )
+        appdata = os.environ.get("APPDATA")
+        base = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+        return base / "Codeium" / "windsurf" / "mcp_config.json"
     elif system == "Linux":
         return get_xdg_config_home() / "codeium" / "windsurf" / "mcp_config.json"
 
@@ -108,6 +105,44 @@ security:
 """)
 
     print(f"✅ Created .brain structure at: {brain_path}")
+
+
+def scan_project(workspace_path: Path, brain_path: Path) -> None:
+    """Scan the project for context and seed the brain."""
+    print(f"🔍 Scanning project context at: {workspace_path}")
+
+    # 1. Look for README
+    readme_path = None
+    for name in ["README.md", "README", "readme.md"]:
+        p = workspace_path / name
+        if p.exists():
+            readme_path = p
+            break
+
+    if readme_path:
+        try:
+            content = readme_path.read_text(encoding="utf-8")[:2000]  # Grab initial context
+            print(f"📄 Found {readme_path.name}, ingesting context...")
+
+            # Seed an engram
+            engram_path = brain_path / "engrams" / "ledger.jsonl"
+            engram_path.parent.mkdir(parents=True, exist_ok=True)
+
+            engram = {
+                "key": "project_overview",
+                "value": f"Project overview from {readme_path.name}:\n\n{content}",
+                "context": "General",
+                "intensity": 5,
+                "timestamp": datetime.now().isoformat() + "Z"
+            }
+
+            with open(engram_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(engram) + "\n")
+            print(f"✅ Seeded project engram from README.")
+        except Exception as e:
+            print(f"⚠️ Could not read README: {e}")
+    else:
+        print("💡 Tip: Add a README.md to help Nucleus understand your project better.")
 
 
 def get_nucleus_config_block(brain_path: Path) -> Dict[str, Any]:
@@ -178,9 +213,15 @@ Examples:
     )
 
     parser.add_argument(
+        "--scan",
+        action="store_true",
+        help="Scan project (README, etc.) and seed the brain"
+    )
+
+    parser.add_argument(
         "--version", "-v",
         action="version",
-        version="nucleus-mcp 1.0.0"
+        version="nucleus-mcp 1.0.1"
     )
 
     args = parser.parse_args()
@@ -193,6 +234,10 @@ Examples:
     # Create brain structure
     brain_path = Path(args.path).absolute() / ".brain"
     create_brain_structure(brain_path)
+
+    # Scan project if requested
+    if args.scan:
+        scan_project(Path(args.path).absolute(), brain_path)
 
     if args.skip_config:
         print("\n⏭️  Skipping MCP client configuration")
