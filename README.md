@@ -231,6 +231,12 @@ We're building the universal brain for AI agents. Join us!
 - **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/nucleus-mcp/discussions)
 - **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 
+### ✨ Contributors
+
+A huge thank you to the pioneers helping build the universal brain:
+
+- [@aryasadawrate19](https://github.com/aryasadawrate19) — Added Linux XDG support for `nucleus-init`.
+
 ### Development Setup
 
 ```bash
