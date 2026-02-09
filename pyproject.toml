@@ -33,17 +33,17 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-urls = { 
-    Homepage = "https://github.com/eidetic-works/nucleus-mcp", 
-    Repository = "https://github.com/eidetic-works/nucleus-mcp",
-    Documentation = "https://github.com/eidetic-works/nucleus-mcp#readme",
-    Issues = "https://github.com/eidetic-works/nucleus-mcp/issues"
-}
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.0.0",
     "watchdog>=3.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/eidetic-works/nucleus-mcp"
+Repository = "https://github.com/eidetic-works/nucleus-mcp"
+Documentation = "https://github.com/eidetic-works/nucleus-mcp#readme"
+Issues = "https://github.com/eidetic-works/nucleus-mcp/issues"
 
 [project.optional-dependencies]
 full = [
