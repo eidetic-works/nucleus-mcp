@@ -25,12 +25,29 @@ def get_claude_config_path() -> Optional[Path]:
 
 def get_cursor_config_path() -> Path:
     """Get the Cursor MCP config path."""
+    if platform.system() == "Windows":
+        return (
+            Path(os.environ.get("APPDATA", ""))
+            / "Cursor"
+            / "User"
+            / "globalStorage"
+            / "mcp.json"
+        )
     return Path.home() / ".cursor" / "mcp.json"
+
 
 
 def get_windsurf_config_path() -> Path:
     """Get the Windsurf MCP config path."""
+    if platform.system() == "Windows":
+        return (
+            Path(os.environ.get("APPDATA", ""))
+            / "Codeium"
+            / "windsurf"
+            / "mcp_config.json"
+        )
     return Path.home() / ".codeium" / "windsurf" / "mcp_config.json"
+
 
 
 def create_brain_structure(brain_path: Path) -> None:
@@ -82,13 +99,16 @@ security:
 
 def get_nucleus_config_block(brain_path: Path) -> Dict[str, Any]:
     """Generate the Nucleus MCP server config block."""
+    python_cmd = "python" if platform.system() == "Windows" else "python3"
+
     return {
-        "command": "python3",
+        "command": python_cmd,
         "args": ["-m", "mcp_server_nucleus"],
         "env": {
             "NUCLEAR_BRAIN_PATH": str(brain_path.absolute())
         }
     }
+
 
 
 def update_config_file(config_path: Path, brain_path: Path) -> bool:
