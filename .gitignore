@@ -74,3 +74,49 @@ venv.bak/
 *.lock
 .brain/
 session/
+
+# =============================================
+# INTERNAL DOCS - NEVER COMMIT
+# =============================================
+# Launch strategy (keep in nucleus-launch-internal/)
+docs/*LAUNCH*.md
+docs/*STRATEGY*.md
+docs/HACKER_NEWS.md
+docs/REDDIT*.md
+docs/TWITTER*.md
+docs/PRODUCT_HUNT*.md
+docs/MCP_COMMUNITY*.md
+docs/SOCIAL_PREVIEW*.md
+docs/PYPI_PUBLISH*.md
+
+# Internal planning
+*_INTERNAL.md
+*_STRATEGY.md
+*_PRIVATE.md
+ROADMAP_INTERNAL.md
+GTM*.md
+OUTREACH*.md
+
+# Test artifacts
+modification_test.txt
+test_*.txt
+*.test.md
+
+# Secrets and credentials
+.env*
+secrets/
+*.secret
+*.key
+*.pem
+credentials/
+
+# Local development
+.local/
+local_*
+dev_notes/
+scratch/
+tmp/
+
+# Build artifacts that shouldn't be committed
+*.whl
+*.tar.gz
