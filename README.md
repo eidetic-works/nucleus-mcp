@@ -33,7 +33,7 @@ Make a plan in Windsurf → Claude remembers it
 One brain. All your tools.
 ```
 
-<!-- TODO: Add demo GIF here -->
+<!-- Demo video: https://github.com/eidetic-works/nucleus-mcp/releases - see demo_video.mp4 -->
 
 ---
 
