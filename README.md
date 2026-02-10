@@ -207,10 +207,7 @@ brain_sync_status()  # Shows last sync, active agents
 | **Cross-platform** | ❌ | ❌ | ✅ |
 | **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
 
-
-**OpenClaw is great for multi-agent teams on their platform.**
--**OpenClaw is great for multi-agent teams on their platform.**
-+**OpenClaw trades security for capability. Nucleus gives you both.**
+**OpenClaw trades security for capability. Nucleus gives you both.**
 **Nucleus connects ALL your platforms with one brain.**
 
 ---
