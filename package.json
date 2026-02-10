@@ -1,0 +1,25 @@
+{
+    "name": "nucleus-mcp",
+    "version": "1.0.2",
+    "mcpName": "io.github.eidetic-works/nucleus",
+    "description": "The Universal Brain for AI Agents - Cross-platform memory sync for Cursor, Claude, Windsurf",
+    "main": "index.js",
+    "module": "index.js",
+    "bin": {
+        "nucleus-mcp": "./index.js",
+        "nucleus-init": "./index.js"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "mcp",
+        "ai",
+        "agents",
+        "memory",
+        "nucleus"
+    ],
+    "author": "Nucleus Team",
+    "license": "MIT",
+    "dependencies": {}
+}
