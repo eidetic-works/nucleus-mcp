@@ -1,23 +1,20 @@
 {
-    "mcpId": "nucleus-mcp",
-    "title": "Nucleus MCP",
-    "description": "The Sovereign Agent Control Plane. Managed memory, governance ledger, and safe executive control for AI agents.",
-    "version": "1.0.2",
-    "categories": [
-        "Productivity",
-        "Utility",
-        "Developer Tools"
-    ],
-    "author": "Nucleus Team",
-    "homepage": "https://github.com/eidetic-works/nucleus-mcp",
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "io.github.eidetic-works/nucleus",
+    "description": "Sovereign agent control plane with task ledger, hypervisor security, and long-term memory.",
     "repository": {
-        "type": "git",
-        "url": "https://github.com/eidetic-works/nucleus-mcp.git"
+        "url": "https://github.com/eidetic-works/nucleus-mcp",
+        "source": "github"
     },
-    "license": "MIT",
-    "runtime": "python",
-    "install": {
-        "npm": "npx -y nucleus-mcp",
-        "pypi": "pip install nucleus-mcp"
-    }
+    "version": "1.0.2",
+    "packages": [
+        {
+            "registryType": "npm",
+            "identifier": "nucleus-mcp",
+            "version": "1.0.2",
+            "transport": {
+                "type": "stdio"
+            }
+        }
+    ]
 }
