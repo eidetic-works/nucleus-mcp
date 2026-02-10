@@ -203,7 +203,12 @@ brain_sync_status()  # Shows last sync, active agents
 | **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
 | **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
 | **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+| **Security** | ❌ Sleeper agents, key leaks | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
+| **Cross-platform** | ❌ | ❌ | ✅ |
+| **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
 
+-**OpenClaw is great for multi-agent teams on their platform.**
++**OpenClaw trades security for capability. Nucleus gives you both.**
 **OpenClaw is great for multi-agent teams on their platform.**
 **Nucleus connects ALL your platforms with one brain.**
 
