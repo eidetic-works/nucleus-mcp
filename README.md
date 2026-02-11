@@ -1,9 +1,13 @@
 # 🧠 Nucleus MCP
 
-[![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
+[![PyPI version](https://badge.fury.io/py/mcp-server-nucleus.svg)](https://badge.fury.io/py/mcp-server-nucleus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
+> [!CAUTION]
+> **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
+> Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails — all 100% local.
 
 > **The Universal Brain for AI Agents** — One brain that syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
 
@@ -199,16 +203,18 @@ brain_sync_status()  # Shows last sync, active agents
 | | OpenClaw | Claude Code | Nucleus |
 |---|----------|-------------|---------|
 | **What it syncs** | OpenClaw → OpenClaw | Claude → Claude | **Everything ↔ Everything** |
-| **Cross-platform** | ❌ | ❌ | ✅ |
-| **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
-| **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
-| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
 | **Security** | ❌ Sleeper agents, key leaks | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
 | **Cross-platform** | ❌ | ❌ | ✅ |
 | **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
+| **Identity Persistence** | ❌ Session-bound | ❌ Login-bound | ✅ Hypervisor-enforced |
+| **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
+| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
 
+**OpenClaw is great for multi-agent teams on their platform.**
 **OpenClaw trades security for capability. Nucleus gives you both.**
-**Nucleus connects ALL your platforms with one brain.**
+
+> [!TIP]
+> **Check out the [Detailed Comparison](COMPARISON.md)** to see how Nucleus stacks up against ContextStream and Autonomy AI.
 
 ---
 
@@ -258,6 +264,12 @@ source venv/bin/activate
 pip install -e ".[dev]"
 pytest tests/
 ```
+
+## 🛡️ Join the Nucleus Vanguard (Private Beta)
+
+We're building the first secure sync layer for agents. Join our founding builders to help shape the roadmap and get early access to Nucleus Cloud/Connect.
+
+**[Request Beta Access Here](https://nucleusos.dev)** | **[Join the Discord](https://discord.gg/RJuBNNJ5MT)**
 
 ---
 

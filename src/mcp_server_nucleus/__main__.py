@@ -1,8 +1,7 @@
 
-import sys
-import os
 import argparse
-from pathlib import Path
+import os
+
 
 def main():
     parser = argparse.ArgumentParser(description="Nucleus MCP Server")
@@ -13,7 +12,7 @@ def main():
     # Check for FastMCP
     fastmcp_available = False
     try:
-        from fastmcp import FastMCP
+        from fastmcp import FastMCP  # noqa: F401
         fastmcp_available = True
     except ImportError:
         pass

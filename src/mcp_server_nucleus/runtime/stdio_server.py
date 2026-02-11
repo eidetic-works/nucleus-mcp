@@ -1,25 +1,22 @@
 
 import json
-import sys
-import os
 import logging
+import os
 import re
-from pathlib import Path
-from typing import Dict, Any, Optional, List
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 # Add parent directory to sys.path to handle relative imports if run as script
 current_dir = Path(__file__).parent
 if str(current_dir.parent.parent) not in sys.path:
     sys.path.append(str(current_dir.parent.parent))
 
-from ..hypervisor.locker import Locker
-from ..hypervisor.injector import Injector
-from ..hypervisor.watchdog import Watchdog
-from .common import get_brain_path, make_response
-from .task_ops import _list_tasks, _add_task, _update_task, _claim_task, _get_next_task
-from .memory import _write_memory, _search_memory
-from .event_ops import _emit_event
+from ..hypervisor.injector import Injector  # noqa: E402
+from ..hypervisor.locker import Locker  # noqa: E402
+from ..hypervisor.watchdog import Watchdog  # noqa: E402
+from .common import get_brain_path, make_response  # noqa: E402
 
 logger = logging.getLogger("nucleus.stdio_server")
 
@@ -30,11 +27,11 @@ class StdioServer:
         self.locker = Locker()
         self.injector = Injector(workspace_root)
         self.watchdog = Watchdog(workspace_root)
-        
+
     def handle_request(self, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         method = request.get("method")
         msg_id = request.get("id")
-        
+
         if method == "initialize":
             return {
                 "id": msg_id,
@@ -44,7 +41,7 @@ class StdioServer:
                     "serverInfo": {"name": "Nucleus MCP Fallback Server", "version": "1.0.0"}
                 }
             }
-        
+
         elif method == "tools/list":
             return {
                 "id": msg_id,
@@ -59,7 +56,7 @@ class StdioServer:
                     ]
                 }
             }
-            
+
         elif method == "tools/call":
             params = request.get("params", {})
             name = params.get("name")
@@ -71,10 +68,11 @@ class StdioServer:
                     data = json.loads(result_text)
                     content = [{"type": "text", "text": json.dumps(data, indent=2)}]
                     is_error = not data.get("success", True)
-                except:
+                except Exception as e:
+                    logger.error(f"Error parsing tool output: {e}")
                     content = [{"type": "text", "text": result_text}]
                     is_error = False
-                
+
                 return {
                     "id": msg_id,
                     "result": {"content": content, "isError": is_error}
@@ -84,8 +82,24 @@ class StdioServer:
                     "id": msg_id,
                     "error": {"code": -32603, "message": str(e)}
                 }
-        
-        return None
+
+        elif method == "resources/list":
+            return {
+                "id": msg_id,
+                "result": {"resources": []}
+            }
+
+        elif method == "prompts/list":
+            return {
+                "id": msg_id,
+                "result": {"prompts": []}
+            }
+
+        else:
+            return {
+                "id": msg_id,
+                "error": {"code": -32601, "message": "Method not found"}
+            }
 
     def execute_tool(self, name: str, args: Dict[str, Any]) -> str:
         if name == "lock_resource":
@@ -111,7 +125,7 @@ class StdioServer:
             engram_file = self.brain_path / "engrams" / "ledger.jsonl"
             if engram_file.exists():
                 engram_count = len(engram_file.read_text().splitlines())
-            
+
             governance = {
                 "policies": {"default_deny": True, "isolation_boundaries": True, "immutable_audit": True},
                 "statistics": {"engram_count": engram_count},
@@ -125,10 +139,10 @@ class StdioServer:
         try:
             if not re.match(r"^[a-zA-Z0-9_.-]+$", key):
                 return make_response(False, error="Invalid key characters")
-            
+
             engram_path = self.brain_path / "engrams" / "ledger.jsonl"
             engram_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             engram = {
                 "key": key,
                 "value": value,
@@ -136,10 +150,10 @@ class StdioServer:
                 "intensity": intensity,
                 "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             }
-            
+
             with open(engram_path, "a") as f:
                 f.write(json.dumps(engram) + "\n")
-            
+
             return make_response(True, data={"engram": engram, "message": f"Engram '{key}' written."})
         except Exception as e:
             return make_response(False, error=str(e))
@@ -149,17 +163,17 @@ class StdioServer:
             engram_path = self.brain_path / "engrams" / "ledger.jsonl"
             if not engram_path.exists():
                 return make_response(True, data={"engrams": [], "count": 0})
-            
+
             records = []
             with open(engram_path, "r") as f:
                 for line in f:
                     if line.strip():
                         records.append(json.loads(line))
-            
+
             filtered = [r for r in records if r.get("intensity", 5) >= min_intensity]
             if context:
                 filtered = [r for r in filtered if r.get("context") == context]
-                
+
             filtered.sort(key=lambda x: x.get("intensity", 5), reverse=True)
             return make_response(True, data={"engrams": filtered, "count": len(filtered)})
         except Exception as e:

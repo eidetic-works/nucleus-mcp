@@ -6,12 +6,12 @@
         "url": "https://github.com/eidetic-works/nucleus-mcp",
         "source": "github"
     },
-    "version": "1.0.2",
+    "version": "1.0.4",
     "packages": [
         {
             "registryType": "npm",
             "identifier": "nucleus-mcp",
-            "version": "1.0.2",
+            "version": "1.0.4",
             "transport": {
                 "type": "stdio"
             }

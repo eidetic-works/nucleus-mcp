@@ -1,12 +1,10 @@
 
 import logging
-import time
-import shutil
 from pathlib import Path
-from typing import List, Optional
+
 try:
-    from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
+    from watchdog.observers import Observer
 except ImportError:
     # Handle environment where watchdog is not installed
     Observer = None
@@ -24,15 +22,15 @@ class SecurityEventHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if not FileSystemEventHandler or event.is_directory:
             return
-        
+
         path = str(Path(event.src_path).resolve())
         is_protected = False
-        
+
         for p_path in self.watchdog.protected_paths:
             if path == p_path or path.startswith(p_path + "/"):
                 is_protected = True
                 break
-        
+
         if is_protected:
             logger.warning(f"🚨 SECURITY BREACH: Locked file modified: {path}")
             self.locker.lock(path)
@@ -52,7 +50,7 @@ class Watchdog:
         if abs_path not in self.protected_paths:
             self.protected_paths.append(abs_path)
             self.locker.lock(abs_path)
-    
+
     def start(self):
         if not self.observer:
             logger.warning("Watchdog dependency not installed. Monitoring disabled.")

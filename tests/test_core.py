@@ -121,7 +121,7 @@ class TestEventEmission:
             os.environ["NUCLEAR_BRAIN_PATH"] = tmpdir
             
             try:
-                _emit_event("TEST_EVENT", {"key": "value"})
+                _emit_event("TEST_EVENT", "test_emitter", {"key": "value"})
                 
                 events_path = Path(tmpdir) / "ledger" / "events.jsonl"
                 assert events_path.exists()
@@ -149,21 +149,23 @@ class TestEngramTools:
             
             try:
                 # Write an engram
-                result = brain_write_engram(
-                    content="Test knowledge",
-                    category="test",
-                    tags=["unit-test"]
+                from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
+                result = _brain_write_engram_impl(
+                    key="test_key",
+                    value="Test knowledge",
+                    context="test"
                 )
                 data = json.loads(result)
                 assert data["success"] is True
-                assert "engram_id" in data["data"]
+                assert "engram" in data["data"]
+                assert data["data"]["engram"]["key"] == "test_key"
                 
                 # Query engrams
-                result = brain_query_engrams(query="knowledge")
+                result = _brain_query_engrams_impl(query="knowledge")
                 data = json.loads(result)
                 assert data["success"] is True
                 assert len(data["data"]["engrams"]) > 0
-                assert "Test knowledge" in data["data"]["engrams"][0]["content"]
+                assert "Test knowledge" in data["data"]["engrams"][0]["value"]
             finally:
                 os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
@@ -179,7 +181,8 @@ class TestSyncTools:
             os.environ["NUCLEAR_BRAIN_PATH"] = tmpdir
             
             try:
-                result = brain_identify_agent("test_agent", "cursor")
+                from mcp_server_nucleus import _brain_identify_agent_impl
+                result = _brain_identify_agent_impl("test_agent", "cursor")
                 data = json.loads(result)
                 
                 assert data["success"] is True
@@ -196,7 +199,8 @@ class TestSyncTools:
             os.environ["NUCLEAR_BRAIN_PATH"] = tmpdir
             
             try:
-                result = brain_sync_now()
+                from mcp_server_nucleus import _brain_sync_now_impl
+                result = _brain_sync_now_impl()
                 data = json.loads(result)
                 
                 assert data["success"] is True
@@ -216,7 +220,8 @@ class TestHealthCheck:
             os.environ["NUCLEAR_BRAIN_PATH"] = tmpdir
             
             try:
-                result = brain_health()
+                from mcp_server_nucleus import _brain_health_impl
+                result = _brain_health_impl()
                 data = json.loads(result)
                 
                 assert "checks" in data["data"]

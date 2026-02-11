@@ -1,10 +1,9 @@
 
 import json
+import logging
 import time
 import uuid
-import logging
-from typing import Dict, Any, List, Optional
-from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from .common import get_brain_path
 from .event_ops import _emit_event

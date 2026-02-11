@@ -120,3 +120,5 @@ tmp/
 # Build artifacts that shouldn't be committed
 *.whl
 *.tar.gz
+.mcpregistry_*
+.mcpregistry_*

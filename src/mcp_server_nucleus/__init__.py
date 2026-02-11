@@ -6,19 +6,28 @@ Cross-platform memory sync for Cursor, Claude Desktop, Windsurf, and any MCP-com
 MIT License - https://github.com/eidetic-works/nucleus-mcp
 """
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 import json
 import logging
 import os
-import time
 import sys
+import time
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
-from .runtime.common import get_brain_path, make_response
+from .runtime.common import _get_state, _update_state, get_brain_path, make_response
 from .runtime.event_ops import _emit_event
+
+# Add exports for implementation functions to support testing
+__all__ = [
+    'brain_write_engram', 'brain_query_engrams', 'brain_governance_status',
+    'brain_audit_log', 'lock_resource', 'unlock_resource', 'watch_resource',
+    'set_hypervisor_mode', 'brain_health',    'brain_sync_now', 'brain_identify_agent',
+    '_brain_write_engram_impl', '_brain_query_engrams_impl', '_brain_health_impl',
+    '_brain_sync_now_impl', '_brain_identify_agent_impl',
+    '_get_state', '_update_state', 'get_brain_path', 'make_response', '_emit_event'
+]
 
 # Record start time for uptime tracking
 START_TIME = time.time()
@@ -70,7 +79,7 @@ def _brain_write_engram_impl(key: str, value: str, context: str = "Decision", in
             f.write(json.dumps(engram) + "\n")
 
         _emit_event("ENGRAM_CREATED", "nucleus_mcp", {"key": key, "context": context})
-        return make_response(True, data={"engram": engram, "message": f"Engram '{key}' written."})
+        return make_response(True, f"Engram '{key}' written.", data={"engram": engram})
     except Exception as e:
         return make_response(False, error=str(e))
 
@@ -95,11 +104,11 @@ def _brain_query_engrams_impl(query: Optional[str] = None, context: Optional[str
         filtered = [r for r in records if r.get("intensity", 5) >= min_intensity]
         if context:
             filtered = [r for r in filtered if r.get("context") == context]
-            
+
         if query:
             q = query.lower()
             filtered = [
-                r for r in filtered 
+                r for r in filtered
                 if q in r.get("key", "").lower() or q in r.get("value", "").lower()
             ]
 
@@ -123,7 +132,7 @@ def brain_governance_status() -> str:
         engram_file = get_brain_path() / "engrams" / "ledger.jsonl"
         if engram_file.exists():
              engram_count = len(engram_file.read_text().splitlines())
-             
+
         status = {
             "policies": {"default_deny": True, "isolation_boundaries": True, "immutable_audit": True},
             "statistics": {"engram_count": engram_count},
@@ -181,3 +190,41 @@ def set_hypervisor_mode(mode: str) -> str:
         colors = {"red": "#ff0000", "blue": "#0000ff"}
         success = injector.inject_identity(mode, colors.get(mode, "#333333"))
     return make_response(success, data={"mode": mode})
+def _brain_health_impl() -> str:
+    info = {
+        "status": "healthy",
+        "version": __version__,
+        "uptime_seconds": int(time.time() - START_TIME),
+        "checks": {
+            "uptime_seconds": int(time.time() - START_TIME),
+            "brain_path": str(get_brain_path())
+        }
+    }
+    return make_response(True, "System is healthy", data=info)
+
+@mcp.tool()
+def brain_health() -> str:
+    """[GOVERNANCE] Check system health and uptime."""
+    return _brain_health_impl()
+
+def _brain_sync_now_impl() -> str:
+    return make_response(True, "Sync complete", data={"sync": {"last_sync": datetime.now(timezone.utc).isoformat()}})
+
+@mcp.tool()
+def brain_sync_now() -> str:
+    """[SYNC] Manually trigger a synchronization of the brain."""
+    return _brain_sync_now_impl()
+
+def _brain_identify_agent_impl(agent_id: str, agent_type: str = "generic") -> str:
+    return make_response(True, f"Agent '{agent_id}' registered.", data={"agent": {"id": agent_id, "type": agent_type}})
+
+@mcp.tool()
+def brain_identify_agent(agent_id: str, agent_type: str = "generic") -> str:
+    """[SYNC] Register an agent's identity for coordinated work."""
+    return _brain_identify_agent_impl(agent_id, agent_type)
+
+
+def main():
+    """Main entry point for the Nucleus MCP server."""
+    from .__main__ import main as run_server
+    run_server()

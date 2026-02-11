@@ -1,8 +1,8 @@
-
-import subprocess
-import os
 import logging
-from typing import List, Union
+import os
+import subprocess
+import sys
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +12,10 @@ class Locker:
 
     def _run_cmd(self, cmd: List[str]) -> bool:
         try:
-            result = subprocess.run(
-                cmd, 
-                capture_output=True, 
-                text=True, 
+            subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
                 check=True
             )
             return True
@@ -27,22 +27,26 @@ class Locker:
         if not os.path.exists(path):
             logger.error(f"Cannot lock non-existent path: {path}")
             return False
-            
+
         logger.info(f"🔒 Locking: {path}")
 
         if metadata:
             import time
             if "timestamp" not in metadata:
                 metadata["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-            
+
             for k, v in metadata.items():
                 key = k if k.startswith("nucleus.lock.") else f"nucleus.lock.{k}"
                 self._set_xattr(path, key, v)
 
-        if os.path.isdir(path):
-            return self._run_cmd(["chflags", "-R", "uchg", path])
+        if sys.platform == "darwin":
+            if os.path.isdir(path):
+                return self._run_cmd(["chflags", "-R", "uchg", path])
+            else:
+                return self._run_cmd(["chflags", "uchg", path])
         else:
-            return self._run_cmd(["chflags", "uchg", path])
+            logger.warning(f"Hypervisor locking (chflags) not supported on {sys.platform}. Only metadata was set.")
+            return True
 
     def unlock(self, path: str) -> bool:
         if not os.path.exists(path):
@@ -50,22 +54,32 @@ class Locker:
             return False
 
         logger.info(f"🔓 Unlocking: {path}")
-        if os.path.isdir(path):
-            return self._run_cmd(["chflags", "-R", "nouchg", path])
+        if sys.platform == "darwin":
+            if os.path.isdir(path):
+                return self._run_cmd(["chflags", "-R", "nouchg", path])
+            else:
+                return self._run_cmd(["chflags", "nouchg", path])
         else:
-            return self._run_cmd(["chflags", "nouchg", path])
+            logger.warning(f"Hypervisor unlocking (chflags) not supported on {sys.platform}.")
+            return True
 
     def is_locked(self, path: str) -> bool:
         if not os.path.exists(path):
             return False
-        
+
         try:
             st = os.stat(path)
-            return (st.st_flags & 0x2) != 0
-        except Exception:
+            if sys.platform == "darwin":
+                return (st.st_flags & 0x2) != 0
+            return False
+        except Exception as e:
+            logger.debug(f"Error checking lock status: {e}")
             return False
 
     def _set_xattr(self, path: str, key: str, value: str):
+        if sys.platform != "darwin":
+            return
+
         try:
             subprocess.run(
                 ["xattr", "-w", key, str(value), path],
@@ -78,7 +92,7 @@ class Locker:
     def get_metadata(self, path: str) -> dict:
         if not os.path.exists(path):
             return {}
-        
+
         try:
             result = subprocess.run(
                 ["xattr", path],
@@ -99,5 +113,6 @@ class Locker:
                     clean_key = key.replace("nucleus.lock.", "")
                     data[clean_key] = val
             return data
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to get metadata: {e}")
             return {}

@@ -5,9 +5,10 @@ Nucleus MCP CLI - Smart initialization and configuration
 import json
 import os
 import platform
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-from datetime import datetime
+
 
 def get_xdg_config_home() -> Path:
     """Get XDG config directory on Linux."""
@@ -138,7 +139,7 @@ def scan_project(workspace_path: Path, brain_path: Path) -> None:
 
             with open(engram_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(engram) + "\n")
-            print(f"✅ Seeded project engram from README.")
+            print("✅ Seeded project engram from README.")
         except Exception as e:
             print(f"⚠️ Could not read README: {e}")
     else:
