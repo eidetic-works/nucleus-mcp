@@ -271,7 +271,7 @@ pytest tests/
 
 We're building the first secure sync layer for agents. Join our founding builders to help shape the roadmap and get early access to Nucleus Cloud/Connect.
 
-**[Request Beta Access Here](https://nucleusos.dev)** | **[Join the Discord](https://discord.gg/RJuBNNJ5MT)**
+**[Request Beta Access (Join Discord)](https://discord.gg/RJuBNNJ5MT)** | **[Visit Website](https://nucleusos.dev)**
 
 ---
 
