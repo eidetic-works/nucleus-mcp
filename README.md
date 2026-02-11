@@ -269,9 +269,10 @@ pytest tests/
 
 ## 🛡️ Join the Nucleus Vanguard (Private Beta)
 
-We're building the first secure sync layer for agents. Join our founding builders to help shape the roadmap and get early access to Nucleus Cloud/Connect.
+We're building the first secure sync layer for agents. 
+The Vanguard is currently by **private invitation only**. To request access, join the Discord and introduce yourself in the `#vanguard-waitlist` channel.
 
-**[Request Beta Access (Join Discord)](https://discord.gg/RJuBNNJ5MT)** | **[Visit Website](https://nucleusos.dev)**
+**[Join Discord to Request Access](https://discord.gg/RJuBNNJ5MT)** | **[Visit Website](https://nucleusos.dev)**
 
 ---
 
