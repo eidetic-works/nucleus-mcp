@@ -1,6 +1,6 @@
 # 🧠 Nucleus MCP
 
-[![PyPI version](https://img.shields.io/pypi/v/nucleus-mcp.svg)](https://pypi.org/project/nucleus-mcp/)
+[![PyPI version](https://img.shields.io/pypi/v/nucleus-mcp?color=brightgreen&label=pypi%20package)](https://pypi.org/project/nucleus-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -248,11 +248,13 @@ We're building the universal brain for AI agents. Join us!
 - **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/nucleus-mcp/discussions)
 - **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-### ✨ Contributors
+### ✨ Pioneers & Contributors
 
-A huge thank you to the pioneers helping build the universal brain:
+Nucleus is a community-first project. A special thank you to our first contributor for setting the standard:
 
-- [@aryasadawrate19](https://github.com/aryasadawrate19) — Added Linux XDG support for `nucleus-init`.
+- **[@aryasadawrate19](https://github.com/aryasadawrate19)** — Added Linux XDG support for `nucleus-init`, bringing Nucleus to the Linux ecosystem.
+
+*Want to be here? See [CONTRIBUTING.md](CONTRIBUTING.md) and claim a "Good First Issue".*
 
 ### Development Setup
 
