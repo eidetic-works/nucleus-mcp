@@ -224,7 +224,7 @@ brain_sync_status()  # Shows last sync, active agents
 **OpenClaw trades security for capability. Nucleus gives you both.**
 
 > [!TIP]
-> **Check out the [Detailed Comparison](COMPARISON.md)** to see how Nucleus stacks up against ContextStream and Autonomy AI.
+> **Check out the [Detailed Comparison](docs/COMPETITIVE_ANALYSIS.md)** to see how Nucleus stacks up against ContextStream and other alternatives.
 
 ---
 
