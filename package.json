@@ -1,6 +1,6 @@
 {
     "name": "nucleus-mcp",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "mcpName": "io.github.eidetic-works/nucleus",
     "description": "The Universal Brain for AI Agents - Cross-platform memory sync for Cursor, Claude, Windsurf",
     "main": "index.js",
