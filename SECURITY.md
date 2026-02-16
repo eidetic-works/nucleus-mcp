@@ -13,7 +13,7 @@
 
 ### How to Report
 
-1. **Email**: security@nucleus-mcp.com
+1. **Email**: security@nucleusos.dev
 2. **Subject**: `[SECURITY] Brief description`
 3. **Include**:
    - Detailed description of the vulnerability

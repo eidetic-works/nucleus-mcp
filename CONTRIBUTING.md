@@ -110,7 +110,7 @@ Documentation improvements are always welcome:
 
 **Do NOT report security vulnerabilities via public GitHub Issues.**
 
-Instead, email: security@nucleus-mcp.com
+Instead, email: security@nucleusos.dev
 
 Include:
 - Detailed description of the vulnerability
@@ -128,7 +128,7 @@ By contributing to Nucleus MCP, you agree that your contributions will be licens
 
 - **General Questions**: GitHub Discussions
 - **Bug Reports**: GitHub Issues
-- **Security**: security@nucleus-mcp.com
+- **Security**: security@nucleusos.dev
 
 ---
 
