@@ -9,7 +9,7 @@
 > **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
 > Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails — all 100% local.
 
-> **The Universal Brain for AI Agents** — One brain that syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
+> **The Sovereign Brain** — Cross-platform AI memory that never leaves your machine. Syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
 
 ---
 
@@ -27,7 +27,7 @@ Every time you switch tools, you lose context. You re-explain decisions. You rep
 
 ---
 
-## ✨ The Solution
+### ✨ The Solution
 
 **Nucleus syncs them with one brain.**
 
@@ -37,7 +37,10 @@ Make a plan in Windsurf → Claude remembers it
 One brain. All your tools.
 ```
 
-<!-- Demo video: https://github.com/eidetic-works/nucleus-mcp/releases - see demo_video.mp4 -->
+![Recursive Snap Demo](docs/RECURSIVE_SNAP_DEMO.gif)
+
+> [!TIP]
+> **See the "Recursive Snap" in action**: Nucleus mounts your entire tool mesh (Stripe, Search, Postgres) into a single governed parent instantly.
 
 ---
 
@@ -209,6 +212,13 @@ brain_sync_status()  # Shows last sync, active agents
 | **Identity Persistence** | ❌ Session-bound | ❌ Login-bound | ✅ Hypervisor-enforced |
 | **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
 | **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+
+---
+
+## 🔗 Technical Deep Dives
+
+*   **Forensics**: [How we trace agent intent at the kernel level](https://dev.to/nucleusos/how-i-synced-cursor-claude-and-windsurf-with-one-shared-brain-mcp-1mh4)
+*   **Philosophy**: [Why we abandoned cloud memory for local sovereignty](https://dev.to/nucleusos/why-we-abandoned-cloud-memory-for-local-sovereignty-5bbo)
 
 **OpenClaw is great for multi-agent teams on their platform.**
 **OpenClaw trades security for capability. Nucleus gives you both.**
