@@ -6,7 +6,7 @@ import traceback
 import time
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from ..hypervisor.locker import Locker
 from ..hypervisor.watchdog import Watchdog
 from ..hypervisor.injector import Injector
@@ -14,7 +14,6 @@ from .task_ops import (
     _list_tasks, _add_task, _update_task, 
     _claim_task, _get_next_task
 )
-from .memory import _write_memory, _search_memory
 from pathlib import Path
 from datetime import datetime
 import asyncio
@@ -620,10 +619,13 @@ class StdioServer:
             return make_response(False, error=str(e))
 
 def main():
-    sys.stderr.write("DEBUG: STDIO_SERVER MAIN START\\n"); sys.stderr.flush()
+    sys.stderr.write("DEBUG: STDIO_SERVER MAIN START\n")
+    sys.stderr.flush()
     server = StdioServer()
-    sys.stderr.write("DEBUG: STDIO_SERVER AFTER INIT\\n"); sys.stderr.flush()
-    sys.stderr.write("Nucleus Sovereign Control Plane (Stdio Mode)\\n"); sys.stderr.flush()
+    sys.stderr.write("DEBUG: STDIO_SERVER AFTER INIT\n")
+    sys.stderr.flush()
+    sys.stderr.write("Nucleus Sovereign Control Plane (Stdio Mode)\n")
+    sys.stderr.flush()
     # Run async main loop
     asyncio.run(server.run())
 

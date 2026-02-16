@@ -6,14 +6,14 @@
 __version__ = "1.0.4"
 
 import os
-import re
+import re # noqa: F401
 import json
 import time
-import uuid
+import uuid # noqa: F401
 import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pathlib import Path
+from pathlib import Path # noqa: F401
 import sys
 import warnings
 
@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
 START_TIME = time.time()
 
 # v0.6.0 Tool Tier System - Solves Registry Bloat
-from .tool_tiers import get_active_tier, get_tier_info, is_tool_allowed, tier_manager
+from .tool_tiers import get_active_tier, get_tier_info, is_tool_allowed, tier_manager # noqa: E402
 
 ACTIVE_TIER = get_active_tier()
 logger_init = logging.getLogger("nucleus.init")
@@ -38,34 +38,35 @@ os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
 # from fastmcp import FastMCP (Moved to try/except block below)
 
 # Import commitment ledger module
-from . import commitment_ledger
+from . import commitment_ledger # noqa: F401, E402
 
 # Phase 1 Monolith Decomposition Imports
-from .runtime.common import get_brain_path, make_response, _get_state, _update_state
-from .runtime.event_ops import _emit_event, _read_events
-from .runtime.task_ops import (
+from .runtime.common import get_brain_path, make_response, _get_state, _update_state # noqa: F401, E402
+from .runtime.event_ops import _emit_event, _read_events # noqa: F401, E402
+from .runtime.task_ops import ( # noqa: F401, E402
     _get_tasks_list, _save_tasks_list, _list_tasks, _add_task, 
     _claim_task, _update_task, _get_next_task, _import_tasks_from_jsonl,
     _escalate_task
-)
-from .runtime.session_ops import (
+) # noqa: F401
+from .runtime.session_ops import ( # noqa: F401, E402
     _save_session, _resume_session, _list_sessions, 
     _get_session, _check_for_recent_session, _prune_old_sessions,
     _get_sessions_path, _get_active_session_path
-)
-from .runtime.depth_ops import (
+) # noqa: F401
+from .runtime.depth_ops import ( # noqa: F401, E402
     _get_depth_path, _get_depth_state, _save_depth_state, _depth_push, 
     _depth_pop, _depth_show, _depth_reset, _depth_set_max, _format_depth_indicator,
     _generate_depth_map
 )
-from .runtime.schema_gen import generate_tool_schema
-from .runtime.mounter import get_mounter
-from .runtime.sync_ops import (
+from .runtime.schema_gen import generate_tool_schema # noqa: F401, E402
+from .runtime.mounter import get_mounter # noqa: F401, E402
+from .runtime.sync_ops import ( # noqa: F401, E402
     get_current_agent, set_current_agent, get_agent_info,
     sync_lock, perform_sync, get_sync_status, record_sync_time,
     start_file_watcher, stop_file_watcher, is_sync_enabled,
     auto_start_sync_if_configured
-)
+) # noqa: F401
+ # noqa: F401
 
 # Setup logging
 # logging.basicConfig(level=logging.INFO) # Removing to prevent overriding FastMCP settings
@@ -104,7 +105,7 @@ except ImportError:
     mcp = MockMCP()
 
 # Initialize tiered tool registration (must happen after mcp is created)
-from .core.tool_registration_impl import configure_tiered_tool_registration
+from .core.tool_registration_impl import configure_tiered_tool_registration # noqa: E402
 configure_tiered_tool_registration(mcp)
 
 
@@ -117,7 +118,7 @@ configure_tiered_tool_registration(mcp)
 
 def get_orch():
     """Get the orchestrator singleton (Unified)."""
-    from .runtime.orchestrator_unified import get_orchestrator
+    from .runtime.orchestrator_unified import get_orchestrator # noqa: E402, F401
     return get_orchestrator()
 
 # ============================================================
@@ -138,7 +139,7 @@ def brain_auto_fix_loop(file_path: str, verification_command: str) -> str:
     Retries up to 3 times.
     Phase 4: Self-Healing.
     """
-    from .runtime.loops.fixer import FixerLoop
+    from .runtime.loops.fixer import FixerLoop # noqa: E402, F401
     
     # We pass brain_fix_code as the fixer callback
     # brain_fix_code returns a JSON string, which FixerLoop expects
@@ -158,7 +159,7 @@ def brain_auto_fix_loop(file_path: str, verification_command: str) -> str:
 # ============================================================
 # HYPERVISOR LAYER (v0.8.0) - "God Mode" Lock
 # ============================================================
-from .hypervisor.locker import Locker
+from .hypervisor.locker import Locker # noqa: E402
 _locker = Locker()
 
 @mcp.tool()
@@ -183,7 +184,7 @@ def unlock_resource(path: str) -> str:
     else:
         return f"❌ FAILED to unlock: {path}"
 
-from .hypervisor.injector import Injector
+from .hypervisor.injector import Injector # noqa: E402
 _injector = Injector(os.environ.get("NUCLEAR_BRAIN_PATH", "."))
 
 @mcp.tool()
@@ -206,7 +207,7 @@ def set_hypervisor_mode(mode: str) -> str:
         return "❌ Invalid mode. Use 'red', 'blue', or 'reset'."
 
 
-from .hypervisor.watchdog import Watchdog
+from .hypervisor.watchdog import Watchdog # noqa: E402
 # Derive workspace root from brain path (assuming .brain is in root)
 _brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
 _workspace_root = _brain_path.parent
@@ -230,7 +231,7 @@ def nucleus_list_directory(path: str) -> str:
             return f"❌ ERROR: Path not found: {path}"
             
         items = os.listdir(resolved_path)
-        result = [f"📁 {p}" if (resolved_path / p).is_dir() else f"📄 {p}" for p in items]
+        [f"📁 {p}" if (resolved_path / p).is_dir() else f"📄 {p}" for p in items]
         
         # Check lock status for each file
         status_lines = []
@@ -1493,7 +1494,7 @@ def brain_list_proofs() -> Dict:
 def _list_proofs() -> List[str]:
     """Core logic wrapper for listing proofs."""
     try:
-        from .runtime.capabilities.proof_system import ProofSystem
+        from .runtime.capabilities.proof_system import ProofSystem # noqa: E402, F401
         proof_sys = ProofSystem()
         return proof_sys._list_proofs()
     except Exception:
@@ -1651,7 +1652,7 @@ def brain_identify_agent(agent_id: str, environment: str, role: str = "") -> str
     """
     # Pillar 6: ID Collision Protection (Finding 6)
     try:
-        from .runtime.event_ops import _read_events
+        from .runtime.event_ops import _read_events # noqa: E402, F401
         import socket
         current_host = socket.gethostname()
         
@@ -1782,7 +1783,7 @@ def brain_sync_auto(enable: bool) -> str:
         
         # Pillar 5: Git Hygiene (Finding 5)
         try:
-            from .runtime.common import get_brain_path
+            from .runtime.common import get_brain_path # noqa: E402, F401
             root_path = get_brain_path().parent
             gitignore = root_path / ".gitignore"
             
@@ -1820,8 +1821,8 @@ def brain_sync_resolve(file_path: str, strategy: str = "last_write_wins") -> str
         JSON with resolution result.
     """
     try:
-        from .runtime.common import get_brain_path
-        from .runtime.sync_ops import detect_conflict, resolve_conflict, sync_lock, get_current_agent
+        from .runtime.common import get_brain_path # noqa: E402, F401
+        from .runtime.sync_ops import detect_conflict, resolve_conflict, sync_lock, get_current_agent # noqa: E402, F401
         
         brain_path = get_brain_path()
         abs_path = brain_path / file_path
@@ -3149,7 +3150,7 @@ def brain_metrics() -> str:
 def _generate_proof(feature_id: str, thinking: str = "", deployed_url: str = "", files_changed: List[str] = [], risk_level: str = "low", rollback_time: str = "15m") -> Dict[str, Any]:
     """Core logic wrapper for generating a proof."""
     try:
-        from .runtime.capabilities.proof_system import ProofSystem
+        from .runtime.capabilities.proof_system import ProofSystem # noqa: E402, F401
         proof_sys = ProofSystem()
         return proof_sys._generate_proof({
             "feature_id": feature_id,
@@ -3165,7 +3166,7 @@ def _generate_proof(feature_id: str, thinking: str = "", deployed_url: str = "",
 def _get_proof(feature_id: str) -> Dict[str, Any]:
     """Core logic wrapper for getting a proof."""
     try:
-        from .runtime.capabilities.proof_system import ProofSystem
+        from .runtime.capabilities.proof_system import ProofSystem # noqa: E402, F401
         proof_sys = ProofSystem()
         content = proof_sys._get_proof(feature_id)
         if content.startswith("Proof for"): # Not found message
@@ -3219,7 +3220,6 @@ def brain_get_llm_status() -> str:
     """
     import os
     import json
-    from pathlib import Path
     
     brain = get_brain_path()
     tier_status_path = brain / "tier_status.json"
@@ -3279,11 +3279,11 @@ async def brain_spawn_agent(
     """
     try:
         from uuid import uuid4
-        from .runtime.llm_client import DualEngineLLM, LLMTier, TierRouter
-        
+        from .runtime.llm_client import DualEngineLLM # noqa: E402, F401
+            
         session_id = f"spawn-{str(uuid4())[:8]}"
-        from .runtime.factory import ContextFactory
-        from .runtime.agent import EphemeralAgent
+        from .runtime.factory import ContextFactory # noqa: E402, F401
+        from .runtime.agent import EphemeralAgent # noqa: E402, F401
 
         factory = ContextFactory()
         
@@ -4783,12 +4783,12 @@ def brain_status_dashboard(detail_level: str = "standard") -> str:
         # Load data
         registry = _get_slot_registry()
         tasks = _get_tasks_list()
-        tier_defs = _get_tier_definitions()
+        _get_tier_definitions()
         all_slots = registry.get("slots", {})
         
         # Calculate metrics
         active_slots = [s for s in all_slots.values() if s.get("status") == "active"]
-        exhausted_slots = [s for s in all_slots.values() if s.get("status") == "exhausted"]
+        [s for s in all_slots.values() if s.get("status") == "exhausted"]
         busy_slots = [s for s in all_slots.values() if s.get("current_task")]
         
         pending_tasks = [t for t in tasks if t.get("status") in ["PENDING", "READY"]]
@@ -5369,7 +5369,7 @@ def brain_autopilot_sprint(
             
             "autopilot_hint": {
                 "continue": tasks_assigned > 0,
-                "check_status": f"brain_autopilot_sprint(mode='status')",
+                "check_status": "brain_autopilot_sprint(mode='status')",
                 "tasks_remaining": len([t for t in tasks if t.get("status") == "PENDING"]) - tasks_assigned
             }
         }
@@ -5478,7 +5478,7 @@ def brain_file_changes() -> str:
         List of file change events (type, path, timestamp)
     """
     try:
-        from .runtime.file_monitor import get_file_monitor
+        from .runtime.file_monitor import get_file_monitor # noqa: E402, F401
         
         monitor = get_file_monitor()
         if not monitor:
@@ -5528,7 +5528,7 @@ def brain_gcloud_status() -> str:
         GCloud auth status (project, account, availability)
     """
     try:
-        from .runtime.gcloud_ops import get_gcloud_ops
+        from .runtime.gcloud_ops import get_gcloud_ops # noqa: E402, F401
         
         ops = get_gcloud_ops()
         status = ops.check_auth_status()
@@ -5560,7 +5560,7 @@ def brain_gcloud_services(project: str = None, region: str = "us-central1") -> s
         List of Cloud Run services with status
     """
     try:
-        from .runtime.gcloud_ops import GCloudOps
+        from .runtime.gcloud_ops import GCloudOps # noqa: E402, F401
         
         ops = GCloudOps(project=project, region=region)
         
@@ -5590,7 +5590,7 @@ def brain_list_services() -> str:
         JSON string of service list (Real or Mock).
     """
     try:
-        from .runtime.render_ops import get_render_ops
+        from .runtime.render_ops import get_render_ops # noqa: E402, F401
         ops = get_render_ops()
         return json.dumps(ops.list_services(), indent=2)
     except Exception as e:
@@ -5818,7 +5818,7 @@ def brain_search_memory(query: str) -> Dict:
         List of matching snippets with file paths.
     """
     try:
-        from .runtime.memory import _search_memory
+        from .runtime.memory import _search_memory # noqa: E402, F401
         return _search_memory(query)
     except Exception as e:
         return {"error": f"Tool execution failed: {str(e)}"}
@@ -5834,7 +5834,7 @@ def brain_read_memory(category: str) -> Dict:
         Full content of the requested memory file.
     """
     try:
-        from .runtime.memory import _read_memory
+        from .runtime.memory import _read_memory # noqa: E402, F401
         return _read_memory(category)
     except Exception as e:
         return {"error": f"Tool execution failed: {str(e)}"}
@@ -5848,7 +5848,7 @@ def brain_manage_strategy(action: str, content: str = None) -> Dict:
         content: Text content (required for update/append).
     """
     try:
-        from .runtime.strategy import _manage_strategy
+        from .runtime.strategy import _manage_strategy # noqa: E402, F401
         return _manage_strategy(action, content)
     except Exception as e:
         return {"error": f"Tool execution failed: {str(e)}"}
@@ -5862,7 +5862,7 @@ def brain_update_roadmap(action: str, item: str = None) -> Dict:
         item: Roadmap item text (required for add).
     """
     try:
-        from .runtime.strategy import _update_roadmap
+        from .runtime.strategy import _update_roadmap # noqa: E402, F401
         return _update_roadmap(action, item)
     except Exception as e:
         return {"error": f"Tool execution failed: {str(e)}"}
@@ -5870,7 +5870,7 @@ def brain_update_roadmap(action: str, item: str = None) -> Dict:
 def main():
     # Fallback for Python 3.9 / No FastMCP
     if globals().get("USE_STDIO_FALLBACK"):
-        from .runtime.stdio_server import StdioServer
+        from .runtime.stdio_server import StdioServer # noqa: E402, F401
         import logging
         import sys
         
@@ -5888,7 +5888,7 @@ def main():
     
     # Phase 50: Initialize File Monitor for Native Sync
     try:
-        from .runtime.file_monitor import init_file_monitor
+        from .runtime.file_monitor import init_file_monitor # noqa: E402, F401
         brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
         if brain_path and Path(brain_path).exists():
             monitor = init_file_monitor(brain_path)
@@ -5920,7 +5920,7 @@ if __name__ == "__main__":
 def _critique_code(file_path: str, context: Optional[str] = None) -> Dict:
     """Core logic for critiquing code using the Critic persona."""
     try:
-        from .runtime.llm_client import DualEngineLLM
+        from .runtime.llm_client import DualEngineLLM # noqa: E402, F401
         import json
         
         brain = get_brain_path()
@@ -6046,7 +6046,7 @@ def _fix_code(file_path: str, issues_context: str) -> str:
         # Use Dual Engine (using mcp_server_nucleus's internal instance if available, or creating one)
         # We assume DualEngineLLM is imported (it is at top of __init__.py usually, or we use the one instantiated in server. But this is the library).
         # We need to import it or assume it's available.
-        from .runtime.llm_client import DualEngineLLM
+        from .runtime.llm_client import DualEngineLLM # noqa: E402, F401
         
         llm = DualEngineLLM() 
         fix_response = llm.generate_content(
@@ -6161,7 +6161,7 @@ def brain_session_briefing(conversation_id: Optional[str] = None) -> str:
     if conversation_id:
         identity = _get_thread_identity(conversation_id)
         if identity:
-            lines.append(f"### 🪪 Your Identity")
+            lines.append("### 🪪 Your Identity")
             lines.append(f"- **Thread:** `{conversation_id[:12]}...`")
             lines.append(f"- **Role:** {identity.get('role', 'Unknown')}")
             lines.append(f"- **Focus:** {identity.get('label', 'Unknown')}")
@@ -7036,7 +7036,7 @@ def _get_federation_engine():
     global _federation_engine
     if _federation_engine is None:
         try:
-            from .runtime.federation import FederationEngine, FederationConfig
+            from .runtime.federation import FederationEngine, FederationConfig # noqa: E402, F401
             brain_path = get_brain_path()
             config = FederationConfig(
                 brain_id=f"brain_{brain_path.name}",
@@ -7461,10 +7461,8 @@ def brain_federation_health() -> str:
 # ============================================================================
 # SYSTEM HEALTH ENDPOINT (Phase 6B Production Hardening)
 # ============================================================================
-
 def _brain_health_impl() -> str:
     """Internal implementation of system health check (JSON)."""
-    import platform
     
     try:
         try:
@@ -7710,7 +7708,7 @@ def brain_performance_metrics(export_to_file: bool = False) -> str:
     Returns:
         Formatted performance summary or JSON if exported
     """
-    from .runtime.profiling import get_metrics, get_metrics_summary, export_metrics_to_file
+    from .runtime.profiling import get_metrics, get_metrics_summary, export_metrics_to_file # noqa: E402, F401
     
     metrics = get_metrics()
     if not metrics:
@@ -7751,7 +7749,7 @@ def brain_prometheus_metrics(format: str = "prometheus") -> str:
           static_configs:
             - targets: ['localhost:9090']
     """
-    from .runtime.prometheus import get_prometheus_metrics, get_metrics_json
+    from .runtime.prometheus import get_prometheus_metrics, get_metrics_json # noqa: E402, F401
     
     if format.lower() == "json":
         return make_response(True, data=get_metrics_json())
@@ -7845,12 +7843,12 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
         # V9.1 Security Hardening: Key Validation
         if not key or len(key.strip()) < 2:
             import sys
-            print(f"[NUCLEUS] SECURITY VIOLATION: Empty or short key detected", file=sys.stderr)
+            print("[NUCLEUS] SECURITY VIOLATION: Empty or short key detected", file=sys.stderr)
             return make_response(False, error="Security Violation: Key must be at least 2 characters")
             
         if not re.match(r"^[a-zA-Z0-9_.-]+$", key):
             import sys
-            print(f"[NUCLEUS] SECURITY VIOLATION: Invalid key pattern detected", file=sys.stderr)
+            print("[NUCLEUS] SECURITY VIOLATION: Invalid key pattern detected", file=sys.stderr)
             return make_response(False, error="Security Violation: Key contains invalid characters")
 
         # V9.2 Value Restoration: Removed aggressive SQL/Script regex.
@@ -8135,7 +8133,7 @@ def brain_list_decisions(limit: int = 20) -> str:
 
 
 @mcp.tool()
-def brain_list_snapshots(limit: int = 10) -> str:
+def brain_list_context_snapshots(limit: int = 10) -> str:
     """
     List context snapshots from the snapshot ledger.
     
@@ -8245,7 +8243,7 @@ def brain_ipc_tokens(active_only: bool = True) -> str:
             return make_response(True, data={"tokens": [], "count": 0})
         
         from datetime import datetime, timezone
-        now = datetime.now(timezone.utc).isoformat()
+        datetime.now(timezone.utc).isoformat()
         
         events = []
         with open(tokens_file, "r") as f:
@@ -8318,7 +8316,7 @@ def brain_dsor_status() -> str:
                             entry = json.loads(line)
                             meter_count += 1
                             total_units += entry.get("units_consumed", 0)
-                        except:
+                        except Exception:
                             pass
         
         # IPC token stats
@@ -8335,7 +8333,7 @@ def brain_dsor_status() -> str:
                                 token_issued += 1
                             elif event.get("event") == "consumed":
                                 token_consumed += 1
-                        except:
+                        except Exception:
                             pass
         
         status = {
@@ -8421,7 +8419,7 @@ def brain_federation_dsor_status() -> str:
                                     "timestamp": event.get("timestamp"),
                                     "decision_id": event.get("data", {}).get("decision_id")
                                 })
-                        except:
+                        except Exception:
                             pass
         
         # Get last 10 federation events
@@ -8477,7 +8475,7 @@ def brain_routing_decisions(limit: int = 20) -> str:
                                     "decision_id": data.get("decision_id"),
                                     "routing_time_ms": data.get("routing_time_ms")
                                 })
-                        except:
+                        except Exception:
                             pass
         
         # Return last N decisions
@@ -8517,7 +8515,7 @@ def brain_list_tools(category: str = None) -> str:
         for name in dir(nucleus):
             if name.startswith('brain_'):
                 # Handle both functions and FunctionTool objects
-                item = getattr(nucleus, name)
+                getattr(nucleus, name)
                 # If it's a tool, its name is item.name. If function, item.__name__
                 actual_name = name
                 if is_tool_allowed(actual_name):

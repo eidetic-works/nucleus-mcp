@@ -166,7 +166,7 @@ def _resume_session(session_id: Optional[str] = None) -> Dict[str, Any]:
              if created_str:
                  # Very basic check
                  pass
-        except:
+        except Exception:
              pass
 
         return {
@@ -203,7 +203,7 @@ def _list_sessions() -> Dict[str, Any]:
                     "context": session.get("context"),
                     "created_at": session.get("created_at")
                 })
-            except:
+            except Exception:
                 continue
                 
         return {"sessions": sessions, "total": len(sessions)}

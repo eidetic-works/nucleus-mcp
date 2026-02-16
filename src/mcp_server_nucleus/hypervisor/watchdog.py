@@ -1,9 +1,6 @@
 
 import logging
-import time
-import shutil
 from pathlib import Path
-from typing import List, Optional
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 

@@ -28,17 +28,14 @@ import random
 import time
 import uuid
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 # v0.6.0 DSoR imports
 try:
-    from .context_manager import compute_context_hash, get_context_manager
-    from .ipc_auth import get_ipc_auth_manager
     from .event_stream import emit_event, EventTypes
     DSOR_AVAILABLE = True
 except ImportError:
@@ -148,9 +145,6 @@ class MerkleTree:
             self._dirty = False
         return self._root
     
-    def diff(self, other_root: str) -> bool:
-        return self.get_root() != other_root
-
 
 @dataclass
 class FederationPeer:
@@ -417,7 +411,7 @@ class DiscoveryManager:
         online_peers = [p for p in self.state.peers.values() if p.is_healthy()]
         if not online_peers:
             return
-        targets = random.sample(online_peers, min(self.config.gossip_fanout, len(online_peers)))
+        random.sample(online_peers, min(self.config.gossip_fanout, len(online_peers)))
         # In production: exchange membership info with targets
     
     async def _probe_loop(self) -> None:
@@ -612,6 +606,9 @@ class SyncManager:
             peer.last_sync = datetime.utcnow()
             
             return SyncResult(True, peer_id, 0, 0, (time.perf_counter() - start_time) * 1000, self.merkle_tree.get_root())
+        except Exception as e: # Fixed bare except
+            logger.error(f"Error during sync with peer {peer_id}: {e}")
+            return SyncResult(False, peer_id, 0, 0, (time.perf_counter() - start_time) * 1000, self.merkle_tree.get_root(), str(e))
         finally:
             self.sync_in_progress.discard(peer_id)
     

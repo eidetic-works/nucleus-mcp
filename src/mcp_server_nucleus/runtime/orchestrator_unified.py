@@ -18,16 +18,14 @@ import time
 import os
 import logging
 import asyncio
-import uuid
-import re
 import threading
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from datetime import datetime, timezone
 
 # V3 Core Components
 from .crdt_task_store import CRDTTaskStore
-from .task_scheduler import TaskScheduler, TaskStatus, TaskPriority, TaskTier
+from .task_scheduler import TaskScheduler
 # V2 Logic Components
 from .locking import get_lock
 from .policy import DirectivesLoader, MissionParameters
@@ -157,7 +155,8 @@ class UnifiedOrchestrator:
     def get_next_task(self, skills: List[str] = None) -> Optional[Dict]:
         tasks = self.task_store.get_all_tasks()
         available = [t for t in tasks if t.get("status") in ["PENDING", "READY"]]
-        if not available: return None
+        if not available:
+            return None
         available.sort(key=lambda x: x.get("priority", 3))
         return available[0]
 
@@ -217,7 +216,8 @@ class UnifiedOrchestrator:
         mission_artifacts = []
         
         for i, persona in enumerate(state["agents"]):
-            if state["step_count"] >= params.max_steps: break
+            if state["step_count"] >= params.max_steps:
+                break
             
             logger.info(f"🤖 Step {i+1}: Spawning {persona}")
             context = self.context_factory.create_context_for_persona(

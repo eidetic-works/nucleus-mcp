@@ -15,9 +15,8 @@ Author: NOP V3 - January 2026
 
 import time
 import threading
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 from collections import defaultdict
-from heapq import heappush, heappop
 from copy import deepcopy
 from enum import Enum
 
@@ -288,7 +287,7 @@ class TaskScheduler:
         """
         with self.lock:
             decisions = []
-            start_time = time.time()
+            time.time()
 
             # Phase 1: Add tasks to internal state
             for task in tasks:
@@ -376,7 +375,6 @@ class TaskScheduler:
                     )
                     self.stats["queued"] += 1
 
-            elapsed = time.time() - start_time
             return decisions
 
     def get_agent_state(self, agent_id: str) -> Optional[Dict]:

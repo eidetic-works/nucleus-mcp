@@ -22,12 +22,10 @@ import threading
 import hashlib
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple, Set
+from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from datetime import datetime, timedelta
-from collections import defaultdict
-import heapq
+from datetime import datetime
 
 
 class SprintMode(str, Enum):
@@ -331,7 +329,7 @@ class TaskAssigner:
     def assign(self, task: Dict, force: bool = False) -> Optional[TaskAssignment]:
         """Assign task to best available slot."""
         required_tier = task.get("required_tier", "T2_CODE")
-        required_skills = set(task.get("required_skills", []))
+        set(task.get("required_skills", []))
         
         # Step 1: Filter by tier capability
         capable = [s for s in self.slots.values() 
@@ -891,7 +889,7 @@ class AutopilotEngine:
             minutes = int((elapsed.total_seconds() % 3600) // 60)
             
             return f"{hours}h {minutes}m"
-        except:
+        except Exception:
             return "N/A"
     
     def _create_result(
@@ -911,7 +909,7 @@ class AutopilotEngine:
             start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
             end = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
             duration = (end - start).total_seconds()
-        except:
+        except Exception:
             duration = 0
         
         total = len(tasks)

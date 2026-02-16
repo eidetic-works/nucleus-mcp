@@ -20,13 +20,11 @@ import json
 import time
 import threading
 import hashlib
-import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta
-from collections import defaultdict
 
 
 class AlertLevel(str, Enum):
@@ -571,7 +569,7 @@ class ASCIIFormatter:
                 for w in reset_warnings[:3]:
                     lines.append(f"       └── {w.get('slot_id', 'unknown')} in {w.get('minutes', '?')}m")
             else:
-                lines.append(f"   └── Reset Warnings: 0")
+                lines.append("   └── Reset Warnings: 0")
         else:
             lines.append(f"   └── Capacity: {int(utilization*100)}%")
         
@@ -1025,7 +1023,7 @@ class DashboardEngine:
                 return f"❌ {comparison['error']}"
             
             lines = [
-                f"📊 Dashboard Comparison",
+                "📊 Dashboard Comparison",
                 "═" * 50,
             ]
             for key, delta in comparison.get("deltas", {}).items():

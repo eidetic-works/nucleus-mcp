@@ -49,8 +49,10 @@ except ImportError:
     HAS_LEGACY = False
 
 def get_active_sdk() -> str:
-    if HAS_GENAI: return "NEW"
-    if HAS_LEGACY: return "LEGACY"
+    if HAS_GENAI:
+        return "NEW"
+    if HAS_LEGACY:
+        return "LEGACY"
     return "NONE"
 
 _active = get_active_sdk()

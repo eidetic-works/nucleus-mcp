@@ -17,7 +17,6 @@ import contextlib
 import logging
 import subprocess
 import shutil
-import json
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
@@ -178,7 +177,7 @@ class FileBrainLock(BrainLock):
         try:
             with open(self.lock_path, 'r') as f:
                 data["pid"] = f.read().strip()
-        except:
+        except Exception:
             data["pid"] = "unknown"
 
         # Get xattrs

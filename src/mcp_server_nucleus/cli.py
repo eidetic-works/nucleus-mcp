@@ -4,7 +4,6 @@
 import os
 import json
 import sys
-import time
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -835,7 +834,7 @@ def handle_mount_command(args):
         else:
             try:
                 mounts = json.loads(mounts_file.read_text())
-            except:
+            except Exception:
                 mounts = {}
         
         config = {
@@ -877,7 +876,7 @@ def handle_mount_command(args):
             
         try:
             mounts = json.loads(mounts_file.read_text())
-        except:
+        except Exception:
              print("❌ Failed to parse mounts file.")
              return
              
@@ -896,7 +895,7 @@ def handle_mount_command(args):
             
         try:
             mounts = json.loads(mounts_file.read_text())
-        except:
+        except Exception:
              print("❌ Failed to parse mounts file.")
              return
              
