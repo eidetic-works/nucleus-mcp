@@ -277,6 +277,20 @@ pip install -e ".[dev]"
 pytest tests/
 ```
 
+## 🏢 Enterprise
+
+Nucleus is built for organizations that cannot compromise on data sovereignty:
+
+- **Air-Gap Ready**: Deploy in fully disconnected environments
+- **Compliance First**: Full audit trail, SHA-256 hashing, ITAR/SOC2 ready
+- **Team Sync**: Git-based knowledge sharing (coming soon)
+
+📄 **[Enterprise Guide](docs/ENTERPRISE.md)** | 📊 **[Competitive Analysis](docs/COMPETITIVE_ANALYSIS.md)**
+
+**Contact**: [enterprise@nucleusos.dev](mailto:enterprise@nucleusos.dev)
+
+---
+
 ## 🛡️ Join the Nucleus Vanguard (Private Beta)
 
 We're building the first secure sync layer for agents. Join our Vanguard Pioneers to help shape the roadmap and get early access to features before they go public.
