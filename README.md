@@ -7,7 +7,7 @@
 
 > [!CAUTION]
 > **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
-> Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails — all 100% local.
+> Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails, all 100% local.
 
 > **The Sovereign Brain** — Cross-platform AI memory that never leaves your machine. Syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
 
