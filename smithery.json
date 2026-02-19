@@ -13,5 +13,8 @@
             "-m",
             "mcp_server_nucleus"
         ]
+    },
+    "metadata": {
+        "lastTriggered": "2026-02-19T06:45:00Z"
     }
 }
