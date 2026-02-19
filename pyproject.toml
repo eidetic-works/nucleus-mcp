@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.0.5"
-description = "The Sovereign Agent Control Plane with Governance & Engrams"
+version = "1.0.7"
+description = "The Universal Brain for AI Agents - Cross-platform memory sync for Cursor, Claude, Windsurf"
 readme = "README.md"
 authors = [
     { name = "Nucleus Team", email = "hello@nucleusos.dev" }
