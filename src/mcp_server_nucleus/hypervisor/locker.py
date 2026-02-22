@@ -116,7 +116,7 @@ class Locker:
         except Exception:
             return False
 
-    # --- METADATA (Phase 28) ---
+    # --- METADATA (Layer 4) ---
     def _set_xattr(self, path: str, key: str, value: str):
         if os.name == 'nt':
             return # Windows does not support xattr natively
@@ -135,10 +135,13 @@ class Locker:
             logger.warning(f"Failed to set xattr {key}: {e}")
 
     def get_metadata(self, path: str) -> dict:
-        """Retrieves lock metadata from xattrs."""
+        """Retrieves lock metadata from xattrs (macOS/Linux)."""
         if not os.path.exists(path):
             return {}
         
+        if os.name == 'nt':
+            return {} # Windows does not support xattr natively
+
         try:
             result = subprocess.run(
                 ["xattr", path],

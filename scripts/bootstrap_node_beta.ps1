@@ -1,5 +1,5 @@
 # =============================================================================
-# 🚀 NUCLEUS NODE BETA: SINGLE-CLICK IGNITION
+# 🚀 NUCLEUS NODE BETA: SINGLE-CLICK IGNITION (Zenith Hardened)
 # =============================================================================
 # Purpose: Deep-automate the setup of a Sovereign Node on Native Windows.
 # Target: Windows 10/11 (Native, Non-WSL)
@@ -15,12 +15,14 @@ function Write-Success ($msg) {
     Write-Host "[DONE] $msg" -ForegroundColor Green
 }
 
+# 1. Environment Baseline Check
 Write-Step "1. Environment Baseline Check"
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    Write-Error "Winget not found. Please update Windows or install App Installer from the Store."
+    Write-Error "Winget not found. Please update Windows or install 'App Installer' from the Microsoft Store."
 }
 Write-Success "Winget is present."
 
+# 2. Binary Tooling Injection
 Write-Step "2. Binary Tooling Injection"
 Write-Host "Verifying Git, Python 3.11, and Multimedia Tools..."
 $toInstall = @()
@@ -34,6 +36,7 @@ foreach ($id in $toInstall) {
 }
 Write-Success "All binary dependencies met."
 
+# 3. Filesystem Scaffolding
 Write-Step "3. Filesystem Scaffolding"
 $root = "C:\SovereignNode"
 if (-not (Test-Path $root)) {
@@ -43,15 +46,17 @@ if (-not (Test-Path $root)) {
 Set-Location $root
 Write-Success "Operating in $root"
 
+# 4. Repository Acquisition (Zenith Sync)
 Write-Step "4. Repository Acquisition (Zenith Sync)"
 $repos = @{
     "nucleus-mcp" = "https://github.com/eidetic-works/nucleus-mcp.git"
+    "believe-it-bot" = "https://github.com/eidetic-works/believe-it-bot.git"
 }
 
 foreach ($name in $repos.Keys) {
     if (-not (Test-Path $name)) {
         Write-Host "Cloning $name..."
-        git clone $repos[$name]
+        git clone $repos[$name] $name
     } else {
         Write-Host "$name already exists. Pulling latest..."
         Set-Location $name
@@ -61,52 +66,69 @@ foreach ($name in $repos.Keys) {
 }
 Write-Success "Repositories synchronized."
 
+# 5. The Git Corruption Shield (LF Enforcement)
 Write-Step "5. The Git Corruption Shield (LF Enforcement)"
 Get-ChildItem -Directory | ForEach-Object {
-    Set-Location $_.FullName
-    Write-Host "Hardening line endings in $($_.Name)..."
-    "* text=auto eol=lf" | Set-Content -Path .gitattributes -Force
-    git add . --renormalize
-    Set-Location $root
+    $dir = $_.FullName
+    if (Test-Path (Join-Path $dir ".git")) {
+        Set-Location $dir
+        Write-Host "Hardening line endings in $($_.Name)..."
+        "* text=auto eol=lf" | Set-Content -Path .gitattributes -Force
+        git add . --renormalize
+        Set-Location $root
+    }
 }
 Write-Success "Zero-Rot Line Endings Enforced."
 
+# 6. Nucleus Virtualization
 Write-Step "6. Nucleus Virtualization"
 $mcpDir = Join-Path $root "nucleus-mcp"
-Set-Location $mcpDir
-if (-not (Test-Path ".venv")) {
-    Write-Host "Creating Virtual Environment..."
-    python -m venv .venv
+if (Test-Path $mcpDir) {
+    Set-Location $mcpDir
+    if (-not (Test-Path ".venv")) {
+        Write-Host "Creating Virtual Environment..."
+        python -m venv .venv
+    }
+    Write-Host "Installing dependencies..."
+    & ".\.venv\Scripts\python.exe" -m pip install --upgrade pip
+    & ".\.venv\Scripts\pip.exe" install -e .
+    Write-Success "Nucleus installed in developer mode."
+} else {
+    Write-Warning "Nucleus directory not found. Skipping virtualization."
 }
-Write-Host "Installing dependencies..."
-& ".\.venv\Scripts\python.exe" -m pip install --upgrade pip
-& ".\.venv\Scripts\pip.exe" install -e .
-Write-Success "Nucleus installed in developer mode."
 
+# 7. Windsurf Integration String
 Write-Step "7. Windsurf Integration String"
 $pythonPath = (Join-Path $mcpDir ".venv\Scripts\python.exe").Replace("\", "/")
-$brainPath = $mcpDir.Replace("\", "/")
+# Brain root should point to the application (believe-it-bot)
+$botDir = Join-Path $root "believe-it-bot"
+$brainRoot = $botDir.Replace("\", "/")
 
-$jsonBlock = @"
-{
-  "mcpServers": {
-    "nucleus-native": {
-      "command": "$pythonPath",
-      "args": ["-m", "mcp_server_nucleus.runtime.stdio_server"],
-      "env": {
-        "NUCLEAR_BRAIN_PATH": "$brainPath",
-        "NUCLEUS_MODE": "BETA_SURGE"
-      }
-    }
-  }
-}
-"@
+# Constructing JSON manually to avoid Here-String parser sensitivity
+$json = "{"
+$json += "`n  `"mcpServers`": {"
+$json += "`n    `"nucleus-native`": {"
+$json += "`n      `"command`": `"$pythonPath`","
+$json += "`n      `"args`": [`"-m`", `"mcp_server_nucleus.runtime.stdio_server`"],"
+$json += "`n      `"env`": {"
+$json += "`n        `"NUCLEAR_BRAIN_PATH`": `"$brainRoot`","
+$json += "`n        `"NUCLEUS_MODE`": `"BETA_SURGE`""
+$json += "`n      }"
+$json += "`n    }"
+$json += "`n  }"
+$json += "`n}"
 
 Write-Host "`n--- COPY THIS INTO WINDSURF MCP SETTINGS ---" -ForegroundColor Yellow
-Write-Host $jsonBlock
+Write-Host $json
 Write-Host "-------------------------------------------`n"
 
+# 8. Operational Smoke Test
 Write-Step "8. Operational Smoke Test"
-Write-Host "Running diagnostic boot..."
-& ".\.venv\Scripts\python.exe" -m mcp_server_nucleus.runtime.stdio_server --help | Select-Object -First 5
-Write-Success "Smoke test complete. Your Node is ALIVE."
+if (Test-Path $mcpDir) {
+    Set-Location $mcpDir
+    Write-Host "Running diagnostic boot..."
+    & ".\.venv\Scripts\python.exe" -m mcp_server_nucleus.runtime.stdio_server --help | Select-Object -First 5
+    Write-Success "Smoke test complete. Your Node is ALIVE."
+}
+
+Set-Location $root
