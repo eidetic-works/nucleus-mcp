@@ -8,14 +8,13 @@ AG-011: God Mode view of the brain.
 
 import sys
 import os
-import json
 import asyncio
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from mcp_server_nucleus import get_orch, brain_health, brain_list_tasks
+from mcp_server_nucleus import get_orch
 
 async def run_harness():
     print("=== 🧠 Nucleus CLI Harness ===")

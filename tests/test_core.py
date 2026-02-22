@@ -4,7 +4,6 @@ Tests for core module functionality
 
 import tempfile
 import os
-import pytest
 
 # Set up test environment
 _test_dir = tempfile.mkdtemp(prefix="nucleus_core_env_")

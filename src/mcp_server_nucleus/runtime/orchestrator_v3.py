@@ -14,11 +14,11 @@ import time
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field, asdict
+from datetime import datetime
+from dataclasses import dataclass, field
 
 from .crdt_task_store import CRDTTaskStore
-from .task_scheduler import TaskScheduler, TaskStatus, TaskPriority, TaskTier
+from .task_scheduler import TaskScheduler
 
 # V3.1 Components - lazy loaded to avoid circular imports
 _agent_pool = None

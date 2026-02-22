@@ -4,7 +4,6 @@
 Tests the _archive_resolved_files() function which moves .resolved.* 
 and .metadata.json backup files to archive/resolved/.
 """
-import json
 import os
 import shutil
 import tempfile

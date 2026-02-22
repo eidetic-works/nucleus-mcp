@@ -1,5 +1,4 @@
 from typing import List, Optional
-from pathlib import Path
 from .common import get_brain_path
 
 def _read_artifact(path: str) -> str:

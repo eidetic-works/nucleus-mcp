@@ -60,6 +60,17 @@ from .runtime.depth_ops import (
 )
 from .runtime.schema_gen import generate_tool_schema
 from .runtime.mounter_ops import get_mounter
+from .runtime.trigger_ops import _get_triggers_impl, _trigger_agent_impl
+from .runtime.artifact_ops import _read_artifact
+from .runtime.telemetry_ops import (
+    _brain_record_interaction_impl,
+    _brain_value_ratio_impl,
+    _brain_check_kill_switch_impl,
+    _brain_pause_notifications_impl,
+    _brain_resume_notifications_impl,
+    _brain_record_feedback_impl,
+    _brain_mark_high_impact_impl
+)
 from .runtime.sync_ops import (
     get_current_agent, set_current_agent, get_agent_info,
     sync_lock, perform_sync, get_sync_status, record_sync_time,
@@ -1182,7 +1193,7 @@ def resource_events() -> str:
 @mcp.resource("brain://triggers")
 def resource_triggers() -> str:
     """Trigger definitions - subscribable."""
-    triggers = _get_triggers()
+    triggers = _get_triggers_impl()
     return json.dumps(triggers, indent=2)
 
 @mcp.resource("brain://depth")
@@ -1845,20 +1856,8 @@ def brain_record_interaction() -> str:
     Record a user interaction timestamp (MDR_010).
     Call this when the user engages with any brain functionality.
     """
-@mcp.tool()
-def brain_record_interaction() -> str:
-    """
-    Record a user interaction timestamp (MDR_010).
-    Call this when the user engages with any brain functionality.
-    """
     return _brain_record_interaction_impl()
 
-@mcp.tool()
-def brain_value_ratio() -> str:
-    """
-    Get the Value Ratio metric (MDR_010).
-    Value Ratio = High Impact Closures / Notifications Sent.
-    """
 @mcp.tool()
 def brain_value_ratio() -> str:
     """
@@ -2649,7 +2648,7 @@ def brain_apply_critique(review_path: str) -> Dict:
             description += f"- [{i.get('severity')}] {i.get('description')}\n"
             
         # Trigger Developer
-        result = _trigger_agent(
+        result = _trigger_agent_impl(
             agent="developer",
             task_description=description,
             context_files=[path_str, target]
@@ -3069,7 +3068,7 @@ def brain_session_briefing(conversation_id: Optional[str] = None) -> str:
     if conversation_id:
         identity = _get_thread_identity(conversation_id)
         if identity:
-            lines.append(f"### 🪪 Your Identity")
+            lines.append("### 🪪 Your Identity")
             lines.append(f"- **Thread:** `{conversation_id[:12]}...`")
             lines.append(f"- **Role:** {identity.get('role', 'Unknown')}")
             lines.append(f"- **Focus:** {identity.get('label', 'Unknown')}")
@@ -3995,7 +3994,7 @@ def brain_list_decisions(limit: int = 20) -> str:
 
 
 @mcp.tool()
-def brain_list_snapshots(limit: int = 10) -> str:
+def brain_list_ledger_snapshots(limit: int = 10) -> str:
     """
     List context snapshots from the snapshot ledger.
     

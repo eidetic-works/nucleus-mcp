@@ -4,12 +4,11 @@
 import os
 import json
 import sys
-import time
 import shutil
 from datetime import datetime
 from pathlib import Path
 import argparse
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 
 # ============================================================================
 # TEMPLATE: DEFAULT (Full structure)
@@ -488,7 +487,7 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
     else:
         print("\n✅ Auto-configured your MCP client(s). Config used:")
         print(f'   Brain path: {abs_path}')
-        print(f'   Command:    python3 -m mcp_server_nucleus')
+        print('   Command:    python3 -m mcp_server_nucleus')
     
     print("\n" + "=" * 60)
     print("🚀 NEXT STEPS")
@@ -687,7 +686,7 @@ def main():
                     return # Silent operation
             
             def run_sidecar():
-                print(f"\n📡 Starting Discovery Sidecar on localhost:42000...")
+                print("\n📡 Starting Discovery Sidecar on localhost:42000...")
                 try:
                     server = HTTPServer(('localhost', 42000), SidecarHandler)
                     server.serve_forever()

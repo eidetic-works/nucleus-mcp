@@ -18,16 +18,14 @@ import time
 import os
 import logging
 import asyncio
-import uuid
-import re
 import threading
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from datetime import datetime, timezone
 
 # V3 Core Components
 from .crdt_task_store import CRDTTaskStore
-from .task_scheduler import TaskScheduler, TaskStatus, TaskPriority, TaskTier
+from .task_scheduler import TaskScheduler
 # V2 Logic Components
 from .locking import get_lock
 from .policy import DirectivesLoader, MissionParameters

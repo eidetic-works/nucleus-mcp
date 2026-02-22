@@ -8,7 +8,7 @@ import json
 import time
 import uuid
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 from .common import get_brain_path, _get_state
 from .event_ops import _emit_event

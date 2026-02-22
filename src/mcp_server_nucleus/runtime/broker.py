@@ -8,15 +8,13 @@ Roles:
 3. SETTLEMENT: (Future) Handles credit transfers.
 """
 
-import json
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Optional, Dict, Literal
+from typing import List, Optional, Literal
 from pathlib import Path
 from pydantic import BaseModel
 
-from .locking import get_lock
 
 logger = logging.getLogger("BROKER")
 

@@ -4,7 +4,7 @@ import json
 import os
 import logging
 import sys
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 # Implement SimpleMCPClient for Host-Guest compatibility (Py3.9 Host -> Py3.14 Guest)
@@ -143,7 +143,7 @@ except ImportError:
                             del self.pending_requests[msg["id"]]
                     except Exception as e:
                         logger.error(f"Shim parser error: {e}")
-            except Exception as e:
+            except Exception:
                 pass
 
         async def list_tools(self):

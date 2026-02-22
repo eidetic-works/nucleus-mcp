@@ -7,10 +7,8 @@ Tests the production-ready multi-agent sync infrastructure.
 
 import json
 import pytest
-import tempfile
-import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

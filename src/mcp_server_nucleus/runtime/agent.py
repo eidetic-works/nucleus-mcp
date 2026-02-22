@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timezone
 
 # v0.6.0 DSoR: Import context manager and IPC auth
-from .context_manager import get_context_manager, ContextSnapshot
+from .context_manager import get_context_manager
 from .ipc_auth import get_ipc_auth_manager, IPCToken
 
 # Gemini types imported dynamically or duck-typed via DualEngineLLM

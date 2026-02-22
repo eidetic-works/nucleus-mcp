@@ -14,11 +14,10 @@ Contains:
 
 import json
 import time
-import uuid
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from .common import get_brain_path
-
+from .event_ops import _emit_event
 
 def _lazy(name):
     import mcp_server_nucleus as m
@@ -425,7 +424,7 @@ def _claim_with_fence(task_id: str, slot_id: str) -> Dict:
         task["claimed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
         task["status"] = "IN_PROGRESS"
         
-        _save_tasks_list(tasks)
+        storage.update_task(task["id"], task)
         
         # Update slot
         registry = _get_slot_registry()
@@ -487,7 +486,7 @@ def _complete_with_fence(task_id: str, slot_id: str, fence_token: int, outcome: 
         task["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
         task["completed_by"] = slot_id
         
-        _save_tasks_list(tasks)
+        storage.update_task(task["id"], task)
         
         _emit_event("task_completed_with_fence", slot_id, {
             "task_id": task_id,

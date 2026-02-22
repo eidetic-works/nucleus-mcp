@@ -9,7 +9,7 @@ import json
 import time
 import uuid
 import logging
-from typing import Dict, Any, List, Optional, Set
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 
 # Relative imports
@@ -87,7 +87,7 @@ def _list_tasks(
                         if claimed_by and ct.get("claimed_by") != claimed_by: continue
                         if skill and skill not in ct.get("required_skills", []): continue
                         filtered.append(ct)
-        except Exception as e:
+        except Exception:
             pass
         
         # Sort by priority (asc)

@@ -4,7 +4,6 @@ Consolidation Operations - Brain artifact archival, redundancy detection, merge 
 Extracted from __init__.py monolith (v1.0.7 decomposition).
 """
 
-import json
 import time
 import logging
 from typing import Dict

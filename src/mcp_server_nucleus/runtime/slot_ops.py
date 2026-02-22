@@ -8,8 +8,7 @@ Moves complex orchestration logic out of __init__.py.
 import json
 import time
 import uuid
-from typing import Dict, Any, List, Optional
-from pathlib import Path
+from typing import Dict, List
 
 # Relative imports
 from .. import commitment_ledger
@@ -24,8 +23,7 @@ from .orch_helpers import (
     _can_slot_run_task,
     _score_slot_for_task,
     _compute_dependency_graph,
-    _claim_with_fence,
-    _get_model_cost
+    _claim_with_fence
 )
 
 def _brain_slot_complete_impl(slot_id: str, task_id: str, outcome: str = "success", 
@@ -44,7 +42,7 @@ def _brain_slot_complete_impl(slot_id: str, task_id: str, outcome: str = "succes
         # Verify fence token if provided
         if fence_token is not None:
              if slot.get("fence_token") != fence_token:
-                 return f"Error: Stale fence token. Task was likely reassigned."
+                 return "Error: Stale fence token. Task was likely reassigned."
         
         current_task_id = slot.get("current_task")
         if current_task_id != task_id:
@@ -461,7 +459,7 @@ def _brain_autopilot_sprint_impl(slots: List[str] = None, mode: str = "auto",
             
             "autopilot_hint": {
                 "continue": tasks_assigned > 0,
-                "check_status": f"brain_autopilot_sprint(mode='status')",
+                "check_status": "brain_autopilot_sprint(mode='status')",
                 "tasks_remaining": len([t for t in tasks if t.get("status") == "PENDING"]) - tasks_assigned
             }
         }
@@ -630,7 +628,7 @@ def _brain_request_handoff_impl(to_agent: str, context: str, request: str,
         })
         
         # Format for human visibility
-        formatted = f\"\"\"
+        formatted = f"""
 📬 HANDOFF REQUEST
 ━━━━━━━━━━━━━━━━━━
 TO: {to_agent}
@@ -641,7 +639,7 @@ ARTIFACTS: {', '.join(artifacts) if artifacts else 'None'}
 ━━━━━━━━━━━━━━━━━━
 ID: {handoff['id']}
 Status: Pending - will appear in target agent's session_start
-\"\"\"
+"""
         return formatted
         
     except Exception as e:

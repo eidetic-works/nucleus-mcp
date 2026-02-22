@@ -22,12 +22,10 @@ import threading
 import hashlib
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple, Set
+from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from datetime import datetime, timedelta
-from collections import defaultdict
-import heapq
+from datetime import datetime
 
 
 class SprintMode(str, Enum):

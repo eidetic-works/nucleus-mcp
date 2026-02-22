@@ -25,7 +25,7 @@ else:
 src_root = str(src_p)
 
 # Debug logging to stderr (because stdout is for JSON-RPC)
-sys.stderr.write(f"[Nucleus] Bootstrapping standalone server...\n")
+sys.stderr.write("[Nucleus] Bootstrapping standalone server...\n")
 sys.stderr.write(f"[Nucleus] Script path: {current_path}\n")
 sys.stderr.write(f"[Nucleus] Injected src root: {src_root}\n")
 
@@ -35,7 +35,7 @@ if src_root not in sys.path:
 
 try:
     import mcp_server_nucleus
-    sys.stderr.write(f"[Nucleus] Successfully imported mcp_server_nucleus package.\n")
+    sys.stderr.write("[Nucleus] Successfully imported mcp_server_nucleus package.\n")
 except ImportError as e:
     sys.stderr.write(f"[Nucleus] FATAL: Could not import mcp_server_nucleus: {e}\n")
     sys.stderr.write(f"[Nucleus] sys.path: {sys.path}\n")
@@ -48,7 +48,7 @@ import traceback
 import time
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from mcp_server_nucleus.hypervisor.locker import Locker
 from mcp_server_nucleus.hypervisor.watchdog import Watchdog
 from mcp_server_nucleus.hypervisor.injector import Injector
@@ -56,7 +56,6 @@ from mcp_server_nucleus.runtime.task_ops import (
     _list_tasks, _add_task, _update_task, 
     _claim_task, _get_next_task
 )
-from mcp_server_nucleus.runtime.memory import _write_memory, _search_memory
 from pathlib import Path
 from datetime import datetime
 import asyncio

@@ -21,11 +21,10 @@ Usage via MCP:
 
 import json
 import logging
-import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict
 
 logger = logging.getLogger("nucleus.morning_brief")
 

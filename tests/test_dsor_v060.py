@@ -8,13 +8,11 @@ Tests for:
 4. Token metering integration
 """
 
-import json
 import os
 import tempfile
 import shutil
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 
 class TestContextManager(unittest.TestCase):
@@ -35,7 +33,7 @@ class TestContextManager(unittest.TestCase):
     def test_context_manager_import(self):
         """Test that context_manager imports correctly"""
         from mcp_server_nucleus.runtime.context_manager import (
-            ContextManager, ContextSnapshot, get_context_manager
+            ContextManager, ContextSnapshot
         )
         self.assertIsNotNone(ContextManager)
         self.assertIsNotNone(ContextSnapshot)
@@ -132,7 +130,7 @@ class TestIPCAuth(unittest.TestCase):
     def test_ipc_auth_import(self):
         """Test that ipc_auth imports correctly"""
         from mcp_server_nucleus.runtime.ipc_auth import (
-            IPCAuthManager, IPCToken, get_ipc_auth_manager
+            IPCAuthManager, IPCToken
         )
         self.assertIsNotNone(IPCAuthManager)
         self.assertIsNotNone(IPCToken)

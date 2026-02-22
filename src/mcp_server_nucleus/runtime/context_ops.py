@@ -6,9 +6,6 @@ Moves large inline string formatting out of __init__.py.
 """
 
 import json
-import time
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 
 from .common import get_brain_path, _get_state
 from .event_ops import _read_events

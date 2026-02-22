@@ -5,7 +5,6 @@ Core logic for usage telemetry, value ratio, and kill switch.
 Moves MDR_010 compliance tools out of __init__.py.
 """
 
-from typing import Dict, Any, Optional
 
 # Relative import from parent package (mcp_server_nucleus)
 from .. import commitment_ledger

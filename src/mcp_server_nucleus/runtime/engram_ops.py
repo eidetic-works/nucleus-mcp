@@ -11,8 +11,6 @@ Contains:
 import json
 import os
 import re
-from datetime import datetime
-from pathlib import Path
 
 from .common import get_brain_path, make_response
 from .event_ops import _emit_event
@@ -27,12 +25,12 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
         # V9.1 Security Hardening: Key Validation
         if not key or len(key.strip()) < 2:
             import sys
-            print(f"[NUCLEUS] SECURITY VIOLATION: Empty or short key detected", file=sys.stderr)
+            print("[NUCLEUS] SECURITY VIOLATION: Empty or short key detected", file=sys.stderr)
             return make_response(False, error="Security Violation: Key must be at least 2 characters")
             
         if not re.match(r"^[a-zA-Z0-9_.-]+$", key):
             import sys
-            print(f"[NUCLEUS] SECURITY VIOLATION: Invalid key pattern detected", file=sys.stderr)
+            print("[NUCLEUS] SECURITY VIOLATION: Invalid key pattern detected", file=sys.stderr)
             return make_response(False, error="Security Violation: Key contains invalid characters")
 
         # Validate intensity

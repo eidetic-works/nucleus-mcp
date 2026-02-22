@@ -4,7 +4,6 @@ Tests for tool registration implementation
 
 import tempfile
 import os
-import pytest
 from unittest.mock import MagicMock
 
 # Set up test environment
@@ -12,7 +11,7 @@ _test_dir = tempfile.mkdtemp(prefix="nucleus_reg_env_")
 os.environ["NUCLEAR_BRAIN_PATH"] = _test_dir
 
 from mcp_server_nucleus.core import tool_registration_impl
-from mcp_server_nucleus.tool_tiers import tier_manager, _ACTIVE_TIER_CACHE
+from mcp_server_nucleus.tool_tiers import tier_manager
 import mcp_server_nucleus.tool_tiers as tool_tiers_module
 
 

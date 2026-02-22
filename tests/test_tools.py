@@ -23,9 +23,7 @@ except ImportError:
     pytest = DummyPytest()
 
 import json
-import tempfile
 import os
-from pathlib import Path
 
 # Skip all tests if pytest not available
 if not PYTEST_AVAILABLE:
@@ -383,7 +381,7 @@ class TestClaimTask:
     """Tests for brain_claim_task."""
     
     def test_claim_success(self, setup_tasks):
-        from mcp_server_nucleus import _claim_task, _list_tasks
+        from mcp_server_nucleus import _claim_task
         
         result = _claim_task("task-001", "test-agent")
         
@@ -428,7 +426,7 @@ class TestUpdateTask:
     """Tests for brain_update_task."""
     
     def test_update_status(self, setup_tasks):
-        from mcp_server_nucleus import _update_task, _list_tasks
+        from mcp_server_nucleus import _update_task
         
         result = _update_task("task-001", {"status": "DONE"})
         
@@ -468,7 +466,7 @@ class TestAddTask:
     """Tests for brain_add_task."""
     
     def test_add_basic_task(self, setup_tasks):
-        from mcp_server_nucleus import _add_task, _list_tasks
+        from mcp_server_nucleus import _add_task
         
         result = _add_task("New test task")
         
@@ -642,7 +640,7 @@ class TestTaskWorkflow:
     def test_dependency_unblocking(self, setup_tasks):
         """Test: Complete blocker -> Blocked task becomes available"""
         from mcp_server_nucleus import (
-            _update_task, _get_next_task, _list_tasks
+            _update_task, _get_next_task
         )
         
         # task-003 is blocked by task-001

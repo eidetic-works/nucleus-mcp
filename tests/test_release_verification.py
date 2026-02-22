@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 # =============================================================================
@@ -173,6 +172,6 @@ def test_version_consistency():
     
     if dev_toml.exists():
         content = dev_toml.read_text()
-        # We expect 1.0.7 as per original test, or maybe it was updated?
-        # Original test had 'version = "1.0.7"'
-        assert 'version = "1.0.7"' in content, "pyproject.toml version mismatch"
+        # We expect 1.0.8 as per original test, or maybe it was updated?
+        # Original test had 'version = "1.0.8"'
+        assert 'version = "1.0.8"' in content, "pyproject.toml version mismatch"
