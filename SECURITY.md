@@ -4,85 +4,158 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | ✅ Yes             |
-| < 1.0   | ❌ No              |
+| 0.5.x   | ✅ Active support  |
+| 0.4.x   | ⚠️ Security fixes only |
+| < 0.4   | ❌ No longer supported |
 
 ## Reporting a Vulnerability
 
 **Do NOT report security vulnerabilities via public GitHub Issues.**
 
-### How to Report
+### Private Disclosure
 
-1. **Email**: security@nucleusos.dev
-2. **Subject**: `[SECURITY] Brief description`
-3. **Include**:
-   - Detailed description of the vulnerability
-   - Steps to reproduce
-   - Potential impact assessment
-   - Any suggested fixes (optional)
+Email: **security@nucleusos.dev**
 
-### What to Expect
+Until the email is active, please use GitHub's private vulnerability reporting:
+1. Go to the repository's Security tab
+2. Click "Report a vulnerability"
+3. Follow the private disclosure process
 
-- **Acknowledgment**: Within 48 hours
-- **Initial Assessment**: Within 7 days
-- **Resolution Timeline**: Varies by severity
-  - Critical: 24-72 hours
-  - High: 1-2 weeks
-  - Medium: 2-4 weeks
-  - Low: Next release cycle
+### What to Include
 
-### Responsible Disclosure
+- **Description**: Clear explanation of the vulnerability
+- **Impact**: What can an attacker do with this?
+- **Steps to Reproduce**: Minimal example to trigger the issue
+- **Environment**: Python version, OS, MCP client
+- **Suggested Fix**: If you have one (optional)
 
-We follow responsible disclosure practices:
+### Response Timeline
 
-1. We will acknowledge your report within 48 hours
-2. We will provide an estimated timeline for the fix
-3. We will notify you when the vulnerability is fixed
-4. We will credit you in the release notes (unless you prefer anonymity)
+| Stage | Timeframe |
+|-------|-----------|
+| Acknowledgment | 48 hours |
+| Initial Assessment | 7 days |
+| Fix Development | 14-30 days |
+| Public Disclosure | After fix released |
+
+### Scope
+
+In scope:
+- Authentication/authorization bypasses
+- Default-Deny policy circumvention
+- Audit trail tampering
+- Information disclosure
+- Remote code execution
+- Denial of service
+
+Out of scope:
+- Social engineering
+- Physical attacks
+- Issues in dependencies (report upstream)
+- Issues requiring local access (by design)
+
+## Security Architecture
+
+### Default-Deny
+
+Nucleus enforces **Default-Deny** at the runtime level:
+
+```
+┌─────────────────────────────────────────┐
+│         MCP TOOL REQUEST                │
+├─────────────────────────────────────────┤
+│  ↓                                      │
+│  Policy Check (Default: DENY)           │
+│  ↓                                      │
+│  [ALLOW?] → Execute Tool                │
+│  [DENY?]  → Log + Block                 │
+└─────────────────────────────────────────┘
+```
+
+### Cryptographic Audit
+
+Every interaction is logged with SHA-256 hashing:
+
+```json
+{
+  "timestamp": "2026-01-26T20:00:00Z",
+  "action": "tool_call",
+  "tool": "brain_write_engram",
+  "params_hash": "sha256:abc123...",
+  "result_hash": "sha256:def456...",
+  "prev_hash": "sha256:789xyz..."
+}
+```
+
+The hash chain makes tampering detectable.
+
+### Data Storage
+
+- All data stored locally in `.brain/` directory
+- No external data transmission by default
+- User controls all persistence
 
 ## Security Best Practices
 
 ### For Users
 
-1. **Keep Nucleus Updated**: Always use the latest version
-2. **Protect Your `.brain/` Folder**: Contains your project context
-3. **Review Audit Logs**: Check `events.jsonl` for suspicious activity
-4. **Use File Locking**: Lock critical files during sensitive operations
+1. **Protect your `.brain/` directory**
+   - Don't commit to public repos
+   - Use `.gitignore` to exclude it
+   - Backup sensitive engrams
 
-### For Contributors
+2. **Review mounted servers**
+   - Only mount trusted MCP servers
+   - Audit `brain_list_mounted()` regularly
 
-1. **No Hardcoded Secrets**: Never commit API keys, tokens, or credentials
-2. **Input Validation**: Validate all user inputs
-3. **Path Traversal**: Prevent directory traversal attacks
-4. **Dependency Auditing**: Keep dependencies updated
+3. **Monitor audit logs**
+   - Check `brain_audit_log()` periodically
+   - Look for unexpected tool calls
 
-## Security Features
+### For Administrators
 
-Nucleus includes several security features:
+1. **Use environment isolation**
+   - Separate `.brain/` per project
+   - Use containers for untrusted agents
 
-- **Local-First Architecture**: Your data never leaves your machine
-- **Audit Trail**: Every action logged to `events.jsonl`
-- **File Locking**: Hypervisor-level immutable locks
-- **Intent-Aware Metadata**: Know WHO locked WHAT and WHY
+2. **Restrict file access**
+   - Set appropriate permissions on `.brain/`
+   - Consider read-only mounts for sensitive data
+
+3. **Enable logging**
+   - Keep `interaction_log.jsonl` for forensics
+   - Archive logs securely
 
 ## Known Security Considerations
 
+### Bytecode Extraction
+
+Python bytecode can be decompiled. We address this via:
+- Citadel Strategy (private source)
+- Track 1.5: Cython compilation (planned)
+- Track 2.0: Rust migration (roadmap)
+
 ### MCP Protocol
 
-Nucleus operates as an MCP server. Be aware that:
+MCP messages are not encrypted by default. For sensitive deployments:
+- Use localhost connections only
+- Implement TLS for remote connections
+- Consider network isolation
 
-- MCP clients (Claude, Cursor, etc.) have full access to exposed tools
-- Environment variables may contain sensitive paths
-- The `.brain/` folder should be treated as sensitive data
+### Engram Sensitivity
 
-### Multi-Agent Sync
+Engrams may contain sensitive information. Users should:
+- Avoid storing secrets in engrams
+- Use external secret managers
+- Encrypt sensitive engram values
 
-When using multi-agent sync:
+## Acknowledgments
 
-- All agents with access to `.brain/` can read/write data
-- Sync conflicts are resolved via last-write-wins by default
-- Consider file locking for critical operations
+We thank the following researchers for responsible disclosure:
+
+*(No vulnerabilities reported yet)*
 
 ---
 
-*Security is a shared responsibility. Thank you for helping keep Nucleus safe.*
+*Security policy maintained by the Nucleus team.*
+*Last updated: January 26, 2026*

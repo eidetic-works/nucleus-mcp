@@ -42,26 +42,8 @@ class ContextTransaction(BaseModel):
 class ContextBroker:
     def __init__(self, brain_path: Path):
         self.brain_path = brain_path
-        self.listings_path = brain_path / "ledger" / "listings.json"
-        self.ledger_path = brain_path / "ledger" / "transactions.jsonl"
-        
-        # Ensure dirs
-        self.listings_path.parent.mkdir(parents=True, exist_ok=True)
-
-    def _load_listings(self) -> Dict[str, ContextListing]:
-        with get_lock("broker", self.brain_path).section():
-            if not self.listings_path.exists():
-                return {}
-            try:
-                data = json.loads(self.listings_path.read_text())
-                return {k: ContextListing(**v) for k, v in data.items()}
-            except Exception:
-                return {}
-
-    def _save_listings(self, listings: Dict[str, ContextListing]):
-        with get_lock("broker", self.brain_path).section():
-            data = {k: v.model_dump() for k, v in listings.items()}
-            self.listings_path.write_text(json.dumps(data, indent=2))
+        from .db import get_storage_backend
+        self.storage = get_storage_backend(brain_path)
 
     def publish_listing(self, provider_id: str, topic: str, description: str, content: str, price: float = 0.0, type: Literal["data", "service"] = "data") -> str:
         """Create a new context listing."""
@@ -77,33 +59,62 @@ class ContextBroker:
             created_at=datetime.now().isoformat()
         )
         
-        listings = self._load_listings()
-        listings[listing_id] = listing
-        self._save_listings(listings)
+        self.storage.create_listing(listing)
         
         logger.info(f"📢 Listing Published: {topic} by {provider_id} ({listing_id})")
         return listing_id
 
-    def search_listings(self, query: str) -> List[ContextListing]:
-        """Find listings by topic or description."""
-        listings = self._load_listings()
-        query = query.lower()
-        results = []
-        for lst in listings.values():
-            if query in lst.topic.lower() or query in lst.description.lower():
-                results.append(lst)
-        return results
+    def search_listings(self, query: str, limit: int = 20, offset: int = 0) -> List[ContextListing]:
+        """
+        Find listings by topic or description.
+
+        SCALABILITY FIX (MASTER_STRATEGY §1.2):
+        Added limit/offset for pagination. At 1000+ listings, loading
+        everything into memory for a string search is unacceptable.
+
+        Args:
+            query: Search string (matches topic or description).
+            limit: Max results to return (default 20).
+            offset: Number of results to skip (for pagination).
+
+        Returns:
+            List of matching ContextListing objects.
+        """
+        return self.storage.search_listings(query, limit, offset)
+
+    def get_listing(self, listing_id: str) -> Optional[ContextListing]:
+        """
+        Get a single listing by ID without loading all listings into the caller.
+
+        Args:
+            listing_id: The listing ID to retrieve.
+
+        Returns:
+            ContextListing or None if not found.
+        """
+        return self.storage.get_listing(listing_id)
+
+    def count_listings(self) -> int:
+        """
+        Get the total number of active listings.
+
+        O(n) file read but avoids deserializing content fields in the future
+        when we move to a database backend.
+
+        Returns:
+            Number of listings in the marketplace.
+        """
+        return self.storage.count_listings()
+
 
     def buy_context(self, buyer_id: str, listing_id: str) -> Optional[ContextTransaction]:
         """Execute a context transaction."""
-        listings = self._load_listings()
+        listing = self.storage.get_listing(listing_id)
         
-        if listing_id not in listings:
+        if not listing:
             logger.error(f"❌ Transaction Failed: Listing {listing_id} not found")
             return None
             
-        listing = listings[listing_id]
-        
         # In a real economy, check budget here.
         
         tx_id = f"tx-{uuid.uuid4().hex[:8]}"
@@ -117,10 +128,8 @@ class ContextBroker:
             content=listing.content # Deliver the goods
         )
         
-        # Append to ledger
-        with get_lock("ledger", self.brain_path).section():
-            with open(self.ledger_path, "a") as f:
-                f.write(tx.model_dump_json() + "\n")
+        # Append to ledger via storage backend
+        self.storage.create_transaction(tx)
                 
         logger.info(f"💰 Sold: {listing.topic} from {listing.provider_id} to {buyer_id}")
         return tx

@@ -27,7 +27,8 @@ class FixerLoop:
     def _log(self, message: str):
         timestamp = time.strftime("%H:%M:%S")
         entry = f"[{timestamp}] {message}"
-        print(entry)
+        import sys
+        sys.stderr.write(entry + "\n"); sys.stderr.flush()
         self.logs.append(entry)
 
     def _run_verification(self) -> Tuple[bool, str]:

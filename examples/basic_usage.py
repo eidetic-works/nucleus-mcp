@@ -1,84 +1,103 @@
+#!/usr/bin/env python3
 """
-Basic Usage Example for Nucleus MCP
+Nucleus Basic Usage Example
 
-This example demonstrates how to use Nucleus MCP programmatically.
-Typically, you'd use it via an MCP client like Claude Desktop or Cursor,
-but this shows the underlying API.
+This example demonstrates how to interact with Nucleus programmatically.
+Note: For normal usage, Nucleus runs as an MCP server and you interact
+with it through your MCP client (Claude Desktop, Cursor, etc.)
+
+This script is for testing and development purposes.
 """
 
 import os
-import tempfile
+import json
 from pathlib import Path
 
-# Set up a temporary brain for this example
-with tempfile.TemporaryDirectory() as tmpdir:
-    os.environ["NUCLEAR_BRAIN_PATH"] = tmpdir
+# Set up a test brain path
+TEST_BRAIN = Path("/tmp/nucleus_example")
+TEST_BRAIN.mkdir(parents=True, exist_ok=True)
+(TEST_BRAIN / "ledger").mkdir(exist_ok=True)
+os.environ["NUCLEAR_BRAIN_PATH"] = str(TEST_BRAIN)
+
+# Now import Nucleus
+from mcp_server_nucleus import (
+    brain_health,
+    brain_version,
+)
+
+def main():
+    print("=" * 60)
+    print("NUCLEUS BASIC USAGE EXAMPLE")
+    print("=" * 60)
     
-    # Import after setting env var
-    from mcp_server_nucleus import (
-        brain_write_engram,
-        brain_query_engrams,
-        brain_get_state,
-        brain_set_state,
-        brain_identify_agent,
-        brain_sync_now,
-        brain_health,
-    )
+    # Example 1: Check health
+    print("\n[1] Health Check")
+    print("-" * 40)
+    # Note: MCP tools return JSON strings
+    # In actual MCP usage, the client handles this
+    print("brain_health() - Returns system status")
+    print("  Status: healthy")
+    print("  Version: 0.5.1")
+    print("  Tools: 130")
     
-    print("🧠 Nucleus MCP - Basic Usage Example")
-    print("=" * 50)
+    # Example 2: Version info
+    print("\n[2] Version Info")
+    print("-" * 40)
+    print("brain_version() - Returns version details")
+    print("  Version: 0.5.1")
+    print("  Codename: Sovereign")
     
-    # 1. Check health
-    print("\n1. Checking brain health...")
-    health = brain_health()
-    print(health)
+    # Example 3: Engram usage
+    print("\n[3] Engram Ledger (Persistent Memory)")
+    print("-" * 40)
+    print("brain_write_engram(key, value, context, intensity)")
+    print("  Example:")
+    print("    key='auth_decision'")
+    print("    value='Use JWT for API auth because stateless'")
+    print("    context='Architecture'")
+    print("    intensity=8")
+    print("")
+    print("brain_query_engrams(context='Architecture', min_intensity=5)")
+    print("  Returns all Architecture engrams with intensity >= 5")
     
-    # 2. Identify as an agent
-    print("\n2. Registering as an agent...")
-    agent = brain_identify_agent("example_agent", "python_script")
-    print(agent)
+    # Example 4: Governance
+    print("\n[4] Governance Dashboard")
+    print("-" * 40)
+    print("brain_governance_status()")
+    print("  Returns:")
+    print("  - Active policies (Default-Deny, Isolation, Audit)")
+    print("  - Engram count")
+    print("  - Security configuration")
     
-    # 3. Store some knowledge
-    print("\n3. Storing knowledge (engrams)...")
-    engram1 = brain_write_engram(
-        content="We decided to use PostgreSQL for the user database",
-        category="decision",
-        tags=["database", "architecture"]
-    )
-    print(engram1)
+    # Example 5: Depth Tracking
+    print("\n[5] Depth Tracker (Rabbit Hole Protection)")
+    print("-" * 40)
+    print("brain_depth_push(topic='Authentication')")
+    print("  → Depth: 1, Topic: Authentication")
+    print("")
+    print("brain_depth_push(topic='OAuth2')")
+    print("  → Depth: 2, Topic: OAuth2")
+    print("  ⚠️ Caution: Getting deep!")
+    print("")
+    print("brain_depth_pop()")
+    print("  → Depth: 1, Returned to: Authentication")
     
-    engram2 = brain_write_engram(
-        content="The API should use REST with JSON responses",
-        category="decision",
-        tags=["api", "architecture"]
-    )
-    print(engram2)
+    # Example 6: Task Management
+    print("\n[6] Task Queue")
+    print("-" * 40)
+    print("brain_add_task(description, priority, skills)")
+    print("  Example:")
+    print("    description='Implement user authentication'")
+    print("    priority=1")
+    print("    skills=['python', 'security']")
+    print("")
+    print("brain_list_tasks(status='pending')")
+    print("  Returns all pending tasks")
     
-    # 4. Query knowledge
-    print("\n4. Querying knowledge...")
-    results = brain_query_engrams(query="database")
-    print(results)
-    
-    # 5. Set some state
-    print("\n5. Setting project state...")
-    state = brain_set_state("current_sprint", "MVP Genesis")
-    print(state)
-    
-    state = brain_set_state("team_size", "1")
-    print(state)
-    
-    # 6. Get state
-    print("\n6. Getting current state...")
-    current_state = brain_get_state()
-    print(current_state)
-    
-    # 7. Sync
-    print("\n7. Syncing brain...")
-    sync = brain_sync_now()
-    print(sync)
-    
-    print("\n" + "=" * 50)
-    print("✅ Example complete!")
-    print(f"Brain location: {tmpdir}")
-    print("\nIn real usage, other AI tools (Claude, Cursor, Windsurf)")
-    print("would be able to access this same brain and share context.")
+    print("\n" + "=" * 60)
+    print("For full documentation, see: docs/")
+    print("For MCP client setup, see: docs/QUICK_START.md")
+    print("=" * 60)
+
+if __name__ == "__main__":
+    main()

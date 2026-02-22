@@ -8,14 +8,14 @@ import uuid
 from datetime import datetime, timezone
 
 # v0.6.0 DSoR: Import context manager and IPC auth
-from .context_manager import get_context_manager
+from .context_manager import get_context_manager, ContextSnapshot
 from .ipc_auth import get_ipc_auth_manager, IPCToken
 
 # Gemini types imported dynamically or duck-typed via DualEngineLLM
 
 def get_brain_path_internal() -> Path:
     """Helper to get brain path inside runtime"""
-    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
 
 class DecisionMade:
     """

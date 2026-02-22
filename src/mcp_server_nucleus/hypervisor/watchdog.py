@@ -1,6 +1,9 @@
 
 import logging
+import time
+import shutil
 from pathlib import Path
+from typing import List, Optional
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -61,10 +64,19 @@ class Watchdog:
     
     def start(self):
         """Starts the background monitoring thread."""
-        handler = SecurityEventHandler(self, self.locker)
-        self.observer.schedule(handler, str(self.workspace_root), recursive=True)
-        self.observer.start()
-        logger.info(f"👁️ Hypervisor Watchdog started on {self.workspace_root}")
+        if self.observer.is_alive():
+            return
+            
+        try:
+            handler = SecurityEventHandler(self, self.locker)
+            self.observer.schedule(handler, str(self.workspace_root), recursive=True)
+            self.observer.start()
+            import sys
+            sys.stderr.write(f"[Nucleus] 👁️  Watchdog active: {self.workspace_root}\n"); sys.stderr.flush()
+        except (RuntimeError, Exception) as e:
+            import sys
+            # Only log to stderr, never stdout
+            sys.stderr.write(f"[Nucleus] ⚠️  Watchdog Quiet: {e}\n"); sys.stderr.flush()
 
     def stop(self):
         self.observer.stop()

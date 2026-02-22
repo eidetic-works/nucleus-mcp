@@ -9,7 +9,7 @@ class ProofSystem(Capability):
         # Determine brain path
         brain_path_str = os.environ.get("NUCLEAR_BRAIN_PATH")
         if not brain_path_str:
-            brain_path_str = "/Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"
+            brain_path_str = "/Users/nucleus-os/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"
             
         self.brain_path = Path(brain_path_str)
         self.proofs_dir = self.brain_path / "features" / "proofs"

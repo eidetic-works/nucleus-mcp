@@ -17,7 +17,7 @@ ACTIVE_POLLS = {}
 
 class RenderPolling(Capability):
     def __init__(self):
-        self._brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"))
+        self._brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "/Users/nucleus-os/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"))
         self._api_key = os.environ.get("RENDER_API_KEY")
         
     @property

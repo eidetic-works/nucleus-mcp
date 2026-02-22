@@ -1,3 +1,5 @@
+# GitHub Actions workflow for mcp-server-nucleus
+
 name: CI
 
 on:
@@ -8,10 +10,9 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
@@ -27,23 +28,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Lint with ruff
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Run linter
         run: |
           ruff check src/
 
-      - name: Run tests
-        run: |
-          pytest tests/ -v --cov=src/mcp_server_nucleus --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-
   publish:
-    needs: test
+    needs: [test, lint]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
@@ -55,18 +64,27 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install build dependencies
+      - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install build twine
+          pip install hatch twine
 
       - name: Build package
-        run: python -m build
+        run: hatch build
+
+      - name: Check if version already published
+        id: check_version
+        run: |
+          VERSION=$(hatch version)
+          if pip index versions mcp-server-nucleus 2>/dev/null | grep -q "$VERSION"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Publish to PyPI
-        if: github.repository == 'eidetic-works/nucleus-mcp'
+        if: steps.check_version.outputs.skip != 'true'
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          twine upload dist/* --skip-existing
+        run: twine upload dist/*

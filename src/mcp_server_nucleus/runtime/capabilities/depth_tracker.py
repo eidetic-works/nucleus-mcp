@@ -10,7 +10,7 @@ class DepthTracker(Capability):
         # Determine brain path (fallback for agent runtime if env not set)
         if not os.environ.get("NUCLEAR_BRAIN_PATH"):
             # Default used in verification/dev
-            os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"
+            os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/nucleus-os/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"
 
     @property
     def name(self) -> str:

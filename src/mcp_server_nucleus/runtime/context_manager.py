@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, asdict
 
 def get_brain_path() -> Path:
     """Get the brain path from environment."""
-    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/nucleus-os/ai-mvp-backend/.brain"))
 
 
 @dataclass

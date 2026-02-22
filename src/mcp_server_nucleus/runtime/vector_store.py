@@ -2,8 +2,12 @@
 import logging
 import time
 from typing import List, Dict, Any
+import sqlite3
+import json
+from pathlib import Path
 from .llm_client import DualEngineLLM
 from .storage import get_firestore_client, STORAGE_TYPE
+from ..runtime.common import get_brain_path
 
 logger = logging.getLogger("nucleus.vector_store")
 
@@ -15,13 +19,60 @@ class VectorStore:
         # We use a separate collection for memory vectors to avoid polluting the 'brain' file system
         self.collection_name = "nucleus_memory"
         self.enabled = STORAGE_TYPE == "firestore"
-
+        
         if self.enabled:
-            # Only initialize LLM if we are actually going to use it (requires API Key)
             self.llm = DualEngineLLM(model_name="text-embedding-004")
         else:
             self.llm = None
-            logger.warning("⚠️ VectorStore disabled: NUCLEUS_STORAGE_TYPE is not 'firestore'.")
+            # Initialize Local SQLite Store for fallback
+            self.local_store = LocalSQLiteStore(get_brain_path() / "memory.db")
+            logger.info("🧠 VectorStore: Using Local SQLite fallback (No Amnesia).")
+
+class LocalSQLiteStore:
+    def __init__(self, db_path: Path):
+        self.db_path = db_path
+        self._init_db()
+
+    def _init_db(self):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS memories (
+                    id TEXT PRIMARY KEY,
+                    content TEXT,
+                    metadata TEXT,
+                    created_at REAL
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_content ON memories(content)")
+
+    def store(self, content: str, metadata: Dict) -> str:
+        import uuid
+        doc_id = str(uuid.uuid4())
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT INTO memories (id, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+                (doc_id, content, json.dumps(metadata), time.time())
+            )
+        return doc_id
+
+    def search(self, query: str, limit: int) -> List[Dict]:
+        # Simplest possible keyword search for local fallback
+        # In a real scenario, this would use FTS5 or local embeddings
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT * FROM memories WHERE content LIKE ? ORDER BY created_at DESC LIMIT ?",
+                (f"%{query}%", limit)
+            )
+            results = []
+            for row in cursor:
+                results.append({
+                    "id": row["id"],
+                    "content": row["content"],
+                    "metadata": json.loads(row["metadata"]),
+                    "score": 1.0 # Exact keyword match proxy
+                })
+            return results
 
     def store_memory(self, content: str, metadata: Dict[str, Any] = None) -> str:
         """
@@ -29,8 +80,10 @@ class VectorStore:
         Returns the Document ID.
         """
         if not self.enabled:
-            logger.info(f"Skipping memory storage (Local Mode): {content[:30]}...")
-            return "local_mock_id"
+            metadata = metadata or {}
+            doc_id = self.local_store.store(content, metadata)
+            logger.info(f"🧠 [Local] Stored memory {doc_id}")
+            return doc_id
 
         metadata = metadata or {}
         
@@ -81,7 +134,7 @@ class VectorStore:
         Semantic search for memories.
         """
         if not self.enabled:
-            return [{"content": "Memory disabled in local mode", "score": 0.0}]
+            return self.local_store.search(query, limit)
 
         try:
             # Embed Query

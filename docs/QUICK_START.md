@@ -1,155 +1,233 @@
-# Nucleus MCP: Quick Start Guide
-
-Get cross-platform AI memory syncing in under 2 minutes.
-
----
-
-## Prerequisites
-
-- Python 3.10+
-- Claude Desktop, Cursor, or any MCP-compatible tool
+# Nucleus Quick Start Guide
+## Get Running in 5 Minutes
+### v0.5.1 | The Agent Control Plane
 
 ---
 
-## Installation
+## 🚀 Installation
+
+### Option 1: pip (Recommended)
 
 ```bash
 pip install nucleus-mcp
-nucleus-init
 ```
 
-This creates:
-- `~/.brain/` directory (your sovereign brain)
-- Auto-configures Claude Desktop if installed
-
----
-
-## Verify Installation
+### Option 2: From Source
 
 ```bash
-# Check brain health
-python -c "from mcp_server_nucleus import brain_health; print(brain_health())"
+git clone https://github.com/nucleus-mcp/nucleus.git
+cd nucleus
+pip install -e .
 ```
 
-Expected output:
-```json
-{"status": "healthy", "version": "1.0.5", "brain_path": "/Users/you/.brain"}
-```
+### Option 3: Docker
 
----
-
-## First Memory (Engram)
-
-Write your first cross-platform memory:
-
-```python
-from mcp_server_nucleus import brain_write_engram
-
-# Save a decision
-brain_write_engram(
-    key="tech_stack_choice",
-    value="Using FastAPI + SQLite for MVP backend",
-    context="Architecture",
-    intensity=8
-)
-```
-
-This engram is now available in **all** your MCP tools.
-
----
-
-## Query Memory
-
-Retrieve engrams by context:
-
-```python
-from mcp_server_nucleus import brain_query_engrams
-
-# Get all Architecture decisions
-engrams = brain_query_engrams(context="Architecture", min_intensity=5)
-print(engrams)
+```bash
+docker pull ghcr.io/nucleus-mcp/nucleus:latest
+docker run -v ~/.brain:/data/.brain nucleus
 ```
 
 ---
 
-## Available Contexts
+## ⚙️ Configuration
 
-| Context | Use For |
-|---------|---------|
-| `Feature` | Product features, implementations |
-| `Architecture` | Technical decisions, stack choices |
-| `Brand` | Messaging, positioning, identity |
-| `Strategy` | Business decisions, roadmap |
-| `Decision` | General decisions, choices made |
+### 1. Set the Brain Path
 
----
+Nucleus stores all data in a `.brain/` folder. Set its location:
 
-## Connect Multiple Tools
+```bash
+# Add to your shell profile (~/.zshrc, ~/.bashrc)
+export NUCLEAR_BRAIN_PATH="$HOME/.brain"
 
-### Claude Desktop
+# Create the directory
+mkdir -p ~/.brain
+```
 
-Already configured by `nucleus-init`. Restart Claude Desktop to activate.
+### 2. Configure Your MCP Client
 
-### Cursor
-
-Add to your Cursor MCP config:
+**For Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "nucleus": {
-      "command": "python",
-      "args": ["-m", "mcp_server_nucleus"]
+      "command": "mcp-server-nucleus",
+      "env": {
+        "NUCLEAR_BRAIN_PATH": "/Users/YOUR_USERNAME/.brain"
+      }
     }
   }
 }
 ```
 
-### Windsurf
+**For Cursor** (`.cursor/mcp.json`):
 
-Add to your Windsurf MCP config (same format as Cursor).
-
----
-
-## Next Steps
-
-- **[Enterprise Guide](ENTERPRISE.md)** - Air-gap deployment, compliance
-- **[Competitive Analysis](COMPETITIVE_ANALYSIS.md)** - Why Nucleus
-- **[Full API Reference](https://github.com/eidetic-works/nucleus-mcp#-complete-tool-reference)** - All 15+ tools
-
----
-
-## Troubleshooting
-
-### "brain_path not found"
-
-```bash
-# Manually set brain path
-export NUCLEAR_BRAIN_PATH=~/.brain
+```json
+{
+  "mcpServers": {
+    "nucleus": {
+      "command": "mcp-server-nucleus",
+      "env": {
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
+      }
+    }
+  }
+}
 ```
 
-### Import errors
+### 3. Restart Your MCP Client
 
-```bash
-# Reinstall
-pip uninstall nucleus-mcp
-pip install nucleus-mcp
+After configuration, restart Claude Desktop or Cursor to load Nucleus.
+
+---
+
+## ✅ Verify Installation
+
+Run these commands in your AI chat to verify Nucleus is working:
+
+```
+brain_health()
 ```
 
-### Claude Desktop not seeing Nucleus
+You should see:
 
-1. Restart Claude Desktop
-2. Check `~/.config/Claude/claude_desktop_config.json` includes Nucleus
-3. Run `nucleus-init` again
+```
+💚 NUCLEUS HEALTH CHECK
+═══════════════════════════════════════
+
+🟢 HEALTHY
+[████████████████████] 100%
+
+📋 VERSION
+   Nucleus: 0.5.0
+   ...
+
+✅ System is healthy
+```
 
 ---
 
-## Support
+## 🎯 Your First 5 Minutes
 
-- **Discord**: [Join Nucleus Vanguard](https://discord.gg/RJuBNNJ5MT)
-- **GitHub Issues**: [Report a bug](https://github.com/eidetic-works/nucleus-mcp/issues)
-- **Enterprise**: [enterprise@nucleusos.dev](mailto:enterprise@nucleusos.dev)
+### 1. Start a Session
+
+```
+brain_session_start()
+```
+
+This shows your current context, pending tasks, and recommendations.
+
+### 2. Create Your First Task
+
+```
+brain_add_task(description="Learn Nucleus basics", priority=1)
+```
+
+### 3. View Your Tasks
+
+```
+brain_list_tasks()
+```
+
+### 4. Complete a Task
+
+```
+brain_complete_task(task_id="YOUR_TASK_ID")
+```
+
+### 5. Check the Dashboard
+
+```
+brain_dashboard()
+```
 
 ---
 
-*The Sovereign Brain - Cross-platform AI memory that never leaves your machine.*
+## 🔧 Core Tools
+
+| Tool | Description |
+|------|-------------|
+| `brain_session_start()` | Start session, get context |
+| `brain_add_task()` | Create a new task |
+| `brain_list_tasks()` | View all tasks |
+| `brain_claim_task()` | Claim a task to work on |
+| `brain_complete_task()` | Mark task as done |
+| `brain_orchestrate()` | Auto-assign best task |
+| `brain_dashboard()` | View system status |
+| `brain_health()` | Check system health |
+
+---
+
+## 📁 Understanding .brain/
+
+Your `.brain/` folder structure:
+
+```
+.brain/
+├── ledger/
+│   ├── tasks.json      # Your task queue
+│   └── events.jsonl    # Activity log
+├── sessions/           # Saved sessions
+├── slots/
+│   └── registry.json   # Agent slots
+├── artifacts/          # Generated files
+└── state.json          # Current state
+```
+
+---
+
+## 🎓 Next Steps
+
+1. **Read the full docs:** `brain_version()` for links
+2. **Explore tools:** There are 110+ tools available
+3. **Try autopilot:** `brain_autopilot_sprint_v2()` for autonomous execution
+4. **Save sessions:** `brain_save_session()` to preserve context
+
+---
+
+## 🆘 Troubleshooting
+
+### "NUCLEAR_BRAIN_PATH not set"
+
+```bash
+export NUCLEAR_BRAIN_PATH="$HOME/.brain"
+mkdir -p ~/.brain
+```
+
+### "Brain path does not exist"
+
+```bash
+mkdir -p ~/.brain/ledger ~/.brain/sessions ~/.brain/slots
+```
+
+### MCP Server Not Loading
+
+1. Check your config file syntax (valid JSON)
+2. Verify the path to `nucleus-mcp` is correct
+3. Restart your MCP client
+
+### Need Help?
+
+- GitHub Issues: https://github.com/eidetic-works/nucleus-mcp/issues
+- Discord: https://discord.gg/nucleus (coming soon)
+
+---
+
+## 🧠 The Trinity Framework
+
+Nucleus is built on three pillars:
+
+```
+ORCHESTRATION + CHOREOGRAPHY + CONTEXT = NUCLEUS
+   (control)      (autonomy)     (memory)
+```
+
+- **Orchestration:** Who does what (task assignment, scheduling)
+- **Choreography:** How it happens (autonomous execution)
+- **Context:** What we know (Persistent Engrams)
+
+This is what makes Nucleus different from task managers (no autonomy) or AutoGPT (no persistent state).
+
+---
+
+*Happy orchestrating! 🚀*

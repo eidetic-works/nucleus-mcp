@@ -2,7 +2,7 @@
 import subprocess
 import os
 import logging
-from typing import List
+from typing import List, Union
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class Locker:
 
     def _run_cmd(self, cmd: List[str]) -> bool:
         try:
-            subprocess.run(
+            result = subprocess.run(
                 cmd, 
                 capture_output=True, 
                 text=True, 

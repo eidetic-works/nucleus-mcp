@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.0.7"
-description = "The Universal Brain for AI Agents - Cross-platform memory sync for Cursor, Claude, Windsurf"
+version = "1.0.8"
+description = "The Sovereign Agent Control Plane with Governance & Engrams"
 readme = "README.md"
 authors = [
     { name = "Nucleus Team", email = "hello@nucleusos.dev" }
@@ -19,13 +19,17 @@ dependencies = [
     "duckduckgo-search>=4.0.0",
     "beautifulsoup4>=4.12.0",
     "nest_asyncio",
-    "cryptography>=41.0.0"
+    "cryptography>=41.0.0",
+    "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
 full = [
     "fastmcp",
     "google-genai"
+]
+postgres = [
+    "psycopg2-binary"
 ]
 dev = [
     "pytest>=7.0",
@@ -46,5 +50,5 @@ pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "1.0.7"
 

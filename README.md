@@ -1,35 +1,65 @@
-# 🧠 Nucleus MCP
+# 🧠 nucleus-mcp
 
-[![PyPI version](https://img.shields.io/pypi/v/nucleus-mcp?color=brightgreen&label=pypi%20package)](https://pypi.org/project/nucleus-mcp/)
+> ⚠️ **official repository** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
+
+[![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Nucleus MCP - The Local-First Agentic Identity & Security Layer | Product Hunt](https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1079781&theme=dark)](https://www.producthunt.com/posts/nucleus-mcp?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-nucleus-mcp)
+
+> **the sovereign agent control plane** — one brain that syncs cursor, claude, windsurf, and any mcp-compatible tool.
 
 > [!CAUTION]
-> **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
-> Nucleus was built security-first: Hypervisor controls, resource locking, and full audit trails, all 100% local.
+> **after the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
+> built nucleus security-first: hypervisor controls, resource locking, and full audit trails — all 100% local.
 
-> **The Sovereign Brain** — Cross-platform AI memory that never leaves your machine. Syncs Cursor, Claude Desktop, Windsurf, and any MCP-compatible tool.
-
----
-
-## 🎯 The Problem
-
-You use **multiple AI tools** daily:
-- **Cursor** for coding
-- **Claude Desktop** for thinking
-- **Windsurf** for exploration
-- **ChatGPT** for quick reasoning
-
-**But they don't share memory. (Until now).**
-
-Every time you switch tools, you lose context. You re-explain decisions. You repeat yourself constantly.
+🚀 **live on product hunt**: nucleus is the local-first agentic identity & security layer. [join the strike →](https://www.producthunt.com/posts/nucleus-mcp)
 
 ---
 
-### ✨ The Solution
+## 🚨 v1.0.8 monolith: the "infrastructure" update
+**immediate value. zero friction.**
 
-**Nucleus syncs them with one brain.**
+> **New in v1.0.8**: Monolith Decomposition completed. Core logic migrated to the `runtime/` module for modular growth.
+> **New in v1.0.7**: Nucleus now welcomes you with a **Sovereign Brain Card** and pre-seeded memories.
+> *   **Brain Card**: `cold_start` now returns a rich summary of your memory, active tasks, and connected tools.
+> *   **Welcome Engrams**: Your brain connects with pre-loaded context, so you never start from zero.
+> *   **Smart Config**: `nucleus-init` gives you OS-specific paths (macOS/Windows/Linux) for 1-second setup.
+
+---
+
+## 📦 Installation
+
+The clean, open source version of Nucleus is now available at:
+
+**→ [github.com/eidetic-works/nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
+
+```bash
+pip install nucleus-mcp
+nucleus-init
+```
+
+This repository (`mcp-server-nucleus`) is the internal development monorepo. For production use, please use the official open source package above.
+
+---
+
+## 🎯 the problem
+
+you use **multiple ai tools** daily:
+- cursor for coding
+- claude desktop for thinking
+- windsurf for exploration
+- chatgpt for quick answers
+
+**but they don't share memory.**
+
+every time you switch tools, you lose context. you re-explain decisions. you repeat yourself.
+
+---
+
+## ✨ the solution
+
+**nucleus syncs them with one brain.**
 
 ```
 Tell Claude about a decision → Cursor knows it
@@ -37,10 +67,18 @@ Make a plan in Windsurf → Claude remembers it
 One brain. All your tools.
 ```
 
-![Recursive Snap Demo](docs/RECURSIVE_SNAP_DEMO.gif)
+<!-- TODO: Add demo GIF here showing cross-platform sync -->
 
-> [!TIP]
-> **See the "Recursive Snap" in action**: Nucleus mounts your entire tool mesh (Stripe, Search, Postgres) into a single governed parent instantly.
+---
+
+## 🚀 What Makes Nucleus Different? (The Fractal Architecture)
+
+| Feature | Zapier / iPaaS | LangChain | **Nucleus (v0.5)** |
+| :--- | :--- | :--- | :--- |
+| **Architecture** | Centralized Hub | Code Library | **Recursive Client** |
+| **Scaling** | O(N) (Manual) | O(N) (Code) | **O(1) (Fractal)** |
+| **Data Locality** | Cloud Only | App Dependent | **100% Local** |
+| **Agent Network** | Walled Garden | Static Graph | **Dynamic "Internet of Agents"** |
 
 ---
 
@@ -56,70 +94,75 @@ One brain. All your tools.
 
 ---
 
-## ⚡ Quick Start (2 Minutes)
+## 🛠 140+ MCP Tools Included
+
+- **Engrams** — Persistent knowledge that survives sessions
+- **Tasks** — Track work across agents
+- **Sessions** — Save and resume context
+- **Sync** — Multi-agent brain synchronization
+- **Hypervisor** — File locking, security, audit trails
+- **Orchestration** — Coordinate multiple agents
+
+---
+
+## ⚡ Comparison: Nucleus vs Alternatives
+
+| | OpenClaw | Claude Code | Nucleus |
+|---|----------|-------------|---------|
+| **Security** | ❌ Sleeper agents, key leaks | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
+| **What it syncs** | OpenClaw → OpenClaw | Claude → Claude | **Everything ↔ Everything** |
+| **Cross-platform** | ❌ | ❌ | ✅ |
+| **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
+| **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
+| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+
+**openclaw trades security for capability. nucleus gives you both.**
+**nucleus connects ALL your platforms with one shared brain.**
+
+## 🚀 Quick Start (2 Minutes)
 
 ### 1. Install
-
 ```bash
 pip install nucleus-mcp
 ```
 
-### 2. Initialize
+### 2. Initialize (Smart Config)
+The `nucleus-init` command automatically detects your system and configures Claude Desktop for you.
 
 ```bash
-nucleus-init --scan
+# Create your .brain/ and auto-configure Claude Desktop
+nucleus-init
 ```
 
-This creates your `.brain/` folder, auto-configures Claude Desktop, and **automatically ingests your README.md** to seed the brain with initial context.
+### 3. Ask Claude
+Restart Claude Desktop and try:
+> *"Use the cold_start prompt from nucleus to see our current sprint focus."*
 
-### 3. Restart Claude Desktop
+**You will see the Sovereign Brain Card:** a live dashboard of your engrams, tasks, and connected tools.
 
-Then try:
-> "What decisions have we made about the architecture?"
+> **v1.0.7+**: Smart Init automatically detects your OS and provides the exact config block for your editor.
 
-Claude will now remember across sessions!
+### Configuration (Claude Desktop)
 
----
-
-## 🔧 Manual Configuration
-
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "nucleus": {
       "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
+      "args": ["-m", "nucleus_mcp"],
       "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
       }
     }
   }
 }
 ```
 
-### Cursor
+Restart Claude Desktop and try: *"What's my current sprint focus?"*
 
-Add to `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
-      "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
-      }
-    }
-  }
-}
-```
-
-### Windsurf
+### Configuration (Windsurf)
 
 Add to `~/.codeium/windsurf/mcp_config.json`:
 
@@ -128,62 +171,52 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
   "mcpServers": {
     "nucleus": {
       "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
+      "args": ["-m", "nucleus_mcp"],
       "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
       }
     }
   }
 }
 ```
 
-### ChatGPT (Web)
+### Configuration (Cursor)
 
-1. Go to **Settings** → **Apps** → **Advanced** → **Developer Mode**.
-2. Run the Nucleus SSE Bridge: `python scripts/sse_bridge.py`.
-3. Add `http://localhost:8000/sse` as your MCP endpoint.
+Add to `~/.cursor/mcp.json`:
 
-See the [Community FAQ](docs/COMMUNITY_FAQ.md) for more details.
+```json
+{
+  "mcpServers": {
+    "nucleus": {
+      "command": "python3",
+      "args": ["-m", "nucleus_mcp"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
+      }
+    }
+  }
+}
+```
 
----
+### ❓ Troubleshooting
 
-## 🛠 Core Tools
+**"Show me all tasks" returns nothing?**
+Check your config pointer! You might be pointing to an old or temp brain.
 
-### Memory
-| Tool | Description |
-|------|-------------|
-| `brain_write_engram` | Store persistent knowledge |
-| `brain_query_engrams` | Retrieve knowledge |
-| `brain_audit_log` | View decision history |
+1. **Check config:** Open `~/Library/Application Support/Claude/claude_desktop_config.json`
+2. **Verify path:** Ensure `NUCLEAR_BRAIN_PATH` points to your active project (e.g., `/Users/me/my-project/.brain`)
+3. **Restart:** You MUST restart Claude Desktop after any config change.
 
-### Sync (Multi-Agent)
-| Tool | Description |
-|------|-------------|
-| `brain_sync_now` | Manually trigger brain sync |
-| `brain_sync_status` | Check sync state and conflicts |
-| `brain_sync_auto` | Enable/disable auto-sync |
-| `brain_identify_agent` | Register agent identity |
+## ✨ Core Features (Included)
 
-### State Management
-| Tool | Description |
-|------|-------------|
-| `brain_get_state` | Get current project state |
-| `brain_set_state` | Update project state |
-| `brain_list_artifacts` | List all artifacts |
+- **Persistent Engrams** — `brain_write_engram` / `brain_query_engrams` (Vector-lite).
+- **Audit Ledger** — Immutable SHA-256 logs of every action (`brain_audit_log`).
+- **Recursive Mounting** — `brain_mount_server` (Basic).
+- **Local Sovereignty** — Zero cloud. All data in `~/.nucleus/brain`.
 
-### Hypervisor (Security)
-| Tool | Description |
-|------|-------------|
-| `lock_resource` | Lock file/folder (immutable) |
-| `unlock_resource` | Unlock resource |
-| `watch_resource` | Monitor file changes |
-| `hypervisor_status` | View security state |
+## 🔄 Multi-Agent Sync (New in v0.7.0)
 
----
-
-## 🔄 Multi-Agent Sync (The Killer Feature)
-
-**Multiple agents, one brain.**
+**The killer feature: Multiple agents, one brain.**
 
 ```python
 # Agent A (Claude Desktop) makes a decision
@@ -195,125 +228,65 @@ brain_sync_status()  # Shows last sync, active agents
 
 **Features:**
 - **Intent-Aware Locking** — Files locked with WHO/WHEN/WHY metadata
-- **Conflict Detection** — Last-write-wins with manual resolution option
+- **Conflict Detection** — Last-write-wins with manual resolution option  
 - **Auto-Sync** — Optional file watcher for real-time sync
-- **Audit Trail** — Every sync logged to `events.jsonl`
+- **Audit Trail** — Every sync logged to events.jsonl
 
 ---
 
-## ⚔️ Comparison: Nucleus vs Alternatives
+## 🛠 Tool Categories
 
-| | OpenClaw | Claude Code | Nucleus |
-|---|----------|-------------|---------|
-| **What it syncs** | OpenClaw → OpenClaw | Claude → Claude | **Everything ↔ Everything** |
-| **Security** | ❌ Sleeper agents, key leaks | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
-| **Cross-platform** | ❌ | ❌ | ✅ |
-| **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
-| **Identity Persistence** | ❌ Session-bound | ❌ Login-bound | ✅ Hypervisor-enforced |
-| **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
-| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+### 🧠 Core (Public)
+| Tool | Description |
+|------|-------------|
+| `brain_write_engram` | Store persistent knowledge |
+| `brain_query_engrams` | Retrieve knowledge |
+| `brain_audit_log` | Verify ledger integrity |
+| `brain_mount_server` | Mount sub-MCP servers |
 
----
+### 🔄 Sync Tools
+| Tool | Description |
+|------|-------------|
+| `brain_sync_now` | Manually trigger brain sync |
+| `brain_sync_status` | Check sync state and conflicts |
+| `brain_sync_auto` | Enable/disable auto-sync |
+| `brain_identify_agent` | Register agent identity |
 
-## 🔗 Technical Deep Dives
+### 🔒 Enterprise Features
+| Feature | Capabilities |
+|---------|--------------|
+| **Audit Logs** | Full decision trail with context hashing |
+| **RBAC** | Role-based access control (coming soon) |
+| **SSO** | Enterprise SSO integration (coming soon) |
+| **Compliance** | SOC2/HIPAA export reports (coming soon) |
 
-*   **Forensics**: [How we trace agent intent at the kernel level](https://dev.to/nucleusos/how-i-synced-cursor-claude-and-windsurf-with-one-shared-brain-mcp-1mh4)
-*   **Philosophy**: [Why we abandoned cloud memory for local sovereignty](https://dev.to/nucleusos/why-we-abandoned-cloud-memory-for-local-sovereignty-5bbo)
+## ❓ How is Nucleus Different?
 
-**OpenClaw is great for multi-agent teams on their platform.**
-**OpenClaw trades security for capability. Nucleus gives you both.**
+> **See the full comparison:** [Nucleus vs ContextStream vs mem0 vs OpenClaw →](docs/COMPARISON.md)
 
-> [!TIP]
-> **Check out the [Detailed Comparison](docs/COMPETITIVE_ANALYSIS.md)** to see how Nucleus stacks up against ContextStream and other alternatives.
-
----
-
-## 📁 The `.brain/` Folder
-
-Nucleus stores everything in a `.brain/` folder in your project:
-
-```
-.brain/
-├── config/
-│   └── nucleus.yaml      # Configuration
-├── ledger/
-│   ├── state.json        # Current state
-│   ├── events.jsonl      # Audit log
-│   └── decisions.md      # Decision history
-├── artifacts/
-│   └── ...               # Your stored knowledge
-└── sessions/
-    └── ...               # Saved sessions
-```
-
-**Your data. Your machine. Your control.**
+| | Nucleus | ContextStream | mem0 |
+|---|:-------:|:-------------:|:----:|
+| **Architecture** | 100% Local (Git-native) | Cloud SaaS | Cloud API |
+| **Audit Trail** | ✅ Full | ❌ | ❌ |
+| **Governance** | ✅ Policy engine | ❌ | ❌ |
+| **Pricing** | Free (MIT) | Freemium → Paid | Freemium → Paid |
 
 ---
 
-## 🤝 Contributing
+## 🤝 Community & Contributing
 
 We're building the universal brain for AI agents. Join us!
 
 - **🐛 Found a bug?** Open an [Issue](https://github.com/eidetic-works/nucleus-mcp/issues)
-- **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/nucleus-mcp/discussions)
+- **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/mcp-server-nucleus/discussions)
 - **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **💬 Join Discord** — [discord.gg/nucleus](https://discord.gg/nucleus) (coming soon)
 
-### ✨ Pioneers & Contributors
-
-Nucleus is a community-first project. A special thank you to our first contributor for setting the standard:
-
-- **[@aryasadawrate19](https://github.com/aryasadawrate19)** — Added Linux XDG support for `nucleus-init`, bringing Nucleus to the Linux ecosystem.
-
-*Want to be here? See [CONTRIBUTING.md](CONTRIBUTING.md) and claim a "Good First Issue".*
-
-### Development Setup
-
-```bash
-git clone https://github.com/eidetic-works/nucleus-mcp.git
-cd nucleus-mcp
-python3 -m venv venv
-source venv/bin/activate
-pip install -e ".[dev]"
-pytest tests/
-```
-
-## 🏢 Enterprise
-
-Nucleus is built for organizations that cannot compromise on data sovereignty:
-
-- **Air-Gap Ready**: Deploy in fully disconnected environments
-- **Compliance First**: Full audit trail, SHA-256 hashing, ITAR/SOC2 ready
-- **Team Sync**: Git-based knowledge sharing (coming soon)
-
-📄 **[Enterprise Guide](docs/ENTERPRISE.md)** | 📊 **[Competitive Analysis](docs/COMPETITIVE_ANALYSIS.md)**
-
-**Contact**: [enterprise@nucleusos.dev](mailto:enterprise@nucleusos.dev)
-
----
-
-## 🛡️ Join the Nucleus Vanguard (Private Beta)
-
-We're building the first secure sync layer for agents. Join our Vanguard Pioneers to help shape the roadmap and get early access to features before they go public.
-
-**[Join the Nucleus Vanguard (Discord)](https://discord.gg/RJuBNNJ5MT)** | **[Visit Website](https://nucleusos.dev)**
-
-> [!TIP]
-> The Vanguard is currently open for early adopters. Introduce yourself in the `#welcome-start` channel to claim your **Vanguard Pioneer** role and join the inner circle.
-
----
-
-## 📜 License
+## �📜 License
 
 MIT © Nucleus Team
 
 ---
 
-## ⭐ Support
+**Built for the AI-native developer.** Star us on GitHub if Nucleus saves you from context amnesia! ⭐
 
-**Star us on GitHub if Nucleus saves you from context amnesia!**
-
-One brain. All your AI tools. No more repeating yourself.
-
----
-
-*Built for the AI-native developer.*

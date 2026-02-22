@@ -1,0 +1,23 @@
+{
+    "name": "nucleus-mcp",
+    "version": "1.0.8",
+    "description": "NPM wrapper for the Nucleus-MCP Python server",
+    "main": "index.js",
+    "bin": {
+        "nucleus-mcp": "./index.js",
+        "nucleus-init": "./index.js"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "mcp",
+        "ai",
+        "agents",
+        "memory",
+        "nucleus"
+    ],
+    "author": "Nucleus Team",
+    "license": "MIT",
+    "dependencies": {}
+}

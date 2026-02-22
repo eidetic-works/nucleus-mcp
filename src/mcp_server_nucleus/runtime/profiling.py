@@ -109,8 +109,8 @@ def _record_metric(operation_name: str, elapsed_ms: float, log_slow: bool):
         if elapsed_ms > SLOW_THRESHOLD_MS:
             m["slow_count"] += 1
             if log_slow:
-                # Use print for now, can integrate with structured logging
-                print(f"⚠️ SLOW: {operation_name} took {elapsed_ms:.2f}ms (threshold: {SLOW_THRESHOLD_MS}ms)")
+                import sys
+                sys.stderr.write(f"⚠️ SLOW: {operation_name} took {elapsed_ms:.2f}ms (threshold: {SLOW_THRESHOLD_MS}ms)\n"); sys.stderr.flush()
 
 
 def get_metrics() -> Dict[str, Dict[str, Any]]:

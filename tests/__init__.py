@@ -1,1 +1,1 @@
-"""Nucleus MCP Tests"""
+# Tests package

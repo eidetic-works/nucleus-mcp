@@ -54,7 +54,7 @@ class RenderOps:
                     "id": "srv-mock-1",
                     "name": "nucleus-backend",
                     "type": "web_service",
-                    "repo": "https://github.com/lokeshgarg/ai-mvp-backend",
+                    "repo": "https://github.com/nucleus-os/nucleus-core",
                     "branch": "main"
                 },
                 "cursor": "c1"
@@ -64,7 +64,7 @@ class RenderOps:
                     "id": "srv-mock-2",
                     "name": "gentlequest-app",
                     "type": "static_site",
-                    "repo": "https://github.com/lokeshgarg/gentlequest",
+                    "repo": "https://github.com/nucleus-os/gentlequest",
                     "branch": "production"
                 },
                 "cursor": "c2"

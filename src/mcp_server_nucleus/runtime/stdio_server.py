@@ -1,27 +1,73 @@
-
+#!/usr/bin/env python3
 import sys
+from pathlib import Path
+
+# Security: Ensure we can import our own package
+# This makes the script standalone and robust against PYTHONPATH issues in Claude Desktop
+current_path = Path(__file__).resolve()
+current_dir = current_path.parent
+
+# Robustly find the 'src' directory by looking for 'mcp_server_nucleus' in the path
+# This handles cases where file structure might be slightly different or symlinked
+src_p = current_path
+while src_p.name != 'src' and src_p.parent != src_p:
+    src_p = src_p.parent
+
+if src_p.name == 'src':
+    # found it
+    pass
+else:
+    # Fallback to hardcoded relative path if traversal fails
+    # script is in src/mcp_server_nucleus/runtime/stdio_server.py
+    # we need src in path
+    src_p = current_dir.parent.parent
+
+src_root = str(src_p)
+
+# Debug logging to stderr (because stdout is for JSON-RPC)
+sys.stderr.write(f"[Nucleus] Bootstrapping standalone server...\n")
+sys.stderr.write(f"[Nucleus] Script path: {current_path}\n")
+sys.stderr.write(f"[Nucleus] Injected src root: {src_root}\n")
+
+if src_root not in sys.path:
+    # Use insert(0) to prioritize our local source
+    sys.path.insert(0, src_root)
+
+try:
+    import mcp_server_nucleus
+    sys.stderr.write(f"[Nucleus] Successfully imported mcp_server_nucleus package.\n")
+except ImportError as e:
+    sys.stderr.write(f"[Nucleus] FATAL: Could not import mcp_server_nucleus: {e}\n")
+    sys.stderr.write(f"[Nucleus] sys.path: {sys.path}\n")
+    # Fallback to hardcoded relative path if traversal fails
+    sys.path.append(src_root)
+
 import json
 import logging
 import traceback
 import time
 import os
 import re
-from typing import Any, Dict, Optional
-from ..hypervisor.locker import Locker
-from ..hypervisor.watchdog import Watchdog
-from ..hypervisor.injector import Injector
-from .task_ops import (
+from typing import Any, Dict, List, Optional
+from mcp_server_nucleus.hypervisor.locker import Locker
+from mcp_server_nucleus.hypervisor.watchdog import Watchdog
+from mcp_server_nucleus.hypervisor.injector import Injector
+from mcp_server_nucleus.runtime.task_ops import (
     _list_tasks, _add_task, _update_task, 
     _claim_task, _get_next_task
 )
+from mcp_server_nucleus.runtime.memory import _write_memory, _search_memory
 from pathlib import Path
 from datetime import datetime
 import asyncio
-from .mounter_ops import Mounter
+from mcp_server_nucleus.runtime.mounter_ops import get_mounter
 
 # Configure logging to stderr to not corrupt stdout (which is for JSON-RPC)
 logging.basicConfig(stream=sys.stderr, level=logging.INFO, format='[Nucleus] %(message)s')
 logger = logging.getLogger("nucleus_server")
+
+# Silence watchdog library internals to prevent stdout/stderr pollution from internal threads
+logging.getLogger("watchdog").setLevel(logging.ERROR)
 
 START_TIME = time.time()
 
@@ -38,7 +84,7 @@ class StdioServer:
     def __init__(self):
         # Resolve paths first
         self.brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
-        workspace_root = self.brain_path.parent
+        workspace_root = self.brain_path
         
         self.locker = Locker()
         self.injector = Injector(str(workspace_root))
@@ -49,7 +95,7 @@ class StdioServer:
         except Exception as e:
             logger.error(f"Failed to start watchdog: {e}")
             
-        self.mounter = Mounter(self.brain_path)
+        self.mounter = get_mounter(self.brain_path)
 
     async def run(self):
         # Restore mounts from persistence
@@ -85,11 +131,13 @@ class StdioServer:
                 "result": {
                     "protocolVersion": "2024-11-05", # Updated protocol version
                     "capabilities": {
-                        "tools": {}
+                        "tools": {
+                            "listChanged": True
+                        }
                     },
                     "serverInfo": {
-                        "name": "nucleus-mcp",
-                        "version": "1.0.0"
+                        "name": "nucleus",
+                        "version": "1.0.1"
                     }
                 }
             }
@@ -103,38 +151,21 @@ class StdioServer:
             tools = [
                         {
                             "name": "lock_resource",
-                            "description": "[HYPERVISOR] Lock a file/folder to prevent modification (Layer 4).",
+                            "description": "✨ [NUCLEUS] Hypervisor: Lock a resource (file/folder) within the Sovereign Infrastructure to prevent any modification. High-tier governance tool.",
                             "inputSchema": {
                                 "type": "object",
                                 "properties": {
                                     "path": {"type": "string", "description": "Absolute path to lock"},
-                                    "reason": {"type": "string", "description": "Why is this being locked?"},
-                                    "agent_id": {"type": "string", "description": "Who is locking this?"}
+                                    "reason": {"type": "string", "description": "Governance justification"},
+                                    "agent_id": {"type": "string", "description": "Locking agent identifier"}
                                 },
                                 "required": ["path"]
                             }
                         },
                         {
-                            "name": "unlock_resource",
-                            "description": "[HYPERVISOR] Unlock a resource.",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "path": {"type": "string", "description": "Absolute path to unlock"}
-                                },
-                                "required": ["path"]
-                            }
-                        },
-                        {
-                            "name": "get_lock_metadata",
-                            "description": "[HYPERVISOR] Retrieve lock metadata (Why/Who/When).",
-                            "inputSchema": {
-                                "type": "object",
-                                "properties": {
-                                    "path": {"type": "string", "description": "Path to inspect"}
-                                },
-                                "required": ["path"]
-                            }
+                            "name": "status",
+                            "description": "✨ [NUCLEUS] Hypervisor: Retrieve the operational status of the Sovereign Infrastructure and the COMMAND DECK Connectivity. USE THIS TO VERIFY THE SYSTEM IS ALIVE.",
+                            "inputSchema": {"type": "object", "properties": {}}
                         },
                         {
                             "name": "watch_resource",
@@ -311,11 +342,6 @@ class StdioServer:
                 }
             })
             tools.append({
-                "name": "brain_list_mounts",
-                "description": "List all active mounted servers.",
-                "inputSchema": {"type": "object", "properties": {}}
-            })
-            tools.append({
                "name": "brain_traverse_and_mount",
                "description": "Recursively explore and mount downstream servers.",
                "inputSchema": {
@@ -325,6 +351,39 @@ class StdioServer:
                    },
                    "required": ["root_mount_id"]
                }
+            })
+            tools.append({
+                "name": "thanos_snap",
+                "description": "✨ [NUCLEUS] Hypervisor: Trigger the 'Thanos Snap' - Instantiating the SOVEREIGN COMMAND DECK Infrastructure (Stripe, Postgres, Search). THIS IS THE PRIMARY DEMO TRIGGER.",
+                "inputSchema": {"type": "object", "properties": {}}
+            })
+            tools.append({
+                "name": "list_mounted",
+                "description": "✨ [NUCLEUS] Hypervisor: List all active mounted servers currently occupying the SOVEREIGN COMMAND DECK.",
+                "inputSchema": {"type": "object", "properties": {}}
+            })
+            tools.append({
+                "name": "discover_mounted_tools",
+                "description": "🔍 [NUCLEUS] Hypervisor: Aggregates every tool from the SOVEREIGN COMMAND DECK into the current session. USE THIS AS THE 'SNAP' RESULT.",
+                "inputSchema": {"type": "object", "properties": {}}
+            })
+            tools.append({
+                "name": "brain_rescue_restoration",
+                "description": "🛠️ [RESCUE] Force re-establishment of all infrastructure connections if they were missed at startup.",
+                "inputSchema": {"type": "object", "properties": {}}
+            })
+            tools.append({
+                "name": "brain_invoke_mounted_tool",
+                "description": "Invoke a tool on a mounted MCP server.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "server_id": {"type": "string", "description": "Mount ID (e.g. mnt-123456)"},
+                        "tool_name": {"type": "string", "description": "Tool name on that server"},
+                        "arguments": {"type": "object", "description": "Tool arguments", "default": {}}
+                    },
+                    "required": ["server_id", "tool_name"]
+                }
             })
             
             # Aggregate Tools from Mounts
@@ -349,7 +408,7 @@ class StdioServer:
             
             try:
                 # --- MOUNTER DISPATCH ---
-                if ":" in name:
+                if "__" in name:
                     # Delegate to mounted server
                     result = await self.mounter.call_tool(name, args)
                     # Result is a ToolCallResult object from mcp SDK. We need to serialize it.
@@ -388,15 +447,50 @@ class StdioServer:
                     
                 elif name == "brain_unmount_server":
                     await self.mounter.unmount_server(args["mount_id"])
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": "Unmounted"}], "isError": False}}
+                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": f"Unmounted server {args['mount_id']}"}], "isError": False}}
                     
-                elif name == "brain_list_mounts":
+                elif name == "thanos_snap":
+                    from mcp_server_nucleus import brain_thanos_snap as snap_impl
+                    res = await snap_impl()
+                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": res}], "isError": False}}
+                    
+                elif name == "status":
+                    res = {
+                        "status": "OPERATIONAL",
+                        "mesh_tier": os.environ.get("NUCLEUS_TOOL_TIER", "UNKNOWN"),
+                        "uptime": time.time() - START_TIME,
+                        "mounts": len(self.mounter.sessions)
+                    }
+                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(res, indent=2)}], "isError": False}}
+                    
+                elif name == "list_mounted":
                     res = await self.mounter.list_mounts()
                     return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(res, indent=2)}], "isError": False}}
                     
-                elif name == "brain_traverse_and_mount":
-                    res = await self.mounter.traverse_and_mount(args["root_mount_id"])
-                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(res, indent=2)}], "isError": False}}
+                elif name == "discover_mounted_tools":
+                    tools_list = await self.mounter.list_tools()
+                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": json.dumps(tools_list, indent=2)}], "isError": False}}
+                    
+                elif name == "brain_rescue_restoration":
+                    await self.mounter.restore_mounts()
+                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": [{"type": "text", "text": "Restoration rescue sequence triggered."}], "isError": False}}
+                    
+                elif name == "brain_invoke_mounted_tool":
+                    server_id = args["server_id"]
+                    tool_name = args["tool_name"]
+                    tool_args = args.get("arguments", {})
+                    # Regex fix: ^[a-zA-Z0-9_-]{1,64}$ prevents colons. Using double underscore.
+                    namespaced_name = f"{server_id}__{tool_name}"
+                    result = await self.mounter.call_tool(namespaced_name, tool_args)
+                    # Convert MCP SDK result to JSON-RPC format
+                    content = []
+                    if hasattr(result, "content"):
+                        for item in result.content:
+                            item_dict = item.model_dump() if hasattr(item, "model_dump") else item.__dict__
+                            content.append(item_dict)
+                    else:
+                        content = [{"type": "text", "text": str(result)}]
+                    return {"jsonrpc": "2.0", "id": msg_id, "result": {"content": content, "isError": False}}
 
                 result = self.execute_tool(name, args)
                 return {
@@ -619,13 +713,7 @@ class StdioServer:
             return make_response(False, error=str(e))
 
 def main():
-    sys.stderr.write("DEBUG: STDIO_SERVER MAIN START\n")
-    sys.stderr.flush()
     server = StdioServer()
-    sys.stderr.write("DEBUG: STDIO_SERVER AFTER INIT\n")
-    sys.stderr.flush()
-    sys.stderr.write("Nucleus Sovereign Control Plane (Stdio Mode)\n")
-    sys.stderr.flush()
     # Run async main loop
     asyncio.run(server.run())
 

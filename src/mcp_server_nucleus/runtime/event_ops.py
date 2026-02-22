@@ -76,6 +76,14 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
                 json.dump(summary, f, indent=2)
         except Exception:
             pass  # Don't fail event emit if summary update fails
+
+        # MDR_016: Auto-write engram hook
+        # Significant events auto-generate engrams via ADUN pipeline
+        try:
+            from .engram_hooks import process_event_for_engram
+            process_event_for_engram(event_type, data)
+        except Exception:
+            pass  # Never let auto-engram break event emission
             
         return event_id
     except Exception as e:
@@ -98,6 +106,6 @@ def _read_events(limit: int = 10) -> List[Dict[str, Any]]:
         
         return events[-limit:]
     except Exception as e:
-        # Avoid logger dependency here if possible, or print
-        print(f"Error reading events: {e}")
+        import sys
+        sys.stderr.write(f"Error reading events: {e}\n"); sys.stderr.flush()
         return []

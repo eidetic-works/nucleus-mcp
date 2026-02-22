@@ -36,7 +36,8 @@ try:
     logger.info("✅ SDK: google-genai (new) available")
 except ImportError:
     HAS_GENAI = False
-    logger.error("❌ SDK: google-genai NOT installed! Please run 'pip install google-genai'")
+    if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
+        logger.warning("⚠️ google-genai not installed. Falling back to legacy SDK.")
 
 # Fallback SDK: google.generativeai (Legacy)
 try:
@@ -49,10 +50,8 @@ except ImportError:
     HAS_LEGACY = False
 
 def get_active_sdk() -> str:
-    if HAS_GENAI:
-        return "NEW"
-    if HAS_LEGACY:
-        return "LEGACY"
+    if HAS_GENAI: return "NEW"
+    if HAS_LEGACY: return "LEGACY"
     return "NONE"
 
 _active = get_active_sdk()
@@ -303,7 +302,7 @@ class DualEngineLLM:
         Saves the raw interaction to disk for later mining/consolidation.
         """
         try:
-            brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+            brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "./.brain"))
             raw_path = brain_path / "raw"
             raw_path.mkdir(parents=True, exist_ok=True)
             

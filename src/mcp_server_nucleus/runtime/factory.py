@@ -38,7 +38,7 @@ from .budget import BudgetAuditor
 # Path to brain (can be overridden via env var)
 # NOTE: Default changed to absolute path to fix "Read-only file system" error
 # when MCP server runs from a different working directory.
-BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
 
 # ============================================================
 # INTENT-BASED TIER ESCALATION (Enterprise Feature)

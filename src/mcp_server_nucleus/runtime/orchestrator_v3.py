@@ -14,11 +14,11 @@ import time
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from datetime import datetime
-from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from dataclasses import dataclass, field, asdict
 
 from .crdt_task_store import CRDTTaskStore
-from .task_scheduler import TaskScheduler
+from .task_scheduler import TaskScheduler, TaskStatus, TaskPriority, TaskTier
 
 # V3.1 Components - lazy loaded to avoid circular imports
 _agent_pool = None
@@ -51,7 +51,7 @@ def _get_ingestion_engine(brain_path=None):
 
 def get_brain_path() -> Path:
     """Get brain path from environment or default."""
-    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
 
 
 @dataclass

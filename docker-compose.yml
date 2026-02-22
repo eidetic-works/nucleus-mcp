@@ -1,0 +1,72 @@
+# ============================================================================
+# Nucleus MCP Server - Docker Compose
+# Version: 0.5.0
+# Usage: docker-compose up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Nucleus MCP Server
+  # ===========================================================================
+  nucleus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nucleus-mcp
+    restart: unless-stopped
+    
+    # Environment configuration
+    environment:
+      - NUCLEAR_BRAIN_PATH=/data/.brain
+      - PYTHONUNBUFFERED=1
+      # Optional: Set these for enhanced features
+      # - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+    
+    # Persistent storage for .brain/ folder
+    volumes:
+      - nucleus-brain:/data/.brain
+      # Mount local .brain/ for development
+      # - ./.brain:/data/.brain
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import mcp_server_nucleus; print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ===========================================================================
+# Volumes
+# ===========================================================================
+volumes:
+  nucleus-brain:
+    driver: local
+    name: nucleus-brain-data
+
+# ===========================================================================
+# Networks (optional, for future services)
+# ===========================================================================
+networks:
+  default:
+    name: nucleus-network

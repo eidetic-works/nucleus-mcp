@@ -230,6 +230,11 @@ class TierFilteredToolManager:
         
         return allowed
     
+    def reset(self):
+        """Reset registration state. Useful for testing and reconfiguration."""
+        self.registered_tools = set()
+        self.filtered_tools = set()
+
     def get_stats(self) -> Dict[str, Any]:
         """Get registration statistics."""
         return {

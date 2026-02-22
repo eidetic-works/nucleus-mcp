@@ -4,10 +4,12 @@
 import os
 import json
 import sys
+import time
 import shutil
 from datetime import datetime
 from pathlib import Path
 import argparse
+from typing import Dict, List, Optional, Any
 
 # ============================================================================
 # TEMPLATE: DEFAULT (Full structure)
@@ -61,6 +63,26 @@ Describe expected output format.
 # ============================================================================
 # ONBOARDING: Instructional Seed Tasks
 # ============================================================================
+
+def get_welcome_engrams():
+    """Generate welcome engrams so the brain has content on first connection."""
+    now = datetime.utcnow().isoformat() + "Z"
+    return [
+        {
+            "key": "welcome_to_nucleus",
+            "value": "Welcome to your Sovereign Brain! This is Nucleus — your local-first AI memory server. Everything you store here stays on YOUR machine. Try asking your AI: 'What do you remember about me?' or 'Write an engram about my current project.'",
+            "context": "Feature",
+            "intensity": 8,
+            "timestamp": now
+        },
+        {
+            "key": "tip_cold_start",
+            "value": "Pro tip: Nucleus has a 'cold_start' feature. When your AI connects, it automatically receives your latest context — active tasks, recent memories, and system status. This means your AI never starts from zero.",
+            "context": "Strategy",
+            "intensity": 6,
+            "timestamp": now
+        }
+    ]
 
 def get_default_tasks():
     """Generate instructional seed tasks with current timestamps."""
@@ -245,6 +267,12 @@ def init_brain_default(brain_path: Path) -> bool:
     )
     print("  📝 Created memory/context.md")
     
+    # Seed welcome engrams
+    (brain_path / "memory" / "engrams.json").write_text(
+        json.dumps(get_welcome_engrams(), indent=2)
+    )
+    print("  🧠 Created memory/engrams.json (2 welcome engrams)")
+    
     return True
 
 
@@ -283,11 +311,50 @@ def init_brain_solo(brain_path: Path) -> bool:
     (brain_path / "README.md").write_text(BRAIN_README)
     print("  📖 Created README.md")
     
+    # Seed welcome engrams
+    (brain_path / "memory" / "engrams.json").write_text(
+        json.dumps(get_welcome_engrams(), indent=2)
+    )
+    print("  🧠 Created memory/engrams.json (2 welcome engrams)")
+    
     return True
 
 
 
-def init_brain(path: str = ".brain", template: str = "default"):
+def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str, Any]):
+    """Inject nucleus server into IDE-specific MCP configuration."""
+    if not config_path.exists():
+        return False
+    try:
+        print(f"\n🔍 Found {ide_name} config...")
+        # Reversible: Create backup
+        backup_path = config_path.with_suffix(".json.bak")
+        if not backup_path.exists():
+            shutil.copy2(config_path, backup_path)
+            print(f"  📦 Created backup at {backup_path}")
+        
+        with open(config_path, 'r') as f:
+            config_data = json.load(f)
+        
+        # Normalize to standard 'mcpServers' block
+        target_key = "mcpServers"
+        if target_key not in config_data:
+            config_data[target_key] = {}
+        
+        if "nucleus" not in config_data[target_key]:
+            config_data[target_key]["nucleus"] = nucleus_config
+            with open(config_path, 'w') as f:
+                json.dump(config_data, f, indent=2)
+            print(f"  ✅ Auto-configured 'nucleus' in {ide_name} settings!")
+            return True
+        else:
+            print(f"  ℹ️  'nucleus' already configured in {ide_name}.")
+            return True
+    except Exception as e:
+        print(f"  ⚠️  Could not auto-configure {ide_name}: {e}")
+        return False
+
+def init_brain(path: str = ".brain", template: str = "default") -> bool:
     """Initialize a new .brain directory structure."""
     brain_path = Path(path)
     
@@ -340,68 +407,97 @@ def init_brain(path: str = ".brain", template: str = "default"):
         "env": {"NUCLEAR_BRAIN_PATH": abs_path}
     }
     
-    # Attempt auto-configuration for Claude Desktop
-    claude_config_path = Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
-    auto_configured = False
+    # Paths to known MCP configs
+    ide_configs = [
+        (Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json", "Claude Desktop"),
+        (Path.home() / ".cursor" / "mcp.json", "Cursor"),
+        (Path.home() / ".codeium" / "windsurf" / "mcp_config.json", "Windsurf")
+    ]
     
-    if claude_config_path.exists():
-        try:
-            print("\n🔍 Found Claude Desktop config...")
-            backup_path = claude_config_path.with_suffix(".json.bak")
-            if not backup_path.exists():
-                shutil.copy2(claude_config_path, backup_path)
-                print(f"  📦 Created backup at {backup_path}")
-            
-            with open(claude_config_path, 'r') as f:
-                config_data = json.load(f)
-            
-            if "mcpServers" not in config_data:
-                config_data["mcpServers"] = {}
-            
-            if "nucleus" not in config_data["mcpServers"]:
-                config_data["mcpServers"]["nucleus"] = nucleus_config
-                
-                with open(claude_config_path, 'w') as f:
-                    json.dump(config_data, f, indent=2)
-                
-                print("  ✅ Auto-configured 'nucleus' in Claude Desktop settings!")
-                auto_configured = True
-            else:
-                print("  ℹ️  'nucleus' already configured in Claude Desktop.")
-                auto_configured = True
-                
-        except Exception as e:
-            print(f"  ⚠️  Could not auto-configure: {e}")
+    auto_configured_any = False
+    for path_obj, name in ide_configs:
+        if _patch_mcp_config(path_obj, name, nucleus_config):
+            auto_configured_any = True
 
-    if not auto_configured:
-        config_snippet = f'''"nucleus": {{
-    "command": "python3",
-    "args": ["-m", "mcp_server_nucleus"],
-    "env": {{
-      "NUCLEAR_BRAIN_PATH": "{abs_path}"
-    }}
-  }}'''
+    if not auto_configured_any:
+        # Build a complete, ready-to-paste JSON config block
+        full_config = json.dumps({
+            "mcpServers": {
+                "nucleus": nucleus_config
+            }
+        }, indent=2)
         
-        print("\n" + "="*60)
-        print("📋 COPY THIS into your AI client's config:")
-        print("="*60)
+        # Auto-copy to clipboard
+        copied = False
+        try:
+            import subprocess
+            import platform
+            system = platform.system()
+            if system == "Darwin":
+                process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
+                process.communicate(full_config.encode('utf-8'))
+                copied = True
+            elif system == "Linux":
+                # Try xclip
+                try:
+                    process = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+                    process.communicate(full_config.encode('utf-8'))
+                    copied = True
+                except FileNotFoundError:
+                    # Try xsel
+                    try:
+                        process = subprocess.Popen(['xsel', '--clipboard', '--input'], stdin=subprocess.PIPE)
+                        process.communicate(full_config.encode('utf-8'))
+                        copied = True
+                    except FileNotFoundError:
+                        pass
+            elif system == "Windows":
+                 process = subprocess.Popen('clip', stdin=subprocess.PIPE, shell=True)
+                 process.communicate(full_config.encode('utf-8'))
+                 copied = True
+        except Exception:
+            pass # Fail silently
+            
+        print("\n" + "=" * 60)
+        if copied:
+            print("📋 COPIED TO CLIPBOARD! Add this to your MCP config:")
+        else:
+            print("📋 ADD THIS to your AI client's MCP config:")
+        print("=" * 60)
         print()
-        print(config_snippet)
+        print(full_config)
         print()
-        print("="*60)
+        print("=" * 60)
+        
+        # OS-specific config file locations
+        import platform
+        system = platform.system()
         print("\n📍 Config file locations:")
-        print("   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json")
-        print("   Cursor:         ~/.cursor/mcp.json") 
-        print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
+        if system == "Darwin":
+            print("   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json")
+            print("   Cursor:         ~/.cursor/mcp.json")
+            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
+        elif system == "Linux":
+            print("   Claude Desktop: ~/.config/Claude/claude_desktop_config.json")
+            print("   Cursor:         ~/.cursor/mcp.json")
+            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
+        else:  # Windows
+            print("   Claude Desktop: %APPDATA%\\Claude\\claude_desktop_config.json")
+            print("   Cursor:         %USERPROFILE%\\.cursor\\mcp.json")
+            print("   Windsurf:       %USERPROFILE%\\.codeium\\windsurf\\mcp_config.json")
+    else:
+        print("\n✅ Auto-configured your MCP client(s). Config used:")
+        print(f'   Brain path: {abs_path}')
+        print(f'   Command:    python3 -m mcp_server_nucleus')
     
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🚀 NEXT STEPS")
-    print("="*60)
+    print("=" * 60)
     print("\n1. Restart your AI Client (Claude Desktop, Cursor, etc.)")
     print("2. Try these prompts:")
-    print("   • \"What is my current focus?\"")
+    print("   • \"What do you remember about me?\"")
     print("   • \"Show me all tasks\"")
-    print("   • \"Add a task: Build landing page\"")
+    print("   • \"Write an engram about my current project\"")
     print("\n📚 Docs: https://github.com/eidetic-works/nucleus-mcp")
     
     return True
@@ -431,6 +527,11 @@ def main():
         choices=['default', 'solo'],
         default='default',
         help='Template to use: default (full) or solo (minimal)'
+    )
+    init_parser.add_argument(
+        '--sidecar',
+        action='store_true',
+        help='Start the discovery sidecar (HTTP bridge) immediately after init'
     )
     
     # ============================================================
@@ -556,7 +657,56 @@ def main():
     args = parser.parse_args()
     
     if args.cli_command == 'init':
-        init_brain(args.path, args.template)
+        success = init_brain(args.path, args.template)
+        if success and args.sidecar:
+            # Skip background services for the sidecar process itself
+            os.environ["NUCLEUS_SKIP_AUTOSTART"] = "true"
+            # Start Discovery Sidecar (HTTP Bridge)
+            # This is a non-blocking bridge for the Landing Page to verify sovereignty.
+            from http.server import HTTPServer, BaseHTTPRequestHandler
+            import threading
+            try:
+                from mcp_server_nucleus import _brain_health_impl
+            except ImportError:
+                def _brain_health_impl(): return json.dumps({"status": "error", "message": "Import failed"})
+            
+            class SidecarHandler(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    if self.path == '/health':
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*') # Allow Monolith to ping
+                        self.end_headers()
+                        health_json = _brain_health_impl()
+                        self.wfile.write(health_json.encode())
+                    else:
+                        self.send_response(404)
+                        self.end_headers()
+                
+                def log_message(self, format, *args):
+                    return # Silent operation
+            
+            def run_sidecar():
+                print(f"\n📡 Starting Discovery Sidecar on localhost:42000...")
+                try:
+                    server = HTTPServer(('localhost', 42000), SidecarHandler)
+                    server.serve_forever()
+                except Exception as e:
+                    print(f"  ⚠️ Sidecar could not start: {e} (Port might be occupied)")
+            
+            sidecar_thread = threading.Thread(target=run_sidecar, daemon=True)
+            sidecar_thread.start()
+            
+            print("   ✅ Sidecar active. The Landing Page will now detect your Sovereign Brain.")
+            print("   (Sidecar will close when this command exits. Keep it running to verify Monolith)")
+            
+            # Keep main thread alive if sidecar requested
+            try:
+                import time
+                while True:
+                    time.sleep(1)
+            except (KeyboardInterrupt, SystemExit):
+                print("\n👋 Sidecar stopped.")
     elif args.cli_command == 'install':
         handle_install_command(args)
     elif args.cli_command == 'mount':
@@ -834,7 +984,7 @@ def handle_mount_command(args):
         else:
             try:
                 mounts = json.loads(mounts_file.read_text())
-            except Exception:
+            except:
                 mounts = {}
         
         config = {
@@ -876,7 +1026,7 @@ def handle_mount_command(args):
             
         try:
             mounts = json.loads(mounts_file.read_text())
-        except Exception:
+        except:
              print("❌ Failed to parse mounts file.")
              return
              
@@ -895,7 +1045,7 @@ def handle_mount_command(args):
             
         try:
             mounts = json.loads(mounts_file.read_text())
-        except Exception:
+        except:
              print("❌ Failed to parse mounts file.")
              return
              

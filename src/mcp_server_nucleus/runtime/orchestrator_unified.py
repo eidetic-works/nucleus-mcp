@@ -18,14 +18,16 @@ import time
 import os
 import logging
 import asyncio
+import uuid
+import re
 import threading
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 
 # V3 Core Components
 from .crdt_task_store import CRDTTaskStore
-from .task_scheduler import TaskScheduler
+from .task_scheduler import TaskScheduler, TaskStatus, TaskPriority, TaskTier
 # V2 Logic Components
 from .locking import get_lock
 from .policy import DirectivesLoader, MissionParameters
@@ -40,7 +42,7 @@ class UnifiedOrchestrator:
     """
 
     def __init__(self, brain_path: Optional[Path] = None):
-        self.brain_path = brain_path or Path(os.getenv("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+        self.brain_path = brain_path or Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
         self.replica_id = f"nucleus_{int(time.time())}"
         
         # 1. Initialize Task Core (V3)
@@ -155,8 +157,7 @@ class UnifiedOrchestrator:
     def get_next_task(self, skills: List[str] = None) -> Optional[Dict]:
         tasks = self.task_store.get_all_tasks()
         available = [t for t in tasks if t.get("status") in ["PENDING", "READY"]]
-        if not available:
-            return None
+        if not available: return None
         available.sort(key=lambda x: x.get("priority", 3))
         return available[0]
 
@@ -216,8 +217,7 @@ class UnifiedOrchestrator:
         mission_artifacts = []
         
         for i, persona in enumerate(state["agents"]):
-            if state["step_count"] >= params.max_steps:
-                break
+            if state["step_count"] >= params.max_steps: break
             
             logger.info(f"🤖 Step {i+1}: Spawning {persona}")
             context = self.context_factory.create_context_for_persona(

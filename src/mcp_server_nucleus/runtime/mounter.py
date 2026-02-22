@@ -7,12 +7,14 @@ Supported Transports: stdio (MVP).
 import asyncio
 import json
 import logging
+import subprocess
 import uuid
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger("MOUNTER")
 
+from .common import get_brain_path
 
 class MountedServer:
     def __init__(self, name: str, command: str, args: List[str]):
@@ -162,7 +164,7 @@ class RecursiveMounter:
         for pattern in forbidden_patterns:
             if pattern in cmd_str:
                 import sys
-                print("[NUCLEUS] SECURITY VIOLATION: Recursive mount detected", file=sys.stderr)
+                print(f"[NUCLEUS] SECURITY VIOLATION: Recursive mount detected", file=sys.stderr)
                 return f"Error: Recursive mounting of {pattern} is forbidden for stability."
 
         for s in self.mounted_servers.values():

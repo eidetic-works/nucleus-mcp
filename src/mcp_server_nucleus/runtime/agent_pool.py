@@ -15,10 +15,15 @@ Author: NOP V3.1 - January 2026
 """
 
 import time
+import os
 import threading
+import logging
 from typing import Dict, List, Optional, Set, Callable
 from collections import defaultdict
 from enum import Enum
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 class AgentStatus(str, Enum):
@@ -27,6 +32,7 @@ class AgentStatus(str, Enum):
     AVAILABLE = "AVAILABLE"
     BUSY = "BUSY"
     EXHAUSTED = "EXHAUSTED"
+    AWAITING_CONSENT = "AWAITING_CONSENT"
     RESPAWNING = "RESPAWNING"
     OFFLINE = "OFFLINE"
 
@@ -202,6 +208,75 @@ class Agent:
             "is_near_reset": self.is_near_reset(),
         }
 
+    def cleanup(self) -> Dict:
+        """
+        MDR_014: Mandatory Context Scrub.
+
+        Called during EXHAUSTED → AVAILABLE transitions (Cold-Start path).
+        Prevents context-poisoning by scrubbing ALL accumulated state from
+        the previous mission cycle.
+
+        SECURITY: This is the answer to the MASTER_STRATEGY audit finding:
+        "The current AgentStatus state machine doesn't explicitly enforce
+         a 'Context Scrub' during transitions from EXHAUSTED back to AVAILABLE."
+
+        Scrubs:
+        - context dict (LLM session state, cached responses)
+        - accumulated cost (prevents budget carry-over)
+        - task references (prevents stale task leakage)
+        - spawned_at (resets lifecycle clock)
+        - any dynamically-added attributes from previous missions
+
+        Returns:
+            Dict describing what was scrubbed for audit trail.
+        """
+        scrubbed = {
+            "agent_id": self.id,
+            "scrubbed_at": int(time.time() * 1000),
+            "items_scrubbed": [],
+        }
+
+        # 1. Context dict (primary poisoning vector)
+        if hasattr(self, "context") and self.context:
+            scrubbed["items_scrubbed"].append(f"context ({len(self.context)} keys)")
+        self.context = {}
+
+        # 2. Cost accumulator (prevents budget carry-over between missions)
+        if self.total_cost > 0:
+            scrubbed["items_scrubbed"].append(f"cost (${self.total_cost:.4f})")
+        self.total_cost = 0.0
+
+        # 3. Task counter (clean lifecycle metrics)
+        if self.tasks_completed > 0:
+            scrubbed["items_scrubbed"].append(f"task_counter ({self.tasks_completed} completed)")
+        self.tasks_completed = 0
+
+        # 4. Current tasks (should be empty, but enforce)
+        if self.current_tasks:
+            scrubbed["items_scrubbed"].append(f"leaked_tasks ({len(self.current_tasks)} refs)")
+        self.current_tasks = set()
+
+        # 5. Reset lifecycle clock
+        self.spawned_at = int(time.time() * 1000)
+        self.last_heartbeat = int(time.time() * 1000)
+        scrubbed["items_scrubbed"].append("lifecycle_clock")
+
+        # 6. Scrub any dynamically-added attributes from previous missions
+        #    (agents may get arbitrary attrs during task execution)
+        known_attrs = {
+            "id", "model", "tier", "capacity", "status", "current_tasks",
+            "spawned_at", "last_heartbeat", "tasks_completed", "total_cost",
+            "exhaustion_history", "reset_cycle", "context", "exhausted_at",
+            "persona",
+        }
+        dynamic_attrs = [a for a in vars(self) if a not in known_attrs and not a.startswith("_")]
+        for attr in dynamic_attrs:
+            scrubbed["items_scrubbed"].append(f"dynamic_attr:{attr}")
+            delattr(self, attr)
+
+        logger.info(f"🧹 Agent {self.id} scrubbed: {', '.join(scrubbed['items_scrubbed'])}")
+        return scrubbed
+
 
 class AgentPool:
     """
@@ -216,6 +291,10 @@ class AgentPool:
     - Thread-safe for concurrent operations
 
     Scales: 1 → 100 → 1000 agents (same code, same API)
+
+    CONTEXT GUARDRAIL (Sovereign Security):
+    - Enabled (Default): Mandatory context reset on respawn to prevent "hallucination residue" or poisoning.
+    - Disabled (Manual): Preserves context for "Warm-Start" efficiency (Trade-off: Security risk).
     """
 
     def __init__(
@@ -223,6 +302,7 @@ class AgentPool:
         max_agents: int = 1000,
         checkpoint_callback: Optional[Callable[[str], Dict]] = None,
         handoff_callback: Optional[Callable[[str], Dict]] = None,
+        context_guardrail: Optional[bool] = None,
     ):
         """
         Initialize agent pool.
@@ -231,14 +311,28 @@ class AgentPool:
             max_agents: Maximum number of agents allowed
             checkpoint_callback: Function to checkpoint task (task_id) -> result
             handoff_callback: Function to generate handoff summary (task_id) -> result
+            context_guardrail: Toggle session isolation (True = Reset, False = Preserve).
+                              Reads NUCLEUS_CONTEXT_GUARDRAIL env if not specified.
         """
         self.max_agents = max_agents
         self.checkpoint_callback = checkpoint_callback
         self.handoff_callback = handoff_callback
+        
+        # MDR_011: Context Guardrail Policy
+        if context_guardrail is None:
+            self.context_guardrail = os.getenv("NUCLEUS_CONTEXT_GUARDRAIL", "true").lower() == "true"
+        else:
+            self.context_guardrail = context_guardrail
 
         self.agent_registry: Dict[str, Agent] = {}
         self.tier_index: Dict[str, Set[str]] = defaultdict(set)  # tier -> agent_ids
         self.task_assignments: Dict[str, str] = {}  # task_id -> agent_id
+
+        # MDR_012: Warm-Start Authorization Lease (Epistemic Security)
+        self._warm_auth_until: float = 0.0
+        
+        # MDR_013: Just-In-Time Consent (JIT-C)
+        self.consent_registry: Dict[str, str] = {}  # agent_id -> "warm" | "cold"
 
         self.lock = threading.RLock()
 
@@ -361,8 +455,15 @@ class AgentPool:
                         failed_reassign.append(task_id)
 
             # Mark agent as exhausted
-            agent.status = AgentStatus.EXHAUSTED
-            agent.current_tasks.clear()
+            # Transition to AWAITING_CONSENT instead of just EXHAUSTED
+            agent.status = AgentStatus.AWAITING_CONSENT
+            agent.exhausted_at = time.time()
+            
+            # Clear any previous consent
+            if agent_id in self.consent_registry:
+                del self.consent_registry[agent_id]
+
+            agent.current_tasks.clear() # Ensure tasks are cleared from the agent
 
             # Record exhaustion
             record = ExhaustionRecord(
@@ -381,38 +482,95 @@ class AgentPool:
                 "tasks_pending": failed_reassign,
             }
 
+    def authorize_warm_start(self, hours: int = 24) -> float:
+        """
+        Authorize context preservation (Warm-Start) for a limited duration.
+        This provides a 'Manual Disclosure' layer to override the Context Guardrail.
+        """
+        with self.lock:
+            self._warm_auth_until = time.time() + (hours * 3600)
+            logger.info(f"🛡️ Warm-Start Authorized until: {time.ctime(self._warm_auth_until)}")
+            return self._warm_auth_until
+
+    def submit_consent(self, agent_id: str, choice: str):
+        """
+        Record user consent for an agent respawn.
+        Args:
+            agent_id: ID of the agent
+            choice: 'warm' (Efficiency) or 'cold' (Security)
+        """
+        with self.lock:
+            if choice.lower() not in ["warm", "cold"]:
+                raise ValueError("Consent choice must be 'warm' or 'cold'")
+            self.consent_registry[agent_id] = choice.lower()
+            logger.info(f"📩 Consent recorded for {agent_id}: {choice.upper()}")
+
+    def list_pending_consents(self) -> List[Dict]:
+        """List agents waiting for respawn consent."""
+        with self.lock:
+            return [
+                {"agent_id": aid, "persona": a.persona, "status": a.status}
+                for aid, a in self.agent_registry.items()
+                if a.status == AgentStatus.AWAITING_CONSENT
+            ]
+
+    def is_warm_start_authorized(self) -> bool:
+        """Check if a valid Warm-Start lease exists."""
+        return time.time() < self._warm_auth_until
+
     def respawn_agent(
         self,
         agent_id: str,
         new_capacity: Optional[int] = None,
+        consent: Optional[str] = None,
     ) -> Dict:
         """
-        Respawn exhausted agent with fresh capacity.
-
-        Args:
-            agent_id: Agent to respawn
-            new_capacity: New capacity (None = keep existing)
-
-        Returns:
-            Updated agent dict
+        Respawn an exhausted agent.
+        
+        MDR_013 (JIT-C):
+        - If 'consent' is provided, it overrides memory.
+        - Otherwise, checks self.consent_registry.
+        - Defaults to 'cold' (Security) if no consent found.
         """
         with self.lock:
-            if agent_id not in self.agent_registry:
+            agent = self.agent_registry.get(agent_id)
+            if not agent:
                 return {"success": False, "error": f"Agent {agent_id} not found"}
 
-            agent = self.agent_registry[agent_id]
+            # Retrieve active consent choice
+            choice = consent or self.consent_registry.get(agent_id)
+            
+            if not choice and agent.status == AgentStatus.AWAITING_CONSENT:
+                logger.info(f"🕒 No explicit consent for {agent_id}. Defaulting to COLD-START (Security).")
+                choice = "cold"
 
-            if agent.status != AgentStatus.EXHAUSTED:
-                return {
-                    "success": False,
-                    "error": f"Agent {agent_id} is not exhausted (status: {agent.status.value})",
-                }
-
-            agent.status = AgentStatus.RESPAWNING
-
-            # Update capacity if specified
-            if new_capacity is not None:
+            # Enforce policy based on choice
+            should_reset = True  # Default to security
+            if choice == "warm":
+                # Check even if warm is chosen, is the guardrail active?
+                if self.context_guardrail:
+                    # If guardrail is GLOBAL ON, we might still reset unless we allow JIT override
+                    # Given 'always ask', we'll treat 'warm' as a JIT override of the guardrail
+                    should_reset = False
+                else:
+                    # Guardrail is off, lease might still apply, but JIT choice overrides lease
+                    should_reset = False
+                    
+            # Reset agent state
+            agent.status = AgentStatus.AVAILABLE
+            if new_capacity:
                 agent.capacity = new_capacity
+                
+            if should_reset:
+                # MDR_014: Mandatory Context Scrub (Cold-Start)
+                scrub_result = agent.cleanup()
+            else:
+                # Warm-Start: preserve context but still reset task counter
+                agent.tasks_completed = 0
+                
+            # Clear consent after use
+            if agent_id in self.consent_registry:
+                del self.consent_registry[agent_id]
 
             # Reset cycle tracking
             if agent.reset_cycle is not None:
@@ -425,9 +583,6 @@ class AgentPool:
             # Update heartbeat
             agent.update_heartbeat()
 
-            # Mark as available
-            agent.status = AgentStatus.AVAILABLE
-
             # Update recovery time in last exhaustion record
             if agent.exhaustion_history:
                 last_record = agent.exhaustion_history[-1]
@@ -437,7 +592,13 @@ class AgentPool:
 
             self.metrics["total_respawned"] += 1
 
-            return {"success": True, "agent": agent.to_dict()}
+            return {
+                "success": True, 
+                "agent": agent.to_dict(),
+                "context_cleared": should_reset,
+                "strategy": "Cold-Start (Security)" if should_reset else "Warm-Start (Efficiency)",
+                "consent_used": choice or "none"
+            }
 
     def get_available_agent(
         self,

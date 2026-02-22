@@ -7,7 +7,7 @@ Strategic Role:
 - Manages Agent Swarms (Genesis, Execution).
 - Enforces "Bounded Autonomy" (Budget/Time limits).
 - Bridges the "Context Factory" (Tools) with the "Daemon" (Loop).
-- Future: Triggers "Private Graph Training" (Self-Healing).
+- Future: Triggers "Private Graph Training" (Nucleus-GPT).
 
 Phase 60+ Enterprise Upgrade:
 - REAL agent execution (not mock)
@@ -34,7 +34,7 @@ import os
 def _setup_flywheel_logger():
     """Configure flywheel.log file handler for all Nucleus components."""
     try:
-        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
         log_path = brain_path / "flywheel.log"
         
         # Create handler
@@ -52,7 +52,8 @@ def _setup_flywheel_logger():
             nucleus_logger.setLevel(logging.INFO)
             
     except Exception as e:
-        print(f"[Flywheel] Failed to setup logger: {e}")
+        import sys
+        sys.stderr.write(f"[Flywheel] Failed to setup logger: {e}\n"); sys.stderr.flush()
 
 # Initialize on module load
 _setup_flywheel_logger()
@@ -62,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 class PrivateGraphTrainer:
     """
-    Interface for Local Fine-Tuning (Path D: Neural-GPT).
+    Interface for Local Fine-Tuning (Path D: Nucleus-GPT).
     Currently a stub, but architecturally placed for Phase 60.
     """
     def __init__(self, brain_path: Path):

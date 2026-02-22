@@ -80,7 +80,7 @@ class CodeOps(Capability):
                 return candidate
         
         # 3. Try relative to Project Root (BRAIN_PATH.parent)
-        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
         project_root = brain_path.parent
         
         if not path.is_absolute():
@@ -127,7 +127,7 @@ class CodeOps(Capability):
             # causing relative paths like 'gentlequest-blog/...' to resolve to '/'
             # Solution: Robust fallback chain with explicit validation
             
-            PROJECT_ROOT = Path("/Users/lokeshgarg/ai-mvp-backend")
+            PROJECT_ROOT = Path(".")
             
             if not path.is_absolute():
                 resolved_root = None

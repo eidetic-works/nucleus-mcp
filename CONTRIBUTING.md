@@ -1,13 +1,13 @@
-# Contributing to Nucleus MCP
+# Contributing to Nucleus
 
-Thank you for your interest in contributing to Nucleus MCP - The Universal Brain for AI Agents.
+Thank you for your interest in contributing to Nucleus - The Universal Brain for AI Agents.
 
 ## We're Open Source! 🎉
 
 Nucleus is fully open source under the MIT license. We welcome contributions of all kinds:
 
 - ✅ **Bug Reports**: Via GitHub Issues
-- ✅ **Feature Requests**: Via GitHub Discussions
+- ✅ **Feature Requests**: Via GitHub Discussions  
 - ✅ **Code Contributions**: Via Pull Requests
 - ✅ **Documentation**: Improvements always welcome
 - ✅ **Integrations**: Add support for new AI tools
@@ -18,7 +18,7 @@ Nucleus is fully open source under the MIT license. We welcome contributions of 
 
 Found a bug? Please open a GitHub Issue with:
 
-- **Environment**: Python version, OS, MCP client (Claude/Cursor/Windsurf)
+- **Environment**: Python version, OS, MCP client
 - **Steps to Reproduce**: Minimal example
 - **Expected Behavior**: What should happen
 - **Actual Behavior**: What actually happens
@@ -33,61 +33,27 @@ Have an idea? Open a GitHub Discussion with:
 - **Alternatives Considered**: What else did you consider?
 - **Use Cases**: Who benefits from this?
 
-### 3. Code Contributions
-
-#### Good First Issues
-
-Look for issues labeled `good-first-issue` - these are ideal for new contributors:
-- Documentation improvements
-- Small bug fixes
-- Test coverage additions
-- New integration examples
-
-#### Development Setup
-
-```bash
-# Clone the repo
-git clone https://github.com/eidetic-works/nucleus-mcp.git
-cd nucleus-mcp
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install in development mode
-pip install -e ".[dev]"
-
-# Run tests
-pytest tests/
-```
-
-#### Pull Request Process
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass (`pytest tests/`)
-6. Run linting (`ruff check src/`)
-7. Commit with clear messages
-8. Push to your fork
-9. Open a Pull Request
-
-#### PR Review Criteria
-
-- [ ] Tests pass
-- [ ] Code follows existing style
-- [ ] Documentation updated if needed
-- [ ] No breaking changes (or clearly documented)
-
-### 4. Documentation
+### 3. Documentation
 
 Documentation improvements are always welcome:
 
 - Typo fixes
 - Clarification of existing docs
 - New examples or tutorials
-- Integration guides for new tools
+- Translations
+
+Submit a Pull Request to the `docs/` directory.
+
+### 4. Beta Testing
+
+We're looking for beta testers to validate new features:
+
+- Test pre-release versions
+- Provide feedback on UX
+- Report edge cases
+- Suggest improvements
+
+Contact us to join the beta program.
 
 ## Code of Conduct
 
@@ -106,6 +72,57 @@ Documentation improvements are always welcome:
 - Response times may vary
 - Quality over speed
 
+## Code Contributions
+
+### Good First Issues
+
+Look for issues labeled `good-first-issue` - these are ideal for new contributors:
+- Documentation improvements
+- Small bug fixes
+- Test coverage additions
+- New integration examples
+
+### Development Setup
+
+```bash
+# Clone the repo
+git clone https://github.com/eidetic-works/nucleus-mcp.git
+cd mcp-server-nucleus
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install in development mode
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+```
+
+### Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass (`pytest tests/`)
+6. Commit with clear messages
+7. Push to your fork
+8. Open a Pull Request
+
+### PR Review Criteria
+
+- [ ] Tests pass
+- [ ] Code follows existing style
+- [ ] Documentation updated if needed
+- [ ] No breaking changes (or clearly documented)
+
+## Enterprise Inquiries
+
+For enterprise licensing or partnership inquiries:
+- Email: partnerships@nucleusos.dev
+
 ## Security Vulnerabilities
 
 **Do NOT report security vulnerabilities via public GitHub Issues.**
@@ -122,13 +139,14 @@ We follow responsible disclosure and will credit researchers who report valid vu
 
 ## License
 
-By contributing to Nucleus MCP, you agree that your contributions will be licensed under the MIT License.
+By contributing to Nucleus, you agree that your contributions will be licensed under the project's license terms.
 
 ## Questions?
 
 - **General Questions**: GitHub Discussions
 - **Bug Reports**: GitHub Issues
-- **Security**: security@nucleusos.dev
+- **Partnership**: hello@nucleusos.dev
+- **Security**: hello@nucleusos.dev
 
 ---
 

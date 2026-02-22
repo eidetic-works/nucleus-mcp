@@ -1,86 +1,83 @@
-# Nucleus MCP Demo Video Script
-
-## Original Script (Use This)
-
-> "What if your AI assistants could remember everything... and work together?
->
-> Every Claude conversation starts from zero. No memory. No coordination. You repeat yourself constantly.
->
-> Introducing Nucleus. The core of your AI agents. One command. Persistent memory.
->
-> Available now on PyPI. Ten powerful tools for agent orchestration. MCP Resources and Prompts included.
->
-> Open source. MIT licensed. Works with Claude Desktop out of the box.
->
-> Watch this. I ask Claude about my sprint... it calls brain_get_state... and returns my actual project context.
->
-> List my artifacts. Instant access to all my research, strategies, and outputs.
->
-> Give your AI agents a brain. Install Nucleus today. Star on GitHub if you find it useful."
+# Nucleus v0.5: The Netscape Event (Master Demo Script)
+**For:** Official v0.5 Launch Video  
+**Duration:** 3:30  
+**Narrator:** Warm, technical, focused (Antoni/Neural2-J)
 
 ---
 
-## Video Timestamps (58 seconds total)
+## SCENE 1: The Fragmentation (0:00 - 0:45)
 
-| Time | Visual | Script |
-|------|--------|--------|
-| 0:00-0:05 | Claude Desktop opening | "What if your AI assistants could remember everything..." |
-| 0:05-0:12 | Claude saying "I don't have access" | "Every Claude conversation starts from zero..." |
-| 0:12-0:18 | Terminal: pip install | "Introducing Nucleus. One command." |
-| 0:18-0:25 | Nucleus logo/branding | "Available now on PyPI. Ten powerful tools..." |
-| 0:25-0:32 | Config file | "Open source. MIT licensed." |
-| 0:32-0:45 | Claude using brain_get_state | "Watch this. I ask Claude about my sprint..." |
-| 0:45-0:52 | Artifact listing | "List my artifacts. Instant access..." |
-| 0:52-0:58 | GitHub repo + CTA | "Give your AI agents a brain. Install Nucleus today." |
+### Visual
+- Cluttered Claude Desktop MCP config file (JSON).
+- Close-up of 20+ separate server configurations.
+- Abstract animation: Fragmented silos of data/tools.
 
----
-
-## Key Changes for Open Source Version
-
-The original demo video is **perfect for the open source launch**. No changes needed because:
-
-1. ✅ Shows the core value prop (persistent memory)
-2. ✅ Shows pip install (same command)
-3. ✅ Shows Claude Desktop integration
-4. ✅ Mentions "Open source. MIT licensed."
-5. ✅ Shows real tool usage (brain_get_state, artifacts)
-
-**The video can be used as-is.**
+### Script
+> "The Agentic Web is fragmented. Every new tool is another silo. Every new agent is a new configuration debt. This is the bottleneck of linear growth."
+>
+> "But what if your agent had a browser? Not just a tool, but a navigable mesh."
+>
+> "This is Nucleus v0.5: The Netscape moment for the Internet of Agents."
 
 ---
 
-## Call to Action Updates
+## SCENE 2: The Thanos Snap (0:45 - 1:30)
 
-Update the end screen to show:
+### Visual
+- Terminal showing `nucleus mount add`.
+- Real-time tool discovery in Claude.
+- Visualizing the "Recursive Mount": Mounting a Parent Nucleus that already has 5 Children.
 
-```
-🧠 Nucleus MCP
-
-pip install nucleus-mcp
-nucleus-init
-
-github.com/eidetic-works/nucleus-mcp
-
-⭐ Star us on GitHub!
-```
+### Script
+> "We call this the Thanos Snap. Instead of connecting 50 tools to your agent, you connect them to Nucleus. And then, you mount Nucleus."
+>
+> "With Recursive Mounting, one connection provides a unified namespace for your entire tool mesh. It’s fractal connectivity. Mount one, inherit all."
 
 ---
 
-## Thumbnail Suggestions
+## SCENE 3: The Unified Namespace (1:30 - 2:15)
 
-Option A: Split brain visual with "One Brain. All Your AI Tools."
-Option B: Logos of Cursor + Claude + Windsurf with sync arrows
-Option C: Terminal showing `pip install nucleus-mcp` with brain emoji
+### Visual
+- Claude calling `fs:read_file`.
+- Claude calling `git:commit`.
+- Showing how `mount_id:tool_name` creates a governed, navigable structure.
 
----
-
-## Distribution Plan
-
-1. **YouTube**: Full 58-second version
-2. **Twitter/X**: 45-second cut (skip config section)
-3. **Reddit**: GIF version (no audio, with captions)
-4. **GitHub README**: GIF or embedded YouTube
+### Script
+> "Namespacing is the key to scale. Tools are no longer a flat list of chaos. They are a organized, prefix-driven web. `fs` for files, `mem` for engrams, `stripe` for transactions. Total clarity for the agent. Total control for you."
 
 ---
 
-*The existing demo video from 1 month ago is ready for the open source launch.*
+## SCENE 4: The Verisign Pillar (2:15 - 3:00)
+
+### Visual
+- An agent tries to delete a sensitive file.
+- Nucleus blocks the action (Default-Deny).
+- Terminal shows: `Generating Cryptographic Receipt...`
+- Highlight the SHA-256 signed audit log.
+
+### Script
+> "In the age of autonomous agents, trust is the only currency. This is the Verisign Pillar. Nucleus doesn’t just route actions; it certifies them."
+>
+> "Every decision generates a cryptographic receipt. A permanent 'Why-Trace' that proves the chain of custody. Governance isn't a prompt. It’s infrastructure."
+
+---
+
+## SCENE 5: The Poison Pill (3:00 - 3:30)
+
+### Visual
+- Morphing from code to the Landing Page (nucleusos.dev).
+- Call to action: `pip install nucleus-mcp`.
+- GitHub Repo with a "Star" button being clicked.
+
+### Script
+> "Stop building silos. Start building the mesh. Nucleus is free, local-first, and open source. The browser for agents is here."
+>
+> "pip install nucleus-mcp. Join the standard."
+
+---
+
+## TECHNICAL VERIFICATION (Pre-Roll)
+1.  **Transport**: `stdio`
+2.  **Environment**: `python3.11`
+3.  **Active Mounts**: `fs` (Filesystem), `mem` (Memory), `cracken` (Flash Swarm)
+4.  **Verification Tool**: `verify_mounting.py`

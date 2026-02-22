@@ -1,0 +1,154 @@
+/Users/lokeshgarg/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[Nucleus Init] WARNING: FastMCP not installed. Running in standalone/verification mode.\ntest_archive_empty_returns_success (test_brain_consolidation.TestBrainConsolidation)
+Test that archiving with no files returns success with 0 count. ... ok
+test_archive_handles_metadata_json (test_brain_consolidation.TestBrainConsolidation)
+Test that .metadata.json files are also archived. ... ok
+test_archive_resolved_creates_directory (test_brain_consolidation.TestBrainConsolidation)
+Test that archive/resolved/ is created if missing. ... ok
+test_archive_resolved_moves_files (test_brain_consolidation.TestBrainConsolidation)
+Test that .resolved.* files are moved to archive. ... ok
+test_archive_resolved_skips_primary_files (test_brain_consolidation.TestBrainConsolidation)
+Test that primary files (not .resolved) are NOT moved. ... ok
+test_fallback_to_v1 (test_brain_v2_logic.TestBrainV2Logic)
+Test that we read from state.json if tasks.json is missing ... ok
+test_precedence_of_v2 (test_brain_v2_logic.TestBrainV2Logic)
+Test that tasks.json takes precedence over state.json ... ok
+test_save_v2_if_exists (test_brain_v2_logic.TestBrainV2Logic)
+Test that we save to tasks.json if it exists ... ok
+test_breadcrumbs_build_correctly (test_depth_tracker.TestDepthTracker)
+Test that breadcrumbs show the path. ... ok
+test_caution_at_level_3 (test_depth_tracker.TestDepthTracker)
+Test that caution triggers at level 3 (when max is 5). ... ok
+test_depth_persists (test_depth_tracker.TestDepthTracker)
+Test that depth state persists to file. ... ok
+test_initial_depth_is_zero (test_depth_tracker.TestDepthTracker)
+Test that initial depth is 0 (root level). ... ok
+test_pop_at_root_is_safe (test_depth_tracker.TestDepthTracker)
+Test that popping at root level doesn't crash. ... ok
+test_pop_decreases_depth (test_depth_tracker.TestDepthTracker)
+Test that popping decreases depth. ... ok
+test_push_increases_depth (test_depth_tracker.TestDepthTracker)
+Test that pushing a topic increases depth. ... ok
+test_reset_clears_all_levels (test_depth_tracker.TestDepthTracker)
+Test that reset returns to root. ... ok
+test_set_max_depth (test_depth_tracker.TestDepthTracker)
+Test setting max safe depth. ... ok
+test_set_max_depth_validation (test_depth_tracker.TestDepthTracker)
+Test that invalid max depths are rejected. ... ok
+test_visual_indicator_format (test_depth_tracker.TestDepthTracker)
+Test that visual indicator is formatted correctly. ... ok
+test_warning_at_max_depth (test_depth_tracker.TestDepthTracker)
+Test that warnings trigger at max depth. ... ok
+test_compute_world_state_hash (test_dsor_v060.TestContextManager)
+Test world state hash computation ... ok
+test_context_manager_import (test_dsor_v060.TestContextManager)
+Test that context_manager imports correctly ... ok
+test_snapshot_persistence (test_dsor_v060.TestContextManager)
+Test snapshot persistence and loading ... ok
+test_state_drift_detection (test_dsor_v060.TestContextManager)
+Test that state drift is detected ... ok
+test_state_verification (test_dsor_v060.TestContextManager)
+Test state integrity verification ... ok
+test_take_snapshot (test_dsor_v060.TestContextManager)
+Test taking a context snapshot ... ok
+test_context_hash_computation (test_dsor_v060.TestDecisionMadeIntegration)
+Test context hash computation ... ok
+test_decision_made_class (test_dsor_v060.TestDecisionMadeIntegration)
+Test DecisionMade class structure ... ok
+test_decision_to_dict (test_dsor_v060.TestDecisionMadeIntegration)
+Test DecisionMade serialization ... ok
+test_ephemeral_agent_has_decision_ledger (test_dsor_v060.TestDecisionMadeIntegration)
+Test that EphemeralAgent tracks decisions ... ok
+test_ipc_auth_import (test_dsor_v060.TestIPCAuth)
+Test that ipc_auth imports correctly ... ok
+test_metering_persistence (test_dsor_v060.TestIPCAuth)
+Test that metering entries are persisted ... ok
+test_token_issuance (test_dsor_v060.TestIPCAuth)
+Test IPC token issuance ... ok
+test_token_metering (test_dsor_v060.TestIPCAuth)
+Test token consumption metering ... ok
+test_token_single_use (test_dsor_v060.TestIPCAuth)
+Test that tokens are single-use ... ok
+test_token_validation (test_dsor_v060.TestIPCAuth)
+Test IPC token validation ... ok
+test_governance_status_counts_engrams (test_engram_tools.TestEngramTools)
+Test governance status accurately counts engrams. ... ok
+test_governance_status_returns_policies (test_engram_tools.TestEngramTools)
+Test governance status returns policy information. ... ok
+test_query_engrams_filters_by_context (test_engram_tools.TestEngramTools)
+Test query filters by context category. ... ok
+test_query_engrams_filters_by_intensity (test_engram_tools.TestEngramTools)
+Test query filters by minimum intensity. ... ok
+test_query_engrams_returns_empty_when_no_file (test_engram_tools.TestEngramTools)
+Test query returns empty list when no engrams exist. ... ok
+test_query_engrams_sorts_by_intensity (test_engram_tools.TestEngramTools)
+Test that results are sorted by intensity (highest first). ... ok
+test_write_engram_creates_file (test_engram_tools.TestEngramTools)
+Test that write_engram creates the engram ledger file. ... ok
+test_write_engram_validates_context (test_engram_tools.TestEngramTools)
+Test that context must be valid category. ... ok
+test_write_engram_validates_intensity (test_engram_tools.TestEngramTools)
+Test that intensity must be 1-10. ... ok
+test_brain_health (test_integration.TestIntegration)
+AG-001: Test brain_health() tool ... ok
+test_event_emission_reading (test_integration.TestIntegration)
+AG-007: Test event pipeline (emit -> read) ... ok
+test_session_save_resume_cycle (test_integration.TestIntegration)
+AG-007: Test session save and resume full cycle ... ok
+test_task_crud_operations (test_integration.TestIntegration)
+AG-007: Test full task CRUD queue operations ... ok
+test_metrics_summary_format (test_profiling.TestProfiling)
+Test that metrics summary returns markdown table. ... ok
+test_min_max_tracking (test_profiling.TestProfiling)
+Test that min/max latencies are tracked. ... ok
+test_multiple_calls_accumulate (test_profiling.TestProfiling)
+Test that multiple calls accumulate in metrics. ... ok
+test_reset_metrics_clears_data (test_profiling.TestProfiling)
+Test that reset_metrics clears all data. ... ok
+test_timed_decorator_records_metrics (test_profiling.TestProfiling)
+Test that @timed decorator records call metrics. ... ok
+test_timed_io_decorator (test_profiling.TestProfiling)
+Test timed_io convenience decorator. ... ok
+test_inc_counter_basic (test_prometheus.TestPrometheusMetrics)
+Test basic counter increment. ... ok
+test_metrics_json_structure (test_prometheus.TestPrometheusMetrics)
+Test JSON metrics structure. ... ok
+test_metrics_tracked_decorator (test_prometheus.TestPrometheusMetrics)
+Test @metrics_tracked decorator. ... ok
+test_observe_latency (test_prometheus.TestPrometheusMetrics)
+Test latency observation. ... ok
+test_prometheus_format_output (test_prometheus.TestPrometheusMetrics)
+Test Prometheus exposition format. ... ok
+test_quantile_calculation (test_prometheus.TestPrometheusMetrics)
+Test that quantiles are calculated correctly. ... ok
+test_reset_metrics (test_prometheus.TestPrometheusMetrics)
+Test metrics reset. ... ok
+test_set_gauge (test_prometheus.TestPrometheusMetrics)
+Test gauge setting. ... ok
+
+----------------------------------------------------------------------
+Ran 63 tests in 3.017s
+
+OK
+✅ pass: test_fallback_to_v1
+✅ pass: test_precedence_of_v2
+✅ pass: test_save_v2_if_exists
+✅ pass: test_breadcrumbs_build_correctly
+✅ pass: test_caution_at_level_3
+✅ pass: test_depth_persists
+✅ pass: test_initial_depth_is_zero
+✅ pass: test_pop_at_root_is_safe
+✅ pass: test_pop_decreases_depth
+✅ pass: test_push_increases_depth
+✅ pass: test_reset_clears_all_levels
+✅ pass: test_set_max_depth
+✅ pass: test_set_max_depth_validation
+✅ pass: test_visual_indicator_format
+✅ pass: test_warning_at_max_depth
+✅ pass: test_brain_health
+✅ pass: test_event_emission_reading
+✅ pass: test_session_save_resume_cycle
+✅ pass: test_task_crud_operations
+⚠️ SLOW: minmax_test took 18.25ms (threshold: 10.0ms)
+⚠️ SLOW: test_operation took 10.71ms (threshold: 10.0ms)

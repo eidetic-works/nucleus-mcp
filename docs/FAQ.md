@@ -1,228 +1,215 @@
-# Nucleus MCP: Frequently Asked Questions
+# Nucleus FAQ
 
-## General
-
-### What is Nucleus MCP?
-
-Nucleus is a local-first, cross-platform memory system for AI coding assistants. It syncs your context, decisions, and learnings across Claude Desktop, Cursor, Windsurf, and any MCP-compatible tool.
-
-### Why should I use Nucleus instead of just using each tool separately?
-
-Every time you switch between AI tools, you lose context. You re-explain your codebase, repeat decisions, and waste time. Nucleus creates one "brain" that all your tools share, so they remember everything together.
-
-### Is Nucleus free?
-
-Yes. Nucleus is MIT licensed and 100% free. No subscription, no account required, no cloud fees.
+**Last Updated:** January 26, 2026  
+**Version:** 0.5.1
 
 ---
 
-## Privacy & Security
+## General Questions
 
-### Does Nucleus send my data to the cloud?
+### What is Nucleus?
 
-**No.** Nucleus is 100% local-first. All your data stays in the `.brain/` folder on your machine. Zero cloud calls, zero telemetry.
+Nucleus is **The Agent Control Plane** - a governance layer for AI agents that use the Model Context Protocol (MCP). It provides:
 
-### Where is my data stored?
+- **Default-Deny Security**: No tool executes without explicit policy approval
+- **Engram Ledger**: Persistent memory that survives across sessions
+- **Cryptographic Audit**: Every interaction hashed with SHA-256
+- **130 MCP Tools**: Task orchestration, multi-agent federation, depth tracking
 
-By default, your data is stored in `~/.brain/` (or `$NUCLEAR_BRAIN_PATH` if set). This includes:
-- `engrams/` - Your memories and learnings
-- `ledger/` - Audit trail and task history
-- `state.json` - Current session state
+### How is Nucleus different from CLAUDE.md?
 
-### Can I back up my Nucleus data?
+| Aspect | CLAUDE.md | Nucleus |
+|--------|-----------|---------|
+| Type | Static context file | Active runtime |
+| Enforcement | Honor system | Default-deny policies |
+| Memory | None | Engram Ledger |
+| Audit | None | SHA-256 hashed trail |
+| Tools | 0 | 130 MCP tools |
 
-Yes! Just copy your `.brain/` folder. You can also commit it to git for version control:
+CLAUDE.md tells agents what to do. Nucleus **enforces** what they can do.
 
-```bash
-cd ~/.brain
-git init
-git add .
-git commit -m "Backup brain"
-```
+### Is Nucleus open source?
 
-### Is Nucleus HIPAA/SOC2 compliant?
-
-Nucleus stores all data locally, which satisfies data residency requirements. Full compliance depends on your infrastructure and policies. See [ENTERPRISE.md](ENTERPRISE.md) for details.
+The PyPI package (`mcp-server-nucleus`) is publicly available. The source code follows the **Citadel Strategy** - selective access for validated partners. Contact us for enterprise licensing.
 
 ---
 
 ## Installation
 
-### What are the system requirements?
-
-- Python 3.10+
-- Any MCP-compatible tool (Claude Desktop, Cursor, Windsurf)
-- ~10MB disk space for the package
-- Minimal RAM usage (runs as a subprocess)
-
-### I installed Nucleus but my AI tool doesn't see it
-
-1. Restart your AI tool completely
-2. Check your MCP config file includes Nucleus
-3. Run `nucleus-init` again to reconfigure
-4. Verify with: `python -c "from mcp_server_nucleus import brain_health; print(brain_health())"`
-
-### How do I update Nucleus?
+### How do I install Nucleus?
 
 ```bash
-pip install --upgrade nucleus-mcp
+pip install mcp-server-nucleus
+```
+
+### What Python version is required?
+
+Python 3.10 or higher.
+
+### How do I configure my MCP client?
+
+Add to your MCP client configuration (example for Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "nucleus": {
+      "command": "python",
+      "args": ["-m", "mcp_server_nucleus"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
+      }
+    }
+  }
+}
 ```
 
 ---
 
-## Usage
+## Core Concepts
 
-### What are "engrams"?
+### What is the `.brain/` directory?
 
-Engrams are Nucleus's memory units. Each engram has:
-- **Key**: Unique identifier
-- **Value**: The actual content/memory
+The `.brain/` directory is where Nucleus stores all persistent state:
+
+```
+.brain/
+├── ledger/
+│   ├── state.json          # Session state
+│   ├── tasks.json          # Task queue
+│   ├── events.jsonl        # Event log
+│   ├── engrams.json        # Persistent memory
+│   └── interaction_log.jsonl # Audit trail
+├── sessions/               # Session snapshots
+├── artifacts/              # Research, strategy docs
+└── archive/                # Archived files
+```
+
+### What is an Engram?
+
+An Engram is a persistent memory unit with:
+
+- **Key**: Unique identifier (e.g., "auth_architecture")
+- **Value**: The memory content (include reasoning)
 - **Context**: Category (Feature, Architecture, Brand, Strategy, Decision)
-- **Intensity**: Importance (1-10)
+- **Intensity**: 1-10 priority (10 = critical constraint)
 
-### How do I write a memory?
-
-Via MCP tool in your AI assistant:
-```
-brain_write_engram(key="my_decision", value="Chose React for frontend", context="Architecture", intensity=7)
-```
-
-### How do I retrieve memories?
-
-```
-brain_query_engrams(context="Architecture", min_intensity=5)
+Example:
+```python
+brain_write_engram(
+    key="no_openai",
+    value="Budget constraint - Gemini only because cost",
+    context="Decision",
+    intensity=10
+)
 ```
 
-This returns all Architecture engrams with intensity >= 5.
+### What is Default-Deny?
 
-### What's the difference between contexts?
+Default-Deny means every tool call is blocked by default unless explicitly allowed by policy. This prevents:
 
-| Context | Use For | Example |
-|---------|---------|---------|
-| `Feature` | Product features | "Added dark mode toggle" |
-| `Architecture` | Technical decisions | "Using PostgreSQL for persistence" |
-| `Brand` | Messaging, positioning | "Tagline: The Sovereign Brain" |
-| `Strategy` | Business decisions | "Target enterprise market first" |
-| `Decision` | General choices | "Approved PR #123" |
-
----
-
-## Integration
-
-### How do I connect Cursor?
-
-Add to your Cursor MCP config (`~/.config/cursor/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "python",
-      "args": ["-m", "mcp_server_nucleus"]
-    }
-  }
-}
-```
-
-### How do I connect Claude Desktop?
-
-Run `nucleus-init` and restart Claude Desktop. It auto-configures.
-
-Or manually add to `~/.config/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "python",
-      "args": ["-m", "mcp_server_nucleus"]
-    }
-  }
-}
-```
-
-### Can I use Nucleus with multiple AI tools simultaneously?
-
-Yes! That's the whole point. Write a memory in Claude → it's instantly available in Cursor. All tools share the same `.brain/` folder.
+- Unauthorized file access
+- Unintended external API calls
+- Agent scope creep
 
 ---
 
 ## Troubleshooting
 
-### "Module not found" error
+### "NUCLEAR_BRAIN_PATH environment variable not set"
+
+Set the environment variable to point to your `.brain/` directory:
 
 ```bash
-pip uninstall nucleus-mcp
-pip install nucleus-mcp
+export NUCLEAR_BRAIN_PATH=/path/to/your/.brain
 ```
 
-### "Brain path not found"
-
-Set the environment variable:
-```bash
-export NUCLEAR_BRAIN_PATH=~/.brain
+Or in your MCP client config:
+```json
+"env": {
+  "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
+}
 ```
 
-### Engrams not syncing between tools
+### "Tool not found" errors
 
-1. Both tools must point to the same `.brain/` path
-2. Check `NUCLEAR_BRAIN_PATH` is consistent
-3. Verify engrams were written: `ls ~/.brain/engrams/`
-
-### Tests failing with import errors
-
-This is an IDE linting issue, not a real error. Tests pass with:
+Ensure you're running the latest version:
 ```bash
-PYTHONPATH=src pytest tests/
+pip install --upgrade mcp-server-nucleus
+```
+
+### Tests failing
+
+Run the test suite to verify your installation:
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+### How do I reset my brain state?
+
+Delete or rename the `.brain/` directory and restart:
+```bash
+mv .brain .brain.backup
+# Nucleus will create a fresh .brain/ on next run
 ```
 
 ---
 
-## Comparison
+## Security
 
-### How is Nucleus different from ContextStream?
+### How secure is the audit trail?
 
-| Aspect | Nucleus | ContextStream |
-|--------|---------|---------------|
-| Data location | 100% local | Cloud |
-| Account required | No | Yes |
-| Cross-platform | All MCP tools | Limited |
-| Price | Free (MIT) | Paid tiers |
-| Air-gap support | Yes | No |
+Every interaction is hashed with SHA-256 and stored in `interaction_log.jsonl`. The hash chain makes tampering detectable - any modification breaks subsequent hashes.
 
-### How is Nucleus different from OpenClaw?
+### Can agents bypass Default-Deny?
 
-| Aspect | Nucleus | OpenClaw |
-|--------|---------|----------|
-| Platform support | All MCP tools | Claude only |
-| Security focus | Built-in | Post-breach |
-| Stability | Production | "Hype stage" |
-| Data sovereignty | 100% local | Cloud bridge |
+No. Default-Deny is enforced at the runtime level, not via prompts. An agent cannot "convince" Nucleus to bypass security policies.
+
+### Where is my data stored?
+
+All data stays local in your `.brain/` directory. Nucleus never sends data to external servers unless you explicitly configure external integrations.
+
+---
+
+## Advanced
+
+### How do I mount external MCP servers?
+
+```python
+brain_mount_server(
+    name="my-server",
+    command="npx",
+    args=["-y", "@my-org/mcp-server"]
+)
+```
+
+### How do I query the audit log?
+
+```python
+brain_audit_log(limit=50)  # Get last 50 interactions
+```
+
+### How do I export my brain state?
+
+```python
+brain_export(format="json")  # Export full state
+```
+
+---
+
+## Getting Help
+
+- **Documentation**: [docs/](./docs/)
+- **Issues**: [GitHub Issues](https://github.com/NucleusSovereign/mcp-server-nucleus/issues)
+- **Discord**: Coming soon
+- **Email**: hello@nucleusos.dev
 
 ---
 
 ## Contributing
 
-### How can I contribute?
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md). We welcome:
-- Bug reports
-- Feature requests
-- Documentation improvements
-- Code contributions
-
-### Where do I report bugs?
-
-[GitHub Issues](https://github.com/eidetic-works/nucleus-mcp/issues)
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ---
 
-## Support
-
-- **Discord**: [Nucleus Vanguard](https://discord.gg/RJuBNNJ5MT)
-- **GitHub**: [Issues & Discussions](https://github.com/eidetic-works/nucleus-mcp)
-- **Enterprise**: [enterprise@nucleusos.dev](mailto:enterprise@nucleusos.dev)
-
----
-
-*The Sovereign Brain - Cross-platform AI memory that never leaves your machine.*
+*FAQ maintained by the Nucleus team.*
