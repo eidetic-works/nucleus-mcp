@@ -107,14 +107,19 @@ class StdioServer:
                 if not line:
                     break
                 
-                request = json.loads(line)
-                
-                response = await self.handle_request(request)
-                if response:
-                    out = json.dumps(response)
-                    print(out, flush=True)
-            except json.JSONDecodeError:
-                logger.error("Failed to decode JSON")
+                line = line.strip()
+                if not line:
+                    continue
+
+                try:
+                    request = json.loads(line)
+                    
+                    response = await self.handle_request(request)
+                    if response:
+                        out = json.dumps(response)
+                        print(out, flush=True)
+                except json.JSONDecodeError:
+                    logger.error(f"Failed to decode JSON from line: {repr(line)}")
             except Exception as e:
                 logger.error(f"Server loop error: {e}")
                 traceback.print_exc(file=sys.stderr)
