@@ -4,6 +4,11 @@ import shutil
 from mcp_server_nucleus.hypervisor.locker import Locker
 
 def test_lock_metadata():
+    # Skip test if chflags is not available (not on macOS)
+    if not shutil.which("chflags"):
+        print("Skipping test: chflags not found (macOS only)")
+        return
+    
     locker = Locker()
     test_file = "test_metadata.lock"
     
