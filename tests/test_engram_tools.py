@@ -21,18 +21,14 @@ class TestEngramTools(unittest.TestCase):
         self.brain_path = Path(self.temp_dir) / ".brain"
         self.brain_path.mkdir(parents=True)
         
-        # Patch the get_brain_path function in both __init__ and engram_ops
-        self.patcher = patch('mcp_server_nucleus.get_brain_path')
-        self.patcher2 = patch('mcp_server_nucleus.runtime.engram_ops.get_brain_path')
-        self.mock_brain = self.patcher.start()
-        self.mock_brain2 = self.patcher2.start()
-        self.mock_brain.return_value = self.brain_path
-        self.mock_brain2.return_value = self.brain_path
+        # Set environment variable instead of brittle patches
+        os.environ["NUCLEAR_BRAIN_PATH"] = str(self.brain_path)
     
     def tearDown(self):
         """Clean up temporary directory."""
-        self.patcher.stop()
-        self.patcher2.stop()
+        if "NUCLEAR_BRAIN_PATH" in os.environ:
+            del os.environ["NUCLEAR_BRAIN_PATH"]
+            
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
@@ -108,9 +104,9 @@ class TestEngramTools(unittest.TestCase):
         from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
         
         # Write engrams with different contexts
-        _brain_write_engram_impl("arch1", "value1", "Architecture", 8)
-        _brain_write_engram_impl("brand1", "value2", "Brand", 5)
-        _brain_write_engram_impl("arch2", "value3", "Architecture", 6)
+        _brain_write_engram_impl("arch1", "this is architecture value 1", "Architecture", 8)
+        _brain_write_engram_impl("brand1", "this is brand value 2", "Brand", 5)
+        _brain_write_engram_impl("arch2", "this is architecture value 3", "Architecture", 6)
         
         # Query only Architecture
         result = _brain_query_engrams_impl(context="Architecture", min_intensity=1)
@@ -124,9 +120,9 @@ class TestEngramTools(unittest.TestCase):
         from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
         
         # Write engrams with different intensities
-        _brain_write_engram_impl("critical", "value1", "Decision", 10)
-        _brain_write_engram_impl("normal", "value2", "Decision", 5)
-        _brain_write_engram_impl("archive", "value3", "Decision", 2)
+        _brain_write_engram_impl("critical", "this is a critical decision 1", "Decision", 10)
+        _brain_write_engram_impl("normal", "this is a normal decision 2", "Decision", 5)
+        _brain_write_engram_impl("archive", "this is an archived decision 3", "Decision", 2)
         
         # Query only high intensity
         result = _brain_query_engrams_impl(context=None, min_intensity=8)
@@ -140,9 +136,9 @@ class TestEngramTools(unittest.TestCase):
         from mcp_server_nucleus import _brain_write_engram_impl, _brain_query_engrams_impl
         
         # Write engrams in random order
-        _brain_write_engram_impl("low", "value1", "Decision", 3)
-        _brain_write_engram_impl("high", "value2", "Decision", 9)
-        _brain_write_engram_impl("medium", "value3", "Decision", 6)
+        _brain_write_engram_impl("low", "low intensity value 1", "Decision", 3)
+        _brain_write_engram_impl("high", "high intensity value 2", "Decision", 9)
+        _brain_write_engram_impl("medium", "medium intensity value 3", "Decision", 6)
         
         # Query all
         result = _brain_query_engrams_impl(context=None, min_intensity=1)
@@ -170,8 +166,8 @@ class TestEngramTools(unittest.TestCase):
         from mcp_server_nucleus import _brain_write_engram_impl, _brain_governance_status_impl
         
         # Write some engrams
-        _brain_write_engram_impl("e1", "v1", "Decision", 5)
-        _brain_write_engram_impl("e2", "v2", "Decision", 5)
+        _brain_write_engram_impl("e1", "this is governance value 1", "Decision", 5)
+        _brain_write_engram_impl("e2", "this is governance value 2", "Decision", 5)
         
         result = _brain_governance_status_impl()
         result_data = json.loads(result)

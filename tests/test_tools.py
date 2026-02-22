@@ -206,70 +206,85 @@ class TestAgentTools:
 @pytest.fixture
 def setup_tasks(setup_test_brain):
     """Set up test brain with sample tasks - module level fixture."""
+    from mcp_server_nucleus.runtime.db import get_storage_backend
+    storage = get_storage_backend(setup_test_brain)
+    
+    tasks = [
+        {
+            "id": "task-001",
+            "description": "High priority Python task",
+            "status": "PENDING",
+            "priority": 1,
+            "blocked_by": [],
+            "required_skills": ["python"],
+            "claimed_by": None,
+            "source": "user",
+            "escalation_reason": None,
+            "created_at": "2026-01-01T00:00:00",
+            "updated_at": "2026-01-01T00:00:00"
+        },
+        {
+            "id": "task-002",
+            "description": "Low priority marketing task",
+            "status": "PENDING",
+            "priority": 5,
+            "blocked_by": [],
+            "required_skills": ["marketing"],
+            "claimed_by": None,
+            "source": "synthesizer",
+            "escalation_reason": None,
+            "created_at": "2026-01-01T00:00:00",
+            "updated_at": "2026-01-01T00:00:00"
+        },
+        {
+            "id": "task-003",
+            "description": "Blocked task",
+            "status": "BLOCKED",
+            "priority": 2,
+            "blocked_by": ["task-001"],
+            "required_skills": ["python"],
+            "claimed_by": None,
+            "source": "synthesizer",
+            "escalation_reason": None,
+            "created_at": "2026-01-01T00:00:00",
+            "updated_at": "2026-01-01T00:00:00"
+        },
+        {
+            "id": "task-004",
+            "description": "Already claimed task",
+            "status": "IN_PROGRESS",
+            "priority": 1,
+            "blocked_by": [],
+            "required_skills": ["python"],
+            "claimed_by": "agent-999",
+            "source": "user",
+            "escalation_reason": None,
+            "created_at": "2026-01-01T00:00:00",
+            "updated_at": "2026-01-01T00:00:00"
+        },
+        {
+            "id": "task-legacy-001",
+            "description": "Legacy TODO task",
+            "status": "TODO",
+            "priority": 3,
+            "blocked_by": [],
+            "required_skills": ["researcher"],
+            "claimed_by": None,
+            "source": "user",
+            "escalation_reason": None,
+            "created_at": "2026-01-01T00:00:00",
+            "updated_at": "2026-01-01T00:00:00"
+        }
+    ]
+    
+    for t in tasks:
+        storage.add_task(t)
+
     state_file = setup_test_brain / "ledger" / "state.json"
     state = {
         "current_sprint": {
             "name": "Test Sprint",
-            "focus": "Testing V2",
-            "tasks": [
-                {
-                    "id": "task-001",
-                    "description": "High priority Python task",
-                    "status": "PENDING",
-                    "priority": 1,
-                    "blocked_by": [],
-                    "required_skills": ["python"],
-                    "claimed_by": None,
-                    "source": "user",
-                    "escalation_reason": None,
-                    "created_at": "2026-01-01T00:00:00",
-                    "updated_at": "2026-01-01T00:00:00"
-                },
-                {
-                    "id": "task-002",
-                    "description": "Low priority marketing task",
-                    "status": "PENDING",
-                    "priority": 5,
-                    "blocked_by": [],
-                    "required_skills": ["marketing"],
-                    "claimed_by": None,
-                    "source": "synthesizer",
-                    "escalation_reason": None,
-                    "created_at": "2026-01-01T00:00:00",
-                    "updated_at": "2026-01-01T00:00:00"
-                },
-                {
-                    "id": "task-003",
-                    "description": "Blocked task",
-                    "status": "BLOCKED",
-                    "priority": 2,
-                    "blocked_by": ["task-001"],
-                    "required_skills": ["python"],
-                    "claimed_by": None,
-                    "source": "synthesizer",
-                    "escalation_reason": None,
-                    "created_at": "2026-01-01T00:00:00",
-                    "updated_at": "2026-01-01T00:00:00"
-                },
-                {
-                    "id": "task-004",
-                    "description": "Already claimed task",
-                    "status": "IN_PROGRESS",
-                    "priority": 1,
-                    "blocked_by": [],
-                    "required_skills": ["python"],
-                    "claimed_by": "agent-999",
-                    "source": "user",
-                    "escalation_reason": None,
-                    "created_at": "2026-01-01T00:00:00",
-                    "updated_at": "2026-01-01T00:00:00"
-                },
-                {
-                    "description": "Legacy TODO task",
-                    "status": "TODO",
-                    "preferred_role": "Researcher"
-                }
-            ]
+            "focus": "Testing V2"
         }
     }
     state_file.write_text(json.dumps(state, indent=2))
