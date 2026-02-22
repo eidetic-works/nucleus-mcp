@@ -1,4 +1,12 @@
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 import os
 import time
 import errno
@@ -47,7 +55,11 @@ class BrainLock:
                 self.fd = open(self.lock_file, 'w')
                 # LOCK_EX: Exclusive Lock
                 # LOCK_NB: Non-blocking (fail immediately if locked)
-                fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if fcntl:
+                    fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                elif msvcrt:
+                    self.fd.seek(0)
+                    msvcrt.locking(self.fd.fileno(), msvcrt.LK_NBLCK, 1)
                 
                 # Write PID for debugging / stale detection
                 self.fd.write(str(os.getpid()))
@@ -81,7 +93,11 @@ class BrainLock:
             try:
                 # Remove the lock file content (optional, but clean)
                 self.fd.truncate(0)
-                fcntl.flock(self.fd, fcntl.LOCK_UN)
+                if fcntl:
+                    fcntl.flock(self.fd, fcntl.LOCK_UN)
+                elif msvcrt:
+                    self.fd.seek(0)
+                    msvcrt.locking(self.fd.fileno(), msvcrt.LK_UNLCK, 1)
             except Exception as e:
                 logger.error(f"BrainLock Release Error: {e}")
             finally:
@@ -110,12 +126,18 @@ class BrainLock:
             
         try:
             fd = open(lock_file, 'r')
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            # If we got here, it wasn't locked. Unlock and close.
-            fcntl.flock(fd, fcntl.LOCK_UN)
+            if fcntl:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                # If we got here, it wasn't locked. Unlock and close.
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            elif msvcrt:
+                fd.seek(0)
+                msvcrt.locking(fd.fileno(), msvcrt.LK_NBLCK, 1)
+                fd.seek(0)
+                msvcrt.locking(fd.fileno(), msvcrt.LK_UNLCK, 1)
             fd.close()
             return False
         except IOError as e:
-            if e.errno == errno.EAGAIN:
+            if getattr(e, 'errno', None) in (errno.EAGAIN, errno.EACCES, 13, 33):
                 return True
             raise

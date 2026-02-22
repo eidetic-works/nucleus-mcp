@@ -10,7 +10,15 @@ Strategic Role:
 """
 
 import abc
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 import time
 import os
 import contextlib
@@ -128,7 +136,11 @@ class FileBrainLock(BrainLock):
         while True:
             try:
                 # specific locking operation: LOCK_EX (Exclusive) | LOCK_NB (Non-Blocking)
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if fcntl:
+                    fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                elif msvcrt:
+                    self.lock_file.seek(0)
+                    msvcrt.locking(self.lock_file.fileno(), msvcrt.LK_NBLCK, 1)
                 
                 # Write PID for debugging (knowing who holds the lock)
                 self.lock_file.seek(0)
@@ -159,7 +171,11 @@ class FileBrainLock(BrainLock):
         if self.lock_file:
             try:
                 # Unlock
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                if fcntl:
+                    fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                elif msvcrt:
+                    self.lock_file.seek(0)
+                    msvcrt.locking(self.lock_file.fileno(), msvcrt.LK_UNLCK, 1)
                 self.lock_file.close()
             except ValueError:
                 # File might be closed already

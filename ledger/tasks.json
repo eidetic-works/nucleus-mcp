@@ -1,0 +1,165 @@
+[
+  {
+    "id": "task-1aedcc4f",
+    "description": "RESEARCHER \u2014 CRITICAL AUDIT: Nucleus OS. Benchmark all memory/engram players (Gaurav Dadhich/Maximum AI, Dhruvya Shah, OpenClaw, mem0, Letta/MemGPT). For each: (1) how do they define and trigger memory writes/reads, (2) what is their tool-calling discipline, (3) what made them go viral or get users. Output: competitive matrix + 3 things Nucleus must steal immediately. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT. Source docs in .brain/strategy/FOUNDATIONAL/",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "research",
+      "competitive_analysis",
+      "memory_systems"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:46:53+0530",
+    "updated_at": "2026-02-19T14:46:53+0530"
+  },
+  {
+    "id": "task-5af7e009",
+    "description": "CRITIC \u2014 CRITICAL AUDIT: Nucleus OS. Red-team the current state. Be brutal. Answer: (1) Is Nucleus an OS or a prompt collection? Justify with evidence. (2) Are the 140 tools truly synergistic or a zoo? Pick 5 at random and show whether they work together. (3) What are the top 3 failure modes that will kill Nucleus in the next 90 days if unaddressed? (4) What is the single most dangerous assumption the founder is making? Output: failure mode report + ranked list of existential risks. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "critical_analysis",
+      "red_teaming",
+      "systems_thinking"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:47:02+0530",
+    "updated_at": "2026-02-19T14:47:02+0530"
+  },
+  {
+    "id": "task-c463d370",
+    "description": "DEVELOPER \u2014 CRITICAL AUDIT: Nucleus OS. Solve the two elephants in code. Deliverable 1: Write the Engram Write/Read Trigger Protocol as an implementable Python spec \u2014 define the exact trigger events, conditions, payload schema, and TTL for each engram type. Deliverable 2: Write a minimal self-compounding loop in pseudocode/Python \u2014 the smallest possible script that uses Nucleus to do one real task and writes the result back to the brain. Must be runnable in under 2 days. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "python",
+      "mcp_development",
+      "agent_architecture",
+      "memory_systems"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:47:11+0530",
+    "updated_at": "2026-02-19T14:47:11+0530"
+  },
+  {
+    "id": "task-743baa41",
+    "description": "LIBRARIAN \u2014 CRITICAL AUDIT: Nucleus OS. Audit all 140 tools. Produce: (1) A full tool inventory categorized by capability bucket with a one-line description of each. (2) Identify which tools have ZERO call history in production. (3) Identify the top 10 tools most likely to produce a 'wow' user moment if surfaced correctly. (4) Map which tools depend on engrams to work properly. Output: TOOL_AUDIT_REPORT.md in .brain/strategy/FOUNDATIONAL/. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "documentation",
+      "tool_analysis",
+      "knowledge_management"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:47:19+0530",
+    "updated_at": "2026-02-19T14:47:19+0530"
+  },
+  {
+    "id": "task-2f2324ff",
+    "description": "SYNTHESIZER \u2014 CRITICAL AUDIT: Nucleus OS. Wait for RESEARCHER (task-1aedcc4f), CRITIC (task-5af7e009), DEVELOPER (task-c463d370), LIBRARIAN (task-743baa41) to complete. Then converge all outputs into: (1) A ranked priority list of the top 10 actions Nucleus must take in the next 14 days. (2) A single one-page 'State of Nucleus' doc that can be handed to any new agent as cold-start context. (3) A 'first alive moment' definition \u2014 the exact demo or output that proves Nucleus is real. Output: SYNTHESIS_CRITICAL_AUDIT_FEB19.md in .brain/strategy/FOUNDATIONAL/.",
+    "status": "BLOCKED",
+    "priority": 2,
+    "blocked_by": [
+      "task-1aedcc4f",
+      "task-5af7e009",
+      "task-c463d370",
+      "task-743baa41"
+    ],
+    "required_skills": [
+      "synthesis",
+      "strategy",
+      "technical_writing"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:47:30+0530",
+    "updated_at": "2026-02-19T14:47:30+0530"
+  },
+  {
+    "id": "task-52b1f28b",
+    "description": "DEVOPS \u2014 CRITICAL AUDIT: Nucleus OS. Answer the infrastructure question: (1) How does a developer install and run Nucleus MCP locally in under 10 minutes? Write the exact step-by-step. (2) What is the current startup failure rate and why? (3) Design a tool telemetry pipeline \u2014 where do tool call logs go, how to query them, what 5 metrics to track weekly. (4) What is the minimum docker-compose or process config to run Nucleus + Brain + swarm agents together? Output: DEVOPS_AUDIT_FEB19.md in .brain/strategy/FOUNDATIONAL/. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "devops",
+      "infrastructure",
+      "observability",
+      "docker"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:47:40+0530",
+    "updated_at": "2026-02-19T14:47:40+0530"
+  },
+  {
+    "id": "task-6a298791",
+    "description": "TECH_LEAD \u2014 CRITICAL AUDIT: Nucleus OS. Own the two elephants from a technical leadership perspective. (1) Define soft vs hard bounding for tool calls in Nucleus context \u2014 write the policy as a decision table (trigger type \u00d7 bounding level \u00d7 latency impact \u00d7 reliability impact). (2) Define the minimum synergy contract between tools \u2014 what must every tool expose so others can chain from it? (3) Propose the v0.7 milestone definition \u2014 what 5 things must be true for Nucleus to be declared 'alive'? (4) Which 20 of the 140 tools should form the 'core 20' that compound everything else? Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "technical_leadership",
+      "api_design",
+      "systems_architecture",
+      "mcp"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:47:51+0530",
+    "updated_at": "2026-02-19T14:47:51+0530"
+  },
+  {
+    "id": "task-734393e4",
+    "description": "ARCHITECT \u2014 CRITICAL AUDIT: Nucleus OS. Design the compounding flywheel architecture. (1) Draw the loop: what is the exact data flow from founder input \u2192 Nucleus action \u2192 output artifact \u2192 engram write \u2192 next session context? Describe every node and edge. (2) Where does the swarm fit in this loop? When is it triggered, what does it produce, where does the output go? (3) What is the resilience layer \u2014 if MCP dies as a standard, what does Nucleus fall back on? (4) Design the 'self-healing' architecture \u2014 what happens when an agent fails mid-task? Reference existing: agent_pool.py, broker.py, orchestrator.py, synthesizer.py, capabilities/self_healing.py. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "system_architecture",
+      "distributed_systems",
+      "agent_design",
+      "resilience_engineering"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:48:02+0530",
+    "updated_at": "2026-02-19T14:48:02+0530"
+  },
+  {
+    "id": "task-ff968551",
+    "description": "STRATEGIST \u2014 CRITICAL AUDIT: Nucleus OS. Answer the existential question. (1) What is the ONE thing Nucleus can do in the next 30 days that OpenClaw cannot or will not? Be specific \u2014 name the feature, the target user, and the demo. (2) What is the minimum lovable product (MLP) \u2014 the smallest version of Nucleus that produces an undeniable 'wow'? (3) Design the black swan engineered event \u2014 what sequence of public actions (Reddit, GitHub, demo video, blog post) over 14 days gives Nucleus the best shot at a viral moment? (4) How does Nucleus position itself: consumer dev tool, enterprise agent OS, or sovereign AI OS for builders? Pick one and defend it. Read engram: NUCLEUS_CRITICAL_AUDIT_FEB19_PROBLEM_STATEMENT.",
+    "status": "PENDING",
+    "priority": 1,
+    "blocked_by": [],
+    "required_skills": [
+      "strategy",
+      "gtm",
+      "competitive_positioning",
+      "product_thinking"
+    ],
+    "claimed_by": null,
+    "source": "hypervisor",
+    "escalation_reason": null,
+    "created_at": "2026-02-19T14:48:13+0530",
+    "updated_at": "2026-02-19T14:48:13+0530"
+  }
+]

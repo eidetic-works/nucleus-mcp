@@ -15,7 +15,15 @@ Date: 2026-02-08
 
 import os
 import json
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 import time
 import hashlib
 import logging
@@ -306,7 +314,11 @@ def sync_lock(brain_path: Optional[Path] = None, timeout: int = 5):
     
     while True:
         try:
-            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if fcntl:
+                fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            elif msvcrt:
+                lock_fd.seek(0)
+                msvcrt.locking(lock_fd.fileno(), msvcrt.LK_NBLCK, 1)
             break
         except IOError:
             if time.time() - start_time > timeout:
@@ -327,7 +339,11 @@ def sync_lock(brain_path: Optional[Path] = None, timeout: int = 5):
         yield
     finally:
         # Release lock
-        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+        if fcntl:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+        elif msvcrt:
+            lock_fd.seek(0)
+            msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
         lock_fd.close()
         try:
             lock_file_path.unlink(missing_ok=True)
