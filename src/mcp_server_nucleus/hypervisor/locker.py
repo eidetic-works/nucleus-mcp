@@ -32,10 +32,7 @@ class Locker:
 
     def lock(self, path: str, metadata: dict = None) -> bool:
         """
-        Locks a file or directory using 'chflags uchg'.
-        If path is a directory, it locks it recursively? 
-        Current implementation: Single file/folder lock (non-recursive by default for safety).
-        To do recursive: chflags -R uchg
+        Locks a file or directory using 'chflags uchg' (macOS) or legacy attributes (Windows).
         """
         if not os.path.exists(path):
             logger.error(f"Cannot lock non-existent path: {path}")
@@ -51,10 +48,23 @@ class Locker:
             
             for k, v in metadata.items():
                 key = k if k.startswith("nucleus.lock.") else f"nucleus.lock.{k}"
-                # If directory, apply only to the directory itself for now (recursive xattr is tricky)
                 self._set_xattr(path, key, v)
 
-        # Using -R (recursive) to lock entire directories if needed
+        # OS Specific Locking
+        if os.name == 'nt':
+            # Windows: Set read-only attribute
+            import shutil
+            if shutil.which("attrib"):
+                return self._run_cmd(["attrib", "+r", path])
+            logger.warning("Windows 'attrib' command not found. Skipping lock.")
+            return True # Graceful skip
+            
+        # Check if chflags exists (macOS/BSD)
+        import shutil
+        if not shutil.which("chflags"):
+            logger.warning("Locker: 'chflags' not found. Skipping immutable lock.")
+            return True
+
         if os.path.isdir(path):
             return self._run_cmd(["chflags", "-R", "uchg", path])
         else:
@@ -62,13 +72,24 @@ class Locker:
 
     def unlock(self, path: str) -> bool:
         """
-        Unlocks a file or directory using 'chflags nouchg'.
+        Unlocks a file or directory.
         """
         if not os.path.exists(path):
             logger.error(f"Cannot unlock non-existent path: {path}")
             return False
 
         logger.info(f"🔓 Unlocking: {path}")
+        
+        if os.name == 'nt':
+            import shutil
+            if shutil.which("attrib"):
+                return self._run_cmd(["attrib", "-r", path])
+            return True
+
+        import shutil
+        if not shutil.which("chflags"):
+            return True
+
         if os.path.isdir(path):
             return self._run_cmd(["chflags", "-R", "nouchg", path])
         else:
@@ -76,22 +97,34 @@ class Locker:
 
     def is_locked(self, path: str) -> bool:
         """
-        Checks if the file has the 'uchg' flag set.
+        Checks if the file is locked / read-only.
         """
         if not os.path.exists(path):
             return False
         
-        # 'ls -lz' shows flags on macOS, or 'ls -MdO'
-        # simpler: stat
+        # Windows Check
+        if os.name == 'nt':
+            import stat
+            return not (os.stat(path).st_mode & stat.S_IWRITE)
+
+        # macOS/BSD Check
         try:
             st = os.stat(path)
-            # 0x2 is UF_IMMUTABLE (uchg)
-            return (st.st_flags & 0x2) != 0
+            if hasattr(st, 'st_flags'):
+                return (st.st_flags & 0x2) != 0
+            return False
         except Exception:
             return False
 
     # --- METADATA (Phase 28) ---
     def _set_xattr(self, path: str, key: str, value: str):
+        if os.name == 'nt':
+            return # Windows does not support xattr natively
+
+        import shutil
+        if not shutil.which("xattr"):
+            return
+
         try:
             subprocess.run(
                 ["xattr", "-w", key, str(value), path],
