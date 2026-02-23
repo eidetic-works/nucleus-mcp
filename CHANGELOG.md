@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-02-23
+### Added
+- **Save System (Checkpoint & Handoff)**: Native checkpoint/resume/handoff tools for long-running tasks
+  - `brain_checkpoint_task`: Save progress with artifacts and context
+  - `brain_resume_from_checkpoint`: Resume tasks with full state restoration
+  - `brain_generate_handoff_summary`: Cross-agent handoff with key decisions
+- **UnifiedOrchestrator V3.1 Bridge**: 13 methods from legacy orchestrator now available in unified layer
+  - Task lifecycle: `get_all_tasks`, `claim_task`, `complete_task`
+  - Metrics: `get_pool_metrics`, `get_dependency_graph`, `get_agent_pool`, `get_ingestion_stats`
+- **E2E Test Coverage**: 5 end-to-end tests verifying checkpoint tools through MCP layer
+- **Checkpoint Documentation**: New section in QUICK_START.md
+
+### Changed
+- **Task ID Collision Fix**: Added monotonic counter suffix to prevent duplicate task IDs
+- **Test Suite Expansion**: 197 total tests (up from 135)
+
+### Fixed
+- Task store race conditions in concurrent checkpoint operations
+- Stale version assertion in release verification tests
+
 ## [1.0.8] - 2026-02-22
 ### Added
 - **Node Beta Architecture**: Defined Plan 6 (Native Windows) with `.gitattributes` protection for zero-collision agentic deployment.
