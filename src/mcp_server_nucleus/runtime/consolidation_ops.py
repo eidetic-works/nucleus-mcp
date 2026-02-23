@@ -1,12 +1,14 @@
 """
-Consolidation Operations - Brain artifact archival, redundancy detection, merge proposals.
+Consolidation Operations - Brain artifact archival, redundancy detection, merge proposals,
+and task garbage collection.
 
 Extracted from __init__.py monolith (v1.0.7 decomposition).
 """
 
+import json
 import time
 import logging
-from typing import Dict
+from typing import Dict, List
 from pathlib import Path
 
 from .common import get_brain_path
@@ -367,6 +369,162 @@ def _generate_merge_proposals() -> Dict:
             "proposal_text": proposal_text,
             "findings": findings,
             "summary": summary
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _garbage_collect_tasks(
+    max_age_hours: int = 72,
+    dry_run: bool = False
+) -> Dict:
+    """Archive stale tasks that have had no activity for max_age_hours.
+    
+    Targets:
+    - PENDING tasks with no update in 72+ hours
+    - Auto-generated tasks (id starts with 'auto_')
+    - Duplicate descriptions (keeps newest)
+    
+    Does NOT touch:
+    - IN_PROGRESS tasks (someone is working on them)
+    - DONE tasks (historical record)
+    - Tasks updated within the window
+    
+    Args:
+        max_age_hours: Hours of inactivity before a task is considered stale (default 72)
+        dry_run: If True, report what would be archived without doing it
+    
+    Returns:
+        Dict with archived count, kept count, and details
+    """
+    try:
+        brain = get_brain_path()
+        tasks_file = brain / "ledger" / "tasks.json"
+        
+        if not tasks_file.exists():
+            return {"success": True, "archived": 0, "kept": 0, "message": "No tasks.json found"}
+        
+        with open(tasks_file, "r") as f:
+            raw = json.load(f)
+        
+        # Handle both list and object formats
+        if isinstance(raw, list):
+            tasks = raw
+        elif isinstance(raw, dict) and "tasks" in raw:
+            tasks = raw["tasks"]
+        else:
+            tasks = []
+        
+        if not tasks:
+            return {"success": True, "archived": 0, "kept": 0, "message": "No tasks to process"}
+        
+        cutoff = time.time() - (max_age_hours * 3600)
+        cutoff_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(cutoff))
+        
+        keep = []
+        archive = []
+        dedup_seen = {}
+        
+        for task in tasks:
+            if not isinstance(task, dict):
+                continue
+            
+            task_id = task.get("id", "")
+            status = task.get("status", "").upper()
+            description = task.get("description", "")
+            updated_at = task.get("updated_at", task.get("created_at", ""))
+            
+            # Never archive IN_PROGRESS or DONE tasks
+            if status in ("IN_PROGRESS", "DONE", "COMPLETED"):
+                keep.append(task)
+                continue
+            
+            # Check for auto-generated noise (auto_* IDs)
+            is_auto = task_id.startswith("auto_")
+            
+            # Check staleness by comparing updated_at string
+            is_stale = False
+            if updated_at and updated_at < cutoff_iso:
+                is_stale = True
+            
+            # Check for duplicate descriptions (keep newest)
+            desc_key = description.strip().lower()[:100]
+            if desc_key in dedup_seen:
+                # This is a duplicate — archive the older one
+                existing_updated = dedup_seen[desc_key].get("updated_at", "")
+                if updated_at > existing_updated:
+                    # Current is newer, archive the old one
+                    archive.append(dedup_seen[desc_key])
+                    dedup_seen[desc_key] = task
+                else:
+                    # Current is older, archive it
+                    archive.append(task)
+                    continue
+            else:
+                dedup_seen[desc_key] = task
+            
+            # Archive if stale OR auto-generated
+            if is_stale or is_auto:
+                archive.append(task)
+                if desc_key in dedup_seen and dedup_seen[desc_key] is task:
+                    del dedup_seen[desc_key]
+            else:
+                keep.append(task)
+        
+        # Add remaining dedup survivors to keep
+        for desc_key, task in dedup_seen.items():
+            if task not in keep and task not in archive:
+                keep.append(task)
+        
+        if not dry_run and archive:
+            # Save archived tasks to archive/tasks_archived_YYYYMMDD.jsonl
+            archive_dir = _get_archive_path() / "tasks"
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            archive_file = archive_dir / f"tasks_archived_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
+            
+            with open(archive_file, "w") as f:
+                for task in archive:
+                    f.write(json.dumps(task) + "\n")
+            
+            # Write back the kept tasks
+            if isinstance(raw, dict) and "tasks" in raw:
+                raw["tasks"] = keep
+                with open(tasks_file, "w") as f:
+                    json.dump(raw, f, indent=2)
+            else:
+                with open(tasks_file, "w") as f:
+                    json.dump(keep, f, indent=2)
+            
+            _emit_event(
+                "tasks_garbage_collected",
+                "BRAIN_CONSOLIDATION",
+                {
+                    "archived": len(archive),
+                    "kept": len(keep),
+                    "max_age_hours": max_age_hours,
+                    "archive_file": str(archive_file)
+                },
+                f"Garbage collected {len(archive)} stale tasks, kept {len(keep)}"
+            )
+        
+        # Categorize archived tasks for reporting
+        auto_count = sum(1 for t in archive if t.get("id", "").startswith("auto_"))
+        stale_count = len(archive) - auto_count
+        
+        return {
+            "success": True,
+            "archived": len(archive),
+            "kept": len(keep),
+            "dry_run": dry_run,
+            "breakdown": {
+                "auto_generated": auto_count,
+                "stale": stale_count
+            },
+            "sample_archived": [
+                {"id": t.get("id"), "description": t.get("description", "")[:60]}
+                for t in archive[:10]
+            ],
+            "message": f"{'Would archive' if dry_run else 'Archived'} {len(archive)} tasks, kept {len(keep)}"
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
