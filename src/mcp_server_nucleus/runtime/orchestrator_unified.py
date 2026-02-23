@@ -39,6 +39,8 @@ class UnifiedOrchestrator:
     Integrates mission execution with task management.
     """
 
+    _task_counter = 0
+
     def __init__(self, brain_path: Optional[Path] = None):
         self.brain_path = brain_path or Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
         self.replica_id = f"nucleus_{int(time.time())}"
@@ -120,7 +122,8 @@ class UnifiedOrchestrator:
     def add_task(self, description: str, priority: int = 3, 
                  tier: str = "T2_CODE", blocked_by: List[str] = None,
                  source: str = "user", required_skills: List[str] = None) -> Dict:
-        task_id = f"task_{int(time.time() * 1000)}"
+        UnifiedOrchestrator._task_counter += 1
+        task_id = f"task_{int(time.time() * 1000)}_{UnifiedOrchestrator._task_counter}"
         task = {
             "id": task_id,
             "description": description,
@@ -158,6 +161,183 @@ class UnifiedOrchestrator:
         if not available: return None
         available.sort(key=lambda x: x.get("priority", 3))
         return available[0]
+
+    # =========================================================================
+    # V3.1 CHECKPOINT & HANDOFF OPERATIONS
+    # =========================================================================
+
+    def checkpoint_task(self, task_id: str, checkpoint_data: Dict) -> Dict:
+        """Save checkpoint for long-running task."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        task["checkpoint"] = {
+            "enabled": True,
+            "last_checkpoint_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "data": checkpoint_data
+        }
+
+        self.task_store.update_task(task_id, task)
+        self._save_all_state()
+        return {"success": True, "checkpoint": task["checkpoint"]}
+
+    def resume_from_checkpoint(self, task_id: str) -> Dict:
+        """Get checkpoint data for task resumption."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        checkpoint = task.get("checkpoint")
+        if not checkpoint:
+            return {"success": False, "error": "No checkpoint found for task"}
+
+        return {
+            "success": True,
+            "task_id": task_id,
+            "checkpoint": checkpoint,
+            "context_summary": task.get("context_summary"),
+            "resume_instructions": f"Resume from step {checkpoint.get('data', {}).get('step', 'unknown')}"
+        }
+
+    def generate_context_summary(self, task_id: str, summary: str,
+                                  key_decisions: List[str] = None,
+                                  handoff_notes: str = "") -> Dict:
+        """Generate handoff context summary for a task."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        task["context_summary"] = {
+            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "summary": summary,
+            "key_decisions": key_decisions or [],
+            "handoff_notes": handoff_notes
+        }
+
+        self.task_store.update_task(task_id, task)
+        self._save_all_state()
+        return {"success": True, "context_summary": task["context_summary"]}
+
+    # =========================================================================
+    # V3 TASK LIFECYCLE (claim, complete, query)
+    # =========================================================================
+
+    def get_all_tasks(self, status: Optional[str] = None) -> List[Dict]:
+        """Get all tasks, optionally filtered by status."""
+        tasks = self.task_store.get_all_tasks()
+        if status:
+            tasks = [t for t in tasks if t.get("status") == status]
+        return tasks
+
+    def claim_task(self, task_id: str, agent_id: str) -> Dict:
+        """Atomic task claiming with conflict detection."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        if task.get("claimed_by") and task["claimed_by"] != agent_id:
+            return {"success": False, "error": f"Task already claimed by {task['claimed_by']}"}
+
+        task["claimed_by"] = agent_id
+        task["status"] = "IN_PROGRESS"
+        task["claimed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+
+        self.task_store.update_task(task_id, task)
+        self._save_all_state()
+        return {"success": True, "task": task}
+
+    def complete_task(self, task_id: str, agent_id: str, outcome: str = "success") -> Dict:
+        """Mark task as complete."""
+        task = self.task_store.get_task(task_id)
+        if not task:
+            return {"success": False, "error": f"Task {task_id} not found"}
+
+        task["status"] = "DONE" if outcome == "success" else "FAILED"
+        task["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        task["completed_by"] = agent_id
+
+        self.task_store.update_task(task_id, task)
+        self._save_all_state()
+        return {"success": True, "task": task}
+
+    # =========================================================================
+    # METRICS & MONITORING
+    # =========================================================================
+
+    def get_pool_metrics(self) -> Dict:
+        """Get pool-wide metrics."""
+        tasks = self.task_store.get_all_tasks()
+        return {
+            "total_tasks": len(tasks),
+            "pending": len([t for t in tasks if t.get("status") in ["PENDING", "READY"]]),
+            "in_progress": len([t for t in tasks if t.get("status") == "IN_PROGRESS"]),
+            "blocked": len([t for t in tasks if t.get("status") == "BLOCKED"]),
+            "done": len([t for t in tasks if t.get("status") == "DONE"]),
+            "failed": len([t for t in tasks if t.get("status") == "FAILED"]),
+            "with_checkpoints": len([t for t in tasks if t.get("checkpoint")]),
+            "with_summaries": len([t for t in tasks if t.get("context_summary")])
+        }
+
+    def get_dependency_graph(self) -> Dict:
+        """Compute dependency graph for all tasks."""
+        tasks = self.task_store.get_all_tasks()
+        forward = {}
+        reverse = {}
+
+        for task in tasks:
+            task_id = task["id"]
+            deps = task.get("blocked_by", []) + task.get("depends_on", [])
+            forward[task_id] = deps
+            for dep in deps:
+                if dep not in reverse:
+                    reverse[dep] = []
+                reverse[dep].append(task_id)
+
+        depths = {}
+
+        def compute_depth(tid: str, visited: set) -> int:
+            if tid in depths:
+                return depths[tid]
+            if tid in visited:
+                return -1
+            visited.add(tid)
+            deps = forward.get(tid, [])
+            if not deps:
+                depths[tid] = 0
+                return 0
+            max_dep_depth = max(compute_depth(d, visited) for d in deps)
+            depths[tid] = max_dep_depth + 1 if max_dep_depth >= 0 else -1
+            return depths[tid]
+
+        for task in tasks:
+            compute_depth(task["id"], set())
+
+        return {
+            "forward_deps": forward,
+            "reverse_deps": reverse,
+            "depths": depths,
+            "computed_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        }
+
+    def get_agent_pool(self):
+        """Get the AgentPool instance (lazy import)."""
+        try:
+            from .agent_pool import _get_agent_pool
+            return _get_agent_pool()
+        except ImportError:
+            return None
+
+    def get_ingestion_stats(self) -> Dict:
+        """Get ingestion statistics."""
+        try:
+            from .task_ingestion import _get_ingestion_engine
+            engine = _get_ingestion_engine(self.brain_path)
+            if engine is None:
+                return {"error": "TaskIngestionEngine not available"}
+            return engine.get_ingestion_stats()
+        except ImportError:
+            return {"error": "TaskIngestionEngine not available"}
 
     # =========================================================================
     # MISSION OPERATIONS (Muscles)
