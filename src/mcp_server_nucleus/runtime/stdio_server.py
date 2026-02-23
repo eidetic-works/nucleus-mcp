@@ -751,17 +751,32 @@ def main():
     # Handle diagnostic flags for smoke tests
     if "--help" in sys.argv or "--status" in sys.argv:
         print("NUCLEUS MCP SERVER - OPERATIONAL")
-        print(f"Version: 1.0.8")
+        print(f"Version: 1.0.9")
         print(f"Platform: {sys.platform}")
         print(f"Python: {sys.version.split()[0]}")
         print(f"Brain Path: {os.environ.get('NUCLEAR_BRAIN_PATH', 'NOT_SET')}")
         
-        # Test imports
+        # Build tool list
+        server = StdioServer()
         try:
+            # Manually trigger the tools/list request
+            mcp_output = asyncio.run(server.handle_request({
+                "jsonrpc": "2.0",
+                "id": "diag",
+                "method": "tools/list",
+                "params": {}
+            }))
+            # handle_request might return a dict directly or a JSON string depending on caller
+            if isinstance(mcp_output, str):
+                mcp_output = json.loads(mcp_output)
+                
+            tools = [t["name"] for t in mcp_output["result"]["tools"]]
+            print(f"Registered Tools: {', '.join(tools)}")
+            
             import mcp_server_nucleus
             print("Import Status: OK")
-        except:
-            print("Import Status: FAILED")
+        except Exception as e:
+            print(f"Import Status: FAILED ({e})")
             
         sys.exit(0)
 

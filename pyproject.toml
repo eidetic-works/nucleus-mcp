@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.0.8"
+version = "1.0.9"
 description = "The Sovereign Agent Control Plane with Governance & Engrams"
 readme = "README.md"
 authors = [
