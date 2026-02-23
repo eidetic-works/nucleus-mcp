@@ -59,6 +59,19 @@ class Locker:
             logger.warning("Windows 'attrib' command not found. Skipping lock.")
             return True # Graceful skip
             
+        import sys
+        if sys.platform == 'linux':
+            import shutil
+            if not shutil.which("chattr"):
+                logger.warning("Locker: 'chattr' not found on Linux. Skipping immutable lock.")
+                return True
+            # Linux requires sudo for chattr immutable flags. 
+            # Non-interactive sudo must be allowed for the agent user or it will prompt/fail.
+            if os.path.isdir(path):
+                return self._run_cmd(["sudo", "chattr", "-R", "+i", path])
+            else:
+                return self._run_cmd(["sudo", "chattr", "+i", path])
+
         # Check if chflags exists (macOS/BSD)
         import shutil
         if not shutil.which("chflags"):
@@ -86,6 +99,16 @@ class Locker:
                 return self._run_cmd(["attrib", "-r", path])
             return True
 
+        import sys
+        if sys.platform == 'linux':
+            import shutil
+            if not shutil.which("chattr"):
+                return True
+            if os.path.isdir(path):
+                return self._run_cmd(["sudo", "chattr", "-R", "-i", path])
+            else:
+                return self._run_cmd(["sudo", "chattr", "-i", path])
+
         import shutil
         if not shutil.which("chflags"):
             return True
@@ -106,6 +129,26 @@ class Locker:
         if os.name == 'nt':
             import stat
             return not (os.stat(path).st_mode & stat.S_IWRITE)
+
+        import sys
+        if sys.platform == 'linux':
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["lsattr", path],
+                    capture_output=True,
+                    text=True,
+                    check=False
+                )
+                if result.returncode == 0:
+                    output = result.stdout.strip()
+                    if output and len(output) > 5:
+                        # e.g., "----i---------e---- file.txt" -> check if 'i' is in the attributes part
+                        attrs = output.split()[0]
+                        return 'i' in attrs
+            except Exception:
+                pass
+            return False
 
         # macOS/BSD Check
         try:

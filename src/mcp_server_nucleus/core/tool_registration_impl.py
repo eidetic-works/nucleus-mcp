@@ -12,6 +12,7 @@ import sys
 # State flag to prevent recursion when FastMCP internally calls mcp.tool
 _REGISTERING_TOOL = False
 _original_mcp_tool = None
+_rpc_firewall_hook = None
 
 def _tiered_tool_wrapper(*args, **kwargs):
     """
@@ -60,7 +61,13 @@ def _tiered_tool_wrapper(*args, **kwargs):
                             self.__module__ = original_fn.__module__
                             
                         def __call__(self, *args, **kwargs):
+                            global _rpc_firewall_hook
                             print(f"[NUCLEUS] Executing {self.__name__}...", file=sys.stderr)
+                            
+                            # Layer 3: RPC Firewall Interception
+                            if _rpc_firewall_hook is not None:
+                                _rpc_firewall_hook(self.__name__, args, kwargs)
+                                
                             return self._fn(*args, **kwargs)
                             
                         def __getattr__(self, name):
@@ -91,9 +98,10 @@ def _tiered_tool_wrapper(*args, **kwargs):
     
     return decorator
 
-def configure_tiered_tool_registration(mcp_instance):
+def configure_tiered_tool_registration(mcp_instance, rpc_firewall_hook=None):
     """Initializes the tiered tool registration system for the given MCP instance."""
-    global _original_mcp_tool
+    global _original_mcp_tool, _rpc_firewall_hook
     _original_mcp_tool = mcp_instance.tool
+    _rpc_firewall_hook = rpc_firewall_hook
     mcp_instance.tool = _tiered_tool_wrapper
     return mcp_instance

@@ -35,6 +35,23 @@ logger_init.info(f"Nucleus Tool Tier: {ACTIVE_TIER} ({get_tier_info()['tier_name
 os.environ["FASTMCP_SHOW_CLI_BANNER"] = "False"
 os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
 
+# Epic 5B: Strict Privilege Separation Assertion (Layer 5)
+try:
+    if os.geteuid() != 0:
+        logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged.")
+        logger_init.warning("    The Watchdog can be terminated by local agents (UID collision).")
+        logger_init.warning("    For active defense, install via `sudo scripts/install_nucleus_daemon.sh`")
+        # Ensure it always prints to stderr during startup bypass
+        sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged. Watchdog can be killed.\n")
+        sys.stderr.flush()
+except AttributeError:
+    # Windows fallback (os.geteuid doesn't exist)
+    import ctypes
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged (Non-Admin).")
+        sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged (Non-Admin).\n")
+        sys.stderr.flush()
+
 # from fastmcp import FastMCP (Moved to try/except block below)
 
 # Import commitment ledger module
@@ -116,7 +133,32 @@ except ImportError:
 
 # Initialize tiered tool registration (must happen after mcp is created)
 from .core.tool_registration_impl import configure_tiered_tool_registration
-configure_tiered_tool_registration(mcp)
+
+def nucleus_rpc_firewall_hook(tool_name: str, args: tuple, kwargs: dict):
+    """Layer 3: Pre-execution validation of JSON-RPC tool calls."""
+    if tool_name in ["write_to_file", "replace_file_content", "multi_replace_file_content", "nucleus_delete_file", "brain_fix_code"]:
+        target_path = kwargs.get("TargetFile") or kwargs.get("target_file") or kwargs.get("AbsolutePath") or kwargs.get("path") or kwargs.get("file_path")
+        if target_path:
+            from pathlib import Path
+            try:
+                abs_path = str(Path(target_path).resolve())
+                from .runtime.hypervisor_ops import _watchdog
+                
+                is_protected = False
+                for p_path in getattr(_watchdog, 'protected_paths', []):
+                    if abs_path == p_path or abs_path.startswith(p_path + "/"):
+                        is_protected = True
+                        break
+                        
+                if is_protected:
+                    raise PermissionError(f"🚨 Nucleus RPC Firewall: Unauthorized file modification attempt on protected path: {target_path}")
+            except Exception as e:
+                if isinstance(e, PermissionError) and "Nucleus RPC Firewall" in str(e):
+                    raise e
+                import logging
+                logging.getLogger("nucleus").warning(f"RPC Firewall Hook Error: {e}")
+
+configure_tiered_tool_registration(mcp, rpc_firewall_hook=nucleus_rpc_firewall_hook)
 
 
 
@@ -232,6 +274,27 @@ def hypervisor_status() -> str:
     [HYPERVISOR] Reports the current security state of the Agent OS.
     """
     return hypervisor_status_impl()
+
+# ============================================================
+# EGRESS FIREWALL PROXY (Layer 4)
+# ============================================================
+from .core.egress_proxy import nucleus_curl_impl, nucleus_pip_install_impl
+
+@mcp.tool()
+def nucleus_curl(url: str, method: str = "GET") -> str:
+    """
+    [EGRESS FIREWALL] Proxied HTTP fetch for Air-Gapped Agents.
+    Use this to read docs/schemas when your runtime --network is blocked.
+    """
+    return nucleus_curl_impl(url, method)
+
+@mcp.tool()
+def nucleus_pip_install(package: str) -> str:
+    """
+    [EGRESS FIREWALL] Proxied pip install for Air-Gapped Agents.
+    Executes 'pip install' on the Host so you can import the library.
+    """
+    return nucleus_pip_install_impl(package)
 
 # Artifact and Trigger logic moved to runtime/artifact_ops.py and runtime/trigger_ops.py
 

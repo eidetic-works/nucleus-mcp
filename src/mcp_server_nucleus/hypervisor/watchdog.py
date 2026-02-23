@@ -1,5 +1,7 @@
-
 import logging
+import time
+import os
+from collections import deque
 from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -16,6 +18,7 @@ class SecurityEventHandler(FileSystemEventHandler):
     def __init__(self, watchdog_instance, locker: Locker):
         self.watchdog = watchdog_instance
         self.locker = locker
+        self.revert_timestamps = deque(maxlen=10)
 
     def on_modified(self, event):
         if event.is_directory:
@@ -34,11 +37,43 @@ class SecurityEventHandler(FileSystemEventHandler):
             # Breach Detected!
             logger.warning(f"🚨 SECURITY BREACH: Locked file modified: {path}")
             
-            # 1. Immediate Re-Lock (in case it was unlocked)
-            self.locker.lock(path)
-            
-            # 2. (Future) Revert from Shadow Copy
-            # self.revert(path)
+            # Revert from Shadow Copy (which also re-locks)
+            self.revert(path)
+
+    def revert(self, path: str):
+        current_time = time.time()
+        self.revert_timestamps.append(current_time)
+        
+        # DDoS Circuit Breaker: 10 edits inside 1 second
+        if len(self.revert_timestamps) == self.revert_timestamps.maxlen:
+            time_delta = self.revert_timestamps[-1] - self.revert_timestamps[0]
+            if time_delta < 1.0:
+                logger.error(f"🚨 DDoS CIRCUIT BREAKER TRIPPED! Too many reverts in {time_delta:.2f}s. Dropping connection.")
+                os._exit(1)
+                
+        if path in self.watchdog.shadow_cache:
+            try:
+                # 1. Unlock to allow writing
+                self.locker.unlock(path)
+                
+                # 2. Write with POSIX flock
+                data = self.watchdog.shadow_cache[path]
+                with open(path, 'wb') as f:
+                    try:
+                        import fcntl
+                        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                        f.write(data)
+                        f.flush()
+                        os.fsync(f.fileno())
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    except ImportError:
+                        f.write(data)
+                logger.info(f"✅ Reverted {path} from RAM Shadow Cache.")
+            except Exception as e:
+                logger.error(f"Failed to revert {path}: {e}")
+            finally:
+                # 3. Immediately re-lock
+                self.locker.lock(path)
 
 class Watchdog:
     """
@@ -50,12 +85,22 @@ class Watchdog:
         self.locker = Locker()
         self.observer = Observer()
         self.protected_paths = []
+        self.shadow_cache = {}
 
     def protect(self, path: str):
         """Adds a path to the protected list and starts watching it."""
         abs_path = str((self.workspace_root / path).resolve())
         if abs_path not in self.protected_paths:
             self.protected_paths.append(abs_path)
+            
+            # Load into RAM Shadow Cache
+            try:
+                if os.path.exists(abs_path) and not os.path.isdir(abs_path):
+                    with open(abs_path, 'rb') as f:
+                        self.shadow_cache[abs_path] = f.read()
+            except Exception as e:
+                logger.warning(f"Watchdog: Could not cache {abs_path}: {e}")
+                
             # Ensure it is physically locked
             self.locker.lock(abs_path)
     

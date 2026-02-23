@@ -210,6 +210,29 @@ class StdioServer:
                             }
                         },
                         {
+                            "name": "nucleus_curl",
+                            "description": "[EGRESS FIREWALL] Proxied HTTP fetch for Air-Gapped Agents.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "url": {"type": "string", "description": "URL to fetch"},
+                                    "method": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE"], "default": "GET"}
+                                },
+                                "required": ["url"]
+                            }
+                        },
+                        {
+                            "name": "nucleus_pip_install",
+                            "description": "[EGRESS FIREWALL] Proxied pip install for Air-Gapped Agents.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "package": {"type": "string", "description": "PyPI package name"}
+                                },
+                                "required": ["package"]
+                            }
+                        },
+                        {
                             "name": "brain_audit_log",
                             "description": "View the cryptographic interaction log for trust verification.",
                             "inputSchema": {
@@ -631,6 +654,14 @@ class StdioServer:
             return json.dumps(_get_next_task(
                 skills=args.get("skills", [])
             ), indent=2)
+
+        elif name == "nucleus_curl":
+            from mcp_server_nucleus.core.egress_proxy import nucleus_curl_impl
+            return nucleus_curl_impl(args.get("url"), args.get("method", "GET"))
+            
+        elif name == "nucleus_pip_install":
+            from mcp_server_nucleus.core.egress_proxy import nucleus_pip_install_impl
+            return nucleus_pip_install_impl(args.get("package"))
                 
         raise ValueError(f"Unknown tool: {name}")
 

@@ -40,6 +40,9 @@ TIER_0_LAUNCH: Set[str] = {
     "unlock_resource",           # Demo A: Allow modification
     "hypervisor_status",         # Demo A: Status check
     "watch_resource",            # Demo A: Monitor changes
+    # Egress Proxies (v1.0.9)
+    "nucleus_curl",
+    "nucleus_pip_install",
 }
 
 TIER_1_CORE: Set[str] = {
