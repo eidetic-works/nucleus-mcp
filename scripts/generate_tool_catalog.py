@@ -1,0 +1,221 @@
+import sys
+import os
+import ast
+from pathlib import Path
+
+# Ensure src is in PYTHONPATH
+src_path = Path(__file__).parent.parent / "src"
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus Sovereign Tool Catalog</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .search-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; }
+        .search-input:focus { outline: none; border-color: #7C3AED; box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); }
+        .tool-card { transition: all 0.3s ease; opacity: 1; transform: translateY(0); }
+        .tool-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-color: rgba(124,58,237,0.3); }
+        .tool-card.hidden { display: none; }
+        .copy-btn { opacity: 0; transition: opacity 0.2s; }
+        .tool-card:hover .copy-btn { opacity: 1; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+    <script>
+        function filterTools() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.tool-card');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            document.getElementById('toolCount').innerText = `${visibleCount} tools found`;
+        }
+
+        async function copyToClipboard(text, btn) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<svg class="w-4 h-4 text-green-400" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen text-slate-300 antialiased p-6 md:p-12">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-4 tracking-tight">Nucleus Tool Catalog</h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">The definitive Sovereign Command Deck index. Search, explore, and leverage the exact tool needed for high-trust agentic execution.</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="sticky top-6 z-50 mb-12">
+            <div class="relative max-w-3xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-6 w-6 text-slate-500" style="width: 24px; height: 24px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" id="searchInput" onkeyup="filterTools()" class="search-input w-full pl-12 pr-4 py-4 rounded-xl text-lg text-white font-medium placeholder-slate-500 shadow-xl" placeholder="Search by tool name, description, or parameter...">
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                    <span id="toolCount" class="text-sm text-slate-400 font-medium">Loading tools...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Grid -->
+        <div id="toolGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {{TOOLS}}
+        </div>
+        
+        <!-- Footer -->
+        <footer class="mt-20 text-center text-slate-500 text-sm">
+            <p>Generated by Nucleus Sovereign OS Pipeline • Date: {{DATE}}</p>
+        </footer>
+    </div>
+</body>
+</html>
+"""
+
+def get_ast_args(node):
+    args = []
+    # Using python 3 features (ast.arg)
+    for arg in getattr(node.args, 'args', []) + getattr(node.args, 'kwonlyargs', []):
+        ann = getattr(arg, 'annotation', None)
+        ann_type = "any"
+        if isinstance(ann, ast.Name):
+            ann_type = ann.id
+        elif isinstance(ann, ast.Subscript):
+            if isinstance(ann.value, ast.Name):
+                ann_type = ann.value.id
+        args.append({"name": arg.arg, "type": ann_type})
+    return args
+
+def generate_catalog():
+    print("Parsing tools via AST...")
+    tools_dir = src_path / "mcp_server_nucleus" / "tools"
+    
+    extracted = []
+    
+    for py_file in tools_dir.glob("*.py"):
+        if py_file.name == "__init__.py":
+            continue
+            
+        with open(py_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            
+        try:
+            tree = ast.parse(content)
+        except Exception:
+            continue
+            
+        module_name = py_file.stem
+        
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                is_tool = any(
+                    (isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute) and dec.func.attr == "tool") or
+                    (isinstance(dec, ast.Attribute) and dec.attr == "tool")
+                    for dec in node.decorator_list
+                )
+                
+                if is_tool:
+                    desc_str = ast.get_docstring(node) or "No description provided."
+                    args_info = get_ast_args(node)
+                    extracted.append({
+                        "name": node.name,
+                        "desc": desc_str,
+                        "args": args_info,
+                        "module": module_name
+                    })
+
+    # Sort alphabetically
+    extracted.sort(key=lambda t: t["name"])
+    print(f"Found {len(extracted)} tools.")
+    
+    tools_html = ""
+    for tool in extracted:
+        props_html = ""
+        if tool["args"]:
+            for arg_obj in tool["args"]:
+                p_name = arg_obj["name"]
+                if p_name in ("self", "mcp"):
+                    continue
+                p_type = arg_obj["type"]
+                props_html += f'''
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">{p_name}</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">{p_type}</span>
+                        </div>
+                    </div>
+                '''
+        else:
+            props_html = '<div class="text-xs text-slate-500 italic mt-2">No parameters required.</div>'
+            
+        desc_formatted = tool["desc"].replace("\\n", "<br>")
+            
+        tool_html = f'''
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">{tool["module"]}</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">{tool["name"]}</h3>
+                <button onclick="copyToClipboard('{tool["name"]}', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                {desc_formatted}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    {props_html}
+                </div>
+            </div>
+        </div>
+        '''
+        tools_html += tool_html
+
+    from datetime import datetime
+    final_html = HTML_TEMPLATE.replace("{{TOOLS}}", tools_html).replace("{{DATE}}", datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"))
+    
+    docs_dir = Path(__file__).parent.parent / "docs"
+    docs_dir.mkdir(exist_ok=True)
+    out_path = docs_dir / "catalog.html"
+    
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(final_html)
+        
+    print(f"Catalog successfully generated at: {out_path}")
+    
+    # Also update script template logic to insert correct initial tool count
+    with open(out_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    content = content.replace("Loading tools...", f"{len(extracted)} tools available")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+if __name__ == "__main__":
+    generate_catalog()

@@ -1,0 +1,88 @@
+{
+    "tiers": {
+        "premium": {
+            "model": "gemini-2.5-pro",
+            "platform": "vertex",
+            "description": "Advanced reasoning, complex architecture, critical decisions",
+            "cost_per_1m_tokens": {
+                "input": 2.00,
+                "output": 8.00
+            },
+            "max_context_tokens": 1000000
+        },
+        "standard": {
+            "model": "gemini-2.5-flash",
+            "platform": "vertex",
+            "description": "Default production tier. 95% of agent work.",
+            "cost_per_1m_tokens": {
+                "input": 0.10,
+                "output": 0.40
+            },
+            "max_context_tokens": 1000000
+        },
+        "economy": {
+            "model": "gemini-2.5-flash-lite",
+            "platform": "vertex",
+            "description": "Background tasks, batch processing, digests",
+            "cost_per_1m_tokens": {
+                "input": 0.05,
+                "output": 0.20
+            },
+            "max_context_tokens": 100000
+        },
+        "local_paid": {
+            "model": "gemini-2.5-flash",
+            "platform": "api_key",
+            "description": "Fallback when Vertex/ADC fails. Requires GEMINI_API_KEY with billing.",
+            "cost_per_1m_tokens": {
+                "input": 0.10,
+                "output": 0.40
+            },
+            "max_context_tokens": 32000
+        },
+        "local_free": {
+            "model": "gemini-2.0-flash",
+            "platform": "api_key",
+            "description": "Testing only. 100 req/day limit. Do NOT use for production.",
+            "cost_per_1m_tokens": {
+                "input": 0,
+                "output": 0
+            },
+            "max_context_tokens": 32000,
+            "daily_limit": 100
+        }
+    },
+    "job_routing": {
+        "CRITICAL": "premium",
+        "RESEARCH": "standard",
+        "ORCHESTRATION": "standard",
+        "BACKGROUND": "economy",
+        "TESTING": "local_free"
+    },
+    "budget_modes": {
+        "spartan": [
+            "local_free",
+            "economy",
+            "standard"
+        ],
+        "balanced": [
+            "standard",
+            "economy",
+            "local_paid"
+        ],
+        "premium": [
+            "premium",
+            "standard",
+            "economy"
+        ]
+    },
+    "fallback_chain": [
+        "premium",
+        "standard",
+        "economy",
+        "local_paid",
+        "local_free"
+    ],
+    "default_tier": "standard",
+    "default_budget_mode": "balanced"
+}

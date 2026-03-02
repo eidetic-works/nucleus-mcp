@@ -1,0 +1,1695 @@
+[
+  {
+    "service_id": "srv-001",
+    "service_name": "FuGuMuDaService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "VPC",
+      "DynamoDB",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "REST API to ShippingQueue",
+      "Consumes from SQS_OrderService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-002",
+    "service_name": "SuIeCoPeService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "Route53"
+    ],
+    "communication_patterns": [
+      "gRPC with RecommendationEngine"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-003",
+    "service_name": "RoUeToQeGuIoService",
+    "language_framework": "Node.js/Express",
+    "aws_dependencies": [
+      "Parameter Store",
+      "EKS",
+      "Kinesis",
+      "DynamoDB",
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "gRPC with AnalyticsTopic",
+      "GraphQL API to UserDB"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-004",
+    "service_name": "BoZeKuEaVuService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "Kinesis",
+      "S3",
+      "Secrets Manager"
+    ],
+    "communication_patterns": [
+      "Direct DB access to AnalyticsTopic"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-005",
+    "service_name": "LoKaYiYoQuAaService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "SQS",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "REST API to SearchService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-006",
+    "service_name": "MaYeYeCuService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "RDS",
+      "Route53",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "GraphQL API to PaymentQueue"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-007",
+    "service_name": "UiFoKiService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "EC2",
+      "DynamoDB",
+      "EKS"
+    ],
+    "communication_patterns": [
+      "Direct DB access to PricingService",
+      "gRPC with AuthDB"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-008",
+    "service_name": "FaTeCeSuFoFiService",
+    "language_framework": "Node.js/Express",
+    "aws_dependencies": [
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "gRPC with InventoryService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-009",
+    "service_name": "HeAoMeViZiVaService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "Parameter Store"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_InventoryService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-010",
+    "service_name": "PoHiZoRoYiZoService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "DynamoDB",
+      "SNS",
+      "ECS"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_InventoryService",
+      "REST API to RecommendationEngine",
+      "REST API to PaymentQueue"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-011",
+    "service_name": "SiDiCiIeOoDeService",
+    "language_framework": ".NET/ASP.NET Core",
+    "aws_dependencies": [
+      "S3",
+      "SNS",
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "REST API to PaymentQueue"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-012",
+    "service_name": "OoQiBuIeService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "EKS",
+      "EventBridge",
+      "DynamoDB"
+    ],
+    "communication_patterns": [
+      "gRPC with SearchService",
+      "GraphQL API to RecommendationEngine",
+      "gRPC with InventoryService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-013",
+    "service_name": "NeXaPuService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "S3",
+      "EventBridge",
+      "Parameter Store",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_CatalogService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-014",
+    "service_name": "UeAaTaYeLiService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "CloudWatch",
+      "SNS",
+      "S3"
+    ],
+    "communication_patterns": [
+      "GraphQL API to ProductService",
+      "REST API to CustomerService",
+      "Publishes to SNS_NotificationTopic"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-015",
+    "service_name": "EaJoEaBiIoService",
+    "language_framework": "Go/Gin",
+    "aws_dependencies": [
+      "EventBridge",
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_ShippingQueue",
+      "GraphQL API to ShippingQueue"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-016",
+    "service_name": "HiLiOaService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "Cognito",
+      "CloudFront"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_PricingService",
+      "Consumes from SQS_ProductService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-017",
+    "service_name": "NuHiNuMoService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "API Gateway"
+    ],
+    "communication_patterns": [
+      "gRPC with ShippingQueue",
+      "GraphQL API to CustomerService",
+      "Direct DB access to PricingService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-018",
+    "service_name": "IoQiQaService",
+    "language_framework": "Node.js/Express",
+    "aws_dependencies": [
+      "RDS",
+      "DynamoDB",
+      "Lambda",
+      "Parameter Store"
+    ],
+    "communication_patterns": [
+      "Direct DB access to PricingService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-019",
+    "service_name": "ViLuPiKiQoDuService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "Cognito",
+      "AppSync",
+      "Lambda"
+    ],
+    "communication_patterns": [
+      "Direct DB access to AuthDB"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-020",
+    "service_name": "WiUaIiYuService",
+    "language_framework": "Go/Gin",
+    "aws_dependencies": [
+      "ECS",
+      "AppSync",
+      "CloudFront",
+      "DynamoDB"
+    ],
+    "communication_patterns": [
+      "GraphQL API to RecommendationEngine"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-021",
+    "service_name": "GuWuHeEoJuWuService",
+    "language_framework": "PHP/Laravel",
+    "aws_dependencies": [
+      "Lambda",
+      "RDS",
+      "Kinesis",
+      "Cognito"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_ShippingQueue"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-022",
+    "service_name": "QaGuQaUePiRoService",
+    "language_framework": "Java/Micronaut",
+    "aws_dependencies": [
+      "Route53",
+      "Secrets Manager"
+    ],
+    "communication_patterns": [
+      "gRPC with ProductService",
+      "REST API to CustomerService",
+      "Publishes to SNS_CustomerService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-023",
+    "service_name": "RiOuOoEuXaService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "Secrets Manager",
+      "EventBridge",
+      "RDS",
+      "S3"
+    ],
+    "communication_patterns": [
+      "gRPC with AuthDB",
+      "Consumes from SQS_PaymentQueue"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-024",
+    "service_name": "IuEuJuKoWoService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "SNS",
+      "EKS",
+      "Step Functions",
+      "Lambda",
+      "API Gateway"
+    ],
+    "communication_patterns": [
+      "REST API to PaymentQueue",
+      "gRPC with NotificationTopic"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-025",
+    "service_name": "YaCoMuYuService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "S3",
+      "SNS",
+      "VPC",
+      "EventBridge",
+      "EC2"
+    ],
+    "communication_patterns": [
+      "Direct DB access to AuthDB",
+      "gRPC with SearchService",
+      "gRPC with AnalyticsTopic"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-026",
+    "service_name": "SuRuDoService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "SNS",
+      "ECS"
+    ],
+    "communication_patterns": [
+      "gRPC with NotificationTopic"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-027",
+    "service_name": "HaFuIeService",
+    "language_framework": "PHP/Laravel",
+    "aws_dependencies": [
+      "AppSync",
+      "RDS"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_CatalogService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-028",
+    "service_name": "RiJiMuService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "Step Functions",
+      "Parameter Store"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_AuthDB"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-029",
+    "service_name": "CiXoMiYiVeService",
+    "language_framework": "Go/Echo",
+    "aws_dependencies": [
+      "AppSync",
+      "Parameter Store",
+      "CloudFront",
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_OrderService",
+      "REST API to ProductService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-030",
+    "service_name": "GaRuQuService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "SNS",
+      "VPC",
+      "Route53",
+      "CloudWatch",
+      "S3"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_ProductService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-031",
+    "service_name": "FiZiToCiGeService",
+    "language_framework": "Go/Echo",
+    "aws_dependencies": [
+      "RDS",
+      "SNS"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_PricingService",
+      "gRPC with AuthDB",
+      "Consumes from SQS_CatalogService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-032",
+    "service_name": "HaKoSeOuAiService",
+    "language_framework": "PHP/Laravel",
+    "aws_dependencies": [
+      "RDS",
+      "EC2",
+      "CloudFront",
+      "Kinesis",
+      "SNS"
+    ],
+    "communication_patterns": [
+      "gRPC with AuthDB",
+      "GraphQL API to AnalyticsTopic",
+      "Direct DB access to UserDB"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-033",
+    "service_name": "SiBeGoService",
+    "language_framework": ".NET/ASP.NET Core",
+    "aws_dependencies": [
+      "SQS",
+      "EventBridge",
+      "EKS",
+      "API Gateway",
+      "RDS"
+    ],
+    "communication_patterns": [
+      "Direct DB access to CustomerService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-034",
+    "service_name": "IiAoOeSeYiService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "API Gateway"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_NotificationTopic"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-035",
+    "service_name": "VeRaTeTaZiAaService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "Lambda",
+      "Step Functions"
+    ],
+    "communication_patterns": [
+      "gRPC with UserDB"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-036",
+    "service_name": "KeVeXiPoAoQaService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "EventBridge",
+      "Route53"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_SearchService",
+      "Consumes from SQS_CatalogService",
+      "gRPC with NotificationTopic"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-037",
+    "service_name": "PeSeMoHuZeWuService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "SNS",
+      "DynamoDB",
+      "Route53",
+      "API Gateway"
+    ],
+    "communication_patterns": [
+      "GraphQL API to ShippingQueue"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-038",
+    "service_name": "LaRuPeService",
+    "language_framework": "PHP/Laravel",
+    "aws_dependencies": [
+      "Route53",
+      "Kinesis",
+      "Lambda",
+      "EKS"
+    ],
+    "communication_patterns": [
+      "gRPC with NotificationTopic"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-039",
+    "service_name": "MeNiWiService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "API Gateway"
+    ],
+    "communication_patterns": [
+      "REST API to SearchService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-040",
+    "service_name": "YuRoIoService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "Lambda",
+      "S3",
+      "EKS",
+      "API Gateway",
+      "CloudFront"
+    ],
+    "communication_patterns": [
+      "gRPC with ProductService",
+      "gRPC with UserDB",
+      "Consumes from SQS_RecommendationEngine"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-041",
+    "service_name": "YeEeReRiService",
+    "language_framework": "PHP/Laravel",
+    "aws_dependencies": [
+      "CloudFront"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_PricingService",
+      "GraphQL API to InventoryService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-042",
+    "service_name": "SoLuSuRaCoService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "API Gateway"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_PricingService",
+      "gRPC with RecommendationEngine",
+      "Publishes to SNS_CatalogService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-043",
+    "service_name": "WeQuVaService",
+    "language_framework": "Go/Echo",
+    "aws_dependencies": [
+      "DynamoDB",
+      "Route53"
+    ],
+    "communication_patterns": [
+      "Direct DB access to OrderService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-044",
+    "service_name": "CiCeZiService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "EKS",
+      "VPC"
+    ],
+    "communication_patterns": [
+      "REST API to PaymentQueue",
+      "REST API to InventoryService",
+      "Direct DB access to PricingService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-045",
+    "service_name": "KaXuNoService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "EC2",
+      "DynamoDB",
+      "AppSync",
+      "EventBridge"
+    ],
+    "communication_patterns": [
+      "REST API to UserDB",
+      "REST API to AuthDB"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-046",
+    "service_name": "RaDoNuYiService",
+    "language_framework": "Go/Echo",
+    "aws_dependencies": [
+      "EventBridge"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_SearchService",
+      "REST API to PricingService",
+      "GraphQL API to CatalogService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-047",
+    "service_name": "OiKeGuService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "AppSync",
+      "S3"
+    ],
+    "communication_patterns": [
+      "GraphQL API to InventoryService",
+      "GraphQL API to SearchService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-048",
+    "service_name": "XiVoCuTuService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "Secrets Manager",
+      "RDS",
+      "VPC",
+      "AppSync"
+    ],
+    "communication_patterns": [
+      "REST API to SearchService",
+      "Publishes to SNS_PricingService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-049",
+    "service_name": "YePoOuAaOoService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "RDS"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_AnalyticsTopic",
+      "REST API to NotificationTopic",
+      "Publishes to SNS_AnalyticsTopic"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-050",
+    "service_name": "BaAoOaXoHaJiService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "RDS",
+      "EventBridge",
+      "Route53",
+      "EC2"
+    ],
+    "communication_patterns": [
+      "Direct DB access to SearchService",
+      "Consumes from SQS_ShippingQueue"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-051",
+    "service_name": "IoOoMoQeHiRuService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "AppSync",
+      "API Gateway",
+      "Parameter Store",
+      "EC2",
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_ShippingQueue",
+      "Direct DB access to UserDB"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-052",
+    "service_name": "EaJiCuFeNoService",
+    "language_framework": "Java/Micronaut",
+    "aws_dependencies": [
+      "VPC",
+      "Parameter Store"
+    ],
+    "communication_patterns": [
+      "REST API to InventoryService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-053",
+    "service_name": "QuQiZiVaPaCuService",
+    "language_framework": "PHP/Laravel",
+    "aws_dependencies": [
+      "Cognito",
+      "Secrets Manager",
+      "Kinesis",
+      "SNS",
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_ProductService",
+      "Publishes to SNS_SearchService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-054",
+    "service_name": "MiMuTuService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "VPC",
+      "SNS",
+      "API Gateway",
+      "Lambda",
+      "EventBridge"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_ShippingQueue",
+      "gRPC with PaymentQueue",
+      "Direct DB access to CustomerService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-055",
+    "service_name": "HoKeZiLiService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "Route53",
+      "EC2",
+      "API Gateway",
+      "ECS",
+      "CloudFront"
+    ],
+    "communication_patterns": [
+      "REST API to ProductService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-056",
+    "service_name": "PaPoUuOiTaService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "Kinesis",
+      "ECS",
+      "Lambda",
+      "CloudFront",
+      "VPC"
+    ],
+    "communication_patterns": [
+      "GraphQL API to ShippingQueue",
+      "REST API to UserDB",
+      "GraphQL API to AuthDB"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-057",
+    "service_name": "ToFiDiService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "Lambda"
+    ],
+    "communication_patterns": [
+      "Direct DB access to PaymentQueue",
+      "Direct DB access to CatalogService",
+      "gRPC with UserDB"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-058",
+    "service_name": "TiGaPoPiYiService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "AppSync",
+      "S3"
+    ],
+    "communication_patterns": [
+      "Direct DB access to ProductService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-059",
+    "service_name": "XoIiGaService",
+    "language_framework": "Node.js/Express",
+    "aws_dependencies": [
+      "CloudWatch",
+      "API Gateway",
+      "EventBridge",
+      "RDS",
+      "Step Functions"
+    ],
+    "communication_patterns": [
+      "gRPC with SearchService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-060",
+    "service_name": "XaUaBaQaService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "VPC",
+      "CloudFront",
+      "SQS",
+      "Route53"
+    ],
+    "communication_patterns": [
+      "Direct DB access to CatalogService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-061",
+    "service_name": "TeOiHoService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "CloudWatch"
+    ],
+    "communication_patterns": [
+      "GraphQL API to OrderService",
+      "REST API to ProductService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-062",
+    "service_name": "BiGoZuDoYaService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "Lambda",
+      "S3",
+      "EventBridge"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_AuthDB"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-063",
+    "service_name": "AeQeVuVuService",
+    "language_framework": "Java/Micronaut",
+    "aws_dependencies": [
+      "Step Functions"
+    ],
+    "communication_patterns": [
+      "REST API to UserDB",
+      "Consumes from SQS_PricingService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-064",
+    "service_name": "SuCeLiIaService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "EC2",
+      "S3"
+    ],
+    "communication_patterns": [
+      "Direct DB access to RecommendationEngine"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-065",
+    "service_name": "EiFaPiYoService",
+    "language_framework": "Ruby/Rails",
+    "aws_dependencies": [
+      "ECS",
+      "VPC",
+      "Route53"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_PaymentQueue",
+      "gRPC with PricingService",
+      "Consumes from SQS_AnalyticsTopic"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-066",
+    "service_name": "EuXoCoService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "S3",
+      "DynamoDB",
+      "Route53",
+      "EC2"
+    ],
+    "communication_patterns": [
+      "REST API to RecommendationEngine",
+      "Publishes to SNS_CatalogService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-067",
+    "service_name": "UoWiWoToService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "SNS",
+      "Lambda",
+      "CloudWatch",
+      "EventBridge",
+      "ECS"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_CatalogService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-068",
+    "service_name": "IiFuRoDiService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "Lambda",
+      "VPC",
+      "AppSync",
+      "Kinesis",
+      "ECS"
+    ],
+    "communication_patterns": [
+      "GraphQL API to CatalogService",
+      "Direct DB access to CustomerService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-069",
+    "service_name": "SoTiFiService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "Route53",
+      "API Gateway",
+      "AppSync"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_PricingService",
+      "GraphQL API to CustomerService",
+      "Publishes to SNS_OrderService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-070",
+    "service_name": "YoPiNiService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "VPC",
+      "EKS",
+      "Lambda"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_AnalyticsTopic"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-071",
+    "service_name": "MiBoNeJeService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "EC2",
+      "S3",
+      "DynamoDB",
+      "Cognito",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "Direct DB access to PricingService",
+      "gRPC with CatalogService",
+      "Consumes from SQS_ShippingQueue"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-072",
+    "service_name": "OuUeQaService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "SQS",
+      "VPC",
+      "Step Functions",
+      "AppSync"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_SearchService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-073",
+    "service_name": "LaEeLaZiSeKiService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "Route53",
+      "VPC"
+    ],
+    "communication_patterns": [
+      "REST API to OrderService",
+      "Consumes from SQS_UserDB"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-074",
+    "service_name": "RaMeToQuFeService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "AppSync",
+      "EC2"
+    ],
+    "communication_patterns": [
+      "gRPC with CatalogService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-075",
+    "service_name": "PuLaNiDuService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "Kinesis",
+      "Route53",
+      "Step Functions",
+      "ECS",
+      "EventBridge"
+    ],
+    "communication_patterns": [
+      "REST API to AnalyticsTopic",
+      "REST API to AuthDB",
+      "Direct DB access to PricingService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-076",
+    "service_name": "WeViCaDiFaPiService",
+    "language_framework": "Go/Gin",
+    "aws_dependencies": [
+      "S3"
+    ],
+    "communication_patterns": [
+      "REST API to PricingService",
+      "Publishes to SNS_NotificationTopic",
+      "Consumes from SQS_ProductService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-077",
+    "service_name": "SiYaZuGiAoCeService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "CloudWatch",
+      "DynamoDB",
+      "Kinesis",
+      "EC2",
+      "AppSync"
+    ],
+    "communication_patterns": [
+      "REST API to AnalyticsTopic",
+      "gRPC with AuthDB",
+      "gRPC with UserDB"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-078",
+    "service_name": "FeHiZiEePuReService",
+    "language_framework": "Java/Micronaut",
+    "aws_dependencies": [
+      "SNS",
+      "RDS",
+      "Cognito",
+      "CloudFront",
+      "ECS"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_CatalogService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-079",
+    "service_name": "SuJoXuHuMaService",
+    "language_framework": "Java/Micronaut",
+    "aws_dependencies": [
+      "Lambda",
+      "API Gateway",
+      "Parameter Store",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "Direct DB access to ShippingQueue",
+      "Publishes to SNS_ProductService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-080",
+    "service_name": "MiIaJuBuCoService",
+    "language_framework": "Node.js/Express",
+    "aws_dependencies": [
+      "API Gateway",
+      "EKS",
+      "AppSync"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_AnalyticsTopic",
+      "gRPC with OrderService",
+      "GraphQL API to CatalogService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-081",
+    "service_name": "CoUoSoJaXuService",
+    "language_framework": "Python/FastAPI",
+    "aws_dependencies": [
+      "ECS"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_OrderService",
+      "GraphQL API to SearchService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-082",
+    "service_name": "EuAuCuXeService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "DynamoDB"
+    ],
+    "communication_patterns": [
+      "GraphQL API to AnalyticsTopic",
+      "Consumes from SQS_NotificationTopic"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-083",
+    "service_name": "GaUoTaIeNaService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "Step Functions",
+      "ECS",
+      "SQS",
+      "Cognito"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_ProductService",
+      "Publishes to SNS_PaymentQueue",
+      "REST API to AnalyticsTopic"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-084",
+    "service_name": "IeWaFeService",
+    "language_framework": "Java/Spring Boot",
+    "aws_dependencies": [
+      "Lambda",
+      "Route53",
+      "SQS",
+      "EC2",
+      "S3"
+    ],
+    "communication_patterns": [
+      "REST API to InventoryService",
+      "Publishes to SNS_InventoryService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-085",
+    "service_name": "FoGuZaQoWaXuService",
+    "language_framework": "Go/Gin",
+    "aws_dependencies": [
+      "AppSync",
+      "Secrets Manager",
+      "ECS",
+      "SQS",
+      "Cognito"
+    ],
+    "communication_patterns": [
+      "gRPC with RecommendationEngine",
+      "Direct DB access to SearchService"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-086",
+    "service_name": "GeEaQaService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "Cognito"
+    ],
+    "communication_patterns": [
+      "gRPC with SearchService",
+      "REST API to RecommendationEngine",
+      "REST API to PricingService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-087",
+    "service_name": "WaOuXaWaService",
+    "language_framework": "Node.js/Express",
+    "aws_dependencies": [
+      "AppSync"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_CustomerService",
+      "Publishes to SNS_UserDB"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-088",
+    "service_name": "NuRaEoAiService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "Lambda"
+    ],
+    "communication_patterns": [
+      "GraphQL API to ProductService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-089",
+    "service_name": "UuDeZiTuService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "S3",
+      "CloudWatch",
+      "Secrets Manager"
+    ],
+    "communication_patterns": [
+      "gRPC with PaymentQueue"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-090",
+    "service_name": "ZoFeHuService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "SNS",
+      "Cognito"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_NotificationTopic",
+      "gRPC with InventoryService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Dockerized"
+  },
+  {
+    "service_id": "srv-091",
+    "service_name": "ZoFeJoHuService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "Kinesis",
+      "CloudWatch",
+      "Cognito",
+      "Secrets Manager",
+      "ECS"
+    ],
+    "communication_patterns": [
+      "Consumes from SQS_CatalogService"
+    ],
+    "estimated_cpu_cores": 1,
+    "estimated_memory_gb": 16.0,
+    "containerization_status": "Partially Containerized"
+  },
+  {
+    "service_id": "srv-092",
+    "service_name": "VePeWaOuService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "S3",
+      "AppSync",
+      "CloudFront",
+      "Lambda",
+      "Step Functions"
+    ],
+    "communication_patterns": [
+      "Direct DB access to CustomerService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-093",
+    "service_name": "QiEeQeMiSuSuService",
+    "language_framework": "Node.js/Koa",
+    "aws_dependencies": [
+      "EventBridge",
+      "ECS",
+      "RDS",
+      "DynamoDB"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_PricingService",
+      "GraphQL API to PricingService"
+    ],
+    "estimated_cpu_cores": 4,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-094",
+    "service_name": "MePaWiService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "API Gateway",
+      "Parameter Store",
+      "SNS",
+      "RDS"
+    ],
+    "communication_patterns": [
+      "Direct DB access to SearchService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 8.0,
+    "containerization_status": "ECS Ready"
+  },
+  {
+    "service_id": "srv-095",
+    "service_name": "PiUuKeService",
+    "language_framework": "Java/Quarkus",
+    "aws_dependencies": [
+      "CloudFront",
+      "DynamoDB",
+      "EventBridge",
+      "Parameter Store",
+      "Kinesis"
+    ],
+    "communication_patterns": [
+      "GraphQL API to ProductService",
+      "gRPC with NotificationTopic"
+    ],
+    "estimated_cpu_cores": 0.5,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-096",
+    "service_name": "HeBaZeQaViPaService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "EKS",
+      "RDS",
+      "CloudFront"
+    ],
+    "communication_patterns": [
+      "REST API to SearchService"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 1.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-097",
+    "service_name": "AiJiJiSeService",
+    "language_framework": "Python/Django",
+    "aws_dependencies": [
+      "Cognito",
+      "API Gateway",
+      "Route53",
+      "CloudWatch",
+      "SNS"
+    ],
+    "communication_patterns": [
+      "Publishes to SNS_UserDB",
+      "GraphQL API to PricingService",
+      "Consumes from SQS_PricingService"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "EKS Ready"
+  },
+  {
+    "service_id": "srv-098",
+    "service_name": "XuAoKiQiUaVeService",
+    "language_framework": "Rust/Actix-web",
+    "aws_dependencies": [
+      "DynamoDB"
+    ],
+    "communication_patterns": [
+      "REST API to ShippingQueue"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 4.0,
+    "containerization_status": "Not Containerized"
+  },
+  {
+    "service_id": "srv-099",
+    "service_name": "ZoEuDeVuFuSuService",
+    "language_framework": "Node.js/NestJS",
+    "aws_dependencies": [
+      "AppSync",
+      "DynamoDB",
+      "S3"
+    ],
+    "communication_patterns": [
+      "gRPC with PaymentQueue",
+      "Direct DB access to NotificationTopic"
+    ],
+    "estimated_cpu_cores": 2,
+    "estimated_memory_gb": 2.0,
+    "containerization_status": "Fargate Ready"
+  },
+  {
+    "service_id": "srv-100",
+    "service_name": "PuJaDuService",
+    "language_framework": "Python/Flask",
+    "aws_dependencies": [
+      "EC2"
+    ],
+    "communication_patterns": [
+      "gRPC with AnalyticsTopic",
+      "Publishes to SNS_AnalyticsTopic",
+      "gRPC with RecommendationEngine"
+    ],
+    "estimated_cpu_cores": 8,
+    "estimated_memory_gb": 0.5,
+    "containerization_status": "Fargate Ready"
+  }
+]
