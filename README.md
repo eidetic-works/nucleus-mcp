@@ -2,6 +2,8 @@
 
 > ⚠️ **official repository** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
 
+> 📢 **March 2026 Update**: This repository has been reset to a clean state with a fresh commit history as part of our transition to the Nucleus Team identity. All functionality remains intact, and PyPI/NPM packages continue to work seamlessly. If you previously starred this repo, we'd appreciate your support again! 🙏
+
 [![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
