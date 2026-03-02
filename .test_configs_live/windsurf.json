@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "test",
-      "args": [],
-      "env": {}
-    }
-  }
-}
