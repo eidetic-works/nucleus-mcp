@@ -99,3 +99,32 @@ install_phase73.sh
 
 # Ledger (user-specific runtime state)
 ledger/
+
+# Internal runtime state (never commit to public)
+brain/
+engrams/
+.brain_live_test/
+.brain_test_robustness/
+.demo_brain_c/
+mission_artifacts/
+mounts.json
+
+# Internal workflows and agent commands
+.agent/
+
+# Live test configurations (contain local paths)
+.test_configs_live/
+
+# Internal analysis files
+aws_microservices.json
+microservices_analysis.json
+
+# Internal strategy and launch docs
+docs/strategy/
+docs/REDDIT_LAUNCH_POST.md
+docs/DEMO_SCRIPT.md
+docs/DEMO_STORYBOARD.md
+docs/TITAN_HANDOVER_PROTOCOL.md
+docs/PHASE_A_SHORT_SCRIPT.md
+docs/PHASE_B_SHORT_SCRIPT.md
+docs/PHASE_C_SHORT_SCRIPT.md
