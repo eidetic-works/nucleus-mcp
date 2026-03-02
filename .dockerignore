@@ -1,0 +1,74 @@
+# ============================================================================
+# Nucleus MCP Server - Docker Ignore
+# Excludes unnecessary files from Docker build context
+# ============================================================================
+
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+env
+*.egg-info
+dist
+build
+.eggs
+*.egg
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+
+# Ruff
+.ruff_cache
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Examples (not needed in production image)
+examples
+
+# Website
+website
+
+# Internal development files
+internal
+.agent
+.brain
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Local configuration
+.env
+.env.local
+*.local
+
+# Tests (not needed in production)
+tests
+
+# Scripts (development only)
+scripts

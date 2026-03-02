@@ -1,0 +1,101 @@
+# Build artifacts
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Internal docs (never commit to public)
+internal/
+*_INTERNAL.md
+
+# Test outputs
+.pytest_cache/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local config
+.env
+*.local
+
+# Brain state (user-specific)
+.brain/
+
+# Build
+build/
+*.so
+*.pyd
+
+# Secrets
+*.pem
+*.key
+secrets/
+*.ipc_secret
+node.key
+service-account*.json
+*-key.json
+
+# Wrangler / Cloudflare
+.wrangler/
+
+# Debug files
+debug*.py
+patch_*.py
+
+# Test output logs
+test_report*.txt
+pytest_*_out.txt
+pytest_out.txt
+test3.txt
+
+# Phase / internal status docs
+PHASE73_*.md
+HARDENING_*.md
+INSTALL_PHASE73*.md
+FORCE_RELOAD*.md
+WINDOWS_CI*.md
+COMBOS.md
+DAILY_USAGE_GUIDE.md
+FIX_PERPLEXITY_CONFIG.md
+README_GODMODE.md
+
+# Old build artifacts
+build_public/
+build_dark/
+
+# Install scripts (internal)
+install_phase73.sh
+
+# Ruff cache
+.ruff_cache/
+
+# Ledger (user-specific runtime state)
+ledger/
