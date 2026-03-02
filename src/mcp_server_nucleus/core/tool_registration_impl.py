@@ -1,0 +1,131 @@
+# Auto-generated from monolith decomposition
+# =============================================================================
+# v0.6.0 PROTOCOL COUPLING FIX - Tiered Tool Registration
+# =============================================================================
+# This wrapper ensures only tier-appropriate tools are registered with FastMCP.
+# Without this, ALL tools would be registered regardless of NUCLEUS_TOOL_TIER.
+# See: TITAN_HANDOVER_PROTOCOL.md Section 0 (Registry Bloat Solution)
+
+from ..tool_tiers import is_tool_allowed, tier_manager
+import sys
+from pathlib import Path
+
+# State flag to prevent recursion when FastMCP internally calls mcp.tool
+_REGISTERING_TOOL = False
+_original_mcp_tool = None
+_rpc_firewall_hook = None
+
+def default_rpc_firewall_hook(tool_name: str, args: tuple, kwargs: dict):
+    """Layer 3: Pre-execution validation of JSON-RPC tool calls."""
+    if tool_name in ["write_to_file", "replace_file_content", "multi_replace_file_content", "nucleus_delete_file", "brain_fix_code"]:
+        target_path = kwargs.get("TargetFile") or kwargs.get("target_file") or kwargs.get("AbsolutePath") or kwargs.get("path") or kwargs.get("file_path")
+        if target_path:
+            try:
+                abs_path = str(Path(target_path).resolve())
+                from ..runtime.hypervisor_ops import _watchdog
+                
+                is_protected = False
+                for p_path in getattr(_watchdog, 'protected_paths', []):
+                    if abs_path == p_path or abs_path.startswith(p_path + "/"):
+                        is_protected = True
+                        break
+                        
+                if is_protected:
+                    raise PermissionError(f"🚨 Nucleus RPC Firewall: Unauthorized file modification attempt on protected path: {target_path}")
+            except Exception as e:
+                if isinstance(e, PermissionError) and "Nucleus RPC Firewall" in str(e):
+                    raise e
+                import logging
+                logging.getLogger("nucleus").warning(f"RPC Firewall Hook Error: {e}")
+
+def _tiered_tool_wrapper(*args, **kwargs):
+    """
+    Wrapper around mcp.tool() that checks tier before registration.
+    
+    Handles both decorator styles:
+    - @mcp.tool     (func passed directly)
+    - @mcp.tool()   (func is None, returns decorator)
+    """
+    global _REGISTERING_TOOL, _original_mcp_tool
+    
+    if _original_mcp_tool is None:
+        raise RuntimeError("Tiered tool registration not configured. Call configure_tiered_tool_registration(mcp) first.")
+
+    # If we are already in the middle of a registration, use the original method
+    if _REGISTERING_TOOL:
+        return _original_mcp_tool(*args, **kwargs)
+
+    func = None
+    if len(args) == 1 and callable(args[0]):
+        func = args[0]
+        args = args[1:]
+
+    def decorator(fn):
+        global _REGISTERING_TOOL
+        tool_name = fn.__name__
+        allowed = is_tool_allowed(tool_name)
+        if allowed:
+            tier_manager.registered_tools.add(tool_name)
+            
+            # Set flag and call original method
+            _REGISTERING_TOOL = True
+            try:
+                # Register and capture the FunctionTool return
+                tool = _original_mcp_tool(*args, **kwargs)(fn)
+                
+                # Make the FunctionTool object callable by proxying to the original function
+                if not callable(tool):
+                    class CallableTool:
+                        def __init__(self, tool, original_fn):
+                            self._tool = tool
+                            self._fn = original_fn
+                            # Copy metadata
+                            self.__name__ = original_fn.__name__
+                            self.__doc__ = original_fn.__doc__
+                            self.__module__ = original_fn.__module__
+                            
+                        def __call__(self, *args, **kwargs):
+                            global _rpc_firewall_hook
+                            print(f"[NUCLEUS] Executing {self.__name__}...", file=sys.stderr)
+                            
+                            # Layer 3: RPC Firewall Interception
+                            if _rpc_firewall_hook is not None:
+                                _rpc_firewall_hook(self.__name__, args, kwargs)
+                                
+                            return self._fn(*args, **kwargs)
+                            
+                        def __getattr__(self, name):
+                            return getattr(self._tool, name)
+                            
+                        # Pydantic serialization helpers
+                        def model_dump(self, *args, **kwargs):
+                            return self._tool.model_dump(*args, **kwargs)
+                            
+                        def model_dump_json(self, *args, **kwargs):
+                            return self._tool.model_dump_json(*args, **kwargs)
+                            
+                    return CallableTool(tool, fn)
+                
+                return tool
+            except Exception as e:
+                print(f"[NUCLEUS] ERROR registering {tool_name}: {e}", file=sys.stderr)
+                raise e
+            finally:
+                _REGISTERING_TOOL = False
+        else:
+            tier_manager.filtered_tools.add(tool_name)
+            # Return plain function - NOT registered with MCP
+            return fn
+    
+    if func is not None:
+        return decorator(func)
+    
+    return decorator
+
+def configure_tiered_tool_registration(mcp_instance, rpc_firewall_hook=None):
+    """Initializes the tiered tool registration system for the given MCP instance."""
+    global _original_mcp_tool, _rpc_firewall_hook
+    _original_mcp_tool = mcp_instance.tool
+    _rpc_firewall_hook = rpc_firewall_hook or default_rpc_firewall_hook
+    mcp_instance.tool = _tiered_tool_wrapper
+    return mcp_instance
