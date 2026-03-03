@@ -1,4 +1,5 @@
 
+import shlex
 import subprocess
 import time
 import json
@@ -36,8 +37,7 @@ class FixerLoop:
         self._log(f"Running verification: {self.verification_command}")
         try:
             result = subprocess.run(
-                self.verification_command,
-                shell=True,
+                shlex.split(self.verification_command),
                 capture_output=True,
                 text=True,
                 timeout=60

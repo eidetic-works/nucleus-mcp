@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
-BRAIN = Path("/path/to/your/project/.brain")
+BRAIN = Path("/Users/lokeshgarg/ai-mvp-backend/.brain")
 NOW = datetime.now().isoformat()
 ARCHIVE_DIR = BRAIN / "archive" / "ledger_cleanup_20260219"
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)

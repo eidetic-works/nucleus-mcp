@@ -1,9 +1,9 @@
 {
   "mock1": {
     "transport": "stdio",
-    "command": "/path/to/your/project/mcp-server-nucleus/.venv/bin/python",
+    "command": "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/.venv/bin/python",
     "args": [
-      "/path/to/your/project/mcp-server-nucleus/scripts/mock_mcp_server.py"
+      "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/scripts/mock_mcp_server.py"
     ],
     "env": {
       "TEST_ENV": "1"

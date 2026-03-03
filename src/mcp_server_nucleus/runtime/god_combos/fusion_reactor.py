@@ -170,7 +170,7 @@ def run_fusion_reactor(
         synthesis_value = (
             f"[COMPOUNDED] {observation} "
             f"(synthesized from {prior_count} related engrams across "
-            f"{len(result['sections']['recall']['contexts_found'])} contexts. "
+            f"{len(result.get('sections', {}).get('recall', {}).get('contexts_found', []))} contexts. "
             f"Key priors: {prior_summary})"
         )
         synthesis_type = "compounded"

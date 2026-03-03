@@ -1,73 +1,66 @@
-# ============================================================================
-# Nucleus MCP Server - Production Dockerfile
-# Version: 1.0.8
-# Description: The Agent Control Plane for MCP Servers
-# ============================================================================
+# ============================================================
+# Nucleus Sovereign Agent OS — Production Dockerfile
+# ============================================================
+# Multi-stage build for a minimal, secure deployment image.
+#
+# Usage:
+#   docker build -t nucleus-agent-os .
+#   docker run -v ./brain:/app/.brain nucleus-agent-os sovereign
+#
+# Jurisdiction-aware deployment:
+#   docker build --build-arg JURISDICTION=eu-dora -t nucleus-dora .
+#   docker run -v ./brain:/app/.brain nucleus-dora comply --report
+# ============================================================
 
-# Build stage
-FROM python:3.11-slim as builder
+# Stage 1: Builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /build
+COPY . .
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir --prefix=/install .
 
-# Copy project files
-COPY pyproject.toml README.md LICENSE ./
-COPY src/ ./src/
+# Stage 2: Runtime
+FROM python:3.12-slim AS runtime
 
-# Build wheel
-RUN pip install --no-cache-dir hatchling && \
-    python -m hatchling build -t wheel
-
-# ============================================================================
-# Production stage
-# ============================================================================
-FROM python:3.11-slim as production
-
-# Labels
-LABEL maintainer="Nucleus Team <hello@nucleus-mcp.com>"
-LABEL version="1.0.8"
-LABEL description="Nucleus MCP Server - The Agent Control Plane"
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    NUCLEAR_BRAIN_PATH=/data/.brain
-
-# Create non-root user
-RUN groupadd --gid 1000 nucleus && \
-    useradd --uid 1000 --gid nucleus --shell /bin/bash --create-home nucleus
-
-# Create data directory
-RUN mkdir -p /data/.brain && \
-    chown -R nucleus:nucleus /data
+# Security: non-root user
+RUN groupadd -r nucleus && useradd -r -g nucleus -d /app -s /sbin/nologin nucleus
 
 WORKDIR /app
 
-# Copy wheel from builder
-COPY --from=builder /build/dist/*.whl /tmp/
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
 
-# Install the package
-RUN pip install --no-cache-dir /tmp/*.whl && \
-    rm -rf /tmp/*.whl
+# Jurisdiction configuration (build-time)
+ARG JURISDICTION=global-default
+ENV NUCLEUS_JURISDICTION=${JURISDICTION}
+ENV NUCLEAR_BRAIN_PATH=/app/.brain
 
-# Switch to non-root user
-USER nucleus
+# Create brain directory structure
+RUN mkdir -p /app/.brain/engrams \
+             /app/.brain/ledger \
+             /app/.brain/dsor \
+             /app/.brain/governance \
+             /app/.brain/sessions \
+             /app/.brain/config && \
+    chown -R nucleus:nucleus /app
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import mcp_server_nucleus; print('healthy')" || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD nucleus sovereign --json 2>/dev/null || exit 1
 
-# Expose MCP port (stdio-based, but useful for documentation)
-EXPOSE 8765
+# Switch to non-root
+USER nucleus
 
-# Volume for persistent brain data
-VOLUME ["/data/.brain"]
+# Copy entrypoint
+COPY --chown=nucleus:nucleus deploy/entrypoint.sh /app/entrypoint.sh
 
-# Default command - run MCP server
-CMD ["nucleus-mcp"]
+ENTRYPOINT ["bash", "/app/entrypoint.sh"]
+CMD ["sovereign"]
+
+# Labels
+LABEL org.opencontainers.image.title="Nucleus Sovereign Agent OS"
+LABEL org.opencontainers.image.description="Sovereign, local-first Agent OS with persistent memory and compliance governance"
+LABEL org.opencontainers.image.version="1.3.0"
+LABEL org.opencontainers.image.vendor="Eidetic Works"
+LABEL org.opencontainers.image.source="https://github.com/eidetic-works/nucleus-mcp"

@@ -3,8 +3,8 @@
 # Use this to verify your local installation is ready for E2E testing.
 
 echo "🔍 Checking Nucleus Installation..."
-if [ -d "/path/to/your/project/nucleus-mcp" ]; then
-    echo "✅ Release Repo found: /path/to/your/project/nucleus-mcp"
+if [ -d "/Users/lokeshgarg/ai-mvp-backend/nucleus-mcp" ]; then
+    echo "✅ Release Repo found: /Users/lokeshgarg/ai-mvp-backend/nucleus-mcp"
 else
     echo "❌ Release Repo NOT found. Check sync status."
     exit 1

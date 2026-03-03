@@ -23,6 +23,7 @@ def register(mcp, helpers):
     from ..runtime.engram_ops import (
         _brain_write_engram_impl, _brain_query_engrams_impl,
         _brain_search_engrams_impl, _brain_governance_status_impl,
+        _dsor_query_decisions_impl, _dsor_get_trace_impl,
     )
     from ..runtime.morning_brief_ops import _morning_brief_impl
     from ..runtime.engram_hooks import get_hook_metrics_summary
@@ -111,7 +112,7 @@ def register(mcp, helpers):
                 for line in f:
                     if line.strip():
                         try: decisions.append(json.loads(line))
-                        except: continue
+                        except Exception: continue
             decisions = decisions[-limit:][::-1]
             return make_response(True, data={"decisions": decisions, "count": len(decisions)})
         except Exception as e:
@@ -128,7 +129,7 @@ def register(mcp, helpers):
                 try:
                     with open(snap_file, encoding='utf-8') as f:
                         snapshots.append(json.load(f))
-                except: continue
+                except Exception: continue
             return make_response(True, data={"snapshots": snapshots, "count": len(snapshots)})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")
@@ -149,7 +150,7 @@ def register(mcp, helpers):
                             entry = json.loads(line)
                             if entry.get("timestamp", "") >= cutoff:
                                 entries.append(entry)
-                        except: continue
+                        except Exception: continue
             summary = {"total_entries": len(entries), "total_units": sum(e.get("units_consumed", 0) for e in entries), "by_scope": {}, "by_resource_type": {}, "decisions_linked": sum(1 for e in entries if e.get("decision_id")), "since_hours": since_hours}
             for e in entries:
                 scope = e.get("scope", "unknown")
@@ -172,7 +173,7 @@ def register(mcp, helpers):
                 for line in f:
                     if line.strip():
                         try: events.append(json.loads(line))
-                        except: continue
+                        except Exception: continue
             token_states = {}
             for event in events:
                 tid = event.get("token_id")
@@ -203,7 +204,7 @@ def register(mcp, helpers):
                         try:
                             entry = json.loads(line)
                             meter_count += 1; total_units += entry.get("units_consumed", 0)
-                        except: pass
+                        except Exception: pass
             tokens_file = brain / "ledger" / "auth" / "ipc_tokens.jsonl"
             token_issued, token_consumed = 0, 0
             if tokens_file.exists():
@@ -213,7 +214,7 @@ def register(mcp, helpers):
                             event = json.loads(line)
                             if event.get("event") == "issued": token_issued += 1
                             elif event.get("event") == "consumed": token_consumed += 1
-                        except: pass
+                        except Exception: pass
             return make_response(True, data={"version": "0.6.0", "feature": "DSoR", "components": {"decision_ledger": {"status": "ACTIVE" if decision_count else "READY", "total": decision_count}, "snapshots": {"status": "ACTIVE" if snapshot_count else "READY", "total": snapshot_count}, "ipc_auth": {"status": "ACTIVE" if token_issued else "READY", "issued": token_issued, "consumed": token_consumed}, "metering": {"status": "ACTIVE" if meter_count else "READY", "entries": meter_count, "units": total_units}}, "overall_status": "OPERATIONAL"})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")
@@ -235,7 +236,7 @@ def register(mcp, helpers):
                                     fed_events[key] += 1
                             if et.startswith("federation_"):
                                 recent.append({"type": et, "timestamp": event.get("timestamp"), "decision_id": event.get("data", {}).get("decision_id")})
-                        except: pass
+                        except Exception: pass
             return make_response(True, data={"event_counts": fed_events, "total": sum(fed_events.values()), "recent_events": recent[-10:]})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")
@@ -253,7 +254,7 @@ def register(mcp, helpers):
                             if event.get("type") == "federation_task_routed":
                                 data = event.get("data", {})
                                 decisions.append({"timestamp": event.get("timestamp"), "target_brain": data.get("target_brain"), "score": data.get("score"), "profile": data.get("profile"), "decision_id": data.get("decision_id")})
-                        except: pass
+                        except Exception: pass
             return make_response(True, data={"total_decisions": len(decisions[-limit:]), "decisions": decisions[-limit:]})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")
@@ -344,6 +345,8 @@ def register(mcp, helpers):
         "engram_neighbors": lambda key, max_depth=1: _h_engram_neighbors(key, max_depth),
         "billing_summary": lambda since_hours=None, group_by="tool": _h_billing_summary(since_hours, group_by),
         "render_graph": lambda max_nodes=30, min_intensity=1: _h_render_graph(max_nodes, min_intensity),
+        "dsor_query_decisions": lambda limit=50: _dsor_query_decisions_impl(limit),
+        "dsor_get_trace": lambda decision_id: _dsor_get_trace_impl(decision_id),
     }
 
     @mcp.tool()
@@ -383,6 +386,8 @@ Actions:
   routing_decisions   - Query routing decision history. params: {limit?}
   list_tools          - List tools at current tier. params: {category?}
   tier_status         - Get tier configuration status
+  dsor_query_decisions- Query the DSoR decision ledger. params: {limit?}
+  dsor_get_trace      - Get full provenance trace for a decision. params: {decision_id}
 """
         return await async_dispatch(action, params, ROUTER, "nucleus_engrams")
 

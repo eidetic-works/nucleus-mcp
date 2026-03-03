@@ -40,6 +40,6 @@ async def test_persistence():
 if __name__ == "__main__":
     # Ensure env var is set
     if "NUCLEAR_BRAIN_PATH" not in os.environ:
-        os.environ["NUCLEAR_BRAIN_PATH"] = "/home/user/.brain"
+        os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/.brain"
     
     asyncio.run(test_persistence())

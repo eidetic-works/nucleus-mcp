@@ -140,22 +140,22 @@ def _brain_mission_status_impl(mission_id: str = None) -> str:
         if "error" in status:
             return f"❌ {status['error']}"
         
-        progress = status["progress"]
-        budget = status["budget"]
+        progress = status.get("progress") or {}
+        budget = status.get("budget") or {}
         
-        return f"""🎯 Mission Status: {status['name']}
+        return f"""🎯 Mission Status: {status.get('name', 'N/A')}
 ═══════════════════════════════════════
-ID: {status['mission_id']}
-Status: {status['status'].upper()}
+ID: {status.get('mission_id', 'N/A')}
+Status: {status.get('status', 'UNKNOWN').upper()}
 
 📊 PROGRESS
-   ├── Completed: {progress['completed']}/{progress['total']} ({progress['percent']}%)
-   └── Elapsed: {status['elapsed']}
+   ├── Completed: {progress.get('completed', 0)}/{progress.get('total', 0)} ({progress.get('percent', 0)}%)
+   └── Elapsed: {status.get('elapsed', 'N/A')}
 
 💰 BUDGET
-   ├── Limit: ${budget['limit']:.2f}
-   ├── Spent: ${budget['spent']:.2f}
-   └── Remaining: ${budget['remaining']:.2f}"""
+   ├── Limit: ${budget.get('limit', 0.0):.2f}
+   ├── Spent: ${budget.get('spent', 0.0):.2f}
+   └── Remaining: ${budget.get('remaining', 0.0):.2f}"""
         
     except Exception as e:
         return f"❌ Status error: {str(e)}"
@@ -172,8 +172,8 @@ def _brain_halt_sprint_impl(reason: str = "User requested halt") -> str:
         
         return f"""⛔ Sprint Halt Requested
    Sprint ID: {result.get('sprint_id', 'N/A')}
-   Reason: {result['reason']}
-   Status: {result['status']}
+   Reason: {result.get('reason', 'unknown')}
+   Status: {result.get('status', 'unknown')}
    
 💡 Sprint will complete current task then stop gracefully"""
         

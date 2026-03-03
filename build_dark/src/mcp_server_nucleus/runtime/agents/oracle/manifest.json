@@ -1,0 +1,28 @@
+{
+    "manifest_version": "1.0.0",
+    "agent": {
+        "id": "nucleus.core.oracle",
+        "name": "The Oracle",
+        "version": "1.0.0",
+        "description": "The Antifragile Co-Founder. Governance Entity responsible for strategic simulation and protocol evolution.",
+        "author": "Nucleus Genesis",
+        "license": "MIT"
+    },
+    "capabilities": [
+        {
+            "scope": "strategy",
+            "reason": "Required to read protocols, run simulations, and evolve the master strategy.",
+            "paths": [
+                "${BRAIN_PATH}/strategy",
+                "${BRAIN_PATH}/PROTOCOL_THE_ORACLE.md",
+                "${BRAIN_PATH}/IMPLEMENTATION_PLAN_PHASE61.md",
+                "${BRAIN_PATH}/decisions"
+            ],
+            "mode": "read_write"
+        }
+    ],
+    "lifecycle": {
+        "persistence": "immortal",
+        "cleanup": "none"
+    }
+}

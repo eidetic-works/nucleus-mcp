@@ -1,5 +1,5 @@
 """
-Nucleus Runtime - Pulse Telemetry (v1.1.0 Scaffold)
+Nucleus Runtime - Pulse Telemetry (v1.2.1)
 ====================================================
 Privacy-preserving, sovereign telemetry for Nucleus MCP.
 
@@ -15,7 +15,7 @@ References:
     - SOVEREIGN_AUDIT.md (irreversible pillars)
 
 NOTE: This module does NOT transmit anything. It is a local-only scaffold
-for v1.1.0. The Blinded Pulse gateway (Cloudflare Worker) is built separately.
+for v1.2.1. The Blinded Pulse gateway (Cloudflare Worker) is built separately.
 """
 
 import os

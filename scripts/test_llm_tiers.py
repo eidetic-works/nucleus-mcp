@@ -171,7 +171,7 @@ def main():
     
     # Save if requested
     if "--save" in sys.argv:
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "/path/to/your/project/.brain"))
+        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "/Users/lokeshgarg/ai-mvp-backend/.brain"))
         output_path = brain_path / "tier_status.json"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w') as f:

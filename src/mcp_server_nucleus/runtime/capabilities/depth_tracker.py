@@ -10,7 +10,7 @@ class DepthTracker(Capability):
         # Determine brain path (fallback for agent runtime if env not set)
         if not os.environ.get("NUCLEAR_BRAIN_PATH"):
             # Default used in verification/dev
-            os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/nucleus-os/.gemini/antigravity/brain/7c654df4-b83e-43f9-8620-f15868ec39d1"
+            os.environ["NUCLEAR_BRAIN_PATH"] = ".brain"
 
     @property
     def name(self) -> str:
@@ -57,25 +57,25 @@ class DepthTracker(Capability):
         if tool_name == "brain_depth_push":
             result = _depth_push(args.get("topic"))
             if "error" in result:
-                return f"Error: {result['error']}"
+                return f"Error: {result.get('error')}"
             return f"Descended to Level {result.get('current_depth')}: '{result.get('topic')}'.\n{result.get('warning', '')}\n{result.get('indicator')}"
             
         elif tool_name == "brain_depth_pop":
             result = _depth_pop()
             if "error" in result:
-                return f"Error: {result['error']}"
+                return f"Error: {result.get('error')}"
             return f"{result.get('message')}\n{result.get('indicator')}"
 
         elif tool_name == "brain_depth_show":
             result = _depth_show()
             if "error" in result:
-                return f"Error: {result['error']}"
+                return f"Error: {result.get('error')}"
             return f"{result.get('indicator')}\nStatus: {result.get('status')}\nPath: {result.get('breadcrumbs')}\n\n{result.get('tree')}"
 
         elif tool_name == "brain_depth_reset":
             result = _depth_reset()
             if "error" in result:
-                return f"Error: {result['error']}"
+                return f"Error: {result.get('error')}"
             return result.get('message', 'Reset complete')
 
         return f"Tool {tool_name} not found in DepthTracker."

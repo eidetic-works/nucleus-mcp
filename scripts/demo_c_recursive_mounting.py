@@ -22,7 +22,7 @@ def print_header(title):
 
 async def main():
     # 1. Setup isolated demo brain
-    brain_path = Path("/home/user/.demo_brain_v0.5")
+    brain_path = Path("/Users/lokeshgarg/.demo_brain_v0.5")
     if brain_path.exists():
         shutil.rmtree(brain_path)
     brain_path.mkdir(parents=True, exist_ok=True)
@@ -30,7 +30,7 @@ async def main():
     os.environ["NUCLEAR_BRAIN_PATH"] = str(brain_path)
     
     # Path to the enhanced mock server
-    mock_script = "/path/to/your/project/scripts/mock_mcp_server.py"
+    mock_script = "/Users/lokeshgarg/ai-mvp-backend/scripts/mock_mcp_server.py"
     
     print_header("NUCLEUS v0.5: THE NETSCAPE EVENT (Recursive Aggregator)")
     print("Mode: Fractal Control Plane | Target: Tool Chaos Discovery")

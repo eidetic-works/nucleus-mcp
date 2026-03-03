@@ -9,7 +9,7 @@ Since Phase 73 added new modules, you need to reinstall the package in developme
 
 ```bash
 # In Windsurf or Antigravity terminal
-cd /path/to/your/project/mcp-server-nucleus
+cd /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus
 
 # Reinstall in development mode (picks up all new modules)
 pip install -e .
@@ -251,7 +251,7 @@ No configuration needed - it just works!
 
 **Solution:**
 ```bash
-cd /path/to/your/project/mcp-server-nucleus
+cd /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus
 pip install -e .  # Reinstall in dev mode
 ```
 
@@ -276,7 +276,7 @@ export NUCLEUS_LLM_TIMEOUT=60.0  # Increase to 60 seconds
 **Solution:**
 ```bash
 # Error logs are in brain directory
-cat /path/to/your/project/.brain/telemetry/errors.jsonl | tail -20
+cat /Users/lokeshgarg/ai-mvp-backend/.brain/telemetry/errors.jsonl | tail -20
 ```
 
 ---
@@ -310,7 +310,7 @@ All existing code continues to work. Phase 73 modules are drop-in replacements:
 Run this to verify Phase 73 is working:
 
 ```bash
-cd /path/to/your/project/mcp-server-nucleus
+cd /Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus
 
 # 1. Check installation
 python -c "from mcp_server_nucleus.runtime import ResilientLLMClient; print('✅ Installed')"

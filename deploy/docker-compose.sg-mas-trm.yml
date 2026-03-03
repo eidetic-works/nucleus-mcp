@@ -1,0 +1,45 @@
+# ============================================================
+# Nucleus Sovereign Agent OS — Docker Compose (SG MAS TRM)
+# ============================================================
+# Jurisdiction: Singapore — MAS Technology Risk Management
+# Data Residency: Required (Singapore or approved jurisdictions)
+# Audit Retention: 5 years (1825 days)
+# HITL: 5 operation types (strictest — max 2 autonomous actions)
+# Kill Switch: Required
+#
+# Usage:
+#   docker compose -f docker-compose.sg-mas-trm.yml up -d
+#   docker compose -f docker-compose.sg-mas-trm.yml run nucleus kyc demo
+# ============================================================
+
+services:
+  nucleus:
+    build:
+      context: .
+      args:
+        JURISDICTION: sg-mas-trm
+    image: nucleus-agent-os:sg-mas-trm
+    container_name: nucleus-sg-mas
+    volumes:
+      - nucleus-brain:/app/.brain
+    environment:
+      - NUCLEUS_JURISDICTION=sg-mas-trm
+      - NUCLEAR_BRAIN_PATH=/app/.brain
+      - NUCLEUS_RATE_LIMIT=50
+      - NUCLEUS_RATE_WINDOW_SECONDS=60
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+volumes:
+  nucleus-brain:
+    driver: local
