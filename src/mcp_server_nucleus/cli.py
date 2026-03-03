@@ -743,6 +743,13 @@ def main():
     trace_view.add_argument('--json', action='store_true', help='Output as JSON')
 
     # ============================================================
+    # DASHBOARD COMMAND
+    # ============================================================
+    dashboard_parser = subparsers.add_parser('dashboard', help='🖥️  Launch Sovereign Compliance Dashboard')
+    dashboard_parser.add_argument('--port', type=int, default=8080, help='Port to run dashboard on')
+    dashboard_parser.add_argument('--brain', default=None, help='Path to .brain directory')
+
+    # ============================================================
     # KYC COMMAND — Demo Compliance Workflow (MVE-2)
     # ============================================================
     kyc_parser = subparsers.add_parser('kyc', help='📝 Run simulated KYC review (compliance demo)')
@@ -878,6 +885,8 @@ def main():
         handle_sovereign_command(args)
     elif args.cli_command == 'trace':
         handle_trace_command(args)
+    elif args.cli_command == 'dashboard':
+        handle_dashboard_command(args)
     elif args.cli_command is None:
         # No command given, show help
         parser.print_help()
@@ -2134,6 +2143,29 @@ def handle_trace_command(args):
         else:
             print(format_trace_detail(trace))
         return
+
+
+# ============================================================
+# DASHBOARD COMMAND HANDLER (UI API Server)
+# ============================================================
+
+def handle_dashboard_command(args):
+    """Handle nucleus dashboard command — Launch Sovereign Governance Web UI."""
+    try:
+        from .dashboard.server import run_dashboard_server
+    except ImportError:
+        try:
+            from mcp_server_nucleus.dashboard.server import run_dashboard_server
+        except ImportError:
+            print("❌ Error: Could not import dashboard server. Ensure installation is correct.")
+            return
+
+    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    run_dashboard_server(port=args.port, brain_path=brain_path)
 
 
 def _find_brain_path() -> Path:

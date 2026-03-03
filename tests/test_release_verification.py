@@ -262,4 +262,4 @@ def test_version_consistency():
     if dev_toml.exists():
         content = dev_toml.read_text()
         # Updated for v1.2.0 GA release
-        assert 'version = "1.2.1"' in content, "pyproject.toml version mismatch"
+        assert 'version = "1.3.1"' in content, "pyproject.toml version mismatch"
