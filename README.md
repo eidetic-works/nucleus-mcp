@@ -9,6 +9,8 @@
 
 > **The sovereign, local-first Agent Operating System** — persistent memory, governance, compliance, and audit trails for any AI agent.
 
+🌐 [**Website**](https://nucleusos.dev) • 🏦 [**Live KYC Demo**](https://nucleusos.dev/kyc-demo.html) • 🛠 [**170+ Tool Catalog**](https://hud.nucleusos.dev) • 💬 [**Discord**](https://discord.gg/RJuBNNJ5MT)
+
 > [!CAUTION]
 > **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
 > Nucleus is built security-first: hypervisor controls, resource locking, compliance governance, and full audit trails — all 100% local.
