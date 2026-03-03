@@ -1,7 +1,7 @@
 {
     "name": "nucleus-mcp",
-    "version": "1.0.8",
-    "description": "NPM wrapper for the Nucleus-MCP Python server",
+    "version": "1.3.0",
+    "description": "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents",
     "main": "index.js",
     "bin": {
         "nucleus-mcp": "./index.js",

@@ -49,6 +49,6 @@ async def run_harness():
 if __name__ == "__main__":
     if "NUCLEAR_BRAIN_PATH" not in os.environ:
         # Default to the local project brain if not set
-        os.environ["NUCLEAR_BRAIN_PATH"] = "/path/to/your/project/.brain"
+        os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/ai-mvp-backend/.brain"
     
     asyncio.run(run_harness())

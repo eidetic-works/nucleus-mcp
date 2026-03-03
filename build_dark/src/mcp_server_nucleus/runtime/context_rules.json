@@ -1,0 +1,86 @@
+[
+    {
+        "keywords": [
+            "deploy",
+            "cloud run",
+            "build",
+            "ship",
+            "production"
+        ],
+        "inject": [
+            "cloudbuild.yaml",
+            "docs/infra/DEPLOYMENT.md",
+            "docs/infra/RELEASE_PROTOCOL.md"
+        ],
+        "description": "Deployment and Infrastructure Context"
+    },
+    {
+        "keywords": [
+            "database",
+            "schema",
+            "sql",
+            "postgres",
+            "migration"
+        ],
+        "inject": [
+            "docs/architecture/DATABASE_SCHEMA.md",
+            "alembic.ini"
+        ],
+        "description": "Database and Storage Context"
+    },
+    {
+        "keywords": [
+            "brain",
+            "memory",
+            "context",
+            "recall",
+            "store"
+        ],
+        "inject": [
+            "mcp-server-nucleus/src/mcp_server_nucleus/runtime/factory.py",
+            "docs/architecture/BRAIN_DESIGN.md"
+        ],
+        "description": "Nucleus Brain Architecture Context"
+    },
+    {
+        "keywords": [
+            "api",
+            "endpoint",
+            "route",
+            "http",
+            "rest"
+        ],
+        "inject": [
+            "docs/api/OPENAPI_SPEC.md",
+            "app.py"
+        ],
+        "description": "API Surface Area Context"
+    },
+    {
+        "keywords": [
+            "ui",
+            "frontend",
+            "component",
+            "react",
+            "tailwind"
+        ],
+        "inject": [
+            "tools/nucleus-hud/tailwind.config.ts",
+            "tools/nucleus-hud/app/globals.css"
+        ],
+        "description": "Frontend Design System Context"
+    },
+    {
+        "keywords": [
+            "test",
+            "verify",
+            "qa",
+            "check"
+        ],
+        "inject": [
+            "tests/README.md",
+            "NUCLEUS_GRAND_VERIFICATION_PLAN.md"
+        ],
+        "description": "Testing and Verification Context"
+    }
+]

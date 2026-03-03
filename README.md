@@ -1,153 +1,81 @@
-# 🧠 nucleus-mcp
+# 🧠 Nucleus — Sovereign Agent OS
 
 > ⚠️ **official repository** → **[nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
-
-> 📢 **March 2026 Update**: This repository has been reset to a clean state with a fresh commit history as part of our transition to the Nucleus Team identity. All functionality remains intact, and PyPI/NPM packages continue to work seamlessly. If you previously starred this repo, we'd appreciate your support again! 🙏
 
 [![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
-[![Nucleus MCP - The Local-First Agentic Identity & Security Layer | Product Hunt](https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1079781&theme=dark)](https://www.producthunt.com/posts/nucleus-mcp?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-nucleus-mcp)
+[![Tests](https://img.shields.io/badge/Tests-54%20passing-brightgreen)]()
 
-> **the sovereign agent control plane** — one brain that syncs cursor, claude, windsurf, and any mcp-compatible tool.
+> **The sovereign, local-first Agent Operating System** — persistent memory, governance, compliance, and audit trails for any AI agent.
 
 > [!CAUTION]
-> **after the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
-> built nucleus security-first: hypervisor controls, resource locking, and full audit trails — all 100% local.
-
-🚀 **live on product hunt**: nucleus is the local-first agentic identity & security layer. [join the strike →](https://www.producthunt.com/posts/nucleus-mcp)
+> **After the [OpenClaw security crisis](https://www.youtube.com/watch?v=ceEUO_i7aW4) (1.5M API keys leaked, sleeper agents in skills), agent security is no longer optional.**
+> Nucleus is built security-first: hypervisor controls, resource locking, compliance governance, and full audit trails — all 100% local.
 
 ---
 
-## 🚨 v1.0.8 monolith: the "infrastructure" update
-**immediate value. zero friction.**
+## 🎯 The Problem
 
-> **New in v1.0.8**: Monolith Decomposition completed. Core logic migrated to the `runtime/` module for modular growth.
-> **New in v1.0.7**: Nucleus now welcomes you with a **Sovereign Brain Card** and pre-seeded memories.
-> *   **Brain Card**: `cold_start` now returns a rich summary of your memory, active tasks, and connected tools.
-> *   **Welcome Engrams**: Your brain connects with pre-loaded context, so you never start from zero.
-> *   **Smart Config**: `nucleus-init` gives you OS-specific paths (macOS/Windows/Linux) for 1-second setup.
+AI agents are powerful, but **ungoverned**:
+- **No memory** — every session starts from zero
+- **No audit trail** — no one knows why the agent did what it did
+- **No compliance** — regulators can't approve what they can't trace
+- **No sovereignty** — your data flows through someone else's cloud
 
----
-
-## 📦 Installation
-
-The clean, open source version of Nucleus is now available at:
-
-**→ [github.com/eidetic-works/nucleus-mcp](https://github.com/eidetic-works/nucleus-mcp)**
-
-```bash
-pip install nucleus-mcp
-nucleus-init
-```
-
-This repository (`mcp-server-nucleus`) is the internal development monorepo. For production use, please use the official open source package above.
+**For regulated industries (BFSI, healthcare, legal), this is a dealbreaker.**
 
 ---
 
-## 🎯 the problem
+## ✨ The Solution: Sovereign Agent OS
 
-you use **multiple ai tools** daily:
-- cursor for coding
-- claude desktop for thinking
-- windsurf for exploration
-- chatgpt for quick answers
-
-**but they don't share memory.**
-
-every time you switch tools, you lose context. you re-explain decisions. you repeat yourself.
-
----
-
-## ✨ the solution
-
-**nucleus syncs them with one brain.**
+Nucleus gives every AI agent a **persistent brain** with **built-in governance**:
 
 ```
-Tell Claude about a decision → Cursor knows it
-Make a plan in Windsurf → Claude remembers it
-One brain. All your tools.
+┌─────────────────────────────────────────────────┐
+│  🧠 Nucleus — Sovereign Agent OS                │
+│                                                 │
+│  ┌─ Memory ──┐  ┌─ Governance ┐  ┌─ DSoR ────┐ │
+│  │ Engrams   │  │ HITL        │  │ Decision  │ │
+│  │ Sessions  │  │ Kill Switch │  │ Trail     │ │
+│  │ Context   │  │ Compliance  │  │ Audit     │ │
+│  └───────────┘  └─────────────┘  └───────────┘ │
+│                                                 │
+│  100% Local  •  Zero Cloud  •  Full Audit Trail │
+└─────────────────────────────────────────────────┘
 ```
 
-<!-- TODO: Add demo GIF here showing cross-platform sync -->
-
 ---
-
-## 🚀 What Makes Nucleus Different? (The Fractal Architecture)
-
-| Feature | Zapier / iPaaS | LangChain | **Nucleus (v0.5)** |
-| :--- | :--- | :--- | :--- |
-| **Architecture** | Centralized Hub | Code Library | **Recursive Client** |
-| **Scaling** | O(N) (Manual) | O(N) (Code) | **O(1) (Fractal)** |
-| **Data Locality** | Cloud Only | App Dependent | **100% Local** |
-| **Agent Network** | Walled Garden | Static Graph | **Dynamic "Internet of Agents"** |
-
----
-
-## 🚀 What Makes Nucleus Different
-
-| Feature | Other Solutions | Nucleus |
-|---------|-----------------|---------|
-| **Cross-Platform Sync** | Single platform only | ✅ Syncs ALL your AI tools |
-| **Sovereignty** | Cloud-dependent | ✅ 100% local, your data stays on your machine |
-| **Protocol** | Proprietary | ✅ MCP standard (Anthropic-backed) |
-| **Security** | Often misconfigured | ✅ Secure by default, audit logs included |
-| **Lock-in** | Platform-specific | ✅ MIT license, open standard |
-
----
-
-## 🛠 140+ MCP Tools Included
-
-- **Engrams** — Persistent knowledge that survives sessions
-- **Tasks** — Track work across agents
-- **Sessions** — Save and resume context
-- **Sync** — Multi-agent brain synchronization
-- **Hypervisor** — File locking, security, audit trails
-- **Orchestration** — Coordinate multiple agents
-
----
-
-## ⚡ Comparison: Nucleus vs Alternatives
-
-| | OpenClaw | Claude Code | Nucleus |
-|---|----------|-------------|---------|
-| **Security** | ❌ Sleeper agents, key leaks | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
-| **What it syncs** | OpenClaw → OpenClaw | Claude → Claude | **Everything ↔ Everything** |
-| **Cross-platform** | ❌ | ❌ | ✅ |
-| **Local-first** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
-| **MCP Native** | ❌ Custom protocol | ⚠️ Limited | ✅ Full MCP |
-| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
-
-**openclaw trades security for capability. nucleus gives you both.**
-**nucleus connects ALL your platforms with one shared brain.**
 
 ## 🚀 Quick Start (2 Minutes)
 
-### 1. Install
+### Install
 ```bash
 pip install nucleus-mcp
-```
-
-### 2. Initialize (Smart Config)
-The `nucleus-init` command automatically detects your system and configures Claude Desktop for you.
-
-```bash
-# Create your .brain/ and auto-configure Claude Desktop
 nucleus-init
 ```
 
-### 3. Ask Claude
-Restart Claude Desktop and try:
-> *"Use the cold_start prompt from nucleus to see our current sprint focus."*
+### Try It
+```bash
+# See your sovereignty posture
+nucleus sovereign
 
-**You will see the Sovereign Brain Card:** a live dashboard of your engrams, tasks, and connected tools.
+# Run a KYC compliance demo (15-minute BFSI demo)
+nucleus kyc demo
 
-> **v1.0.7+**: Smart Init automatically detects your OS and provides the exact config block for your editor.
+# Apply EU DORA compliance
+nucleus comply --jurisdiction eu-dora
 
-### Configuration (Claude Desktop)
+# Generate audit-ready report
+nucleus audit-report --format html -o report.html
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+# Browse decision trails
+nucleus trace list
+```
 
+### Configure (Claude Desktop / Cursor / Windsurf)
+
+Add to your MCP config:
 ```json
 {
   "mcpServers": {
@@ -161,134 +89,160 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   }
 }
 ```
-
-Restart Claude Desktop and try: *"What's my current sprint focus?"*
-
-### Configuration (Windsurf)
-
-Add to `~/.codeium/windsurf/mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
-      "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
-      }
-    }
-  }
-}
-```
-
-### Configuration (Cursor)
-
-Add to `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
-      "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
-      }
-    }
-  }
-}
-```
-
-### ❓ Troubleshooting
-
-**"Show me all tasks" returns nothing?**
-Check your config pointer! You might be pointing to an old or temp brain.
-
-1. **Check config:** Open `~/Library/Application Support/Claude/claude_desktop_config.json`
-2. **Verify path:** Ensure `NUCLEAR_BRAIN_PATH` points to your active project (e.g., `/Users/me/my-project/.brain`)
-3. **Restart:** You MUST restart Claude Desktop after any config change.
-
-## ✨ Core Features (Included)
-
-- **Persistent Engrams** — `brain_write_engram` / `brain_query_engrams` (Vector-lite).
-- **Audit Ledger** — Immutable SHA-256 logs of every action (`brain_audit_log`).
-- **Recursive Mounting** — `brain_mount_server` (Basic).
-- **Local Sovereignty** — Zero cloud. All data in `~/.nucleus/brain`.
-
-## 🔄 Multi-Agent Sync (New in v0.7.0)
-
-**The killer feature: Multiple agents, one brain.**
-
-```python
-# Agent A (Claude Desktop) makes a decision
-brain_sync_now()  # Syncs to shared .brain/
-
-# Agent B (Cursor) automatically sees it
-brain_sync_status()  # Shows last sync, active agents
-```
-
-**Features:**
-- **Intent-Aware Locking** — Files locked with WHO/WHEN/WHY metadata
-- **Conflict Detection** — Last-write-wins with manual resolution option  
-- **Auto-Sync** — Optional file watcher for real-time sync
-- **Audit Trail** — Every sync logged to events.jsonl
 
 ---
 
-## 🛠 Tool Categories
+## 🏛️ Why Nucleus for Regulated Industries
 
-### 🧠 Core (Public)
-| Tool | Description |
-|------|-------------|
-| `brain_write_engram` | Store persistent knowledge |
-| `brain_query_engrams` | Retrieve knowledge |
-| `brain_audit_log` | Verify ledger integrity |
-| `brain_mount_server` | Mount sub-MCP servers |
+### Jurisdiction-Aware Compliance
 
-### 🔄 Sync Tools
-| Tool | Description |
-|------|-------------|
-| `brain_sync_now` | Manually trigger brain sync |
-| `brain_sync_status` | Check sync state and conflicts |
-| `brain_sync_auto` | Enable/disable auto-sync |
-| `brain_identify_agent` | Register agent identity |
+One command to configure for any regulatory framework:
 
-### 🔒 Enterprise Features
-| Feature | Capabilities |
-|---------|--------------|
-| **Audit Logs** | Full decision trail with context hashing |
-| **RBAC** | Role-based access control (coming soon) |
-| **SSO** | Enterprise SSO integration (coming soon) |
-| **Compliance** | SOC2/HIPAA export reports (coming soon) |
+```bash
+nucleus comply --jurisdiction eu-dora       # EU DORA (7yr retention, kill switch)
+nucleus comply --jurisdiction sg-mas-trm    # Singapore MAS TRM (5yr, strictest HITL)
+nucleus comply --jurisdiction us-soc2       # US SOC2 (1yr retention)
+nucleus comply --report                     # Check compliance status
+```
 
-## ❓ How is Nucleus Different?
+| Jurisdiction | Region | Retention | HITL Ops | Kill Switch |
+|--------------|--------|-----------|----------|-------------|
+| `eu-dora` | EU | 7 years | 5 types | ✅ Required |
+| `sg-mas-trm` | Singapore | 5 years | 5 types | ✅ Required |
+| `us-soc2` | US/Global | 1 year | 3 types | ⚪ Optional |
+| `global-default` | Global | 90 days | 2 types | ⚪ Optional |
 
-> **See the full comparison:** [Nucleus vs ContextStream vs mem0 vs OpenClaw →](docs/COMPARISON.md)
+### KYC Compliance Demo
 
-| | Nucleus | ContextStream | mem0 |
-|---|:-------:|:-------------:|:----:|
-| **Architecture** | 100% Local (Git-native) | Cloud SaaS | Cloud API |
-| **Audit Trail** | ✅ Full | ❌ | ❌ |
-| **Governance** | ✅ Policy engine | ❌ | ❌ |
-| **Pricing** | Free (MIT) | Freemium → Paid | Freemium → Paid |
+Built-in demo workflow showing how Nucleus governs a KYC document review:
+
+```bash
+nucleus kyc review APP-001  # Low risk → ✅ APPROVE
+nucleus kyc review APP-002  # Medium risk → ⚠️ ESCALATE (PEP match)
+nucleus kyc review APP-003  # High risk → ❌ REJECT (sanctions)
+nucleus kyc demo            # Run all 3 in sequence
+```
+
+Each review generates:
+- 5 automated checks (sanctions, PEP, document validity, risk factors, source of funds)
+- Full decision trail stored as DSoR (Decision System of Record) trace
+- HITL approval request for risky applications
+- Sovereignty guarantee: all processing is local
+
+### Audit Reports
+
+Generate audit-ready reports for regulators:
+
+```bash
+nucleus audit-report                              # Terminal text
+nucleus audit-report --format json                # JSON for APIs
+nucleus audit-report --format html -o report.html # HTML for compliance officers
+```
+
+### Sovereignty Status
+
+See your full sovereignty posture:
+
+```bash
+nucleus sovereign
+```
+
+Shows: sovereignty score (0-100), memory health, governance posture, DSoR integrity, data residency guarantee.
+
+---
+
+## 🛠 Full Feature Set
+
+### Core — Persistent Agent Memory
+| Feature | Command | Description |
+|---------|---------|-------------|
+| **Engrams** | `nucleus_engrams` | Persistent knowledge that survives sessions |
+| **Sessions** | `nucleus_sessions` | Save and resume work context |
+| **Morning Brief** | `nucleus morning-brief` | Daily compounding intelligence brief |
+| **End of Day** | `nucleus end-of-day` | Capture learnings as engrams |
+
+### Governance — Agent Controls
+| Feature | Command | Description |
+|---------|---------|-------------|
+| **Compliance** | `nucleus comply` | Jurisdiction-aware configuration |
+| **Audit Reports** | `nucleus audit-report` | Audit-ready compliance reports |
+| **KYC Demo** | `nucleus kyc` | Pre-built compliance demo workflow |
+| **DSoR Traces** | `nucleus trace` | Browse decision trails |
+| **Sovereignty** | `nucleus sovereign` | Full sovereignty posture report |
+| **HITL** | Built-in | Human-in-the-loop approval gates |
+| **Kill Switch** | Built-in | Emergency halt for agent operations |
+| **Hypervisor** | `nucleus_governance` | File locking, security, mode control |
+
+### Orchestration — Multi-Agent Coordination
+| Feature | Command | Description |
+|---------|---------|-------------|
+| **Tasks** | `nucleus_tasks` | Track work across agents |
+| **Sync** | `nucleus_sync` | Multi-agent brain synchronization |
+| **Slots** | `nucleus_slots` | Agent orchestration with sprint mode |
+| **Federation** | `nucleus_federation` | Multi-brain coordination |
+
+---
+
+## ⚡ Comparison
+
+| | OpenClaw | Claude Code | **Nucleus** |
+|---|----------|-------------|-------------|
+| **Security** | ❌ Key leaks, sleeper agents | ⚠️ Cloud-managed | ✅ Hypervisor + audit trail |
+| **Compliance** | ❌ None | ❌ None | ✅ DORA, MAS TRM, SOC2 |
+| **Audit Trail** | ❌ | ⚠️ Basic logs | ✅ Full DSoR + HTML reports |
+| **HITL** | ❌ | ⚠️ Limited | ✅ Jurisdiction-configurable |
+| **Cross-Platform** | ❌ | ❌ | ✅ Any MCP client |
+| **Local-First** | ⚠️ Some cloud | ⚠️ Some cloud | ✅ 100% local |
+| **Open Source** | ✅ MIT | ❌ Closed | ✅ MIT |
+
+---
+
+## 🐳 Deployment
+
+### Docker (per jurisdiction)
+```bash
+# EU DORA deployment
+docker compose -f deploy/docker-compose.eu-dora.yml up -d
+
+# Or use the one-command deployment script
+./deploy/deploy.sh eu-dora
+```
+
+### Local
+```bash
+pip install nucleus-mcp
+nucleus init
+nucleus comply --jurisdiction eu-dora
+nucleus sovereign  # Verify
+```
+
+---
+
+## 📦 v1.3.0 — What's New
+
+- **Compliance Configuration** — 4 regulatory jurisdictions with governance policies
+- **Audit Reports** — Text, JSON, and HTML output for compliance officers
+- **KYC Demo Workflow** — 3 demo applications with 5 automated checks
+- **Sovereignty Status** — Posture report with A/B/C/D grading
+- **DSoR Trace Viewer** — Browse and inspect decision trails
+- **Deployment Kit** — Dockerfile, docker-compose per jurisdiction, deploy script
+- **54 new tests** — All passing
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ---
 
 ## 🤝 Community & Contributing
-
-We're building the universal brain for AI agents. Join us!
 
 - **🐛 Found a bug?** Open an [Issue](https://github.com/eidetic-works/nucleus-mcp/issues)
 - **💡 Feature idea?** Start a [Discussion](https://github.com/eidetic-works/mcp-server-nucleus/discussions)
 - **🔧 Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 - **💬 Join Discord** — [Join the Nucleus Development Server](https://discord.gg/RJuBNNJ5MT)
 
-## �📜 License
+## 📜 License
 
 MIT © 2026 Nucleus Team | [hello@nucleusos.dev](mailto:hello@nucleusos.dev)
 
 ---
 
-**Built for the AI-native developer.** Star us on GitHub if Nucleus saves you from context amnesia! ⭐
-
+**Built for the AI-native enterprise.** Star us if Nucleus gives your agents a brain — and a conscience. ⭐

@@ -78,7 +78,7 @@ def _save_session(context: str, active_task: Optional[str] = None,
         
         _emit_event(
             "session_saved",
-            "brain_save_session",
+            "nucleus_sessions",
             {
                 "session_id": session_id,
                 "context": context,
@@ -384,7 +384,7 @@ def _brain_session_start_impl() -> str:
             for h in pending_handoffs[:3]:
                 output.append(f"   → TO: {h.get('to_agent')} | P{h.get('priority', 3)}")
                 output.append(f"     Request: {h.get('request', '')[:50]}...")
-            output.append("   Run: brain_get_handoffs() for details")
+            output.append("   Run: nucleus_sessions action='handoff_summary' for details")
             output.append("")
         
         # Recommendations
@@ -397,7 +397,7 @@ def _brain_session_start_impl() -> str:
             output.append(f"   '{top['description'][:60]}...'")
         elif not has_session and sorted_tasks:
             output.append("   1. Pick a task from above")
-            output.append("   2. Create sprint: brain_save_session(context='...')")
+            output.append("   2. Create sprint: nucleus_sessions(action='save', params={'context': '...'})")
             output.append("   3. Stay focused on that sprint")
         else:
             output.append("   Continue current sprint or work on top priority task")

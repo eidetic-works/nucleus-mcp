@@ -502,9 +502,7 @@ Actions:
         try:
             log_path = Path("docs/marketing/marketing_log.md")
             if not log_path.exists():
-                log_path = Path("/path/to/your/project/docs/marketing/marketing_log.md")
-            if not log_path.exists():
-                return json.dumps({"status": "error", "error": "Marketing log not found"})
+                return json.dumps({"status": "error", "error": "Marketing log not found at docs/marketing/marketing_log.md"})
             failures = []
             with open(log_path, "r", encoding='utf-8') as f:
                 for i, line in enumerate(f):

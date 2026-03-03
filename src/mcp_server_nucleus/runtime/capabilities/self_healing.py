@@ -1,6 +1,7 @@
 
 from typing import List, Dict, Any
 import os
+import shlex
 import subprocess
 from .base import Capability
 
@@ -55,8 +56,7 @@ class SelfHealingOps(Capability):
             # Security: We run the command as-is. 
             # In a real scenario, this should be sandboxed or strictly defined.
             result = subprocess.run(
-                self.health_cmd,
-                shell=True,
+                shlex.split(self.health_cmd),
                 capture_output=True,
                 text=True,
                 timeout=120  # 2 minute timeout for health checks

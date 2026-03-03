@@ -269,3 +269,87 @@ def _brain_governance_status_impl() -> str:
     except Exception as e:
         from .error_sanitizer import sanitize_error
         return make_response(False, error=sanitize_error(e, "internal_error", "governance_status"))
+
+def _dsor_query_decisions_impl(limit: int = 50) -> str:
+    """Implementation for querying the DSoR decision ledger."""
+    try:
+        limit = max(1, min(int(limit), 500))
+        brain = get_brain_path()
+        decisions_path = brain / "ledger" / "decisions" / "decisions.jsonl"
+        
+        if not decisions_path.exists():
+            return make_response(True, data={
+                "decisions": [],
+                "count": 0,
+                "message": "No decisions found. DSoR ledger is empty."
+            })
+            
+        decisions = []
+        with open(decisions_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        e = json.loads(line)
+                        decisions.append(e)
+                    except json.JSONDecodeError:
+                        continue
+                        
+        # Reverse chronologically
+        decisions.reverse()
+        total_matching = len(decisions)
+        truncated = total_matching > limit
+        decisions = decisions[:limit]
+        
+        return make_response(True, data={
+            "decisions": decisions,
+            "count": len(decisions),
+            "total_matching": total_matching,
+            "truncated": truncated
+        })
+    except Exception as e:
+        from .error_sanitizer import sanitize_error
+        return make_response(False, error=sanitize_error(e, "internal_error", "dsor_query_decisions"))
+
+def _dsor_get_trace_impl(decision_id: str) -> str:
+    """Implementation for visualizing a specific decision trace."""
+    try:
+        brain = get_brain_path()
+        decisions_path = brain / "ledger" / "decisions" / "decisions.jsonl"
+        
+        target_decision = None
+        if decisions_path.exists():
+            with open(decisions_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            e = json.loads(line)
+                            if e.get("decision_id") == decision_id:
+                                target_decision = e
+                                break
+                        except json.JSONDecodeError:
+                            continue
+        
+        if not target_decision:
+            return make_response(False, error=f"Decision ID {decision_id} not found in ledger.")
+            
+        trace = {
+            "decision": target_decision,
+            "context_snapshot": None
+        }
+        
+        # Retrieve the context snapshot matching the decision's context_hash
+        snapshots_dir = brain / "ledger" / "snapshots"
+        if snapshots_dir.exists():
+            for snap_file in snapshots_dir.glob("*.json"):
+                try:
+                    sdata = json.loads(snap_file.read_text())
+                    if sdata.get("state_hash") == target_decision.get("context_hash"):
+                        trace["context_snapshot"] = sdata
+                        break
+                except Exception:
+                    continue
+                    
+        return make_response(True, data={"trace": trace})
+    except Exception as e:
+        from .error_sanitizer import sanitize_error
+        return make_response(False, error=sanitize_error(e, "internal_error", "dsor_get_trace"))

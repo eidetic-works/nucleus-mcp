@@ -4,7 +4,7 @@ import json
 import traceback
 
 sys.path.insert(0, "./src")
-os.environ["NUCLEAR_BRAIN_PATH"] = "/path/to/your/project/.brain"
+os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/ai-mvp-backend/.brain"
 
 from mcp_server_nucleus.tools.sync import register
 
@@ -20,7 +20,7 @@ helpers = {
     "read_events": lambda *args: [],
     "get_state": lambda *args: {},
     "update_state": lambda *args: None,
-    "get_brain_path": lambda: "/path/to/your/project/.brain"
+    "get_brain_path": lambda: "/Users/lokeshgarg/ai-mvp-backend/.brain"
 }
 
 mcp = MockMCP()

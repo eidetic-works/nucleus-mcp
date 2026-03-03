@@ -86,7 +86,7 @@ def _brain_rollback_ingestion_impl(batch_id: str, reason: str = None) -> str:
         result = engine.rollback(batch_id, reason)
         
         if result.get("success"):
-            return f"✅ Rollback complete\n   Batch: {batch_id}\n   Tasks removed: {result['tasks_removed']}"
+            return f"✅ Rollback complete\n   Batch: {batch_id}\n   Tasks removed: {result.get('tasks_removed', 0)}"
         else:
             return f"❌ Rollback failed: {result.get('error')}"
             
@@ -106,11 +106,11 @@ def _brain_ingestion_stats_impl() -> str:
         lines = [
             "📊 **Ingestion Statistics**",
             "=" * 40,
-            f"   Total ingested: {stats['total_ingested']}",
-            f"   Total skipped: {stats['total_skipped']}",
-            f"   Total failed: {stats['total_failed']}",
-            f"   Batches: {stats['batches_count']}",
-            f"   Dedup cache: {stats['dedup_cache_size']}",
+            f"   Total ingested: {stats.get('total_ingested', 0)}",
+            f"   Total skipped: {stats.get('total_skipped', 0)}",
+            f"   Total failed: {stats.get('total_failed', 0)}",
+            f"   Batches: {stats.get('batches_count', 0)}",
+            f"   Dedup cache: {stats.get('dedup_cache_size', 0)}",
         ]
         
         if stats.get("by_source"):

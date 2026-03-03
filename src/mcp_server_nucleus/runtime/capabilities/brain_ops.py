@@ -89,7 +89,7 @@ class BrainOps(Capability):
     def execute_tool(self, tool_name: str, args: Dict) -> str:
         """Execute the tool locally using commitment_ledger."""
         # Use configured brain path
-        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/nucleus-os/ai-mvp-backend/.brain"))
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
         
         if tool_name == "brain_add_commitment":
             result = commitment_ledger.add_commitment(
@@ -101,7 +101,7 @@ class BrainOps(Capability):
                 priority=args.get('priority', 3),
                 source=args.get('source', 'nar_agent')
             )
-            return f"Commitment Added: {result['id']}"
+            return f"Commitment Added: {result.get('id', 'unknown')}"
             
         elif tool_name == "brain_get_open_loops":
             loops = commitment_ledger.load_ledger(brain_path)["commitments"]
@@ -212,7 +212,7 @@ class BrainOps(Capability):
             import json
             from datetime import datetime
             
-            brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "/Users/nucleus-os/ai-mvp-backend/.brain"))
+            brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
             raw_path = brain_path / "raw"
             archive_dir = brain_path / "archive"
             archive_dir.mkdir(parents=True, exist_ok=True)

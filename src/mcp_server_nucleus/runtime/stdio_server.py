@@ -315,7 +315,7 @@ class StdioServer:
             "unlock": lambda path: unlock_resource_impl(path),
             "set_mode": lambda mode: set_hypervisor_mode_impl(mode),
             "list_directory": lambda path: nucleus_list_directory_impl(path),
-            "delete_file": lambda path: nucleus_delete_file_impl(path),
+            "delete_file": lambda path, confirm=False: nucleus_delete_file_impl(path, confirm=confirm),
             "watch": lambda path: watch_resource_impl(path),
             "status": lambda: hypervisor_status_impl(),
             "curl": lambda url, method="GET": nucleus_curl_impl(url, method),

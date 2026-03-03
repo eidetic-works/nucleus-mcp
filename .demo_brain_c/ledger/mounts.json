@@ -1,0 +1,20 @@
+[
+  {
+    "id": "mnt-77ec5b",
+    "name": "Alpha",
+    "command": "python3",
+    "args": [
+      "/tmp/mock_mcp_server.py",
+      "Alpha"
+    ]
+  },
+  {
+    "id": "mnt-7477c5",
+    "name": "Beta",
+    "command": "python3",
+    "args": [
+      "/tmp/mock_mcp_server.py",
+      "Beta"
+    ]
+  }
+]

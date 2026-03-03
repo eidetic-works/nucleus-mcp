@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-server-nucleus"
+version = "0.6.0"
+description = "The Agent Control Plane - Default-Deny Security for MCP Servers"
+readme = "README.md"
+authors = [
+    { name = "Nucleus Team", email = "hello@nucleus-mcp.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp",
+    "pydantic",
+    "watchdog>=3.0.0",
+    "google-cloud-firestore>=2.11.0",
+    "google-genai",
+    "duckduckgo-search>=4.0.0",
+    "beautifulsoup4>=4.12.0",
+    "nest_asyncio",
+    "cryptography>=41.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "ruff"
+]
+
+[project.scripts]
+mcp-server-nucleus = "mcp_server_nucleus:main"
+nucleus-init = "mcp_server_nucleus.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_server_nucleus"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+

@@ -75,11 +75,25 @@ fi
 
 echo -e "${GREEN}✅ Synchronization complete!${NC}"
 echo ""
+
+# 5. Enforce Clean Author Config
+CURRENT_NAME=$(git config user.name 2>/dev/null || echo "")
+CURRENT_EMAIL=$(git config user.email 2>/dev/null || echo "")
+if [[ "$CURRENT_NAME" != "Nucleus Team" || "$CURRENT_EMAIL" != "hello@nucleusos.dev" ]]; then
+    echo -e "${YELLOW}⚠️  Setting clean author config in target repo...${NC}"
+    git config user.name "Nucleus Team"
+    git config user.email "hello@nucleusos.dev"
+fi
+
 echo "The changes have been staged in the nucleus-mcp repository."
 echo "You can now navigate there to review and commit:"
 echo ""
 echo "  cd ../nucleus-mcp"
 echo "  git status"
+echo "  git diff --cached --stat"
 echo "  git commit -m \"🚀 Sync: <your message>\""
-echo "  git push origin HEAD"
+echo "  git push origin main"
+echo ""
+echo -e "${RED}⛔ NEVER run 'git push' from the mono-repo to the public remote.${NC}"
+echo -e "${RED}   This script is the ONLY safe way to sync.${NC}"
 echo ""

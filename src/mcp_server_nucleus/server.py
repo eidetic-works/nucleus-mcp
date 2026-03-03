@@ -65,6 +65,15 @@ def register_resources(mcp, helpers):
         except Exception:
             return json.dumps({"global_version": 0, "uri_versions": {}, "recent_changes": []})
 
+    @mcp.resource("brain://traces")
+    def resource_traces() -> str:
+        """Full list of recent DecisionMade traces - subscribable."""
+        try:
+            from .runtime.engram_ops import _dsor_query_decisions_impl
+            return _dsor_query_decisions_impl(limit=50)
+        except Exception as e:
+            return json.dumps({"success": False, "error": str(e)})
+
 # ============================================================
 # MCP PROMPTS (Pre-built orchestration)
 # ============================================================

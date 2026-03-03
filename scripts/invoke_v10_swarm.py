@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath("src"))
 from mcp_server_nucleus.runtime.orchestrator import SwarmsOrchestrator
 
 async def main():
-    brain_path = Path("/home/user/.gemini/antigravity/brain/b95f3ae4-2e33-4132-a8c3-8ecf4024f5ae")
+    brain_path = Path("/Users/lokeshgarg/.gemini/antigravity/brain/b95f3ae4-2e33-4132-a8c3-8ecf4024f5ae")
     os.environ["NUCLEUS_BRAIN_PATH"] = str(brain_path)
     
     print(f"🧠 Initializing Swarm Orchestrator at {brain_path}")

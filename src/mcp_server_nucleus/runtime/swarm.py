@@ -32,7 +32,7 @@ def get_brain_path() -> Path:
             return parent / ".brain"
     
     # Ultimate fallback
-    return Path("/Users/nucleus-os/ai-mvp-backend/.brain")
+    return Path(".brain")
 
 
 def _orchestrate_swarm(mission: str, agents: List[str] = None) -> Dict:

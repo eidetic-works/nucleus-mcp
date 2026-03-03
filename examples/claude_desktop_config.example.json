@@ -7,8 +7,8 @@
                 "mcp_server_nucleus"
             ],
             "env": {
-                "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain",
-                "PYTHONPATH": "/path/to/your/project/mcp-server-nucleus/src"
+                "NUCLEAR_BRAIN_PATH": "/Users/lokeshgarg/ai-mvp-backend/.brain",
+                "PYTHONPATH": "/Users/lokeshgarg/ai-mvp-backend/mcp-server-nucleus/src"
             }
         }
     }

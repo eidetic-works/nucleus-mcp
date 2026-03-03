@@ -90,6 +90,6 @@ while True:
 
 if __name__ == "__main__":
     if "NUCLEAR_BRAIN_PATH" not in os.environ:
-        os.environ["NUCLEAR_BRAIN_PATH"] = "/home/user/.brain"
+        os.environ["NUCLEAR_BRAIN_PATH"] = "/Users/lokeshgarg/.brain"
     
     asyncio.run(test_tool_discovery())

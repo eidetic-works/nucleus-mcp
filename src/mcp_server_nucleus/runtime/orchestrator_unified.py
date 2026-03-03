@@ -1,5 +1,5 @@
 """
-Unified Nucleus Orchestrator (v0.5.0)
+Unified Nucleus Orchestrator (v1.2.1)
 =====================================
 Converges SwarmsOrchestrator (V2) with NucleusOrchestratorV3 (V3).
 
