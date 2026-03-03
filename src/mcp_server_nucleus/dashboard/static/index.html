@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus — Sovereign Compliance Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-900: #0B0F19;
+            --bg-800: #131825;
+            --bg-700: #1A2035;
+            --bg-600: #212841;
+            --border: rgba(255, 255, 255, 0.06);
+            --text-primary: #E8ECF4;
+            --text-secondary: #8892A8;
+            --text-muted: #5A6478;
+            --accent: #38BDF8;
+            --success: #34D399;
+            --warning: #FBBF24;
+            --danger: #F87171;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-900);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .glass {
+            background: var(--bg-800);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-ring {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1.5px solid rgba(56, 189, 248, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.15rem;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .score-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .score-pill.green {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: var(--success);
+        }
+
+        .score-pill.yellow {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: var(--warning);
+        }
+
+        .score-pill.red {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: var(--danger);
+        }
+
+        .jurisdiction-tag {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title i {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Metrics */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .metric-box {
+            background: var(--bg-700);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+        }
+
+        .metric-box .label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .metric-box .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .metric-box.full {
+            grid-column: span 2;
+        }
+
+        .metric-box.full .value {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+
+        /* Agent Buttons */
+        .agent-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            background: var(--bg-900);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            color: var(--text-primary);
+        }
+
+        .agent-btn:hover {
+            background: var(--bg-700);
+        }
+
+        .agent-btn.low {
+            border-left: 3px solid var(--success);
+        }
+
+        .agent-btn.med {
+            border-left: 3px solid var(--warning);
+        }
+
+        .agent-btn.high {
+            border-left: 3px solid var(--danger);
+        }
+
+        .agent-btn .name {
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .agent-btn .risk {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .agent-btn .play {
+            font-size: 0.65rem;
+        }
+
+        .agent-btn.low .play {
+            color: var(--success);
+        }
+
+        .agent-btn.med .play {
+            color: var(--warning);
+        }
+
+        .agent-btn.high .play {
+            color: var(--danger);
+        }
+
+        .btn-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .status-banner {
+            margin-top: 0.75rem;
+            padding: 0.6rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            display: none;
+        }
+
+        .status-banner.show {
+            display: block;
+        }
+
+        .status-banner.info {
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            color: var(--accent);
+        }
+
+        .status-banner.ok {
+            background: rgba(52, 211, 153, 0.08);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            color: var(--success);
+        }
+
+        .status-banner.warn {
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            color: var(--warning);
+        }
+
+        .status-banner.err {
+            background: rgba(248, 113, 113, 0.08);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: var(--danger);
+        }
+
+        /* DSoR Panel */
+        .dsor-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dsor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 999px;
+            background: var(--bg-700);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--bg-600);
+            color: var(--text-primary);
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .split {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Table */
+        .trace-table {
+            background: var(--bg-900);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .trace-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+
+        .trace-table thead {
+            background: rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+        }
+
+        .trace-table th {
+            padding: 0.6rem 0.85rem;
+            text-align: left;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .trace-table td {
+            padding: 0.6rem 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .trace-table tr {
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .trace-table tbody tr:hover {
+            background: rgba(56, 189, 248, 0.04);
+        }
+
+        .trace-id {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Inspector */
+        .inspector {
+            background: var(--bg-900);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 480px;
+        }
+
+        .inspector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.85rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .inspector-header .id {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .inspector-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .inspector-body {
+            padding: 0.85rem;
+            overflow-y: auto;
+            flex: 1;
+            font-size: 0.75rem;
+        }
+
+        .inspector-body .placeholder {
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        .check-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .check-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+        }
+
+        .check-item .rw {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .reasoning-block {
+            margin-top: 0.75rem;
+            padding: 0.6rem;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 6px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.35rem;
+            margin: 0.75rem 0 0.5rem;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .5
+            }
+        }
+
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="glass header">
+        <div class="header-left">
+            <div class="logo-ring"><i class="fa-solid fa-atom"></i></div>
+            <div>
+                <h1>Nucleus</h1>
+                <div class="subtitle">Sovereign Agent OS Governance</div>
+            </div>
+        </div>
+        <div>
+            <div id="score-pill" class="score-pill green mono">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span id="score-text">Loading…</span>
+            </div>
+            <div id="jurisdiction-tag" class="jurisdiction-tag mono">Jurisdiction: —</div>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="grid">
+
+        <!-- LEFT COLUMN -->
+        <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+            <!-- System Status -->
+            <div class="glass card">
+                <div class="card-title"><i class="fa-solid fa-server"></i> System Status</div>
+                <div class="metric-grid">
+                    <div class="metric-box">
+                        <div class="label mono">Engrams</div>
+                        <div class="value" id="m-engrams">—</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" style="color:var(--accent)" id="m-decisions">—</div>
+                        <div class="label mono">DSoR Decisions</div>
+                    </div>
+                    <div class="metric-box full">
+                        <div class="label mono">Brain Path</div>
+                        <div class="value mono" id="m-path">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Autonomous Agents -->
+            <div class="glass card">
+                <div class="card-title"><i class="fa-solid fa-robot" style="color:var(--accent)"></i> Autonomous Agents
+                </div>
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.75rem;">Trigger compliance workflows
+                    and observe local governance execution.</p>
+                <div class="btn-stack">
+                    <button class="agent-btn low" onclick="runKyc('APP-001')">
+                        <div>
+                            <div class="name">Evaluate KYC: John Smith</div>
+                            <div class="risk mono">Low Risk Profile</div>
+                        </div>
+                        <div class="play"><i class="fa-solid fa-play"></i></div>
+                    </button>
+                    <button class="agent-btn med" onclick="runKyc('APP-002')">
+                        <div>
+                            <div class="name">Evaluate KYC: Maria R.</div>
+                            <div class="risk mono">Medium Risk (PEP Match)</div>
+                        </div>
+                        <div class="play"><i class="fa-solid fa-play"></i></div>
+                    </button>
+                    <button class="agent-btn high" onclick="runKyc('APP-003')">
+                        <div>
+                            <div class="name">Evaluate KYC: Dmitri V.</div>
+                            <div class="risk mono">High Risk (Sanctions Hit)</div>
+                        </div>
+                        <div class="play"><i class="fa-solid fa-play"></i></div>
+                    </button>
+                </div>
+                <div id="kyc-status" class="status-banner info"></div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: DSoR -->
+        <div class="glass card dsor-panel">
+            <div class="dsor-header">
+                <div class="card-title" style="border:none;padding:0;margin:0;"><i class="fa-solid fa-list-check"></i>
+                    Decision System of Record (DSoR)</div>
+                <button class="refresh-btn" onclick="loadTraces()"><i class="fa-solid fa-rotate-right"></i>
+                    Refresh</button>
+            </div>
+            <div class="split">
+                <!-- Trace List -->
+                <div class="trace-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Agent Task</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trace-body">
+                            <tr>
+                                <td colspan="2" style="text-align:center;color:var(--text-muted);padding:2rem;">Loading
+                                    ledger…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Inspector -->
+                <div class="inspector">
+                    <div class="inspector-header">
+                        <span class="id mono" id="insp-id">Inspector</span>
+                        <span class="inspector-badge mono" id="insp-badge">N/A</span>
+                    </div>
+                    <div class="inspector-body" id="insp-body">
+                        <p class="placeholder">Select a record from the ledger to view the immutable decision reasoning
+                            context.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API = window.location.origin + "/api";
+
+        // ── Sovereignty ─────────────────────────────────────────
+        async function loadSov() {
+            try {
+                const [sovR, cmpR] = await Promise.all([
+                    fetch(API + "/sovereign"),
+                    fetch(API + "/compliance")
+                ]);
+                const sov = await sovR.json();
+                const cmp = await cmpR.json();
+
+                const score = sov.sovereignty_score || 0;
+                const sections = sov.sections || {};
+                const mem = sections.memory || {};
+                const dsor = sections.dsor || {};
+                const ident = sections.identity || {};
+                const gov = sections.governance || {};
+
+                // Score pill
+                let grade = score >= 80 ? "A+" : score >= 60 ? "B" : "C";
+                let cls = score >= 80 ? "green" : score >= 60 ? "yellow" : "red";
+                const pill = document.getElementById("score-pill");
+                pill.className = "score-pill mono " + cls;
+                document.getElementById("score-text").textContent = score + "/100  Grade " + grade;
+
+                // Jurisdiction
+                const jName = gov.jurisdiction_name || cmp.jurisdiction || gov.jurisdiction || "Unconfigured";
+                document.getElementById("jurisdiction-tag").textContent = "Jurisdiction: " + jName;
+
+                // Metrics
+                document.getElementById("m-engrams").textContent = mem.engram_count || 0;
+                document.getElementById("m-decisions").textContent = dsor.decision_count || 0;
+                document.getElementById("m-path").textContent = ident.path || sov.brain_path || "/app/.brain";
+            } catch (e) {
+                document.getElementById("score-text").textContent = "OFFLINE";
+                document.getElementById("score-pill").className = "score-pill mono";
+            }
+        }
+
+        // ── Traces ──────────────────────────────────────────────
+        async function loadTraces() {
+            const tbody = document.getElementById("trace-body");
+            try {
+                const r = await fetch(API + "/traces");
+                const d = await r.json();
+                if (!d.traces || d.traces.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);padding:2rem;">Ledger empty.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = "";
+                const sorted = d.traces.slice().reverse();
+                sorted.forEach(t => {
+                    const tr = document.createElement("tr");
+                    const rid = t.review_id || t.file || "—";
+
+                    // Parse timestamp: prefer started_at, else extract from review_id
+                    let time = "—";
+                    const raw = t.started_at || t.completed_at;
+                    if (raw) {
+                        const ts = new Date(raw);
+                        if (!isNaN(ts)) time = [ts.getHours(), ts.getMinutes(), ts.getSeconds()].map(n => String(n).padStart(2, "0")).join(":");
+                    } else {
+                        const m = (rid || "").match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
+                        if (m) { const ts2 = new Date(m[1].replace(/-/g, (c, i) => i > 9 ? ":" : c)); if (!isNaN(ts2)) time = [ts2.getHours(), ts2.getMinutes(), ts2.getSeconds()].map(n => String(n).padStart(2, "0")).join(":"); }
+                    }
+
+                    let color = "var(--text-primary)";
+                    const ttype = t.type || "";
+                    if (ttype.includes("KYC")) color = "var(--accent)";
+                    if (ttype.includes("RISK")) color = "var(--warning)";
+                    if (ttype.includes("SYNC") || ttype.includes("DATA")) color = "var(--success)";
+
+                    tr.innerHTML = `
+                <td class="mono" style="color:var(--text-muted);white-space:nowrap;">${time}</td>
+                <td>
+                    <span style="color:${color}">${ttype || "—"}</span>
+                    <span class="trace-id mono">${rid}</span>
+                </td>`;
+                    tr.onclick = () => viewTrace(rid);
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--danger);">Failed to load traces.</td></tr>';
+            }
+        }
+
+        // ── Trace Detail ────────────────────────────────────────
+        async function viewTrace(id) {
+            const body = document.getElementById("insp-body");
+            const badge = document.getElementById("insp-badge");
+            document.getElementById("insp-id").textContent = id;
+            body.innerHTML = '<p style="text-align:center;margin-top:2rem;"><i class="fa-solid fa-circle-notch spin" style="color:var(--accent);font-size:1.25rem;"></i></p>';
+
+            try {
+                const r = await fetch(API + "/traces/" + id);
+                const d = await r.json();
+
+                // Badge
+                if (d.recommendation === "APPROVE") {
+                    badge.textContent = "✅ APPROVED (R:" + (d.risk_score || 0) + ")";
+                    badge.style.background = "rgba(52,211,153,0.15)"; badge.style.color = "var(--success)"; badge.style.borderColor = "rgba(52,211,153,0.3)";
+                } else if (d.recommendation === "ESCALATE") {
+                    badge.textContent = "⚠️ HITL REQUIRED (R:" + (d.risk_score || 0) + ")";
+                    badge.style.background = "rgba(251,191,36,0.15)"; badge.style.color = "var(--warning)"; badge.style.borderColor = "rgba(251,191,36,0.3)";
+                } else if (d.recommendation === "REJECT") {
+                    badge.textContent = "⛔ REJECTED (R:" + (d.risk_score || 0) + ")";
+                    badge.style.background = "rgba(248,113,113,0.15)"; badge.style.color = "var(--danger)"; badge.style.borderColor = "rgba(248,113,113,0.3)";
+                } else {
+                    badge.textContent = "TRACE"; badge.style.background = ""; badge.style.color = ""; badge.style.borderColor = "";
+                }
+
+                let html = `<div class="mono" style="font-size:0.65rem;color:var(--text-muted);background:rgba(0,0,0,0.25);padding:0.5rem;border-radius:6px;margin-bottom:0.5rem;">
+            Timestamp: ${d.started_at || d.completed_at || "—"}<br>Record: ${d.review_id || id}<br>Applicant: ${d.applicant || "N/A"}
+        </div>`;
+
+                if (d.checks && d.checks.length) {
+                    html += '<div class="section-label">Algorithm Checks</div><ul class="check-list">';
+                    d.checks.forEach(c => {
+                        const icon = c.passed ? '<i class="fa-solid fa-check" style="color:var(--success)"></i>' : '<i class="fa-solid fa-xmark" style="color:var(--danger)"></i>';
+                        html += `<li class="check-item"><span>${icon} ${c.check_name}</span><span class="rw mono">+${c.risk_weight}</span></li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                if (d.reasoning) {
+                    html += '<div class="section-label">Sovereign Decision Log</div>';
+                    html += '<div class="reasoning-block mono">' + d.reasoning + '</div>';
+                }
+
+                body.innerHTML = html;
+            } catch (e) {
+                body.innerHTML = '<p style="color:var(--danger)">Failed to load trace: ' + e.message + '</p>';
+            }
+        }
+
+        // ── KYC Runner ──────────────────────────────────────────
+        async function runKyc(appId) {
+            const banner = document.getElementById("kyc-status");
+            banner.className = "status-banner info show";
+            banner.innerHTML = '<i class="fa-solid fa-cog spin"></i> Agent actively parsing identity documents…';
+
+            try {
+                const t0 = Date.now();
+                const r = await fetch(API + "/kyc/demo?id=" + appId, { method: "POST" });
+                const ms = Date.now() - t0;
+                const d = await r.json();
+
+                let cls = "ok", icon = "fa-check";
+                if (d.recommendation === "ESCALATE") { cls = "warn"; icon = "fa-exclamation-triangle"; }
+                if (d.recommendation === "REJECT") { cls = "err"; icon = "fa-ban"; }
+
+                banner.className = "status-banner " + cls + " show";
+                banner.innerHTML = `<i class="fa-solid ${icon}"></i> Agent decision: <strong>${d.recommendation}</strong>
+            <span style="display:block;font-size:0.6rem;color:var(--text-muted);margin-top:4px;">Autonomous evaluation executed in ${ms}ms. Written to local ledger.</span>`;
+
+                loadSov();
+                loadTraces();
+            } catch (e) {
+                banner.className = "status-banner err show";
+                banner.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Execution Failed: ' + e.message;
+            }
+        }
+
+        // ── Init ────────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", () => { loadSov(); loadTraces(); });
+    </script>
+</body>
+
+</html>
