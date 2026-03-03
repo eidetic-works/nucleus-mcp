@@ -18,8 +18,8 @@ HTML_TEMPLATE = """
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .search-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; }
-        .search-input:focus { outline: none; border-color: #7C3AED; box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); }
+        .search-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; color: white !important; }
+        .search-input:focus { outline: none; border-color: #7C3AED; box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); color: white !important; }
         .tool-card { transition: all 0.3s ease; opacity: 1; transform: translateY(0); }
         .tool-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-color: rgba(124,58,237,0.3); }
         .tool-card.hidden { display: none; }
