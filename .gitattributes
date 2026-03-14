@@ -1,0 +1,88 @@
+# Precision Sync: Exclude internal tools and private scripts from public repository
+scripts/sync_public_repo.sh export-ignore
+scripts/publish_pypi.sh export-ignore
+scripts/build_dual_artifacts.sh export-ignore
+scripts/build_dark_wheel.py export-ignore
+scripts/build_public_decoy.py export-ignore
+scripts/cleanup_ledger.py export-ignore
+scripts/deploy_airgapped_agent.sh export-ignore
+scripts/drain-upstash-spans.js export-ignore
+scripts/install_nucleus_daemon.sh export-ignore
+scripts/verify_git_cleanroom.sh export-ignore
+scripts/monolith_decomposition.py export-ignore
+scripts/bootstrap_node_beta.ps1 export-ignore
+scripts/analyze-telemetry-moat.cjs export-ignore
+scripts/build_public_decoy.py export-ignore
+
+# Internal Release Manifests
+RELEASE_v1.6.0_EXECUTION_GUIDE.md export-ignore
+PRE_LAUNCH_VALIDATION.md export-ignore
+PHASE73_*.md export-ignore
+PHASE_*.md export-ignore
+HARDENING_*.md export-ignore
+WINDSURF_*.md export-ignore
+ANONYMOUS_TELEMETRY_IMPLEMENTATION.md export-ignore
+CLOUD_TELEMETRY_QUICKSTART.md export-ignore
+DATA_MOAT_SUMMARY.md export-ignore
+OBSERVABILITY_PORTAL.md export-ignore
+TELEMETRY_LAUNCH_VERIFICATION.md export-ignore
+TELEMETRY_PIPELINE_README.md export-ignore
+TELEMETRY_ZERO_TOUCH_SETUP.md export-ignore
+WINDOWS_CI_SUMMARY.md export-ignore
+FIX_PERPLEXITY_CONFIG.md export-ignore
+INSTALL_PHASE73_NOW.md export-ignore
+FORCE_RELOAD_PHASE73.md export-ignore
+
+# Test Artifacts and Scratch Files
+tests/test3.txt export-ignore
+tests/tmp_chflags_test/ export-ignore
+tests/test_recursion.sh export-ignore
+debug*.py export-ignore
+test_*.py export-ignore
+test_*.lock export-ignore
+test_*.txt export-ignore
+pytest_*.txt export-ignore
+fuzzer_report.txt export-ignore
+hr_report_sample.txt export-ignore
+*.log export-ignore
+shortcut_plan.md export-ignore
+mounts.json export-ignore
+microservices_analysis.json export-ignore
+aws_microservices.json export-ignore
+
+# Internal docs/notes
+AGENTS.md export-ignore
+GEMINI.md export-ignore
+NOTES.md export-ignore
+TODO.md export-ignore
+docs/internal/ export-ignore
+README_GODMODE.md export-ignore
+README_TELEMETRY.md export-ignore
+COMBOS.md export-ignore
+DAILY_USAGE_GUIDE.md export-ignore
+
+# Infrastructure/State
+.brain*/ export-ignore
+.gemini/ export-ignore
+.vscode/ export-ignore
+.idea/ export-ignore
+.pytest_cache/ export-ignore
+.ruff_cache/ export-ignore
+.telemetry/ export-ignore
+.test_configs*/ export-ignore
+.venv/ export-ignore
+.wrangler/ export-ignore
+node_modules/ export-ignore
+dist/ export-ignore
+build_*/ export-ignore
+deploy*/ export-ignore
+incidents/ export-ignore
+infra/ export-ignore
+ledger/ export-ignore
+mission_artifacts/ export-ignore
+website/ export-ignore
+cloudflare/ export-ignore
+node_modules/ export-ignore
+uv.lock export-ignore
+package-lock.json export-ignore
+nucleus.db export-ignore
