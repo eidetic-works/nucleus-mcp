@@ -1,7 +1,7 @@
 """Engram, health, version, audit, morning brief, compounding loop,
-DSoR, and tier system tools.
+DSoR, heartbeat, and tier system tools.
 
-Super-Tools Facade: All 25 engram/health/observability actions exposed via
+Super-Tools Facade: All 32 engram/health/observability actions exposed via
 a single `nucleus_engrams(action, params)` MCP tool.
 """
 
@@ -312,6 +312,18 @@ def register(mcp, helpers):
         from ..runtime.context_graph import render_ascii_graph
         return make_response(True, data={"ascii": render_ascii_graph(max_nodes=max_nodes, min_intensity=min_intensity)})
 
+    def _h_heartbeat_check(notify=False, brain_path=None):
+        from ..runtime.heartbeat_ops import _heartbeat_check_impl, _notify_native
+        result = _heartbeat_check_impl(brain_path=brain_path)
+        if notify and result.get("should_notify"):
+            _notify_native(result.get("notification_title", ""), result.get("notification_body", ""))
+        return make_response(True, data=result)
+
+    def _h_heartbeat_status(brain_path=None):
+        from ..runtime.heartbeat_ops import _heartbeat_status_impl
+        result = _heartbeat_status_impl(brain_path=brain_path)
+        return make_response(True, data=result)
+
     ROUTER = {
         "health": lambda: _brain_health_impl(),
         "version": _h_version,
@@ -347,6 +359,8 @@ def register(mcp, helpers):
         "render_graph": lambda max_nodes=30, min_intensity=1: _h_render_graph(max_nodes, min_intensity),
         "dsor_query_decisions": lambda limit=50: _dsor_query_decisions_impl(limit),
         "dsor_get_trace": lambda decision_id: _dsor_get_trace_impl(decision_id),
+        "heartbeat_check": lambda notify=False, brain_path=None: _h_heartbeat_check(notify, brain_path),
+        "heartbeat_status": lambda brain_path=None: _h_heartbeat_status(brain_path),
     }
 
     @mcp.tool()
@@ -388,6 +402,8 @@ Actions:
   tier_status         - Get tier configuration status
   dsor_query_decisions- Query the DSoR decision ledger. params: {limit?}
   dsor_get_trace      - Get full provenance trace for a decision. params: {decision_id}
+  heartbeat_check     - Proactive context-triggered check-in. params: {notify?, brain_path?}. Checks stale blockers/decisions, velocity drops, session gaps.
+  heartbeat_status    - Get heartbeat daemon installation status. params: {brain_path?}. Shows install state + recent check history.
 """
         return await async_dispatch(action, params, ROUTER, "nucleus_engrams")
 

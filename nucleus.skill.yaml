@@ -1,0 +1,53 @@
+name: nucleus
+version: 1.4.0
+description: Sovereign agent brain — persistent memory, task management, session state, growth metrics, and outbound I/O.
+commands:
+  engram search:
+    description: Search engrams by keyword
+    usage: nucleus engram search <query> [--limit N] [--format json|table|tsv]
+  engram write:
+    description: Write an engram to memory
+    usage: nucleus engram write <key> <value> [--context Decision] [--intensity 5]
+  engram query:
+    description: Query engrams by context and intensity
+    usage: nucleus engram query [--context Strategy] [--min-intensity 3] [--limit 50]
+  task list:
+    description: List tasks with optional filters
+    usage: nucleus task list [--status READY] [--priority 1] [--format json|table|tsv]
+  task add:
+    description: Create a new task
+    usage: nucleus task add <description> [--priority 3]
+  task update:
+    description: Update a task's status, priority, or description
+    usage: nucleus task update <task_id> [--status DONE] [--priority 1]
+  session save:
+    description: Save current session context for later resumption
+    usage: nucleus session save <context> [--task "current task"]
+  session resume:
+    description: Resume the most recent or a specific session
+    usage: nucleus session resume [session_id]
+  growth pulse:
+    description: Run daily growth pulse — captures GitHub stars, PyPI installs, compounds insights
+    usage: nucleus growth pulse [--format json]
+  growth status:
+    description: Show current growth metrics without writing engrams
+    usage: nucleus growth status [--format json|table]
+  outbound check:
+    description: Check if content has already been posted (idempotency gate)
+    usage: nucleus outbound check <channel> <identifier> [--body "post text"]
+  outbound record:
+    description: Record a successful outbound post
+    usage: nucleus outbound record <channel> <identifier> --permalink <url> [--workhorse manual]
+  outbound plan:
+    description: Show posting plan — what's ready vs already posted
+    usage: nucleus outbound plan [--channel reddit]
+global_flags:
+  --format: "Output format: json (default when piped), table (default in TTY), tsv"
+  --brain-path: "Path to .brain directory (default: auto-detect from cwd or NUCLEAR_BRAIN_PATH env)"
+  --version: "Show version (nucleus --version)"
+conventions:
+  stdout: data only (JSON, table, or TSV)
+  stderr: errors and status messages
+  exit_0: success
+  exit_1: error
+  pipe: "nucleus engram search 'test' | jq '.key'"

@@ -1,0 +1,722 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus Sovereign Tool Catalog</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .search-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; color: white !important; }
+        .search-input:focus { outline: none; border-color: #7C3AED; box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); color: white !important; }
+        .tool-card { transition: all 0.3s ease; opacity: 1; transform: translateY(0); }
+        .tool-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-color: rgba(124,58,237,0.3); }
+        .tool-card.hidden { display: none; }
+        .copy-btn { opacity: 0; transition: opacity 0.2s; }
+        .tool-card:hover .copy-btn { opacity: 1; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+    <script>
+        function filterTools() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.tool-card');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            document.getElementById('toolCount').innerText = `${visibleCount} tools found`;
+        }
+
+        async function copyToClipboard(text, btn) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<svg class="w-4 h-4 text-green-400" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen text-slate-300 antialiased p-6 md:p-12">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-4 tracking-tight">Nucleus Tool Catalog</h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">The definitive Sovereign Command Deck index. Search, explore, and leverage the exact tool needed for high-trust agentic execution.</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="sticky top-6 z-50 mb-12">
+            <div class="relative max-w-3xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-6 w-6 text-slate-500" style="width: 24px; height: 24px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" id="searchInput" onkeyup="filterTools()" class="search-input w-full pl-12 pr-4 py-4 rounded-xl text-lg text-white font-medium placeholder-slate-500 shadow-xl" placeholder="Search by tool name, description, or parameter...">
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                    <span id="toolCount" class="text-sm text-slate-400 font-medium">12 tools available</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Grid -->
+        <div id="toolGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">orchestration</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_agents</h3>
+                <button onclick="copyToClipboard('nucleus_agents', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Agent spawning, critic, swarm, memory, ingestion & dashboard tools.
+
+Actions:
+  spawn_agent          - Spawn Ephemeral Agent. params: {intent, execute_now?, persona?, confirm?}. HITL: requires confirm=true.
+  apply_critique       - Apply critique fixes. params: {review_path}
+  orchestrate_swarm    - Start multi-agent swarm. params: {mission, agents?}
+  search_memory        - Search long-term memory. params: {query}
+  read_memory          - Read memory category. params: {category}
+  respond_to_consent   - Respond to respawn consent. params: {agent_id, choice?}
+  list_pending_consents - List agents awaiting consent
+  critique_code        - Run Critic review. params: {file_path, context?}
+  fix_code             - Auto-fix code. params: {file_path, issues_context}
+  session_briefing     - Get session briefing. params: {conversation_id?}
+  register_session     - Register session focus. params: {conversation_id, focus_area}
+  handoff_task         - Hand off task. params: {task_description, target_session_id?, priority?}
+  ingest_tasks         - Ingest tasks. params: {source, source_type?, session_id?, auto_assign?, skip_dedup?, dry_run?}
+  rollback_ingestion   - Rollback ingestion. params: {batch_id, reason?}
+  ingestion_stats      - Get ingestion statistics
+  dashboard            - Enhanced dashboard. params: {detail_level?, format?, include_alerts?, include_trends?, category?}
+  snapshot_dashboard   - Create dashboard snapshot. params: {name?}
+  list_dashboard_snapshots - List snapshots. params: {limit?}
+  get_alerts           - Get active alerts
+  set_alert_threshold  - Set alert threshold. params: {metric, level, value}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">engrams</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_engrams</h3>
+                <button onclick="copyToClipboard('nucleus_engrams', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Engrams, health, observability, DSoR & tier system tools.
+
+Actions:
+  health              - Get system health status
+  version             - Get Nucleus version info
+  export_schema       - Export MCP toolset as JSON Schema
+  performance_metrics - Get perf metrics. params: {export_to_file?}
+  prometheus_metrics  - Get Prometheus metrics. params: {format?}
+  audit_log           - View cryptographic interaction log. params: {limit?}
+  write_engram        - Write engram to memory. params: {key, value, context?, intensity?}. context: Feature|Architecture|Brand|Strategy|Decision. intensity: 1-10.
+  query_engrams       - Query engrams. params: {context?, min_intensity?, limit?}. limit default 50, max 500.
+  search_engrams      - Search engrams. params: {query, case_sensitive?, limit?}. limit default 50, max 500.
+  governance_status   - Get governance status
+  morning_brief       - Daily Nucleus Morning Brief
+  hook_metrics        - Monitor auto-write engram hooks
+  compounding_status  - Compounding Loop status
+  end_of_day          - Capture EOD learnings. params: {summary, key_decisions?, blockers?}
+  session_inject      - Session-start context injection
+  weekly_consolidate  - Weekly consolidation. params: {dry_run?}
+  list_decisions      - List DecisionMade events. params: {limit?}
+  list_snapshots      - List context snapshots. params: {limit?}
+  metering_summary    - Token metering summary. params: {since_hours?}
+  ipc_tokens          - List IPC auth tokens. params: {active_only?}
+  dsor_status         - Comprehensive DSoR status
+  pulse_and_polish    - God Combo: automated health check pipeline. params: {write_engram?}. Runs prometheus→audit→brief→engram.
+  self_healing_sre    - God Combo: SRE diagnosis pipeline. params: {symptom, write_engram?}. Runs search→metrics→diagnose→recommend.
+  fusion_reactor      - God Combo: self-reinforcing memory loop. params: {observation, context?, intensity?, write_engrams?}. Compounds knowledge.
+  context_graph       - Build engram relationship graph. params: {include_edges?, min_intensity?}. Returns nodes, edges, clusters.
+  engram_neighbors    - Get neighborhood of an engram. params: {key, max_depth?}. BFS traversal of context graph.
+  billing_summary     - Usage cost tracking from audit logs. params: {since_hours?, group_by?}. group_by: tool|tier|session.
+  render_graph        - ASCII visualization of engram context graph. params: {max_nodes?, min_intensity?}.
+  federation_dsor     - Federation DSoR status
+  routing_decisions   - Query routing decision history. params: {limit?}
+  list_tools          - List tools at current tier. params: {category?}
+  tier_status         - Get tier configuration status
+  dsor_query_decisions- Query the DSoR decision ledger. params: {limit?}
+  dsor_get_trace      - Get full provenance trace for a decision. params: {decision_id}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">features</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_features</h3>
+                <button onclick="copyToClipboard('nucleus_features', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Feature tracking, proof generation & MCP server mounting.
+
+Actions:
+  add             - Add a feature. params: {product, name, description, source, version, how_to_test, expected_result, status?, tags?}
+  list            - List features. params: {product?, status?, tag?}
+  get             - Get feature by ID. params: {feature_id}
+  update          - Update feature fields. params: {feature_id, status?, description?, version?}
+  validate        - Mark feature validated. params: {feature_id, result}
+  search          - Search features. params: {query}
+  mount_server    - Mount external MCP server. params: {name, command, args?}
+  thanos_snap     - Trigger Instance Fractal Aggregation
+  unmount_server  - Unmount MCP server. params: {server_id}
+  list_mounted    - List mounted MCP servers
+  discover_tools  - Discover tools from mounted servers. params: {server_id?}
+  invoke_tool     - Invoke tool on mounted server. params: {server_id, tool_name, arguments?}
+  traverse_mount  - Recursively mount downstream servers. params: {root_mount_id}
+  generate_proof  - Generate proof document. params: {feature_id, thinking?, deployed_url?, files_changed?, risk_level?, rollback_time?}
+  get_proof       - Get proof for a feature. params: {feature_id}
+  list_proofs     - List all proof documents
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">federation</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_federation</h3>
+                <button onclick="copyToClipboard('nucleus_federation', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Federation management for multi-brain coordination.
+
+Actions:
+  status  - Get comprehensive federation status
+  join    - Join a federation via seed peer. params: {seed_peer}
+  leave   - Leave the federation gracefully
+  peers   - List all federation peers with details
+  sync    - Force immediate synchronization with all peers
+  route   - Route a task to the optimal brain. params: {task_id, profile?}
+  health  - Get federation health dashboard
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">governance</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_governance</h3>
+                <button onclick="copyToClipboard('nucleus_governance', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Governance, Hypervisor & security tools for the Nucleus Agent OS.
+
+Actions:
+  auto_fix_loop   - Auto-fix loop: Verify->Diagnose->Fix->Verify (3 retries). params: {file_path, verification_command}
+  lock            - [HYPERVISOR] Lock a file/dir immutable (chflags uchg). params: {path}
+  unlock          - [HYPERVISOR] Unlock a file/dir. params: {path}
+  set_mode        - [HYPERVISOR] Switch IDE context: "red" or "blue". params: {mode}
+  list_directory  - [GOVERNANCE] List files in a directory. params: {path}
+  delete_file     - [GOVERNANCE] Delete a file (governed by Hypervisor). params: {path, confirm?}. HITL: requires confirm=true.
+  watch           - [HYPERVISOR] Monitor a file/folder for changes. params: {path}
+  status          - [HYPERVISOR] Report current security state of Agent OS
+  curl            - [EGRESS] Proxied HTTP fetch for air-gapped agents. params: {url, method?}
+  pip_install     - [EGRESS] Proxied pip install for air-gapped agents. params: {package}
+  validate_strategic_plan - [PROTOCOL] Validate Strategic mode PLAN has Big Bang [BB##] refs. params: {plan_text, mode?}
+  comply_list     - [COMPLIANCE] List available regulatory jurisdictions
+  comply_apply    - [COMPLIANCE] Apply jurisdiction config. params: {jurisdiction, brain_path?}
+  comply_report   - [COMPLIANCE] Generate compliance status report. params: {brain_path?}
+  audit_report    - [COMPLIANCE] Generate audit-ready report. params: {report_format?, since_hours?, brain_path?}
+  kyc_review      - [COMPLIANCE] Run KYC demo review. params: {application_id?, brain_path?}
+  sovereign_status - [STATUS] Get sovereignty posture report. params: {brain_path?}
+  trace_list      - [DSoR] List decision traces. params: {trace_type?, brain_path?}
+  trace_view      - [DSoR] View specific trace. params: {trace_id, brain_path?}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">orchestration</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_infra</h3>
+                <button onclick="copyToClipboard('nucleus_infra', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Infrastructure: file changes, cloud, marketing & strategy tools.
+
+Actions:
+  file_changes        - Get pending file change events
+  gcloud_status       - Check GCloud auth status
+  gcloud_services     - List Cloud Run services. params: {project?, region?}
+  list_services       - List Render.com services
+  scan_marketing_log  - Scan marketing log for failures
+  synthesize_strategy - Analyze marketing & update strategy. params: {focus_topic?}
+  status_report       - Generate State of the Union. params: {focus?}
+  optimize_workflow   - Self-optimize workflow cheatsheet
+  manage_strategy     - Read/Update strategy doc. params: {action, content?}
+  update_roadmap      - Read/Update roadmap. params: {action, item?}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">orchestration</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_orchestration</h3>
+                <button onclick="copyToClipboard('nucleus_orchestration', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Satellite view, commitments, loops, patterns & metrics.
+
+Actions:
+  satellite         - Unified satellite view. params: {detail_level?}
+  scan_commitments  - Scan artifacts for new commitments
+  archive_stale     - Auto-archive commitments older than 30 days
+  export            - Export brain to zip
+  list_commitments  - List open commitments. params: {tier?}
+  close_commitment  - Close a commitment. params: {commitment_id, method}
+  commitment_health - Get commitment health summary
+  open_loops        - View all open loops. params: {type_filter?, tier_filter?}
+  add_loop          - Add a new open loop. params: {description, loop_type?, priority?}
+  weekly_challenge  - Manage weekly challenge. params: {action?, challenge_id?}
+  patterns          - Manage learned patterns. params: {action?}
+  metrics           - Get coordination metrics
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">sessions</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_sessions</h3>
+                <button onclick="copyToClipboard('nucleus_sessions', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Session management, events, state & checkpoint tools.
+
+Actions:
+  save             - Save session for later. params: {context, active_task?, pending_decisions?, breadcrumbs?, next_steps?}
+  resume           - Resume a saved session. params: {session_id?}
+  list             - List all saved sessions
+  check_recent     - Check for recent session to resume
+  end              - End work session. params: {summary?, learnings?, mood?}
+  start            - Mandatory session start protocol
+  archive_resolved - Archive .resolved.* backup files
+  propose_merges   - Detect redundant artifacts, generate merge proposals
+  garbage_collect  - Archive stale tasks. params: {max_age_hours?, dry_run?}
+  emit_event       - Emit event to brain ledger. params: {event_type, emitter, data, description?}
+  read_events      - Read recent events. params: {limit?}
+  get_state        - Get brain state. params: {path?}
+  update_state     - Update brain state. params: {updates}
+  checkpoint       - Save task checkpoint. params: {task_id, step?, progress_percent?, context?, artifacts?, resumable?}
+  resume_checkpoint - Resume from checkpoint. params: {task_id}
+  handoff_summary  - Generate handoff summary. params: {task_id, summary, key_decisions?, handoff_notes?}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">orchestration</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_slots</h3>
+                <button onclick="copyToClipboard('nucleus_slots', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Orchestration slots, sprints & mission management.
+
+Actions:
+  orchestrate        - THE GOD COMMAND. params: {slot_id?, model?, alias?, mode?}
+  slot_complete      - Mark task complete. params: {slot_id, task_id, outcome?, notes?}
+  slot_exhaust       - Mark slot exhausted. params: {slot_id, reset_hours?}
+  status_dashboard   - ASCII dashboard. params: {detail_level?}
+  autopilot_sprint   - Sprint command. params: {slots?, mode?, halt_on_blocker?, halt_on_tier_mismatch?, max_tasks_per_slot?, budget_limit?, dry_run?}
+  force_assign       - Force assign task. params: {slot_id, task_id, acknowledge_risk?}
+  autopilot_sprint_v2 - Enhanced sprint V3.1. params: {slots?, mode?, halt_on_blocker?, halt_on_tier_mismatch?, max_tasks_per_slot?, budget_limit?, time_limit_hours?, dry_run?}
+  start_mission      - Start mission. params: {name, goal, task_ids, slot_ids?, budget_limit?, time_limit_hours?, success_criteria?}
+  mission_status     - Get mission status. params: {mission_id?}
+  halt_sprint        - Halt sprint. params: {reason?}
+  resume_sprint      - Resume sprint. params: {sprint_id?}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">sync</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_sync</h3>
+                <button onclick="copyToClipboard('nucleus_sync', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Sync, artifact, trigger & deploy management for multi-agent coordination.
+
+Actions:
+  identify_agent   - Register agent identity. params: {agent_id, environment, role?}
+  sync_status      - Check current multi-agent sync status
+  sync_now         - Manually trigger sync. params: {force?}
+  sync_auto        - Enable/disable file watching. params: {enable}
+  sync_resolve     - Resolve a file conflict. params: {file_path, strategy?}
+  read_artifact    - Read an artifact file. params: {path}
+  write_artifact   - Write to an artifact file. params: {path, content}
+  list_artifacts   - List artifacts. params: {folder?}
+  trigger_agent    - Trigger an agent via event. params: {agent, task_description, context_files?}
+  get_triggers     - Get all defined neural triggers
+  evaluate_triggers - Evaluate triggers for an event. params: {event_type, emitter}
+  start_deploy_poll - Start monitoring a Render deploy. params: {service_id, commit_sha?}
+  check_deploy     - Check deploy poll status. params: {service_id}
+  complete_deploy  - Mark deploy complete. params: {service_id, success, deploy_url?, error?, run_smoke_test?}
+  smoke_test       - Run a smoke test. params: {url, endpoint?}
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">tasks</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_tasks</h3>
+                <button onclick="copyToClipboard('nucleus_tasks', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                Task management, depth tracking & ADHD context-switch tools.
+
+Actions:
+  list              - List tasks. params: {status?, priority?, skill?, claimed_by?}
+  get_next          - Get highest-priority unblocked task. params: {skills}
+  claim             - Atomically claim a task. params: {task_id, agent_id}
+  update            - Update task fields. params: {task_id, updates}
+  add               - Create a new task. params: {description, priority?, blocked_by?, required_skills?, source?, task_id?, skip_dep_check?}
+  import_jsonl      - Import tasks from JSONL. params: {jsonl_path, clear_existing?, merge_gtm_metadata?}
+  escalate          - Escalate task for human help. params: {task_id, reason}
+  depth_push        - Go deeper into subtopic. params: {topic}
+  depth_pop         - Come back up one level
+  depth_show        - Show current depth state
+  depth_reset       - Reset depth to root
+  depth_set_max     - Set max safe depth. params: {max_depth}
+  depth_map         - Generate exploration map
+  context_switch    - Record context switch / ADHD drift check. params: {new_context}
+  context_switch_status - Get context switch metrics
+  context_switch_reset  - Reset context switch counter
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-card glass rounded-xl p-6 flex flex-col relative group">
+            <span class="absolute -top-3 left-6 px-3 py-1 bg-purple-900/80 text-purple-200 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg border border-purple-500/30">orchestration</span>
+            <div class="flex justify-between items-start mb-4 mt-2">
+                <h3 class="text-lg font-bold text-slate-100 font-mono tracking-tight break-all pr-8 leading-tight">nucleus_telemetry</h3>
+                <button onclick="copyToClipboard('nucleus_telemetry', this)" class="copy-btn absolute top-6 right-6 p-2 rounded-md bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors" title="Copy to clipboard">
+                    <svg class="w-4 h-4" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-sm text-slate-300 mb-6 flex-grow leading-relaxed">
+                LLM tiers, telemetry, PEFS notifications & protocol tools.
+
+Actions:
+  set_llm_tier         - Set default LLM tier. params: {tier}
+  get_llm_status       - Get LLM tier configuration
+  record_interaction   - Record user interaction timestamp
+  value_ratio          - Get Value Ratio metric
+  check_kill_switch    - Check Kill Switch status
+  pause_notifications  - Pause PEFS notifications
+  resume_notifications - Resume PEFS notifications
+  record_feedback      - Record notification feedback. params: {notification_type, score}
+  mark_high_impact     - Mark loop closure as high-impact
+  check_protocol       - Check protocol compliance. params: {agent_id}
+  request_handoff      - Request agent handoff. params: {to_agent, context, request, priority?, artifacts?}
+  get_handoffs         - Get pending handoffs. params: {agent_id?}
+  agent_cost_dashboard - Get agent cost tracking dashboard
+  dispatch_metrics     - Get dispatch telemetry (per-action timing, error rates)
+            </div>
+            
+            <div class="mt-auto border-t border-slate-700/50 pt-4">
+                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Parameters</h4>
+                <div class="max-h-48 overflow-y-auto pr-1 pb-1">
+                    
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">action</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">str</span>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pl-3 border-l-2 border-slate-700 bg-slate-800/30 p-2 rounded-r">
+                        <div class="flex items-center">
+                            <span class="font-mono text-sm text-purple-300">params</span>
+                            <span class="text-xs font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">dict</span>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+        
+        </div>
+        
+        <!-- Footer -->
+        <footer class="mt-20 text-center text-slate-500 text-sm">
+            <p>Generated by Nucleus Sovereign OS Pipeline • Date: 2026-03-03 15:15:30 UTC</p>
+        </footer>
+    </div>
+</body>
+</html>

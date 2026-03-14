@@ -377,85 +377,196 @@ def _format_html(report: Dict) -> str:
     approvals = report["sections"].get("approvals", {})
     checklist = report["sections"].get("compliance_checklist", {})
 
+    # Calculate score logic matching the Dashboard
+    sov_score = sum(1 for c in checklist.get("checks", []) if c["status"] == "pass")
+    total_checks = checklist.get("total", 1)
+    grade = "A+" if sov_score == total_checks else ("B" if sov_score >= total_checks - 1 else "C")
+    badge_color = "success" if grade == "A+" else "warning"
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Nucleus Audit Report</title>
-<style>
-body {{ font-family: 'Inter', -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; background: #0d1117; color: #c9d1d9; }}
-h1 {{ color: #58a6ff; border-bottom: 2px solid #30363d; padding-bottom: 1rem; }}
-h2 {{ color: #79c0ff; margin-top: 2rem; }}
-.meta {{ color: #8b949e; font-size: 0.9rem; }}
-table {{ width: 100%; border-collapse: collapse; margin: 1rem 0; }}
-th {{ background: #161b22; color: #58a6ff; text-align: left; padding: 0.75rem; border: 1px solid #30363d; }}
-td {{ padding: 0.75rem; border: 1px solid #30363d; }}
-tr:nth-child(even) {{ background: #161b22; }}
-.pass {{ color: #3fb950; }} .fail {{ color: #f85149; }} .warn {{ color: #d29922; }}
-.badge {{ display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem; font-weight: 600; }}
-.badge-pass {{ background: #1a3a2a; color: #3fb950; }}
-.badge-fail {{ background: #3a1a1a; color: #f85149; }}
-.sovereignty {{ background: #1a2a3a; border: 1px solid #58a6ff; padding: 1rem; border-radius: 0.5rem; margin-top: 2rem; }}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus Audit Report - {report.get('generated_at', 'N/A')[:10]}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {{
+            theme: {{
+                extend: {{
+                    colors: {{
+                        nucleus: {{
+                            900: '#0F172A',
+                            800: '#1E293B',
+                            accent: '#38BDF8',
+                            success: '#10B981',
+                            warning: '#F59E0B',
+                            danger: '#EF4444'
+                        }}
+                    }}
+                }}
+            }}
+        }}
+    </script>
+    <style>
+        body {{ background-color: #0F172A; color: #E2E8F0; }}
+        .glass-panel {{
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+        }}
+        @media print {{
+            body {{ background-color: white; color: black; }}
+            .glass-panel {{ background: white; border: 1px solid #ccc; color: black; }}
+            .text-white {{ color: black !important; }}
+            .text-slate-400 {{ color: #666 !important; }}
+            .bg-nucleus-900 {{ background: #f8f9fa !important; }}
+        }}
+    </style>
 </head>
-<body>
-<h1>🧠 Nucleus Agent OS — Audit Trail Report</h1>
-<div class="meta">
-<p>Generated: {report.get('generated_at', 'N/A')}</p>
-<p>Jurisdiction: {jurisdiction.get('name', 'Not configured')} ({jurisdiction.get('region', 'Global')})</p>
-</div>
+<body class="min-h-screen p-8 text-sm">
 
-<h2>📋 Decision Records ({decisions.get('count', 0)})</h2>
-<table>
-<tr><th>Timestamp</th><th>Emitter</th><th>Description</th></tr>
-"""
-    for d in decisions.get("records", [])[:20]:
-        html += f"<tr><td>{d.get('timestamp', '?')[:19]}</td><td>{d.get('emitter', '?')}</td><td>{d.get('description', '')}</td></tr>\n"
-    if not decisions.get("records"):
-        html += "<tr><td colspan='3'>No decision records found</td></tr>\n"
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-8 glass-panel p-6">
+        <div class="flex items-center gap-4">
+            <div class="h-10 w-10 rounded-full bg-nucleus-accent/20 flex items-center justify-center text-nucleus-accent border border-nucleus-accent/50">
+                <i class="fa-solid fa-atom text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Nucleus</h1>
+                <p class="text-slate-400 text-xs tracking-wider uppercase font-semibold">Sovereign Compliance Audit Report</p>
+                <p class="text-slate-500 text-xs font-mono mt-1">Generated: {report.get('generated_at', 'N/A')}</p>
+            </div>
+        </div>
+        
+        <div class="flex flex-col items-end">
+            <div class="px-4 py-2 rounded-full border border-nucleus-{badge_color}/50 bg-nucleus-{badge_color}/10 text-nucleus-{badge_color} font-mono font-bold flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>PASSED: {sov_score}/{total_checks} | GRADE {grade}</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-2 font-mono">Jurisdiction: {jurisdiction.get('name', 'Unconfigured')}</p>
+        </div>
+    </header>
 
-    html += f"""</table>
-
-<h2>📊 Event Log ({events.get('count', 0)})</h2>
-<table>
-<tr><th>Timestamp</th><th>Type</th><th>Description</th></tr>
-"""
-    for e in events.get("records", [])[:20]:
-        html += f"<tr><td>{e.get('timestamp', '?')[:19]}</td><td>{e.get('type', '?')}</td><td>{e.get('description', '')[:80]}</td></tr>\n"
-
-    html += f"""</table>
-
-<h2>✋ HITL Approvals ({approvals.get('count', 0)})</h2>
-<table>
-<tr><th>Timestamp</th><th>Type</th><th>Description</th></tr>
-"""
-    for a in approvals.get("records", [])[:20]:
-        html += f"<tr><td>{a.get('timestamp', '?')[:19]}</td><td>{a.get('type', '?')}</td><td>{a.get('description', '')[:80]}</td></tr>\n"
-
-    html += f"""</table>
-
-<h2>✅ Compliance Checklist ({checklist.get('passed', 0)}/{checklist.get('total', 0)})</h2>
-<table>
-<tr><th>Check</th><th>Status</th><th>Detail</th></tr>
+    <div class="space-y-6">
+        <!-- Checklist -->
+        <div class="glass-panel p-6">
+            <h2 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-check-double mr-2 text-nucleus-success"></i>Regulatory Checklist</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 """
     for c in checklist.get("checks", []):
-        status_class = c["status"]
-        html += f"<tr><td>{c['item']}</td><td class='{status_class}'>{c['status'].upper()}</td><td>{c['detail']}</td></tr>\n"
+        status_color = "success" if c["status"] == "pass" else ("warning" if c["status"] == "warn" else "danger")
+        icon = "fa-check" if c["status"] == "pass" else ("fa-exclamation" if c["status"] == "warn" else "fa-xmark")
+        html += f"""
+                <div class="bg-nucleus-800/80 p-4 rounded-lg border border-white/5 flex gap-4 items-center">
+                    <div class="h-8 w-8 rounded-full bg-nucleus-{status_color}/20 flex items-center justify-center text-nucleus-{status_color}">
+                        <i class="fa-solid {icon}"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-medium">{c['item']}</p>
+                        <p class="text-xs text-slate-400 font-mono mt-1">{c['detail']}</p>
+                    </div>
+                </div>
+"""
 
-    html += f"""</table>
+    html += f"""
+            </div>
+        </div>
 
-<div class="sovereignty">
-<h3>🔒 Sovereignty Guarantee</h3>
-<p>This report was generated by <strong>Nucleus Agent OS</strong> — a sovereign, local-first Agent OS.</p>
-<ul>
-<li>✅ All data in this report resides on the local filesystem</li>
-<li>✅ No data was transmitted externally during report generation</li>
-<li>✅ All agent decisions are traceable via DSoR (Decision System of Record)</li>
-<li>✅ Human-in-the-loop governance is enforced for sensitive operations</li>
-</ul>
-</div>
+        <!-- Ledger Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Decisions -->
+            <div class="glass-panel p-6 flex flex-col">
+                <h2 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-list-check mr-2 text-nucleus-accent"></i>DSoR Event Ledger ({decisions.get('count', 0)})</h2>
+                <div class="bg-nucleus-900/50 border border-white/5 rounded-lg overflow-y-auto max-h-[400px]">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 uppercase bg-nucleus-900/80 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">Timestamp</th>
+                                <th class="px-4 py-3 font-medium">Trace Event</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+"""
+    for d in decisions.get("records", [])[:25]:
+        html += f"""
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">{d.get('timestamp', '?')[:19].replace('T', ' ')}</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-white font-medium">{d.get('description', '')}</span><br/>
+                                    <span class="text-[10px] text-slate-500 font-mono">ID: {d.get('id', '?')}</span>
+                                </td>
+                            </tr>
+"""
+    if not decisions.get("records"):
+        html += "<tr><td colspan='2' class='px-4 py-6 text-center text-slate-500'>No traces found in window.</td></tr>"
 
+    html += f"""
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Approvals & General Events -->
+            <div class="glass-panel p-6 flex flex-col">
+                <h2 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-user-shield mr-2 text-slate-400"></i>HITL & Audit Events ({approvals.get('count', 0) + events.get('count', 0)})</h2>
+                <div class="bg-nucleus-900/50 border border-white/5 rounded-lg overflow-y-auto max-h-[400px]">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 uppercase bg-nucleus-900/80 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">Timestamp</th>
+                                <th class="px-4 py-3 font-medium">Event Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+"""
+
+    combined_events = approvals.get("records", []) + events.get("records", [])
+    # Re-sort by timestamp descending
+    try:
+        combined_events.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    except:
+        pass
+
+    for e in combined_events[:25]:
+        etype = str(e.get("type", ""))
+        color = "nucleus-warning" if "HITL" in etype else "nucleus-accent"
+        html += f"""
+                            <tr class="border-b border-white/5">
+                                <td class="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">{e.get('timestamp', '?')[:19].replace('T', ' ')}</td>
+                                <td class="px-4 py-3">
+                                    <span class="text-{color} font-mono text-[10px] bg-{color}/10 px-1 py-0.5 rounded border border-{color}/30">{etype}</span><br/>
+                                    <span class="text-slate-300 mt-1 block">{e.get('description', '')[:100]}</span>
+                                </td>
+                            </tr>
+"""
+    if not combined_events:
+        html += "<tr><td colspan='2' class='px-4 py-6 text-center text-slate-500'>No events found in window.</td></tr>"
+
+    html += f"""
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sovereignty Footer -->
+        <div class="glass-panel p-6 border-l-4 border-nucleus-accent">
+            <h3 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-lock mr-2 text-nucleus-accent"></i>Sovereignty Guarantee</h3>
+            <p class="text-slate-300 mb-4">This report was generated by <strong>Nucleus Agent OS</strong> — a sovereign, local-first platform.</p>
+            <div class="flex gap-4 flex-wrap">
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-hard-drive mr-1 text-slate-400"></i> Local Filesystem Strict Residency</span>
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-wifi mr-1 text-slate-400"></i> Local Engine - No Data Exfiltration</span>
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-fingerprint mr-1 text-slate-400"></i> Immutable DSoR Hashes</span>
+                <span class="bg-black/30 px-3 py-1 rounded text-xs border border-white/10"><i class="fa-solid fa-stopwatch mr-1 text-slate-400"></i> Algorithmic Governance Hook Active</span>
+            </div>
+        </div>
+
+    </div>
 </body>
 </html>"""
 
     return html
+

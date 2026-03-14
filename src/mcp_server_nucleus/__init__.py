@@ -46,19 +46,24 @@ os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
 # Epic 5B: Strict Privilege Separation Assertion (Layer 5)
 try:
     if os.geteuid() != 0:
-        logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged.")
-        logger_init.warning("    The Watchdog can be terminated by local agents (UID collision).")
-        logger_init.warning("    For active defense, install via `sudo scripts/install_nucleus_daemon.sh`")
-        # Ensure it always prints to stderr during startup bypass
-        sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged. Watchdog can be killed.\n")
-        sys.stderr.flush()
+        _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+        if not _is_quiet:
+            logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged.")
+            logger_init.warning("    The Watchdog can be terminated by local agents (UID collision).")
+            logger_init.warning("    For active defense, install via `sudo scripts/install_nucleus_daemon.sh`")
+            
+            # Suppress stderr printing if JSON or quiet output is requested to keep stdout clean for agents
+            sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged. Watchdog can be killed.\n")
+            sys.stderr.flush()
 except AttributeError:
     # Windows fallback (os.geteuid doesn't exist)
     import ctypes
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged (Non-Admin).")
-        sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged (Non-Admin).\n")
-        sys.stderr.flush()
+        _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+        if not _is_quiet:
+            logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged (Non-Admin).")
+            sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged (Non-Admin).\n")
+            sys.stderr.flush()
 
 # from fastmcp import FastMCP (Moved to try/except block below)
 

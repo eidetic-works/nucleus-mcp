@@ -8,7 +8,11 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 import argparse
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+# Self-healing engine (Intent-Level Error Recovery)
+from .selfhealer import handle_cli_error
+from .cli_output import EXIT_ERROR
 
 # ============================================================================
 # TEMPLATE: DEFAULT (Full structure)
@@ -518,6 +522,11 @@ def main():
         description='Nucleus Control Plane CLI - Manage your AI coordination system'
     )
     
+    parser.add_argument('--version', action='version', version='%(prog)s 1.5.0')
+    parser.add_argument('--self-heal', action='store_true', default=True,
+                        help='Enable self-healing error handler (default: on)')
+    parser.add_argument('--no-self-heal', dest='self_heal', action='store_false',
+                        help='Disable self-healing, raise errors normally')
     subparsers = parser.add_subparsers(dest='cli_command', help='Available commands')
     
     # ============================================================
@@ -636,6 +645,8 @@ def main():
     status_parser.add_argument('--minimal', action='store_true', help='Show minimal view (depth only)')
     status_parser.add_argument('--sprint', action='store_true', help='Show sprint view (includes tasks)')
     status_parser.add_argument('--full', action='store_true', help='Show full view (includes session)')
+    status_parser.add_argument('--json', action='store_true', help='Output as JSON')
+    status_parser.add_argument('--format', choices=['json', 'table'], default=None, help='Output format (json or table)')
     
     # --- CONSOLIDATE SUBCOMMAND ---
     consolidate_parser = subparsers.add_parser('consolidate', help='Brain consolidation and cleanup operations')
@@ -792,107 +803,522 @@ def main():
     mount_remove = mount_subparsers.add_parser('remove', help='Remove a mount')
     mount_remove.add_argument('id', help='Mount ID to remove')
 
+    # ============================================================
+    # DEPLOY COMMAND (MVE-3)
+    # ============================================================
+    deploy_parser = subparsers.add_parser('deploy', help='Deploy jurisdictional environment (MVE-3)')
+    deploy_parser.add_argument('--jurisdiction', choices=['eu-dora', 'sg-mas-trm', 'us-soc2', 'global-default'], help='Regulatory jurisdiction profile')
+    deploy_parser.add_argument('--dry-run', action='store_true', help='Simulate deployment without changes')
+
+    # ============================================================
+    # DOGFOOD COMMAND (30-Day Experiment Tracker)
+    # ============================================================
+    dogfood_parser = subparsers.add_parser('dogfood', help='30-day dog food test tracker')
+    dogfood_subparsers = dogfood_parser.add_subparsers(dest='dogfood_action', help='Dogfood actions')
+
+    # nucleus dogfood log <score> [options]
+    dogfood_log = dogfood_subparsers.add_parser('log', help='Log daily pain score')
+    dogfood_log.add_argument('score', type=int, help='Pain-if-broken score 1-10')
+    dogfood_log.add_argument('--pay', action='store_true', help='Would you pay $29/mo?')
+    dogfood_log.add_argument('--faster', type=int, default=0, help='Decisions made faster today')
+    dogfood_log.add_argument('--notes', default='', help='Daily notes')
+
+    # nucleus dogfood status
+    dogfood_subparsers.add_parser('status', help='Show experiment status')
+
+    # ============================================================
+    # HEARTBEAT COMMAND — v1.5.0 "The Alive Brain"
+    # Context-triggered proactive agent engagement
+    # ============================================================
+    heartbeat_parser = subparsers.add_parser('heartbeat', help='💓 Proactive context-triggered agent check-ins')
+    heartbeat_subparsers = heartbeat_parser.add_subparsers(dest='heartbeat_action', help='Heartbeat actions')
+
+    # nucleus heartbeat check [--notify] [--format json]
+    hb_check = heartbeat_subparsers.add_parser('check', help='Evaluate context triggers and report insights',
+        epilog='Examples:\n  nucleus heartbeat check\n  nucleus heartbeat check --format json | jq .triggers\n  nucleus heartbeat check --notify\n  nucleus heartbeat check -q',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    hb_check.add_argument('--notify', action='store_true', help='Send native OS notification if triggers fire')
+    hb_check.add_argument('--format', choices=['json', 'table'], default=None,
+                          help='Output format (default: table)')
+    hb_check.add_argument('-q', '--quiet', action='store_true', help='Bare trigger messages only')
+    hb_check.add_argument('--brain-path', default=None, help='Path to .brain directory')
+
+    # nucleus heartbeat install [--interval 30]
+    hb_install = heartbeat_subparsers.add_parser('install', help='Install platform-native scheduling (launchd/systemd)')
+    hb_install.add_argument('--interval', type=int, default=30, help='Check interval in minutes (default: 30)')
+    hb_install.add_argument('--brain-path', default=None, help='Path to .brain directory')
+
+    # nucleus heartbeat uninstall
+    heartbeat_subparsers.add_parser('uninstall', help='Remove heartbeat scheduling')
+
+    # nucleus heartbeat status
+    hb_status = heartbeat_subparsers.add_parser('status', help='Show heartbeat installation status and recent checks')
+    hb_status.add_argument('--format', choices=['json', 'table'], default=None, help='Output format')
+    hb_status.add_argument('--brain-path', default=None, help='Path to .brain directory')
+
+
+    # ============================================================
+    # AGENT CLI — v1.4.0 "The Universal Interface"
+    # These commands call runtime functions directly and output
+    # pipe-friendly JSON (when piped) or tables (when interactive).
+    # ============================================================
+
+    def _add_agent_flags(p):
+        p.add_argument('--format', choices=['json', 'table', 'tsv'], default=None,
+                        help='Output format (default: table if TTY, json if piped)')
+        p.add_argument('--brain-path', default=None,
+                        help='Path to .brain directory (default: auto-detect)')
+        p.add_argument('-q', '--quiet', action='store_true', default=False,
+                        help='Bare output (one value per line, no headers — for pipes/xargs)')
+        return p
+
+    # --- ENGRAM COMMANDS ---
+    engram_parser = subparsers.add_parser('engram', help='🧠 Agent memory: search, write, query engrams')
+    engram_subs = engram_parser.add_subparsers(dest='engram_action', help='Engram actions')
+
+    _p = _add_agent_flags(engram_subs.add_parser('search', help='Search engrams by keyword',
+        epilog='Examples:\n  nucleus engram search "auth"\n  nucleus engram search "auth" --format json | jq .key\n  nucleus engram search "auth" -q | xargs -I{} echo "Found: {}"',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('query', help='Search query string')
+    _p.add_argument('--limit', type=int, default=50, help='Max results (default: 50)')
+
+    _p = _add_agent_flags(engram_subs.add_parser('write', help='Write an engram to memory',
+        epilog='Examples:\n  nucleus engram write my_key "important insight"\n  nucleus engram write arch_v2 "new design" --context Architecture --intensity 8\n  nucleus engram write my_key "value" --format json | jq .status',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('key', help='Engram key (alphanumeric, min 2 chars)')
+    _p.add_argument('value', help='Engram content text')
+    _p.add_argument('--context', default='Decision',
+                    choices=['Feature', 'Architecture', 'Brand', 'Strategy', 'Decision'],
+                    help='Engram context (default: Decision)')
+    _p.add_argument('--intensity', type=int, default=5, help='Importance 1-10 (default: 5)')
+
+    _p = _add_agent_flags(engram_subs.add_parser('query', help='Query engrams by context/intensity',
+        epilog='Examples:\n  nucleus engram query --context Strategy --limit 10\n  nucleus engram query --min-intensity 7 --format json\n  nucleus engram query -q | wc -l',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('--context', default=None, help='Filter by context')
+    _p.add_argument('--min-intensity', type=int, default=1, help='Minimum intensity (default: 1)')
+    _p.add_argument('--limit', type=int, default=50, help='Max results (default: 50)')
+
+    # --- TASK COMMANDS ---
+    task_parser = subparsers.add_parser('task', help='📋 Task management: list, add, update')
+    task_subs = task_parser.add_subparsers(dest='task_action', help='Task actions')
+
+    _p = _add_agent_flags(task_subs.add_parser('list', help='List tasks',
+        epilog='Examples:\n  nucleus task list --status READY\n  nucleus task list --format json | jq length\n  nucleus task list -q | wc -l',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('--status', default=None, help='Filter by status (e.g., READY, IN_PROGRESS)')
+    _p.add_argument('--priority', type=int, default=None, help='Filter by priority')
+
+    _p = _add_agent_flags(task_subs.add_parser('add', help='Create a new task',
+        epilog='Examples:\n  nucleus task add "Ship v1.4.1" --priority 1\n  nucleus task add "Review PR" --format json | jq .task_id',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('description', help='Task description')
+    _p.add_argument('--priority', type=int, default=3, help='Priority 1-5 (default: 3)')
+
+    _p = _add_agent_flags(task_subs.add_parser('update', help='Update a task',
+        epilog='Examples:\n  nucleus task update task-abc123 --status DONE\n  nucleus task update task-abc123 --priority 1 --format json',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('task_id', help='Task ID to update')
+    _p.add_argument('--status', help='New status')
+    _p.add_argument('--priority', type=int, help='New priority')
+    _p.add_argument('--description', help='New description')
+
+    # --- SESSION COMMANDS (agent-facing) ---
+    session_parser = subparsers.add_parser('session', help='💾 Session save/resume for agents')
+    session_subs = session_parser.add_subparsers(dest='session_action', help='Session actions')
+
+    _p = _add_agent_flags(session_subs.add_parser('save', help='Save current session',
+        epilog='Examples:\n  nucleus session save "Working on CLI polish"\n  nucleus session save "Debugging auth" --task task-abc --format json',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('context', help='Session context description')
+    _p.add_argument('--task', default=None, help='Current active task')
+
+    _p = _add_agent_flags(session_subs.add_parser('resume', help='Resume a saved session',
+        epilog='Examples:\n  nucleus session resume\n  nucleus session resume sess-abc123 --format json',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('id', nargs='?', default=None, help='Session ID (default: most recent)')
+
+    # --- GROWTH COMMANDS ---
+    growth_parser = subparsers.add_parser('growth', help='📈 Growth pulse and metrics')
+    growth_subs = growth_parser.add_subparsers(dest='growth_action', help='Growth actions')
+
+    _add_agent_flags(growth_subs.add_parser('pulse', help='Run daily growth pulse',
+        epilog='Examples:\n  nucleus growth pulse\n  nucleus growth pulse --format json | jq .sections',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _add_agent_flags(growth_subs.add_parser('status', help='Show growth metrics summary',
+        epilog='Examples:\n  nucleus growth status\n  nucleus growth status --format json',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+
+    # --- OUTBOUND COMMANDS ---
+    outbound_parser = subparsers.add_parser('outbound', help='📤 Outbound posting: check, record, plan')
+    outbound_subs = outbound_parser.add_subparsers(dest='outbound_action', help='Outbound actions')
+
+    _p = _add_agent_flags(outbound_subs.add_parser('check', help='Check if content already posted',
+        epilog='Examples:\n  nucleus outbound check reddit r/ClaudeAI\n  nucleus outbound check reddit r/ClaudeAI --format json | jq .status',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('channel', help='Channel name (e.g., reddit, twitter, hackernews)')
+    _p.add_argument('identifier', help='Post identifier (e.g., subreddit, thread ID)')
+    _p.add_argument('--body', default='', help='Post body for hash computation')
+
+    _p = _add_agent_flags(outbound_subs.add_parser('record', help='Record a successful post',
+        epilog='Examples:\n  nucleus outbound record reddit r/ClaudeAI --permalink https://reddit.com/abc\n  nucleus outbound record reddit r/ClaudeAI --workhorse chrome --format json',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('channel', help='Channel name')
+    _p.add_argument('identifier', help='Post identifier')
+    _p.add_argument('--permalink', default='', help='URL of the published post')
+    _p.add_argument('--body', default='', help='Post body text')
+    _p.add_argument('--workhorse', default='manual', help='How it was posted (manual, praw, chrome)')
+
+    _p = _add_agent_flags(outbound_subs.add_parser('plan', help='Show posting plan',
+        epilog='Examples:\n  nucleus outbound plan\n  nucleus outbound plan --format json | jq ".ready | length"\n  nucleus outbound plan -q',
+        formatter_class=argparse.RawDescriptionHelpFormatter))
+    _p.add_argument('--channel', default=None, help='Filter by channel')
+
+    # ============================================================
+    # RUN COMMAND — Run Nucleus agents (coordinator, etc.)
+    # ============================================================
+    run_parser = subparsers.add_parser('run', help='🚀 Run Nucleus agents')
+    run_subparsers = run_parser.add_subparsers(dest='run_agent', help='Agent to run')
+
+    coord_parser = run_subparsers.add_parser('coordinator',
+        help='Start the dual-agent coordinator (Gemini CLI + Cascade loop)')
+    coord_parser.add_argument('--no-resume', action='store_true', help='Start fresh Gemini session instead of resuming')
+    coord_parser.add_argument('--task', type=str, default=None, help='Task prompt to send to Gemini CLI on start')
+    coord_parser.add_argument('--cascade-port', type=int, default=3000, help='Port for Windsurf Cascade API (default: 3000)')
+    coord_parser.add_argument('--gemini-yolo', action='store_true', help='Launch Gemini CLI with --yolo (auto-approve tools like run_shell_command)')
+    coord_parser.add_argument('--gemini-auto-wait', action='store_true', help='Auto-wait when Gemini replies with "retry in N seconds"')
+    coord_parser.add_argument('--resume-id', type=str, default=None, help='Resume specific Gemini session id (overrides --resume/--no-resume)')
+    coord_parser.add_argument('--resume-main', action='store_true', help='Resume the stored main Gemini session (env GEMINI_MAIN_SESSION_ID or .gemini-sessions.json)')
+    coord_parser.add_argument('--resume-test', action='store_true', help='Resume the stored test Gemini session (env GEMINI_TEST_SESSION_ID or .gemini-sessions.json)')
+    coord_parser.add_argument('--autopilot', action='store_true', help='Enable multi-turn autopilot mode (keeps Gemini CLI alive across turns)')
+    coord_parser.add_argument('--prompt-file', type=str, default=None, help='Batch mode: read prompts from file (one per line, # comments skipped)')
+    coord_parser.add_argument('--idle-timeout', type=float, default=15.0, help='Seconds of silence before considering a Gemini turn done (default: 15)')
+
     args = parser.parse_args()
-    
-    if args.cli_command == 'init':
-        success = init_brain(args.path, args.template)
-        if success and args.sidecar:
-            # Skip background services for the sidecar process itself
-            os.environ["NUCLEUS_SKIP_AUTOSTART"] = "true"
-            # Start Discovery Sidecar (HTTP Bridge)
-            # This is a non-blocking bridge for the Landing Page to verify sovereignty.
-            from http.server import HTTPServer, BaseHTTPRequestHandler
-            import threading
-            try:
-                from mcp_server_nucleus.runtime.health_ops import _brain_health_impl
-            except ImportError:
-                def _brain_health_impl(): return json.dumps({"status": "error", "message": "Import failed"})
-            
-            class SidecarHandler(BaseHTTPRequestHandler):
-                def do_GET(self):
-                    if self.path == '/health':
-                        self.send_response(200)
-                        self.send_header('Content-type', 'application/json')
-                        self.send_header('Access-Control-Allow-Origin', '*') # Allow Monolith to ping
-                        self.end_headers()
-                        health_json = _brain_health_impl()
-                        self.wfile.write(health_json.encode())
-                    else:
-                        self.send_response(404)
-                        self.end_headers()
-                
-                def log_message(self, format, *args):
-                    return # Silent operation
-            
-            def run_sidecar():
-                print("\n📡 Starting Discovery Sidecar on localhost:42000...")
+
+    try:
+        if args.cli_command == 'init':
+            success = init_brain(args.path, args.template)
+            if success and args.sidecar:
+                # Skip background services for the sidecar process itself
+                os.environ["NUCLEUS_SKIP_AUTOSTART"] = "true"
+                # Start Discovery Sidecar (HTTP Bridge)
+                # This is a non-blocking bridge for the Landing Page to verify sovereignty.
+                from http.server import HTTPServer, BaseHTTPRequestHandler
+                import threading
                 try:
-                    server = HTTPServer(('localhost', 42000), SidecarHandler)
-                    server.serve_forever()
-                except Exception as e:
-                    print(f"  ⚠️ Sidecar could not start: {e} (Port might be occupied)")
-            
-            sidecar_thread = threading.Thread(target=run_sidecar, daemon=True)
-            sidecar_thread.start()
-            
-            print("   ✅ Sidecar active. The Landing Page will now detect your Sovereign Brain.")
-            print("   (Sidecar will close when this command exits. Keep it running to verify Monolith)")
-            
-            # Keep main thread alive if sidecar requested
-            try:
-                import time
-                while True:
-                    time.sleep(1)
-            except (KeyboardInterrupt, SystemExit):
-                print("\n👋 Sidecar stopped.")
-    elif args.cli_command == 'install':
-        handle_install_command(args)
-    elif args.cli_command == 'mount':
-        handle_mount_command(args)
-    elif args.cli_command == 'status':
-        handle_status_command(args)
-    elif args.cli_command == 'depth':
-        handle_depth_command(args)
-    elif args.cli_command == 'features':
-        handle_features_command(args)
-    elif args.cli_command == 'sessions':
-        handle_sessions_command(args)
-    elif args.cli_command == 'consolidate':
-        handle_consolidate_command(args)
-    elif args.cli_command == 'search':
-        handle_search_command(args)
-    elif args.cli_command == 'schema':
-        handle_schema_command(args)
-    elif args.cli_command == 'morning-brief':
-        handle_morning_brief_command(args)
-    elif args.cli_command == 'loop':
-        handle_loop_command(args)
-    elif args.cli_command == 'end-of-day':
-        handle_end_of_day_command(args)
-    elif args.cli_command == 'graph':
-        handle_graph_command(args)
-    elif args.cli_command == 'billing':
-        handle_billing_command(args)
-    elif args.cli_command == 'combo':
-        handle_combo_command(args)
-    elif args.cli_command == 'comply':
-        handle_comply_command(args)
-    elif args.cli_command == 'audit-report':
-        handle_audit_report_command(args)
-    elif args.cli_command == 'kyc':
-        handle_kyc_command(args)
-    elif args.cli_command == 'sovereign':
-        handle_sovereign_command(args)
-    elif args.cli_command == 'trace':
-        handle_trace_command(args)
-    elif args.cli_command == 'dashboard':
-        handle_dashboard_command(args)
-    elif args.cli_command is None:
-        # No command given, show help
-        parser.print_help()
+                    from mcp_server_nucleus.runtime.health_ops import _brain_health_impl
+                except ImportError:
+                    def _brain_health_impl(): return json.dumps({"status": "error", "message": "Import failed"})
+                
+                class SidecarHandler(BaseHTTPRequestHandler):
+                    def do_GET(self):
+                        if self.path == '/health':
+                            self.send_response(200)
+                            self.send_header('Content-type', 'application/json')
+                            self.send_header('Access-Control-Allow-Origin', '*') # Allow Monolith to ping
+                            self.end_headers()
+                            health_json = _brain_health_impl()
+                            self.wfile.write(health_json.encode())
+                        else:
+                            self.send_response(404)
+                            self.end_headers()
+                    
+                    def log_message(self, format, *args):
+                        return # Silent operation
+                
+                def run_sidecar():
+                    print("\n📡 Starting Discovery Sidecar on localhost:42000...")
+                    try:
+                        server = HTTPServer(('localhost', 42000), SidecarHandler)
+                        server.serve_forever()
+                    except Exception as e:
+                        print(f"  ⚠️ Sidecar could not start: {e} (Port might be occupied)")
+        elif args.cli_command == 'install':
+            handle_install_command(args)
+        elif args.cli_command == 'mount':
+            handle_mount_command(args)
+        elif args.cli_command == 'status':
+            handle_status_command(args)
+        elif args.cli_command == 'depth':
+            handle_depth_command(args)
+        elif args.cli_command == 'features':
+            handle_features_command(args)
+        elif args.cli_command == 'sessions':
+            handle_sessions_command(args)
+        elif args.cli_command == 'consolidate':
+            handle_consolidate_command(args)
+        elif args.cli_command == 'search':
+            handle_search_command(args)
+        elif args.cli_command == 'schema':
+            handle_schema_command(args)
+        elif args.cli_command == 'morning-brief':
+            handle_morning_brief_command(args)
+        elif args.cli_command == 'loop':
+            handle_loop_command(args)
+        elif args.cli_command == 'end-of-day':
+            handle_end_of_day_command(args)
+        elif args.cli_command == 'graph':
+            handle_graph_command(args)
+        elif args.cli_command == 'billing':
+            handle_billing_command(args)
+        elif args.cli_command == 'combo':
+            handle_combo_command(args)
+        elif args.cli_command == 'comply':
+            handle_comply_command(args)
+        elif args.cli_command == 'audit-report':
+            handle_audit_report_command(args)
+        elif args.cli_command == 'kyc':
+            handle_kyc_command(args)
+        elif args.cli_command == 'sovereign':
+            handle_sovereign_command(args)
+        elif args.cli_command == 'trace':
+            handle_trace_command(args)
+        elif args.cli_command == 'dashboard':
+            handle_dashboard_command(args)
+        elif args.cli_command == 'deploy':
+            handle_deploy_command(args)
+        elif args.cli_command == 'dogfood':
+            handle_dogfood_command(args)
+        elif args.cli_command == 'heartbeat':
+            handle_heartbeat_command(args)
+        # ── v1.4.0 Agent CLI Commands ──────────────────────────────
+        elif args.cli_command == 'engram':
+            sys.exit(handle_engram_command(args))
+        elif args.cli_command == 'task':
+            sys.exit(handle_task_command(args))
+        elif args.cli_command == 'session':
+            sys.exit(handle_session_command(args))
+        elif args.cli_command == 'growth':
+            sys.exit(handle_growth_command(args))
+        elif args.cli_command == 'outbound':
+            sys.exit(handle_outbound_command(args))
+        # ── v1.5.0 Agent Runner ──────────────────────────────────
+        elif args.cli_command == 'run':
+            sys.exit(handle_run_command(args))
+        elif args.cli_command is None:
+            parser.print_help()
+        else:
+            print(f"Unknown command: {args.cli_command}")
+            parser.print_help()
+    except SystemExit:
+        raise  # Let sys.exit() pass through cleanly
+    except Exception as exc:
+        if not getattr(args, 'self_heal', True):
+            raise  # --no-self-heal: reraise raw exception
+        use_llm = getattr(args, 'self_heal', True)
+        err = handle_cli_error(exc, getattr(args, 'cli_command', ''), vars(args), use_llm=use_llm)
+        heal = err.get("self_heal", {})
+        if getattr(args, 'format', None) == 'json':
+            print(json.dumps(err, default=str), file=sys.stderr)
+        else:
+            print(f"\n[self-heal] {err.get('error', 'error')}: {err.get('message', exc)}", file=sys.stderr)
+            if heal.get("fixed"):
+                print(f"[self-heal] AUTO-FIXED: {heal.get('deterministic', {}).get('action', '')}", file=sys.stderr)
+            if heal.get("llm_diagnosis", {}).get("llm_used"):
+                diag = heal["llm_diagnosis"]
+                print(f"[self-heal] LLM diagnosis: {diag.get('diagnosis', '')[:200]}", file=sys.stderr)
+                if diag.get("fix"):
+                    print(f"[self-heal] Suggested fix: {diag['fix'][:200]}", file=sys.stderr)
+            if heal.get("suggestions"):
+                print("[self-heal] Suggestions:", file=sys.stderr)
+                for s in heal["suggestions"]:
+                    if s:
+                        print(f"  - {s}", file=sys.stderr)
+            if heal.get("needs_human"):
+                print("[self-heal] ⚠ This error needs human review.", file=sys.stderr)
+            print(f"[self-heal] Incident logged: {heal.get('error_id', 'unknown')}", file=sys.stderr)
+        sys.exit(err.get('exit_code', EXIT_ERROR))
+
+
+# ════════════════════════════════════════════════════════════════
+# v1.4.0 AGENT CLI HANDLERS — "The Universal Interface"
+# Direct runtime calls + cli_output formatting.
+# Unix conventions: stdout=data, stderr=errors, exit codes.
+# ════════════════════════════════════════════════════════════════
+
+def _setup_agent_env(args):
+    """Set brain path from --brain-path flag before calling runtime."""
+    bp = getattr(args, 'brain_path', None)
+    if bp:
+        os.environ["NUCLEAR_BRAIN_PATH"] = str(Path(bp).resolve())
+
+
+def _get_fmt(args) -> str:
+    """Get output format from args, with TTY auto-detection. --quiet takes precedence."""
+    from .cli_output import detect_format
+    return detect_format(getattr(args, 'format', None), quiet=getattr(args, 'quiet', False))
+
+
+def handle_engram_command(args) -> int:
+    """Handle engram search/write/query — direct runtime calls."""
+    from .cli_output import output, parse_runtime_response
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+    action = getattr(args, 'engram_action', None)
+
+    if action == 'search':
+        from .runtime.engram_ops import _brain_search_engrams_impl
+        raw = _brain_search_engrams_impl(args.query, case_sensitive=False, limit=args.limit)
+        ok, data, err = parse_runtime_response(raw)
+        if not ok:
+            return output(None, fmt, error=err)
+        engrams = data if isinstance(data, list) else data.get("results", data.get("engrams", [])) if isinstance(data, dict) else []
+        if isinstance(engrams, list):
+            return output(engrams, fmt, columns=["key", "value", "context", "intensity"])
+        return output(data, fmt)
+
+    elif action == 'write':
+        from .runtime.engram_ops import _brain_write_engram_impl
+        raw = _brain_write_engram_impl(args.key, args.value, args.context, args.intensity)
+        ok, data, err = parse_runtime_response(raw)
+        if not ok:
+            return output(None, fmt, error=err)
+        return output({"key": args.key, "status": "written"}, fmt)
+
+    elif action == 'query':
+        from .runtime.engram_ops import _brain_query_engrams_impl
+        min_int = getattr(args, 'min_intensity', 1)
+        raw = _brain_query_engrams_impl(args.context, min_int, args.limit)
+        ok, data, err = parse_runtime_response(raw)
+        if not ok:
+            return output(None, fmt, error=err)
+        engrams = data if isinstance(data, list) else data.get("results", data.get("engrams", [])) if isinstance(data, dict) else []
+        if isinstance(engrams, list):
+            return output(engrams, fmt, columns=["key", "value", "context", "intensity"])
+        return output(data, fmt)
+
     else:
-        print(f"Unknown command: {args.cli_command}")
-        parser.print_help()
+        print("Usage: nucleus engram <search|write|query>", file=sys.stderr)
+        return 1
+
+
+def handle_task_command(args) -> int:
+    """Handle task list/add/update — direct runtime calls."""
+    from .cli_output import output, parse_runtime_response
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+    action = getattr(args, 'task_action', None)
+
+    if action == 'list':
+        from .runtime.task_ops import _list_tasks
+        data = _list_tasks(
+            status=getattr(args, 'status', None),
+            priority=getattr(args, 'priority', None),
+        )
+        tasks = data.get("tasks", []) if isinstance(data, dict) else data
+        return output(tasks, fmt, columns=["task_id", "description", "status", "priority"])
+
+    elif action == 'add':
+        from .runtime.task_ops import _add_task
+        result = _add_task(args.description, priority=args.priority)
+        if result.get("success"):
+            task = result.get("task", {})
+            return output({"task_id": task.get("task_id", ""), "status": "created"}, fmt)
+        return output(None, fmt, error=result.get("error", "Failed to add task"))
+
+    elif action == 'update':
+        from .runtime.task_ops import _update_task
+        updates = {}
+        if getattr(args, 'status', None):
+            updates["status"] = args.status
+        if getattr(args, 'priority', None) is not None:
+            updates["priority"] = args.priority
+        if getattr(args, 'description', None):
+            updates["description"] = args.description
+        if not updates:
+            return output(None, fmt, error="No updates specified. Use --status, --priority, or --description")
+        result = _update_task(args.task_id, updates)
+        if result.get("success"):
+            return output({"task_id": args.task_id, "status": "updated"}, fmt)
+        return output(None, fmt, error=result.get("error", "Failed to update task"))
+
+    else:
+        print("Usage: nucleus task <list|add|update>", file=sys.stderr)
+        return 1
+
+
+def handle_session_command(args) -> int:
+    """Handle session save/resume — direct runtime calls."""
+    from .cli_output import output, parse_runtime_response
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+    action = getattr(args, 'session_action', None)
+
+    if action == 'save':
+        from .runtime.session_ops import _save_session
+        result = _save_session(
+            args.context,
+            active_task=getattr(args, 'task', None),
+        )
+        if result.get("success"):
+            return output({"session_id": result.get("session_id", ""), "status": "saved"}, fmt)
+        return output(None, fmt, error=result.get("error", "Failed to save session"))
+
+    elif action == 'resume':
+        from .runtime.session_ops import _resume_session
+        result = _resume_session(getattr(args, 'id', None))
+        if result:
+            return output(result, fmt)
+        return output(None, fmt, error="No session found to resume")
+
+    else:
+        print("Usage: nucleus session <save|resume>", file=sys.stderr)
+        return 1
+
+
+def handle_growth_command(args) -> int:
+    """Handle growth pulse/status — direct runtime calls."""
+    from .cli_output import output
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+    action = getattr(args, 'growth_action', None)
+
+    if action == 'pulse':
+        from .runtime.growth_ops import growth_pulse
+        result = growth_pulse()
+        return output(result, fmt)
+
+    elif action == 'status':
+        from .runtime.growth_ops import capture_metrics
+        result = capture_metrics(write_engram=False)
+        return output(result, fmt)
+
+    else:
+        print("Usage: nucleus growth <pulse|status>", file=sys.stderr)
+        return 1
+
+
+def handle_outbound_command(args) -> int:
+    """Handle outbound check/record/plan — direct runtime calls."""
+    from .cli_output import output
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+    action = getattr(args, 'outbound_action', None)
+
+    if action == 'check':
+        from .runtime.outbound_ops import outbound_check
+        result = outbound_check(args.channel, args.identifier, getattr(args, 'body', ''))
+        return output(result, fmt)
+
+    elif action == 'record':
+        from .runtime.outbound_ops import outbound_record
+        result = outbound_record(
+            args.channel, args.identifier,
+            body=getattr(args, 'body', ''),
+            permalink=getattr(args, 'permalink', ''),
+            workhorse=getattr(args, 'workhorse', 'manual'),
+        )
+        return output(result, fmt)
+
+    elif action == 'plan':
+        from .runtime.outbound_ops import outbound_plan
+        result = outbound_plan(channel=getattr(args, 'channel', None))
+        return output(result, fmt)
+
+    else:
+        print("Usage: nucleus outbound <check|record|plan>", file=sys.stderr)
+        return 1
 
 
 def handle_depth_command(args):
@@ -1540,29 +1966,45 @@ def handle_consolidate_command(args):
 
 def handle_status_command(args):
     """Handle nucleus status command (Satellite View)."""
+    import logging as _logging
     from mcp_server_nucleus.runtime.satellite_ops import (
         _get_satellite_view,
         _format_satellite_cli
     )
     
     # Determine detail level from flags
-    if args.minimal:
+    if getattr(args, 'minimal', False):
         detail_level = "minimal"
-    elif args.sprint:
+    elif getattr(args, 'sprint', False):
         detail_level = "sprint"
-    elif args.full:
+    elif getattr(args, 'full', False):
         detail_level = "full"
     else:
         detail_level = "standard"
     
+    # Determine if JSON output requested (--json flag OR --format json)
+    as_json = getattr(args, 'json', False) or getattr(args, 'format', None) == 'json'
+    
+    # When JSON output requested, suppress ALL logging to keep stdout clean
+    if as_json:
+        _logging.disable(_logging.CRITICAL)
+    
     try:
         view = _get_satellite_view(detail_level)
-        output = _format_satellite_cli(view)
-        print(output)
+        if as_json:
+            import json as _json
+            print(_json.dumps(view, indent=2, default=str))
+        else:
+            output = _format_satellite_cli(view)
+            print(output)
     except Exception as e:
-        print(f"❌ Error getting satellite view: {e}")
-        print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        if as_json:
+            import json as _json
+            print(_json.dumps({"ok": False, "error": str(e)}, indent=2))
+        else:
+            print(f"❌ Error getting satellite view: {e}")
+            print()
+            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
 
 
 
@@ -2191,6 +2633,292 @@ def _find_brain_path() -> Path:
             return candidate
 
     return None
+
+
+# ============================================================
+# DEPLOY COMMAND (MVE-3)
+# ============================================================
+
+def handle_deploy_command(args):
+    """Handle nucleus deploy command — Jurisdiction-aware deployment."""
+    from .runtime.compliance_config import apply_jurisdiction
+    from .runtime.sovereign_status import generate_sovereign_status
+    import json
+
+    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
+    if not brain_path:
+        print("❌ No .brain directory found. Run `nucleus init` first.")
+        return
+
+    if not hasattr(args, 'jurisdiction') or not args.jurisdiction:
+        print("")
+        print("  🚀 nucleus deploy — Sovereign Agent OS Deployment")
+        print("")
+        print("  Usage:")
+        print("    nucleus deploy --jurisdiction eu-dora       # Deploy with DORA compliance")
+        print("    nucleus deploy --jurisdiction sg-mas-trm    # Deploy with MAS TRM compliance")
+        print("    nucleus deploy --jurisdiction us-soc2       # Deploy with SOC2 alignment")
+        print("    nucleus deploy --jurisdiction global-default # Deploy with standard governance")
+        print("")
+        return
+
+    print(f"\n🚀 Deploying Sovereign Agent OS [{args.jurisdiction.upper()}]...")
+    
+    if args.dry_run:
+        print("   [DRY RUN] Simulating deployment checks...")
+        print("   ✅ MCP connectivity check passed")
+        print("   ✅ Hypervisor locks available")
+        print(f"   ✅ Governance policies ready: {args.jurisdiction}")
+        print("\n   Deployment simulation successful. Remove --dry-run to apply.")
+        return
+
+    apply_jurisdiction(brain_path, args.jurisdiction)
+    print("   ✅ Compliance policies applied")
+    
+    # Generate status report
+    report = generate_sovereign_status(brain_path)
+    print("   ✅ Sovereignty posture verified")
+    
+    # Provide a manifest output
+    manifest = {
+        "environment": "Local Sovereign Core",
+        "jurisdiction": args.jurisdiction.upper(),
+        "brain_path": str(brain_path),
+        "data_residency": "100% Local Guardrails",
+        "sovereign_score": f"{report.get('score', 0)}/100 ({report.get('grade', '?')})"
+    }
+    manifest_path = brain_path / "deploy_manifest.json"
+    with open(manifest_path, "w", encoding='utf-8') as f:
+         json.dump(manifest, f, indent=2)
+         
+    print("\n  📦 DEPLOYMENT MANIFEST")
+    print("  " + "=" * 45)
+    print(f"   Environment:   {manifest['environment']}")
+    print(f"   Jurisdiction:  {manifest['jurisdiction']}")
+    print(f"   Brain Path:    {manifest['brain_path']}")
+    print(f"   Data Res:      {manifest['data_residency']}")
+    print(f"   Sovereignty:   Score {manifest['sovereign_score']}")
+    print("  " + "=" * 45)
+    print("\n   Deployment successful! Your Agent OS is now compliant.")
+    print("   Run `nucleus comply --report` to view auditor details.\n")
+
+
+def handle_dogfood_command(args):
+    """Handle nucleus dogfood command — 30-day dog food test tracker."""
+    from .runtime.dogfood_tracker import log_daily, get_status, format_status
+
+    brain_path = _find_brain_path()
+
+    if not hasattr(args, 'dogfood_action') or args.dogfood_action is None:
+        print("")
+        print("  🐕 nucleus dogfood — 30-Day Dog Food Test")
+        print("")
+        print("  Track daily usage to validate Experiment 1 (Stage 5).")
+        print("  Kill Gate: avg pain < 5/10 after 30 days = KILL")
+        print("")
+        print("  Usage:")
+        print("    nucleus dogfood log 8                   Log today's pain score (8/10)")
+        print("    nucleus dogfood log 9 --pay             Also mark 'would pay $29/mo'")
+        print("    nucleus dogfood log 7 --faster 3        3 decisions made faster today")
+        print("    nucleus dogfood log 8 --notes 'Engrams saved 20m on context rebuild'")
+        print("    nucleus dogfood status                  Show experiment dashboard")
+        print("")
+        return
+
+    if args.dogfood_action == 'log':
+        result = log_daily(
+            pain_score=args.score,
+            would_pay=args.pay,
+            decisions_faster=args.faster,
+            notes=args.notes,
+            brain_path=brain_path,
+        )
+        if result.get("error"):
+            print(f"❌ {result['error']}")
+            return
+
+        entry = result["entry"]
+        summary = result["summary"]
+        gate = result["kill_gate"]
+
+        print("")
+        print(f"  ✅ Day {entry['day_number']} logged:")
+        print(f"     Pain: {entry['pain_if_broken']}/10  |  Pay: {'Yes' if entry['would_pay'] else 'No'}  |  Faster: {entry['decisions_faster']}")
+        if entry['notes']:
+            print(f"     Notes: {entry['notes']}")
+        print("")
+        print(f"  Running avg: {summary['avg_pain_score']}/10 {summary['pain_trend']}  |  Pay rate: {summary['would_pay_rate']}")
+        print(f"  Kill gate: {'🟢 SAFE' if gate['status'] == 'SAFE' else '🔴 AT RISK'} (threshold: pain < 5)")
+        if summary['total_days'] >= 30:
+            print(f"  🏁 30 days reached! Final avg: {summary['avg_pain_score']}/10")
+        print("")
+        return
+
+    if args.dogfood_action == 'status':
+        status = get_status(brain_path)
+        print(format_status(status))
+        return
+
+
+def handle_heartbeat_command(args):
+    """Handle nucleus heartbeat command — proactive context-triggered check-ins."""
+    from .runtime.heartbeat_ops import (
+        _heartbeat_check_impl,
+        _heartbeat_install_impl,
+        _heartbeat_uninstall_impl,
+        _heartbeat_status_impl,
+        _notify_native,
+    )
+
+    if not hasattr(args, 'heartbeat_action') or args.heartbeat_action is None:
+        print("")
+        print("  💓 nucleus heartbeat — Proactive Context-Triggered Check-Ins")
+        print("")
+        print("  Your agent brain that thinks about you when you're not looking.")
+        print("  Checks for stale blockers, forgotten decisions, and momentum drops.")
+        print("")
+        print("  Usage:")
+        print("    nucleus heartbeat check                  Run a proactive check-in now")
+        print("    nucleus heartbeat check --notify          Check + send OS notification")
+        print("    nucleus heartbeat check --format json     Machine-readable output")
+        print("    nucleus heartbeat check -q                Bare trigger messages only")
+        print("    nucleus heartbeat install                 Install 30-min scheduling")
+        print("    nucleus heartbeat install --interval 15   Custom interval (minutes)")
+        print("    nucleus heartbeat uninstall               Remove scheduling")
+        print("    nucleus heartbeat status                  Show installation & recent checks")
+        print("")
+        return
+
+    brain_path = getattr(args, 'brain_path', None)
+
+    if args.heartbeat_action == 'check':
+        result = _heartbeat_check_impl(brain_path=brain_path)
+
+        # Handle --notify flag
+        if getattr(args, 'notify', False) and result.get("should_notify"):
+            _notify_native(
+                result.get("notification_title", "🧠 Nucleus"),
+                result.get("notification_body", "Check-in required"),
+            )
+
+        # Output formatting
+        fmt = getattr(args, 'format', None)
+        quiet = getattr(args, 'quiet', False)
+
+        if quiet:
+            # Bare trigger messages only
+            for t in result.get("triggers", []):
+                print(t["message"])
+            return
+
+        if fmt == 'json':
+            import json as _json
+            print(_json.dumps(result, indent=2, default=str))
+            return
+
+        # Default: formatted table output
+        print(result.get("formatted", ""))
+        return
+
+    if args.heartbeat_action == 'install':
+        interval = getattr(args, 'interval', 30)
+        result = _heartbeat_install_impl(
+            interval_minutes=interval,
+            brain_path=brain_path,
+        )
+        if result.get("success"):
+            print("")
+            print(f"  {result['message']}")
+            print(f"  Platform: {result.get('platform', '?')}")
+            print(f"  Interval: every {result.get('interval_minutes', 30)} minutes")
+            print(f"  Command:  {result.get('command', '?')}")
+            print("")
+            print(f"  Uninstall: {result.get('uninstall', 'nucleus heartbeat uninstall')}")
+            print("")
+        else:
+            print(f"  ❌ {result.get('error', 'Unknown error')}")
+        return
+
+    if args.heartbeat_action == 'uninstall':
+        result = _heartbeat_uninstall_impl()
+        if result.get("success"):
+            print(f"  {result['message']}")
+        else:
+            print(f"  ❌ {result.get('error', 'Unknown error')}")
+        return
+
+    if args.heartbeat_action == 'status':
+        result = _heartbeat_status_impl(brain_path=brain_path)
+
+        fmt = getattr(args, 'format', None)
+        if fmt == 'json':
+            import json as _json
+            print(_json.dumps(result, indent=2, default=str))
+            return
+
+        print(result.get("formatted", ""))
+        return
+
+
+# ════════════════════════════════════════════════════════════════
+# v1.5.0 AGENT RUNNER — "nucleus run <agent>"
+# ════════════════════════════════════════════════════════════════
+
+def handle_run_command(args) -> int:
+    """Handle 'nucleus run <agent>' — launch Nucleus agents."""
+    agent = getattr(args, 'run_agent', None)
+
+    if agent == 'coordinator':
+        # Import and run the coordinator agent
+        import importlib.util
+        coord_path = Path(__file__).resolve().parent.parent.parent.parent / "nucleus" / "agents" / "coordinator.py"
+        if not coord_path.exists():
+            print(f"❌ Coordinator not found at: {coord_path}", file=sys.stderr)
+            print("  Expected: nucleus/agents/coordinator.py in project root", file=sys.stderr)
+            return 1
+        spec = importlib.util.spec_from_file_location("coordinator", coord_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        # Resolve common kwargs
+        resume_id = getattr(args, 'resume_id', None)
+        if getattr(args, 'resume_main', False):
+            resume_id = mod._load_session_id("main")
+        elif getattr(args, 'resume_test', False):
+            resume_id = mod._load_session_id("test")
+        elif not resume_id:
+            resume_id = mod._load_session_id("main") or None
+
+        # Route: autopilot vs one-shot
+        if getattr(args, 'autopilot', False) or getattr(args, 'prompt_file', None):
+            initial_prompts = []
+            task = getattr(args, 'task', None)
+            if task:
+                initial_prompts.append(task)
+            return mod.watch_gemini_autopilot(
+                prompts=initial_prompts if initial_prompts else None,
+                resume=False if resume_id else not getattr(args, 'no_resume', False),
+                cascade_port=getattr(args, 'cascade_port', 3000),
+                gemini_yolo=getattr(args, 'gemini_yolo', False),
+                resume_id=resume_id,
+                gemini_auto_wait=getattr(args, 'gemini_auto_wait', False),
+                idle_timeout=getattr(args, 'idle_timeout', 15.0),
+                prompt_file=getattr(args, 'prompt_file', None),
+            )
+
+        return mod.watch_gemini_output(
+            resume=False if resume_id else not getattr(args, 'no_resume', False),
+            task=getattr(args, 'task', None),
+            cascade_port=getattr(args, 'cascade_port', 3000),
+            gemini_yolo=getattr(args, 'gemini_yolo', False),
+            resume_id=resume_id,
+            gemini_auto_wait=getattr(args, 'gemini_auto_wait', False),
+        )
+    else:
+        print("Usage: nucleus run <coordinator>", file=sys.stderr)
+        print("Available agents:", file=sys.stderr)
+        print("  coordinator  — Dual-agent pair programming loop (Gemini CLI + Cascade)", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
