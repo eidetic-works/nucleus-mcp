@@ -1,0 +1,32 @@
+{
+  "name": "nucleus-mcp",
+  "version": "1.4.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "telemetry:up": "bash scripts/telemetry.sh up",
+    "telemetry:down": "bash scripts/telemetry.sh down",
+    "telemetry:drain": "node scripts/drain-upstash-spans.js",
+    "telemetry:summary": "bash scripts/telemetry-summary.sh",
+    "telemetry:all": "bash scripts/telemetry-all.sh",
+    "telemetry:brief": "bash scripts/telemetry-daily-brief.sh",
+    "telemetry:audit": "node scripts/telemetry-validate.mjs",
+    "telemetry:dash": "docker compose -f infra/telemetry/docker-compose.yaml up -d",
+    "telemetry:dash:down": "docker compose -f infra/telemetry/docker-compose.yaml down",
+    "telemetry:dash:logs": "docker compose -f infra/telemetry/docker-compose.yaml logs -f",
+    "telemetry:open:jaeger": "open http://localhost:16686",
+    "telemetry:open:grafana": "open http://localhost:3000",
+    "telemetry:open:prometheus": "open http://localhost:9090",
+    "telemetry:local:demo": "bash scripts/telemetry-local-demo.sh",
+    "incident:check": "python3 scripts/incident-controller.py",
+    "incident:daemon": "python3 scripts/incident-controller.py --daemon",
+    "incident:dry-run": "python3 scripts/incident-controller.py --dry-run",
+    "incident:evaluate": "python3 scripts/incident-controller.py --evaluate",
+    "incident:policy": "python3 scripts/incident-controller.py --policy-report",
+    "health:smoke-test": "python3 scripts/incident-controller.py --smoke-test",
+    "deploy:snapshot": "python3 scripts/incident-controller.py --create-release",
+    "deploy:list": "python3 scripts/incident-controller.py --list-releases",
+    "deploy:rollout": "python3 scripts/incident-controller.py --rollout",
+    "deploy:rollback": "python3 scripts/incident-controller.py --rollback"
+  }
+}

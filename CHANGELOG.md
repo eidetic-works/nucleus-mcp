@@ -5,6 +5,107 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-03-14 — "Telemetry Hotfix"
+
+### Fixed
+- **CRITICAL:** Restored missing `record_anon_command()` implementation in `anon_telemetry.py`
+  - v1.6.0 shipped with a 46-line stub (docstring + imports only)
+  - All telemetry calls from `_dispatch.py` and `cli.py` silently failed
+  - No Python SDK users were sending anonymous telemetry in v1.6.0
+  - Full 328-line implementation restored with OTLP JSON span builder
+  - Verified working: Python SDK → Cloudflare Worker → OTel Collector → Jaeger
+  - Service name: `nucleus-anon` with command/category/duration attributes
+
+### Technical Details
+- Lightweight HTTP OTLP sender using `urllib.request` (no heavy dependencies)
+- Fire-and-forget background threads (never blocks user workflow)
+- Proper config priority: env var > yaml config > default (enabled)
+- First-run privacy notice with one-time marker file
+- Flush on shutdown with configurable timeout (default 2s)
+
+**All v1.6.0 users should upgrade immediately to enable telemetry.**
+
+---
+ 
+## [1.5.1] - 2026-03-12 — "The Transparent Brain"
+
+### Added — Anonymous Opt-Out Telemetry
+
+Production-ready anonymous usage telemetry using OpenTelemetry, sending aggregate command-level data to help improve Nucleus.
+
+#### Anonymous Telemetry (`runtime/anon_telemetry.py`)
+- Separate OTel pipeline (own TracerProvider/MeterProvider) — zero interference with user's enterprise OTel
+- Opt-out by default: enabled unless `nucleus config --no-telemetry`
+- Sends: command name, tool category, duration_ms, error type, Nucleus/Python version, OS platform
+- NEVER sends: engram content, file paths, prompts, API keys, any PII
+- Fire-and-forget: unreachable endpoint = zero impact on normal operation
+- Endpoint: `telemetry.nucleusos.dev:4317` (configurable)
+
+#### `nucleus config` Command
+- `nucleus config --show` — View current configuration
+- `nucleus config --no-telemetry` — Opt out of anonymous telemetry
+- `nucleus config --telemetry` — Opt back in
+- `nucleus config --telemetry-endpoint <url>` — Custom endpoint
+
+#### First-Run Notice
+- One-time notice on first CLI invocation with opt-out instructions
+- Marker file at `.brain/config/.telemetry_notice_shown`
+
+#### Infrastructure
+- OpenTelemetry Collector config for `telemetry.nucleusos.dev`
+- Docker Compose stack: OTel Collector + Prometheus + Grafana + Caddy (TLS)
+- Pre-built Grafana dashboard with 10 panels (commands, errors, versions, OS)
+- `TELEMETRY.md` transparency page
+
+#### Brain Init
+- `nucleus init` now creates `.brain/config/` directory
+- Seeds `nucleus.yaml` with default telemetry configuration
+- Both default and solo templates updated
+
+### Testing
+- 23 new tests for anonymous telemetry (100% pass)
+- 87 total regression tests passing
+- Zero new dependencies (reuses existing `opentelemetry-sdk`)
+
+---
+
+## [1.5.0] - 2026-03-08 — "The Sovereign Kernel"
+ 
+### Added — Architectural Hardening & Paradox Resolution
+Phase 5 completion focuses on removing "Bootstrap Paradoxes" and ensuring public scalability.
+ 
+#### Adaptive Path Discovery
+- Nucleus now dynamically locates its brain directory using a priority hierarchy:
+  1. `NUCLEUS_BRAIN_PATH` / `NUCLEAR_BRAIN_PATH` environment variables.
+  2. Recursive parent search from CWD for `.brain`.
+  3. Fallback to `$HOME/.nucleus/brain`.
+- Added `nucleus self-setup` to automate environment and path configuration.
+ 
+#### CLI Sovereignty & Health
+- Unified CLI routing in `cli.py`: Removed redundant handlers, enforced single source of truth.
+- Python-native bootstrap: Replaced fragile shell scripts (`chief.sh`) with native logic.
+- `nucleus status --health`: Real-time system health checks and sovereignty score.
+- `nucleus status --cleanup-lock`: Safe recovery from stale `.lock` files.
+ 
+#### Universal Shell Integration
+- Added `completions.sh` providing autocompletion for `bash` and `zsh`.
+- Automated completion injection via `nucleus self-setup`.
+ 
+#### Federation Engine Level 1 (Local IPC)
+- Automated local peer discovery via IPC registry in `/tmp`.
+- Exclusive file locking for registry integrity and PID-liveness pruning for ghost processes.
+ 
+#### DSoR Self-Healing
+- Automated reconciliation of "orphaned" decisions in audit logs.
+- `AuditReport` now syncs with `EventStream` to ensure 100% decision traceability.
+ 
+### Fixed
+- Fixed recursion depth leakage in `coordinator.py`.
+- Resolved `NameError` in `selfhealer.py` related to brain path resolution.
+- Improved error handling for stalled MCP connections.
+ 
+---
+
 ## [1.4.1] - 2026-03-05 — "Agent-Native"
 
 ### Added — Gemini CLI Integration (March 5, 2026)
