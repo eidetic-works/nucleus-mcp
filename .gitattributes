@@ -35,9 +35,9 @@ FORCE_RELOAD_PHASE73.md export-ignore
 
 # Test Artifacts and Scratch Files
 tests/test_*.py export-ignore
-!tests/test_core.py
-!tests/test_integration.py
-!tests/test_uchg.py
+tests/test_core.py -export-ignore
+tests/test_integration.py -export-ignore
+tests/test_uchg.py -export-ignore
 test_*.lock export-ignore
 test_*.txt export-ignore
 pytest_*.txt export-ignore
