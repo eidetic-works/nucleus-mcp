@@ -29,9 +29,10 @@ import platform
 import subprocess
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from .common import get_brain_path
 
 logger = logging.getLogger("nucleus.heartbeat")
 
@@ -63,7 +64,7 @@ def _save_heartbeat_state(brain: Path, state: Dict):
         json.dump(state, f, indent=2)
 
 def _filter_by_cooldown(triggers: List[Dict], state: Dict) -> List[Dict]:
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     valid_triggers = []
     
     # Cooldowns in hours (The Centenary Heart - patient, non-nagging)
@@ -119,9 +120,10 @@ The Heartbeat just woke you up because the following {len(blockers)} system trig
 YOUR MANDATE:
 1. DO NOT blindy execute them all at once. Act as the Prefrontal Cortex.
 2. META-REFLECTION: For each item, ask 'Is this still relevant? Has it been solved elsewhere?' If it is obsolete, cross it off in .brain/task.md, write an engram explaining why, and drop it.
-3. DEPENDENCY RESOLUTION: Look at the remaining valid tasks. If they touch the same files/repos, execute them SEQUENTIALLY to avoid git conflicts. If they are completely independent (e.g. one is a marketing post, one is a database fix), you may execute them sequentially in whatever order is most logical.
-4. EXECUTION: You have authorization to diagnose the codebase, write code, and test it.
-5. CLOSURE: When finished, update .brain/task.md checkboxes and write 'nucleus engram' entries for your resolutions. Do not wait for human input.
+3. 3-ROUND RECURSIVE SELF-AUDIT (PHASE 82): Before presenting a final plan or executing code, you MUST mathematically execute at least 3 recursive self-audits simulation rounds (Thesis -> Audit -> Synthesis). You are NOT allowed to just "plan". Audit your own plan ruthlessly for Class 1 Cognitive Viruses, False Dichotomies, and Survivorship Bias. Only after 3 rounds of audited synthesis may you proceed to execution.
+4. DEPENDENCY RESOLUTION: Look at the remaining valid tasks. If they touch the same files/repos, execute them SEQUENTIALLY to avoid git conflicts. If they are completely independent (e.g. one is a marketing post, one is a database fix), you may execute them sequentially in whatever order is most logical.
+5. EXECUTION: You have authorization to diagnose the codebase, write code, and test it.
+6. CLOSURE: When finished, update .brain/task.md checkboxes and write 'nucleus engram' entries for your resolutions. Do not wait for human input.
 """
     
     def run_coordinator():
@@ -159,15 +161,19 @@ YOUR MANDATE:
                 env={
                     **os.environ, 
                     "NUCLEAR_BRAIN_PATH": str(brain),
-                    "GOOGLE_APPLICATION_CREDENTIALS": str(Path.home() / ".config/gcloud/application_default_credentials.json"),
-                    "GOOGLE_CLOUD_PROJECT": "gen-lang-client-0894185576",
+                    "GOOGLE_APPLICATION_CREDENTIALS": os.environ.get(
+                        "GOOGLE_APPLICATION_CREDENTIALS", 
+                        str(brain / "config" / "gcloud" / "application_default_credentials.json") if (brain / "config" / "gcloud" / "application_default_credentials.json").exists()
+                        else str(Path.home() / ".config/gcloud/application_default_credentials.json")
+                    ),
+                    "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576"),
                     "GOOGLE_CLOUD_LOCATION": "global",
                     "PATH": "/Users/lokeshgarg/.nvm/versions/node/v22.18.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/lokeshgarg/ai-mvp-backend/.venv/bin"
                 }
             )
             logger.info(f"🧠 [Autonomic] Spawned TMUX session: {tmux_session}")
         except Exception as e:
-            logger.error(f"❌ [Autonomic] Failed to spawn hands for {key}: {e}")
+            logger.error(f"❌ [Autonomic] Failed to spawn hands for {tmux_session}: {e}")
 
     # Fire and forget
     threading.Thread(target=run_coordinator, daemon=True).start()
@@ -224,7 +230,7 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
     _log_heartbeat_check(brain, triggers, elapsed_ms)
     
     result = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "triggers": triggers,
         "trigger_count": len(triggers),
         "should_notify": should_notify,
@@ -247,7 +253,7 @@ def _check_stale_blockers(brain: Path) -> List[Dict]:
     if not engram_path.exists():
         return []
     
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=STALE_BLOCKER_HOURS)
     stale = []
     
@@ -300,7 +306,7 @@ def _check_stale_decisions(brain: Path) -> List[Dict]:
     if not engram_path.exists():
         return []
     
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=STALE_DECISION_HOURS)
     stale = []
     
@@ -355,7 +361,7 @@ def _check_velocity_drop(brain: Path) -> Optional[Dict]:
     if not engram_path.exists():
         return None
     
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     window = now - timedelta(hours=VELOCITY_WINDOW_HOURS)
     recent_count = 0
     total_count = 0
@@ -405,7 +411,7 @@ def _check_session_gap(brain: Path) -> Optional[Dict]:
     sessions_path = brain / "ledger" / "sessions.jsonl"
     events_path = brain / "ledger" / "events.jsonl"
     
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=SESSION_GAP_HOURS)
     last_activity = None
     
@@ -475,7 +481,7 @@ def _format_heartbeat_output(triggers: List[Dict]) -> str:
     lines = []
     lines.append("=" * 56)
     lines.append("💓 NUCLEUS HEARTBEAT (Centenary Edition)")
-    lines.append(f"   {datetime.now().strftime('%A, %B %d %I:%M %p')}")
+    lines.append(f"   {datetime.now(timezone.utc).strftime('%A, %B %d %I:%M %p')}")
     lines.append("=" * 56)
     
     for i, t in enumerate(triggers, 1):
@@ -503,7 +509,7 @@ def _log_heartbeat_check(brain: Path, triggers: List[Dict], elapsed_ms: float):
     log_path = log_dir / "checks.jsonl"
     
     entry = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "trigger_count": len(triggers),
         "signals": [t["signal"] for t in triggers],
         "duration_ms": round(elapsed_ms, 1),
@@ -594,12 +600,14 @@ def _install_launchd(interval_minutes: int, brain_path: Optional[str]) -> Dict:
     plist_path = _get_launchd_plist_path()
     nucleus_bin = _get_nucleus_executable()
     
-    brain_env = ""
-    if brain_path:
-        brain_env = f"""    <key>EnvironmentVariables</key>
+    brain_path_obj = Path(brain_path) if brain_path else get_brain_path()
+    log_dir = brain_path_obj / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    
+    brain_env = f"""    <key>EnvironmentVariables</key>
     <dict>
         <key>NUCLEUS_BRAIN_PATH</key>
-        <string>{brain_path}</string>
+        <string>{brain_path_obj}</string>
     </dict>"""
     
     plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -620,9 +628,9 @@ def _install_launchd(interval_minutes: int, brain_path: Optional[str]) -> Dict:
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{Path.home()}/.nucleus/heartbeat_stdout.log</string>
+    <string>{log_dir}/heartbeat_stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>{Path.home()}/.nucleus/heartbeat_stderr.log</string>
+    <string>{log_dir}/heartbeat_stderr.log</string>
 {brain_env}
 </dict>
 </plist>"""
