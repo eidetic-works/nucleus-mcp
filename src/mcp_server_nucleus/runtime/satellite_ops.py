@@ -172,6 +172,36 @@ def _get_health_stats() -> Dict:
         }
 
 
+def _get_products_health() -> Dict:
+    """Get the health status of the 4 core products in the Nucleus ecosystem."""
+    import os
+    from pathlib import Path
+    
+    # Check paths
+    nucleus_path = Path("/Users/lokeshgarg/ai-mvp-backend")
+    gq_path = Path("/Users/lokeshgarg/ai-mvp-backend/gentlequest-blog")
+    bib_path = Path("/Users/lokeshgarg/apps/believe-it-bot")
+    studio_path = Path("/Users/lokeshgarg/apps/believe-it-bot/AQUILA_VOICE_ARCHITECTURE")
+    
+    return {
+        "nucleus_os": {
+            "status": "🟢 ONLINE" if nucleus_path.exists() else "🔴 OFFLINE",
+            "path": str(nucleus_path.name)
+        },
+        "gentlequest": {
+            "status": "🟢 ONLINE" if gq_path.exists() else "🔴 OFFLINE",
+            "path": str(gq_path.name)
+        },
+        "believe_it_bot": {
+            "status": "🟢 ONLINE" if bib_path.exists() else "🔴 OFFLINE",
+            "path": str(bib_path.name)
+        },
+        "sovereign_studio": {
+            "status": "🟢 ONLINE" if studio_path.exists() else "🔴 OFFLINE",
+            "path": str(studio_path.name)
+        }
+    }
+
 def _get_satellite_view(detail_level: str = "standard") -> Dict:
     """
     Get unified satellite view of the brain.
@@ -211,11 +241,12 @@ def _get_satellite_view(detail_level: str = "standard") -> Dict:
     
     if detail_level == "minimal":
         return result
-    
-    # Standard: add activity and health
+
+    # Standard: add activity, health, and products
     result["activity"] = _get_activity_sparkline(days=7)
     result["health"] = _get_health_stats()
-    
+    result["products"] = _get_products_health()
+
     # Add commitment health (PEFS Phase 2)
     try:
         brain = get_brain_path()
@@ -352,6 +383,22 @@ def _format_satellite_cli(view: Dict) -> str:
         lines.append(f"│     Artifacts: {artifacts} active | {archived} archived{' ' * (28 - len(str(artifacts)) - len(str(archived)))} │")
         if stale > 0:
             lines.append(f"│     ⚠️  {stale} stale files (30+ days){' ' * (36 - len(str(stale)))} │")
+        lines.append("│                                                         │")
+
+    # Products (if present)
+    products = view.get("products")
+    if products:
+        lines.append("│  🚀 CORE PRODUCTS                                       │")
+        p_list = [
+            ("Nucleus OS", products.get("nucleus_os", {})),
+            ("GentleQuest", products.get("gentlequest", {})),
+            ("Believe-it-bot", products.get("believe_it_bot", {})),
+            ("Sovereign Studio", products.get("sovereign_studio", {}))
+        ]
+        for name, data in p_list:
+            status = data.get("status", "🔴 OFFLINE")
+            line_str = f"│     {name:<18} {status:<34} │"
+            lines.append(line_str)
         lines.append("│                                                         │")
     
     # Commitments (PEFS - if present)

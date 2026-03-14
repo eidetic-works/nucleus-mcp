@@ -106,3 +106,16 @@ docker build --build-arg JURISDICTION=eu-dora -t nucleus:eu-dora .
 docker compose -f deploy/docker-compose.eu-dora.yml up -d
 docker compose -f deploy/docker-compose.sg-mas-trm.yml up -d
 ```
+
+## 🐕 Dog Food Experiment (30-Day Test)
+
+```bash
+# Log today's pain-if-broken score (1-10)
+nucleus dogfood log 8
+
+# Log with all fields
+nucleus dogfood log 9 --pay --faster 3 --notes "Engrams saved 20min"
+
+# Show experiment dashboard
+nucleus dogfood status
+```

@@ -11,7 +11,7 @@ SAFE_COMMANDS = frozenset({
     'python3', 'python', 'node', 'npm', 'npx', 'pytest', 'git',
     'ls', 'cat', 'head', 'tail', 'grep', 'find', 'wc', 'diff',
     'echo', 'pwd', 'env', 'which', 'make', 'cargo', 'ruff',
-    'pip', 'pip3', 'uv', 'poetry',
+    'pip', 'pip3', 'uv', 'poetry', 'gcloud', 'nucleus'
 })
 
 class CodeOps(Capability):

@@ -94,6 +94,53 @@ Add to your MCP config:
 
 ---
 
+## � Agent CLI — v1.4.0 "The Universal Interface"
+
+Nucleus speaks **MCP + CLI + SDK**. Every command auto-detects TTY (table) vs pipe (JSON).
+
+```bash
+# Memory
+nucleus engram search "compliance"                    # Table in terminal, JSONL when piped
+nucleus engram write my_key "important insight" --context Strategy --intensity 8
+nucleus engram query --context Decision --limit 10
+
+# Tasks
+nucleus task list --status READY --format json        # Force JSON output
+nucleus task add "Ship v1.4.0 CLI" --priority 1
+nucleus task update task-abc123 --status DONE
+
+# Sessions
+nucleus session save "Working on CLI implementation"
+nucleus session resume                                # Most recent session
+
+# Growth
+nucleus growth pulse                                  # GitHub stars + PyPI + compound
+nucleus growth status                                 # Metrics without side effects
+
+# Outbound I/O
+nucleus outbound check reddit r/ClaudeAI              # Idempotency gate
+nucleus outbound record reddit r/ClaudeAI --permalink https://reddit.com/abc
+nucleus outbound plan                                 # What's ready vs posted
+
+# Pipe-friendly (Unix composable)
+nucleus engram search "test" | jq '.key'
+nucleus task list --format tsv | cut -f1,3
+```
+
+**Global flags:** `--format json|table|tsv` • `--brain-path /path/to/.brain` • `--version`
+
+---
+
+## �🥞 The Layered Open-Core Model
+Nucleus is designed for progressive adoption. You can start local and scale up to full institutional compliance seamlessly.
+
+1. **Layer 1: Sovereign Core (OSS):** 100% local, persistent engrams, session state, and essential file governance.
+2. **Layer 2: CLI-First Tooling:** `morning-brief`, `end-of-day`, and the `dogfood` tracker for compounding intelligence.
+3. **Layer 3: Deployment Kit:** 1-command jurisdiction deployments (`nucleus deploy --jurisdiction eu-dora`).
+4. **Layer 4: Institutional Compliance:** DSoR Trace Viewer, Audit Report HTML exports (DORA/MAS TRM), and strict HITL gates.
+
+---
+
 ## 🏛️ Why Nucleus for Regulated Industries
 
 ### Jurisdiction-Aware Compliance

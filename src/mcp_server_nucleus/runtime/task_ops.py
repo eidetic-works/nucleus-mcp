@@ -90,7 +90,12 @@ def _list_tasks(
         except Exception:
             pass
         
-        # Sort by priority (asc)
+        # Sort by priority (asc) — coerce to int to avoid mixed-type comparisons
+        for t in filtered:
+            try:
+                t["priority"] = int(t.get("priority", 3))
+            except Exception:
+                t["priority"] = 3
         filtered.sort(key=lambda x: x.get("priority", 3))
         
         return filtered

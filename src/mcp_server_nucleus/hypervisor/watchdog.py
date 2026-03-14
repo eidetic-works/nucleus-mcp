@@ -121,18 +121,23 @@ class Watchdog:
         """Starts the background monitoring thread."""
         if self.observer.is_alive():
             return
-            
+
         try:
             handler = SecurityEventHandler(self, self.locker)
             self.observer.schedule(handler, str(self.workspace_root), recursive=True)
             self.observer.start()
             import sys
-            sys.stderr.write(f"[Nucleus] 👁️  Watchdog active: {self.workspace_root}\n"); sys.stderr.flush()
+            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+            if not _is_quiet:
+                sys.stderr.write(f"[Nucleus] 👁️  Watchdog active: {self.workspace_root}\n")
+                sys.stderr.flush()
         except (RuntimeError, Exception) as e:
             import sys
             # Only log to stderr, never stdout
-            sys.stderr.write(f"[Nucleus] ⚠️  Watchdog Quiet: {e}\n"); sys.stderr.flush()
-
+            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+            if not _is_quiet:
+                sys.stderr.write(f"[Nucleus] ⚠️  Watchdog Quiet: {e}\n")
+                sys.stderr.flush()
     def stop(self):
         self.observer.stop()
         self.observer.join()

@@ -72,4 +72,6 @@ def register_all(mcp, helpers):
                 setattr(parent, name, func)
                 total_tools += 1
 
-    print(f"[NUCLEUS] Registered {total_tools} facade tools from {len(modules)} modules.", file=sys.stderr)
+    _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+    if not _is_quiet:
+        print(f"[NUCLEUS] Registered {total_tools} facade tools from {len(modules)} modules.", file=sys.stderr)

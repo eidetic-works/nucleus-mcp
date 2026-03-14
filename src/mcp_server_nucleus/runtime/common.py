@@ -55,14 +55,26 @@ def setup_nucleus_logging(name: str = "nucleus", level: int = logging.INFO):
 logger = setup_nucleus_logging()
 
 def get_brain_path() -> Path:
-    """Get the brain path from environment variable (read dynamically for testing)."""
+    """Get the brain path from environment variable or auto-detect from working directory."""
     brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
-    if not brain_path:
-        raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set")
-    path = Path(brain_path)
-    if not path.exists():
-         raise ValueError(f"Brain path does not exist: {brain_path}")
-    return path
+    
+    if brain_path:
+        path = Path(brain_path)
+        if not path.exists():
+            raise ValueError(f"Brain path does not exist: {brain_path}")
+        return path
+    
+    # Smart fallback: Find .brain in cwd or parent directories
+    cwd = Path.cwd()
+    if (cwd / ".brain").exists():
+        return cwd / ".brain"
+    
+    for parent in cwd.parents:
+        if (parent / ".brain").exists():
+            return parent / ".brain"
+            
+    # If we get here, no brain was found
+    raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set and no .brain directory found in current or parent directories.")
 
 def make_response(success: bool, data=None, error=None, error_code=None):
     """Standardized API response formatter.

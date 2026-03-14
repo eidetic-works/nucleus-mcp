@@ -81,13 +81,13 @@ class TierRouter:
     
     TIER_CONFIGS = {
         LLMTier.PREMIUM: {
-            "model": "gemini-2.5-pro",  # Note: gemini-3-pro not yet in Vertex AI
+            "model": "gemini-3.1-pro-preview",  # Note: gemini-3-pro not yet in Vertex AI
             "platform": "vertex",
             "cost_level": "high",
             "description": "Advanced reasoning, complex architecture"
         },
         LLMTier.STANDARD: {
-            "model": "gemini-2.5-flash",
+            "model": "gemini-3.1-flash-lite-preview",
             "platform": "vertex",
             "cost_level": "medium",
             "description": "Default production, 95% of work"
@@ -99,7 +99,7 @@ class TierRouter:
             "description": "Background tasks, batch jobs"
         },
         LLMTier.LOCAL_PAID: {
-            "model": "gemini-2.5-flash",
+            "model": "gemini-3.1-flash-lite-preview",
             "platform": "api_key",
             "cost_level": "medium",
             "description": "Fallback when Vertex fails"
