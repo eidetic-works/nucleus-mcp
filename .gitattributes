@@ -34,11 +34,10 @@ INSTALL_PHASE73_NOW.md export-ignore
 FORCE_RELOAD_PHASE73.md export-ignore
 
 # Test Artifacts and Scratch Files
-tests/test3.txt export-ignore
-tests/tmp_chflags_test/ export-ignore
-tests/test_recursion.sh export-ignore
-debug*.py export-ignore
-test_*.py export-ignore
+tests/test_*.py export-ignore
+!tests/test_core.py
+!tests/test_integration.py
+!tests/test_uchg.py
 test_*.lock export-ignore
 test_*.txt export-ignore
 pytest_*.txt export-ignore
