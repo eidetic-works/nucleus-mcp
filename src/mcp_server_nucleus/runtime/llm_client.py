@@ -12,9 +12,10 @@ import os
 import logging
 import json
 from pathlib import Path
-from datetime import datetime
-from typing import Optional, Dict, Any
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, Union
 from enum import Enum
+from dataclasses import dataclass, field
 
 # Configure logger
 logger = logging.getLogger("nucleus.llm")
@@ -33,11 +34,11 @@ try:
     from google import genai
     from google.genai import types
     HAS_GENAI = True
-    logger.info("✅ SDK: google-genai (new) available")
+    logger.debug("✅ SDK: google-genai (new) available")
 except ImportError:
     HAS_GENAI = False
     if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
-        logger.warning("⚠️ google-genai not installed. Falling back to legacy SDK.")
+        logger.debug("⚠️ google-genai not installed. Falling back to legacy SDK.")
 
 # Fallback SDK: google.generativeai (Legacy)
 try:
@@ -55,7 +56,7 @@ def get_active_sdk() -> str:
     return "NONE"
 
 _active = get_active_sdk()
-logger.info(f"🎯 SDK Selection: Using {_active}")
+logger.debug(f"🎯 SDK Selection: Using {_active}")
 
 
 # ============================================================
@@ -64,11 +65,13 @@ logger.info(f"🎯 SDK Selection: Using {_active}")
 
 class LLMTier(Enum):
     """Available LLM pricing/capability tiers."""
-    PREMIUM = "premium"           # gemini-3-pro, highest capability
-    STANDARD = "standard"         # gemini-2.5-flash, default production
-    ECONOMY = "economy"           # gemini-2.5-flash-lite, background tasks
-    LOCAL_PAID = "local_paid"     # API Key with billing
-    LOCAL_FREE = "local_free"     # API Key free tier (100 req/day)
+    # --- Vertex AI / Paid tiers (for when billing is enabled) ---
+    PREMIUM = "premium"           # gemini-3.1-pro-preview (Vertex), highest capability
+    STANDARD = "standard"         # gemini-3.1-flash-lite-preview (Vertex), default production
+    ECONOMY = "economy"           # gemini-2.5-flash (Vertex), background tasks
+    # --- API Key tiers (free-tier / local dev) ---
+    LOCAL_PAID = "local_paid"     # API Key with billing (Anthropic fallback)
+    LOCAL_FREE = "local_free"     # API Key free tier
 
 
 class TierRouter:
@@ -77,41 +80,67 @@ class TierRouter:
     - Job type (CRITICAL, RESEARCH, ORCHESTRATION, BACKGROUND, TESTING)
     - Budget mode (spartan, balanced, premium)
     - Quota availability (fallback on errors)
-    """
     
+    Free-Tier Quota Reference (as of 2026-03-10):
+      gemini-3-flash:                20 RPD
+      gemini-2.5-flash:              20 RPD
+      gemini-3.1-flash-lite-preview: 500 RPD  ← best for fuzzing/testing
+      gemini-2.5-flash-lite:         20 RPD
+    """
+
     TIER_CONFIGS = {
+        # --- Vertex AI / Paid (preserved for when billing is enabled) ---
+        # --- Vertex AI / Paid (Currently disabled/mapped to best free) ---
         LLMTier.PREMIUM: {
-            "model": "gemini-3.1-pro-preview",  # Note: gemini-3-pro not yet in Vertex AI
+            "model": "gemini-3-flash-preview",
             "platform": "vertex",
             "cost_level": "high",
-            "description": "Advanced reasoning, complex architecture"
+            "description": "Mapped to Gemini 3 Flash (Free)"
         },
         LLMTier.STANDARD: {
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3-flash-preview",
             "platform": "vertex",
             "cost_level": "medium",
-            "description": "Default production, 95% of work"
+            "description": "Mapped to Gemini 3 Flash (Free)"
         },
         LLMTier.ECONOMY: {
             "model": "gemini-2.5-flash-lite",
             "platform": "vertex",
             "cost_level": "low",
-            "description": "Background tasks, batch jobs"
+            "description": "Gemini 2.5 Flash Lite"
         },
+        # --- API Key / Local ---
         LLMTier.LOCAL_PAID: {
             "model": "gemini-3.1-flash-lite-preview",
             "platform": "api_key",
             "cost_level": "medium",
-            "description": "Fallback when Vertex fails"
+            "description": "Paid-tier Gemini, massive quota (149.5K RPD)"
         },
         LLMTier.LOCAL_FREE: {
-            "model": "gemini-2.0-flash",
+            "model": "gemini-3-flash-preview",
             "platform": "api_key",
             "cost_level": "free",
-            "description": "Testing only, 100 req/day"
+            "description": "Gemini 3 Flash (Free)"
         },
     }
-    
+
+    # Free-tier model cascade
+    # Ordered by descending quota availability (based on Google AI Studio 2026 limits)
+    FREE_TIER_CASCADE = [
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-2.5-flash-lite"
+    ]
+
+    # Highest intelligence cascade for Sovereign workflow (auto-rotation)
+    SOVEREIGN_CASCADE = [
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-2.5-flash-lite"
+    ]
+
     JOB_ROUTING = {
         "CRITICAL": LLMTier.PREMIUM,
         "RESEARCH": LLMTier.STANDARD,
@@ -220,7 +249,7 @@ class DualEngineLLM:
             # Explicit tier selection
             self.tier = tier
             self.tier_config = TierRouter.get_config(tier)
-            model_name = self.tier_config["model"]
+            model_name = model_name or self.tier_config["model"]
             logger.info(f"🎯 LLM: Using explicit tier '{tier.value}' → {model_name}")
         elif job_type:
             # Job-based routing
@@ -258,8 +287,30 @@ class DualEngineLLM:
         # 1. Initialize google-genai (Primary)
         if HAS_GENAI:
             try:
-                if use_vertex:
-                    project_id = os.environ.get("GCP_PROJECT_ID", os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576"))
+                proxy_url = os.environ.get("GEMINI_API_BASE_URL")
+                
+                # Phase 14 Hardening: Auto-discovery of local proxy
+                if not proxy_url and Path("/tmp/gemini_proxy.port").exists():
+                    try:
+                        port = Path("/tmp/gemini_proxy.port").read_text().strip()
+                        proxy_url = f"http://127.0.0.1:{port}/v1"
+                        logger.info(f"📍 Auto-discovered Gemini Proxy at {proxy_url}")
+                    except Exception as e:
+                        logger.debug(f"Proxy auto-discovery failed: {e}")
+
+                if proxy_url:
+                    logger.info(f"🔗 LLM Client: Proxy Mode ({proxy_url})")
+                    # Force API Key mode for proxy, disable Vertex
+                    self.client = genai.Client(
+                        api_key=self.api_key or "sk-dummy", # Proxy handles keys
+                        http_options={'base_url': proxy_url}
+                    )
+                elif use_vertex:
+                    project_id = os.environ.get("GCP_PROJECT_ID", os.environ.get("GOOGLE_CLOUD_PROJECT"))
+                    if not project_id and os.environ.get("FORCE_VERTEX") == "1":
+                         logger.warning("⚠️ Vertex AI requested but GCP_PROJECT_ID/GOOGLE_CLOUD_PROJECT not set.")
+                         raise ValueError("GCP_PROJECT_ID or GOOGLE_CLOUD_PROJECT is required for Vertex AI mode.")
+                    
                     location = os.environ.get("GCP_LOCATION", "us-central1")
                     
                     logger.info(f"🏢 LLM Client: Vertex AI Mode ({project_id})")
@@ -302,20 +353,19 @@ class DualEngineLLM:
         Saves the raw interaction to disk for later mining/consolidation.
         """
         try:
-            brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", "./.brain"))
+            from .common import get_brain_path
+            brain_path = get_brain_path()
             raw_path = brain_path / "raw"
             raw_path.mkdir(parents=True, exist_ok=True)
             
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
             filename = raw_path / f"llm_interaction_{timestamp}.json"
             
             # Extract text from response (Best effort)
-            response_text = "Unknown"
-            if hasattr(response, 'text'):
-                response_text = response.text
+            response_text = self._safe_text(response) or "Unknown"
                 
             data = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "engine": self.engine,
                 "model": self.model_name,
                 "prompt": str(prompt)[:5000], # Truncate massive prompts 
@@ -330,6 +380,36 @@ class DualEngineLLM:
 
     def generate_content(self, prompt: str, **kwargs) -> Any:
         try:
+            # ── Token Budget Check (42-Round Audit: Round 14) ─────────
+            try:
+                from .token_budget import get_budget_manager, estimate_tokens
+                budget = get_budget_manager()
+                session_id = os.environ.get("NUCLEUS_SESSION_ID", "default")
+                agent_id = kwargs.pop("_agent_id", "default")
+                if not budget.can_execute(session_id=session_id, agent_id=agent_id):
+                    raise RuntimeError(
+                        f"Token budget exceeded for session={session_id}, agent={agent_id}. "
+                        "Reset with NUCLEUS_SESSION_COST_LIMIT or wait for daily reset."
+                    )
+            except ImportError:
+                session_id, agent_id = "default", "default"
+
+            # Emit DSoR event for interaction start (Audit Trail)
+            try:
+                from .event_ops import _emit_event
+                _emit_event(
+                    event_type="LLM_GENERATE",
+                    emitter="DualEngineLLM",
+                    data={
+                        "model": self.model_name,
+                        "tier": self.tier.value if self.tier else "unknown",
+                        "prompt_preview": prompt[:100] + "..." if len(prompt) > 100 else prompt
+                    },
+                    description=f"Generating content using {self.model_name}"
+                )
+            except ImportError:
+                pass # Fallback if event_ops not reachable
+
             if self.engine == "NEW":
                 config_args = {}
                 if self.system_instruction:
@@ -353,6 +433,7 @@ class DualEngineLLM:
                     config=config
                 )
                 self._log_interaction(prompt, response)
+                self._record_token_usage(prompt, response, session_id, agent_id)
                 return response
 
             elif self.engine == "LEGACY":
@@ -363,11 +444,34 @@ class DualEngineLLM:
                 
                 response = self.model.generate_content(prompt, generation_config=generation_config)
                 self._log_interaction(prompt, response)
+                self._record_token_usage(prompt, response, session_id, agent_id)
                 return response
 
         except Exception as e:
-            logger.error(f"❌ LLM Generate Content Failed ({self.engine}): {e}")
+            err_str = str(e)
+            # Keep 429/403/quota errors concise — the sweeper logs the compact version
+            if any(code in err_str for code in ("429", "403", "402", "RESOURCE_EXHAUSTED", "PERMISSION_DENIED", "BILLING_DISABLED", "credit_limit")):
+                logger.debug(f"LLM blocked ({self.engine}/{self.model_name}): {err_str[:60]}")
+            else:
+                logger.error(f"❌ LLM Generate Content Failed ({self.engine}): {e}")
             raise
+
+    def _record_token_usage(self, prompt: str, response: Any, session_id: str = "default", agent_id: str = "default"):
+        """Record token usage to the BudgetManager after each LLM call."""
+        try:
+            from .token_budget import get_budget_manager, estimate_tokens
+            input_tokens = estimate_tokens(str(prompt))
+            response_text = getattr(response, 'text', '') or ''
+            output_tokens = estimate_tokens(response_text)
+            get_budget_manager().record_usage(
+                model=self.model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                session_id=session_id,
+                agent_id=agent_id,
+            )
+        except Exception as e:
+            logger.debug(f"Token usage recording skipped: {e}")
 
     def embed_content(self, text: str, task_type: str = "retrieval_document", title: Optional[str] = None) -> Dict[str, Any]:
         try:
@@ -402,6 +506,713 @@ class DualEngineLLM:
              logger.error(f"❌ LLM Embed Content Failed ({self.engine}): {e}")
              raise
 
+    @staticmethod
+    def _safe_text(obj) -> str:
+        """Extract .text from a Gemini response/chunk, suppressing SDK warnings."""
+        import io, contextlib
+        with contextlib.redirect_stderr(io.StringIO()):
+            return getattr(obj, 'text', None) or ""
+
+    def stream_content(self, prompt: str, **kwargs):
+        """
+        Stream text from LLM, yielding chunks as they arrive.
+        Falls back to non-streaming generate_content() if streaming unavailable.
+        """
+        if self.engine == "NEW":
+            try:
+                config_args = {}
+                if self.system_instruction:
+                    config_args['system_instruction'] = self.system_instruction
+                config = types.GenerateContentConfig(**config_args)
+
+                chunks = []
+                for chunk in self.client.models.generate_content_stream(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=config,
+                ):
+                    text = self._safe_text(chunk)
+                    if text:
+                        chunks.append(text)
+                        yield text
+                # Log the full interaction after streaming completes
+                full_text = "".join(chunks)
+                self._record_token_usage(prompt, type('R', (), {'text': full_text})(),
+                                         os.environ.get("NUCLEUS_SESSION_ID", "default"), "default")
+                return
+            except Exception as e:
+                logger.warning(f"Streaming failed, falling back to non-stream: {e}")
+
+        # Fallback: non-streaming (LEGACY engine or stream failure)
+        response = self.generate_content(prompt, **kwargs)
+        text = self._safe_text(response) or str(response)
+        if text:
+            yield text
+
     @property
     def active_engine(self):
         return self.engine
+
+    # Alias for legacy support and autonomous self-healer compatibility
+    generate = generate_content
+
+
+# ============================================================
+# ANTHROPIC / CLAUDE PROVIDER
+# ============================================================
+
+@dataclass
+class AnthropicResponse:
+    """Minimal response wrapper matching the Gemini response interface (.text)."""
+    text: str
+    model: str = ""
+    usage: Dict[str, int] = field(default_factory=dict)
+
+
+class AnthropicLLM:
+    """
+    Minimal Anthropic/Claude client that exposes the same generate_content()
+    interface as DualEngineLLM.  Text generation only (no tools, no streaming).
+    """
+
+    DEFAULT_MODEL = "claude-sonnet-4-6-20250514"
+    DEFAULT_MAX_TOKENS = 4096
+
+    def __init__(
+        self,
+        model_name: Optional[str] = None,
+        system_instruction: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        # Accept (and ignore) Gemini-specific kwargs so callers don't break
+        tier: Optional[LLMTier] = None,
+        job_type: Optional[str] = None,
+        budget_mode: str = "balanced",
+        **_ignored,
+    ):
+        self.api_key = api_key or os.environ.get("NUCLEUS_ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "Anthropic provider selected but NUCLEUS_ANTHROPIC_API_KEY is not set. "
+                "Set this env var or pass api_key= explicitly."
+            )
+
+        self.base_url = base_url or os.environ.get("NUCLEUS_ANTHROPIC_BASE_URL")
+        self.model_name = model_name or os.environ.get(
+            "NUCLEUS_ANTHROPIC_MODEL", self.DEFAULT_MODEL
+        )
+        self.system_instruction = system_instruction
+        self.engine = "ANTHROPIC"
+        self.tier = tier
+        self.budget_mode = budget_mode
+
+        # Lazy-import so the dep is only required when actually selected
+        try:
+            import anthropic  # noqa: F811
+        except ImportError:
+            import sys as _sys
+            raise ImportError(
+                "Anthropic provider selected but the 'anthropic' package is not installed. "
+                f"Run: {_sys.executable} -m pip install anthropic"
+            )
+
+        client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
+        if self.base_url:
+            client_kwargs["base_url"] = self.base_url
+        self._client = anthropic.Anthropic(**client_kwargs)
+
+        logger.info(
+            f"🔮 LLM Client: Anthropic Mode → {self.model_name}"
+            + (f" (base_url={self.base_url})" if self.base_url else "")
+        )
+
+    # ── Core interface (matches DualEngineLLM) ──────────────
+
+    def generate_content(self, prompt: str, **kwargs) -> AnthropicResponse:
+        """Generate text via Anthropic Messages API."""
+        # ── Token Budget Check ──
+        session_id = os.environ.get("NUCLEUS_SESSION_ID", "default")
+        agent_id = kwargs.pop("_agent_id", "default")
+        try:
+            from .token_budget import get_budget_manager
+            budget = get_budget_manager()
+            if not budget.can_execute(session_id=session_id, agent_id=agent_id):
+                raise RuntimeError(
+                    f"Token budget exceeded for session={session_id}, agent={agent_id}."
+                )
+        except ImportError:
+            pass
+
+        max_tokens = kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS)
+
+        msg_kwargs: Dict[str, Any] = {
+            "model": self.model_name,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if self.system_instruction:
+            msg_kwargs["system"] = self.system_instruction
+
+        try:
+            raw = self._client.messages.create(**msg_kwargs)
+        except Exception as e:
+            err_str = str(e)
+            if any(code in err_str for code in ("429", "402", "rate_limit", "credit_limit", "overloaded")):
+                logger.debug(f"Anthropic rate limited: {err_str[:60]}")
+            else:
+                logger.error(f"❌ Anthropic generate failed: {e}")
+            raise
+
+        # Extract text from content blocks
+        text_parts = [
+            block.text for block in raw.content if getattr(block, "text", None)
+        ]
+        response = AnthropicResponse(
+            text="\n".join(text_parts),
+            model=raw.model,
+            usage={
+                "input_tokens": raw.usage.input_tokens,
+                "output_tokens": raw.usage.output_tokens,
+            },
+        )
+
+        self._log_interaction(prompt, response)
+        self._record_token_usage(prompt, response, session_id, agent_id)
+        return response
+
+    def stream_content(self, prompt, **kwargs):
+        """
+        Stream text from Anthropic, yielding chunks as they arrive.
+
+        ``prompt`` can be:
+        - a plain string  (single-turn, backward-compatible)
+        - a list of dicts  (native multi-turn: [{"role": "user", "content": "..."},
+                            {"role": "assistant", "content": "..."},...])
+
+        Falls back to non-streaming generate_content() if streaming unavailable.
+        """
+        max_tokens = kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS)
+
+        # Build messages list — accept string or native messages array
+        if isinstance(prompt, list):
+            messages = prompt
+        else:
+            messages = [{"role": "user", "content": prompt}]
+
+        msg_kwargs: Dict[str, Any] = {
+            "model": self.model_name,
+            "max_tokens": max_tokens,
+            "messages": messages,
+        }
+        if self.system_instruction:
+            msg_kwargs["system"] = self.system_instruction
+
+        try:
+            chunks = []
+            with self._client.messages.stream(**msg_kwargs) as stream:
+                for text in stream.text_stream:
+                    chunks.append(text)
+                    yield text
+            full_text = "".join(chunks)
+            prompt_str = str(prompt) if isinstance(prompt, list) else prompt
+            self._record_token_usage(
+                prompt_str,
+                AnthropicResponse(text=full_text),
+                os.environ.get("NUCLEUS_SESSION_ID", "default"), "default",
+            )
+            return
+        except Exception as e:
+            logger.warning(f"Anthropic streaming failed, falling back: {e}")
+
+        # Fallback: non-streaming
+        response = self.generate_content(str(prompt) if isinstance(prompt, list) else prompt, **kwargs)
+        if response.text:
+            yield response.text
+
+    # ── Native Tool Calling ─────────────────────────────────
+
+    SHELL_TOOL = {
+        "name": "shell_execute",
+        "description": "Execute a shell command on the user's local machine. Use this to run any CLI command, inspect files, check system state, or run nucleus CLI commands (e.g. 'nucleus task list', 'nucleus engram search Q').",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "The shell command to execute (e.g. 'ls -la', 'nucleus task list')",
+                }
+            },
+            "required": ["command"],
+        },
+    }
+
+    def stream_with_tools(self, messages, **kwargs):
+        """
+        Stream from Anthropic with native tool calling.
+
+        Yields text chunks as they arrive. After the stream completes, the caller
+        should check `self.last_tool_calls` for any tool_use blocks.
+
+        Args:
+            messages: list of {"role": ..., "content": ...} dicts
+        """
+        max_tokens = kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS)
+
+        msg_kwargs: Dict[str, Any] = {
+            "model": self.model_name,
+            "max_tokens": max_tokens,
+            "messages": messages,
+            "tools": [self.SHELL_TOOL],
+        }
+        if self.system_instruction:
+            msg_kwargs["system"] = self.system_instruction
+
+        self.last_tool_calls = []  # Reset
+        self.last_stop_reason = None
+
+        try:
+            text_chunks = []
+            with self._client.messages.stream(**msg_kwargs) as stream:
+                for event in stream:
+                    # Text delta events
+                    if hasattr(event, 'type'):
+                        if event.type == 'content_block_delta':
+                            delta = event.delta
+                            if hasattr(delta, 'text'):
+                                text_chunks.append(delta.text)
+                                yield delta.text
+                # After stream ends, get the final message for tool_use blocks
+                final = stream.get_final_message()
+                self.last_stop_reason = final.stop_reason
+                for block in final.content:
+                    if block.type == "tool_use":
+                        self.last_tool_calls.append({
+                            "id": block.id,
+                            "name": block.name,
+                            "input": block.input,
+                        })
+
+            full_text = "".join(text_chunks)
+            prompt_str = str(messages)[:5000]
+            self._record_token_usage(
+                prompt_str,
+                AnthropicResponse(text=full_text, usage={
+                    "input_tokens": final.usage.input_tokens,
+                    "output_tokens": final.usage.output_tokens,
+                }),
+                os.environ.get("NUCLEUS_SESSION_ID", "default"), "default",
+            )
+        except Exception as e:
+            err_str = str(e)
+            if any(code in err_str for code in ("429", "402", "rate_limit", "credit_limit", "overloaded")):
+                logger.debug(f"Anthropic rate limited: {err_str[:60]}")
+            else:
+                logger.warning(f"Anthropic stream_with_tools failed: {e}")
+            raise
+
+    # Alias
+    generate = generate_content
+
+    # ── Logging (mirrors DualEngineLLM) ─────────────────────
+
+    def _log_interaction(self, prompt: str, response: AnthropicResponse):
+        try:
+            from .common import get_brain_path
+            brain_path = get_brain_path()
+            raw_path = brain_path / "raw"
+            raw_path.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+            filename = raw_path / f"llm_interaction_{timestamp}.json"
+            data = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "engine": self.engine,
+                "model": self.model_name,
+                "prompt": str(prompt)[:5000],
+                "response_text": response.text,
+            }
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            logger.warning(f"Failed to log interaction: {e}")
+
+    def _record_token_usage(self, prompt: str, response: AnthropicResponse, session_id: str = "default", agent_id: str = "default"):
+        try:
+            from .token_budget import get_budget_manager, estimate_tokens
+            input_tokens = response.usage.get("input_tokens") or estimate_tokens(str(prompt))
+            output_tokens = response.usage.get("output_tokens") or estimate_tokens(response.text)
+            get_budget_manager().record_usage(
+                model=self.model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                session_id=session_id,
+                agent_id=agent_id,
+            )
+        except Exception as e:
+            logger.debug(f"Token usage recording skipped: {e}")
+
+    @property
+    def active_engine(self):
+        return self.engine
+
+
+# ============================================================
+# PROVIDER FACTORY
+# ============================================================
+
+# ============================================================
+# GROQ PROVIDER (OpenAI-compatible, free tier: 30 RPM)
+# ============================================================
+
+@dataclass
+class GroqResponse:
+    """Minimal response wrapper matching the Gemini response interface (.text)."""
+    text: str
+    model: str = ""
+    usage: Dict[str, int] = field(default_factory=dict)
+
+
+class GroqLLM:
+    """
+    Groq client using OpenAI-compatible API. Exposes same generate_content()
+    interface as DualEngineLLM. Supports Llama, Mixtral, Gemma models at
+    lightning speed with a generous free tier (30 RPM).
+
+    Config env vars:
+      NUCLEUS_GROQ_API_KEY    (required)
+      NUCLEUS_GROQ_MODEL      (optional, default: llama-3.3-70b-versatile)
+    """
+
+    DEFAULT_MODEL = "llama-3.3-70b-versatile"
+    DEFAULT_MAX_TOKENS = 4096
+    BASE_URL = "https://api.groq.com/openai/v1"
+
+    def __init__(
+        self,
+        model_name: Optional[str] = None,
+        system_instruction: Optional[str] = None,
+        api_key: Optional[str] = None,
+        # Accept (and ignore) Gemini-specific kwargs so callers don't break
+        tier: Optional[LLMTier] = None,
+        job_type: Optional[str] = None,
+        budget_mode: str = "balanced",
+        **_ignored,
+    ):
+        self.api_key = api_key or os.environ.get("NUCLEUS_GROQ_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "Groq provider selected but NUCLEUS_GROQ_API_KEY is not set. "
+                "Get a free key at https://console.groq.com and set this env var."
+            )
+
+        self.model_name = model_name or os.environ.get(
+            "NUCLEUS_GROQ_MODEL", self.DEFAULT_MODEL
+        )
+        self.system_instruction = system_instruction
+        self.engine = "GROQ"
+        self.tier = tier
+        self.budget_mode = budget_mode
+
+        # Use openai SDK with Groq's base_url
+        try:
+            from openai import OpenAI
+        except ImportError:
+            import sys as _sys
+            raise ImportError(
+                "Groq provider selected but the 'openai' package is not installed. "
+                f"Run: {_sys.executable} -m pip install openai"
+            )
+
+        self._client = OpenAI(api_key=self.api_key, base_url=self.BASE_URL)
+
+        logger.info(f"⚡ LLM Client: Groq Mode → {self.model_name}")
+
+    # ── Core interface (matches DualEngineLLM) ──────────────
+
+    def generate_content(self, prompt: str, **kwargs) -> GroqResponse:
+        """Generate text via Groq's OpenAI-compatible chat completions."""
+        session_id = os.environ.get("NUCLEUS_SESSION_ID", "default")
+        agent_id = kwargs.pop("_agent_id", "default")
+        try:
+            from .token_budget import get_budget_manager
+            budget = get_budget_manager()
+            if not budget.can_execute(session_id=session_id, agent_id=agent_id):
+                raise RuntimeError(
+                    f"Token budget exceeded for session={session_id}, agent={agent_id}."
+                )
+        except ImportError:
+            pass
+
+        max_tokens = kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS)
+
+        messages = []
+        if self.system_instruction:
+            messages.append({"role": "system", "content": self.system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        try:
+            raw = self._client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                max_tokens=max_tokens,
+            )
+        except Exception as e:
+            err_str = str(e)
+            if any(code in err_str for code in ("429", "402", "rate_limit", "credit_limit")):
+                logger.debug(f"Groq rate limited: {err_str[:60]}")
+            else:
+                logger.error(f"❌ Groq generate failed: {e}")
+            raise
+
+        text = raw.choices[0].message.content if raw.choices else ""
+        usage = {}
+        if raw.usage:
+            usage = {
+                "input_tokens": raw.usage.prompt_tokens,
+                "output_tokens": raw.usage.completion_tokens,
+            }
+
+        response = GroqResponse(text=text, model=raw.model, usage=usage)
+        self._log_interaction(prompt, response)
+        self._record_token_usage(prompt, response, session_id, agent_id)
+        return response
+
+    def stream_content(self, prompt, **kwargs):
+        """
+        Stream text from Groq, yielding chunks as they arrive.
+
+        ``prompt`` can be:
+        - a plain string  (single-turn, backward-compatible)
+        - a list of dicts  (native multi-turn: [{"role": "user", "content": "..."},
+                            {"role": "assistant", "content": "..."},...])
+        """
+        max_tokens = kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS)
+
+        # Build messages — accept string or native messages array
+        if isinstance(prompt, list):
+            messages = []
+            if self.system_instruction:
+                messages.append({"role": "system", "content": self.system_instruction})
+            messages.extend(prompt)
+        else:
+            messages = []
+            if self.system_instruction:
+                messages.append({"role": "system", "content": self.system_instruction})
+            messages.append({"role": "user", "content": prompt})
+
+        try:
+            chunks = []
+            stream = self._client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                max_tokens=max_tokens,
+                stream=True,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta if chunk.choices else None
+                if delta and delta.content:
+                    chunks.append(delta.content)
+                    yield delta.content
+            full_text = "".join(chunks)
+            prompt_str = str(prompt) if isinstance(prompt, list) else prompt
+            self._record_token_usage(
+                prompt_str,
+                GroqResponse(text=full_text),
+                os.environ.get("NUCLEUS_SESSION_ID", "default"), "default",
+            )
+            return
+        except Exception as e:
+            logger.warning(f"Groq streaming failed, falling back: {e}")
+
+        # Fallback: non-streaming
+        response = self.generate_content(str(prompt) if isinstance(prompt, list) else prompt, **kwargs)
+        if response.text:
+            yield response.text
+
+    # ── Native Tool Calling (OpenAI-compatible function calling) ──
+
+    SHELL_TOOL = {
+        "type": "function",
+        "function": {
+            "name": "shell_execute",
+            "description": "Execute a shell command on the user's local machine. Use this to run any CLI command, inspect files, check system state, or run nucleus CLI commands.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "The shell command to execute (e.g. 'ls -la', 'nucleus task list')",
+                    }
+                },
+                "required": ["command"],
+            },
+        },
+    }
+
+    def stream_with_tools(self, messages, **kwargs):
+        """
+        Stream from Groq with native function calling (OpenAI-compatible).
+
+        Yields text chunks. After streaming, check self.last_tool_calls
+        for any function calls.
+        """
+        max_tokens = kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS)
+
+        api_messages = []
+        if self.system_instruction:
+            api_messages.append({"role": "system", "content": self.system_instruction})
+        if isinstance(messages, list):
+            api_messages.extend(messages)
+        else:
+            api_messages.append({"role": "user", "content": messages})
+
+        self.last_tool_calls = []
+        self.last_stop_reason = None
+
+        try:
+            text_chunks = []
+            tool_call_chunks = {}  # id -> {name, arguments_str}
+
+            stream = self._client.chat.completions.create(
+                model=self.model_name,
+                messages=api_messages,
+                max_tokens=max_tokens,
+                tools=[self.SHELL_TOOL],
+                stream=True,
+            )
+
+            for chunk in stream:
+                choice = chunk.choices[0] if chunk.choices else None
+                if not choice:
+                    continue
+
+                if choice.finish_reason:
+                    self.last_stop_reason = choice.finish_reason
+
+                delta = choice.delta
+                # Text content
+                if delta and delta.content:
+                    text_chunks.append(delta.content)
+                    yield delta.content
+
+                # Tool call deltas
+                if delta and delta.tool_calls:
+                    for tc_delta in delta.tool_calls:
+                        idx = tc_delta.index
+                        if idx not in tool_call_chunks:
+                            tool_call_chunks[idx] = {
+                                "id": tc_delta.id or "",
+                                "name": "",
+                                "arguments": "",
+                            }
+                        if tc_delta.id:
+                            tool_call_chunks[idx]["id"] = tc_delta.id
+                        if tc_delta.function:
+                            if tc_delta.function.name:
+                                tool_call_chunks[idx]["name"] = tc_delta.function.name
+                            if tc_delta.function.arguments:
+                                tool_call_chunks[idx]["arguments"] += tc_delta.function.arguments
+
+            # Parse accumulated tool calls
+            for idx in sorted(tool_call_chunks.keys()):
+                tc = tool_call_chunks[idx]
+                try:
+                    args = json.loads(tc["arguments"]) if tc["arguments"] else {}
+                except json.JSONDecodeError:
+                    args = {"command": tc["arguments"]}
+                self.last_tool_calls.append({
+                    "id": tc["id"],
+                    "name": tc["name"],
+                    "input": args,
+                })
+
+            full_text = "".join(text_chunks)
+            self._record_token_usage(
+                str(messages)[:5000],
+                GroqResponse(text=full_text),
+                os.environ.get("NUCLEUS_SESSION_ID", "default"), "default",
+            )
+        except Exception as e:
+            err_str = str(e)
+            if any(code in err_str for code in ("429", "402", "rate_limit", "credit_limit")):
+                logger.debug(f"Groq rate limited: {err_str[:60]}")
+            else:
+                logger.warning(f"Groq stream_with_tools failed: {e}")
+            raise
+
+    # Alias
+    generate = generate_content
+
+    # ── Logging (mirrors DualEngineLLM) ─────────────────────
+
+    def _log_interaction(self, prompt: str, response: GroqResponse):
+        try:
+            from .common import get_brain_path
+            brain_path = get_brain_path()
+            raw_path = brain_path / "raw"
+            raw_path.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+            filename = raw_path / f"llm_interaction_{timestamp}.json"
+            data = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "engine": self.engine,
+                "model": self.model_name,
+                "prompt": str(prompt)[:5000],
+                "response_text": response.text,
+            }
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            logger.warning(f"Failed to log interaction: {e}")
+
+    def _record_token_usage(self, prompt: str, response: GroqResponse, session_id: str = "default", agent_id: str = "default"):
+        try:
+            from .token_budget import get_budget_manager, estimate_tokens
+            input_tokens = response.usage.get("input_tokens") or estimate_tokens(str(prompt))
+            output_tokens = response.usage.get("output_tokens") or estimate_tokens(response.text)
+            get_budget_manager().record_usage(
+                model=self.model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                session_id=session_id,
+                agent_id=agent_id,
+            )
+        except Exception as e:
+            logger.debug(f"Token usage recording skipped: {e}")
+
+    @property
+    def active_engine(self):
+        return self.engine
+
+
+def get_llm_client(
+    provider: Optional[str] = None,
+    **kwargs,
+) -> Union[DualEngineLLM, AnthropicLLM, GroqLLM]:
+    """
+    Factory that returns the right LLM client based on provider selection.
+
+    Resolution order for provider:
+      1. Explicit `provider` argument
+      2. NUCLEUS_LLM_PROVIDER env var
+      3. Default: "gemini"
+
+    Any extra **kwargs are forwarded to the underlying client constructor.
+    """
+    provider = (
+        provider
+        or os.environ.get("NUCLEUS_LLM_PROVIDER", "gemini")
+    ).strip().lower()
+
+    if provider == "gemini":
+        return DualEngineLLM(**kwargs)
+
+    if provider == "anthropic":
+        return AnthropicLLM(**kwargs)
+
+    if provider == "groq":
+        return GroqLLM(**kwargs)
+
+    raise ValueError(
+        f"Unknown LLM provider '{provider}'. "
+        "Supported values: 'gemini', 'anthropic', 'groq'."
+    )
