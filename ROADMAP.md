@@ -1,86 +1,98 @@
 # Nucleus Roadmap
 
-**Last Updated:** January 30, 2026  
-**Current Version:** 0.6.0
+**Last Updated:** March 2026
+**Current Version:** 1.6.2
 
 ---
 
 ## Vision
 
-Nucleus aims to be the **definitive Agent Control Plane** - the governance layer that makes autonomous AI agents safe, auditable, and controllable.
+Nucleus is the **Sovereign Agent Operating System** — the governance, memory, and orchestration layer that makes autonomous AI agents safe, auditable, and controllable. In a world where agent frameworks ship fast and break trust, Nucleus is the governed alternative.
 
 ---
 
 ## Released
 
-### v0.6.0 (January 2026) ✅
-**Theme: Decision Provenance**
+### v1.6.x (March 2026) ✅
+**Theme: Telemetry & Observability**
 
-- **Decision System of Record (DSoR)**: Full audit trail for agent decisions
-  - `DecisionMade` events emitted before every tool execution
-  - Context hashing with SHA-256 for state verification
-  - Before/after snapshots for agent lifecycle verification
+- **Smart Telemetry Drain**: Automated Upstash Redis → Local OTel pipeline with Docker lifecycle management
+- **Anonymous Telemetry**: Opt-out OpenTelemetry with fire-and-forget spans (never blocks user workflow)
+- **`nucleus config`**: Toggle telemetry, set endpoints, view configuration
+- **First-User Detection**: Alert on first external user with platform filtering
+
+### v1.5.0 (March 2026) ✅
+**Theme: The Sovereign Kernel**
+
+- **Adaptive Path Discovery**: Dynamic brain location with priority hierarchy
+- **Federation Engine Level 1**: Local IPC peer discovery with exclusive file locking
+- **Universal Shell Integration**: Bash/zsh autocompletion via `nucleus self-setup`
+- **DSoR Self-Healing**: Automated reconciliation of orphaned audit decisions
+- **CLI Sovereignty**: Health checks, sovereignty score, stale lock cleanup
+
+### v1.4.1 (March 2026) ✅
+**Theme: Agent-Native**
+
+- **Gemini CLI Integration**: Wrapper script, 16/16 test suite, production-ready
+- **Agent-Native CLI**: Structured error envelopes, semantic exit codes, machine-parseable output
+- **Audit Score**: 6/16 → 11/16 on "8 Rules for Agent-Callable CLIs" checklist
+
+### v1.0–v1.3 (February 2026) ✅
+**Theme: Core Platform**
+
+- **Engram Ledger**: Persistent memory with intensity scoring and ADUN protocol
+- **Task Orchestration**: Priority-based queue with DAG dependencies, atomic claiming, escalation
+- **Decision System of Record (DSoR)**: SHA-256 audit trail, context hashing, before/after snapshots
+- **Hypervisor**: Default-deny governance, file locking, kill switch, watchdog
+- **Compliance**: 4 jurisdictions (EU-DORA, SG-MAS-TRM, US-SOC2, Global)
+- **12 Facade Tools**: ~170 actions consolidated into clean MCP interface
 - **IPC Authentication**: Per-request tokens (CVE-2026-001 remediation)
-- **Token Metering**: Billing-ready consumption tracking
-- **Context Manager**: World-state hashing and drift detection
-- **5 New MCP Tools**: DSoR inspection and audit
-- **135 MCP Tools**: Total tool count
-- **64 Unit Tests**: Including 16 DSoR-specific tests
+- **KYC Demo**: 5 automated compliance checks
 
-### v0.5.1 (January 2026) ✅
-- **Engram Ledger**: Persistent memory with intensity scoring
-- **Governance Dashboard**: `brain_governance_status()` 
-- **Cryptographic Audit**: SHA-256 hashed interaction log
-- **Recursive Mounter**: Mount/unmount external MCP servers
-- **130 MCP Tools**: Comprehensive agent orchestration
-- **48 Unit Tests**: Full test coverage
-
-### v0.5.0 (January 2026) ✅
-- **V3.1 Task Engine**: Slot pooling, tier routing
-- **Prometheus Metrics**: Observability endpoints
-- **Performance Profiling**: Latency tracking
-- **Multi-Agent Protocol**: MoU enforcement
+### Pre-1.0 (January 2026) ✅
+- **v0.5–v0.6**: Task engine v3.1, Prometheus metrics, multi-agent protocol, DSoR, 135 MCP tools
 
 ---
 
 ## In Progress
 
-### v0.6.1 (Q1 2026) 🚧
-**Theme: Scalability & Protection**
+### v1.7.0 (Q1 2026) 🚧
+**Theme: Interactive Intelligence**
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Tool Router Pattern | Proposed | Group 135+ tools into logical pools |
-| Cython Shield | Proposed | Binary protection for core algorithms |
-| Policy DSL | Planned | Declarative security policies |
-| WebSocket Transport | Planned | Real-time MCP communication |
+| Multi-Provider Chat | Done | Gemini, Anthropic, Groq with native tool calling |
+| Session Resume | Done | Auto-load chat history on startup |
+| Groq Auto-Rotation | Done | Cascade across models on rate limit |
+| Security Posture Tool | Planned | Governance scoring with shareable report |
+| `nucleus secure` | Planned | One-command security hardening |
 
 ---
 
 ## Planned
 
-### v0.7.0 (Q2 2026)
-**Theme: Federation**
+### v1.8.0 (Q2 2026)
+**Theme: Federation & Channels**
 
 - **Peer-to-Peer Federation**: Connect multiple Nucleus instances
 - **Distributed Engrams**: Share memory across federated nodes
+- **Messaging Bridge**: Discord, Slack, Telegram channel integration
 - **Cross-Instance Tasks**: Route tasks to specialized nodes
-- **Federation Dashboard**: Monitor peer health
 
-### v0.8.0 (Q3 2026)
+### v1.9.0 (Q3 2026)
 **Theme: Enterprise**
 
 - **RBAC**: Role-based access control for teams
 - **SSO Integration**: SAML/OIDC authentication
-- **Audit Export**: Compliance-ready audit logs
+- **Audit Export**: Cryptographically signed compliance reports
 - **SLA Monitoring**: Uptime and latency guarantees
 
-### v1.0.0 (Q4 2026)
-**Theme: Production Ready**
+### v2.0.0 (Q4 2026)
+**Theme: Production Scale**
 
 - **Rust Core**: Performance-critical paths in Rust
+- **Horizontal Sharding**: Multi-brain fleet management
 - **Formal Verification**: Proven security properties
-- **Enterprise Support**: SLA-backed support tiers
 - **Certification**: SOC2 / ISO 27001 readiness
 
 ---
@@ -92,7 +104,6 @@ These are exploratory items not committed to a release:
 - **Autonomous Goal Decomposition**: Agents set their own sub-goals
 - **Learned Policies**: ML-based policy recommendations
 - **Natural Language Policies**: "Never access files outside /project"
-- **Blockchain Audit**: Immutable external audit trail
 - **Hardware Security Module**: HSM-backed key management
 
 ---
@@ -108,8 +119,8 @@ These are exploratory items not committed to a release:
 
 ## Release Cadence
 
-- **Patch Releases** (0.5.x): As needed for bug fixes
-- **Minor Releases** (0.x.0): Monthly feature releases
+- **Patch Releases** (1.6.x): As needed for bug fixes
+- **Minor Releases** (1.x.0): Monthly feature releases
 - **Major Releases** (x.0.0): Quarterly milestone releases
 
 ---

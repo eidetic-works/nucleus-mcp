@@ -1,9 +1,15 @@
 {
   "name": "nucleus-mcp",
-  "version": "1.4.1",
+  "version": "1.6.2",
   "private": true,
   "type": "module",
   "scripts": {
+    "telemetry:on": "bash scripts/telemetry-toggle.sh on",
+    "telemetry:off": "bash scripts/telemetry-toggle.sh off",
+    "telemetry:status": "bash scripts/telemetry-toggle.sh status",
+    "telemetry:toggle": "bash scripts/telemetry-toggle.sh toggle",
+    "telemetry:smart-drain": "bash scripts/smart-drain.sh",
+    "telemetry:setup-cron": "bash scripts/setup-smart-drain-cron.sh",
     "telemetry:up": "bash scripts/telemetry.sh up",
     "telemetry:down": "bash scripts/telemetry.sh down",
     "telemetry:drain": "node scripts/drain-upstash-spans.js",

@@ -47,9 +47,9 @@ Copy-pasting context between tools is tedious and error-prone. So I built someth
 
 **How It's Different from OpenClaw**
 
-OpenClaw is great for running multiple agents on their platform. But if you use Cursor AND Claude AND Windsurf (different tools), OpenClaw doesn't help.
+OpenClaw is fast to deploy — but it just leaked 1.5M API keys and got banned from Chinese government computers. No governance, no audit trail, no kill switch.
 
-Nucleus connects different platforms. Use OpenClaw for agent teams. Use Nucleus for your universal brain.
+Nucleus is the governed alternative: default-deny security, SHA-256 audit trail, compliance presets (EU-DORA, SOC2), and a kill switch for rogue agents. Plus it syncs across different tools (Cursor + Claude + Windsurf), which OpenClaw can't do.
 
 **Quick Start**
 
@@ -157,7 +157,7 @@ Questions welcome!
 - Task list in Windsurf → Cursor can see it
 - No more copy-pasting context between tools
 
-**It's different from OpenClaw**: OpenClaw syncs OpenClaw agents. Nucleus syncs *different* tools together.
+**It's different from OpenClaw**: OpenClaw runs agents with no governance (and just leaked 1.5M API keys). Nucleus gives your agents a brain *with boundaries* — audit trail, kill switch, compliance — across Cursor, Claude, and Windsurf.
 
 MIT licensed, open source: https://github.com/eidetic-works/mcp-server-nucleus
 
@@ -186,7 +186,7 @@ A: If it supports MCP protocol, yes! Currently tested with Claude Desktop, Curso
 A: Everything stays local in your `.brain/` folder. MIT licensed, you can audit the code. No telemetry, no cloud, no accounts required.
 
 **Q: What about OpenClaw?**
-A: Different tools for different problems. OpenClaw = run agent teams on their platform. Nucleus = sync different AI tools with one brain. They can work together.
+A: OpenClaw is fast to deploy but has no governance — 1.5M API keys leaked, banned from Chinese govt systems. Nucleus is the governed alternative: default-deny security, audit trails, compliance presets. Different design philosophy. If you need agents with accountability, Nucleus.
 
 ---
 

@@ -5,6 +5,61 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Universal Session Recovery** - Zero-shot recovery workflow for frozen/bloated IDE sessions
+  - `nucleus recover auto <conversation-id>` - One-shot automatic recovery
+  - `nucleus recover detect` - Detect bloated conversations
+  - `nucleus recover extract <conversation-id>` - Extract context from conversation
+  - `nucleus recover quarantine <conversation-id>` - Quarantine bloated files with checksums
+  - `nucleus recover bootstrap <conversation-id>` - Generate fresh session with context inheritance
+  - `nucleus recover rewrite <old-id> <new-id>` - Update test script paths
+  - `nucleus_sessions(action="recover", params={...})` - MCP facade integration
+  - Works across any IDE (Windsurf, Cursor, Antigravity) and CLI
+  - Comprehensive test suite (test_recovery.py) with 50+ tests
+
+## [1.6.2] - 2026-03-16 — "Telemetry Pipeline Optimization"
+
+### Added
+- **Smart Telemetry Drain** - Automated Upstash Redis → Local OTel pipeline
+  - `scripts/smart-drain.sh` - Intelligent Docker lifecycle management
+    - Auto-starts Docker Desktop on macOS if not running
+    - Waits up to 60s for Docker daemon readiness
+    - Starts telemetry containers only if needed
+    - Drains spans from Upstash queue to local collector
+    - Stops Docker Desktop only if script started it
+    - Leaves running containers/Docker untouched
+  - `scripts/drain-upstash-spans.js` - Queue drain with run-once mode
+    - Manual `.env` parsing (no dotenv dependency)
+    - Auto-detects JSON vs protobuf content-type
+    - `NUCLEUS_DRAIN_ONCE=true` for single-pass execution
+    - Proper process.exit(0) for clean termination
+  - `scripts/first-user-alert.sh` - External user detection
+    - Filters out known Python versions (3.9.6, 3.11.14, 3.14.2)
+    - Filters out user platform (darwin)
+    - Creates alert file with first external user details
+    - macOS notification on first detection
+    - Runs only once (idempotent)
+  - `scripts/setup-smart-drain-cron.sh` - Cron automation
+    - Installs cron job to run every 12 hours
+    - Removes old telemetry:drain cron entries
+    - Provides verification and removal instructions
+  - npm scripts for easy access:
+    - `npm run telemetry:smart-drain` - Manual drain
+    - `npm run telemetry:setup-cron` - Install cron
+
+### Fixed
+- **Telemetry Resource Efficiency**
+  - Reduced Upstash Redis command usage from continuous polling to 12-hour batches
+  - Docker Desktop no longer needs to run continuously
+  - Telemetry containers auto-managed (start/stop as needed)
+  - Zero-maintenance telemetry pipeline
+
+### Documentation
+- `SMART_DRAIN_GUIDE.md` - Complete setup and usage guide
+- `TELEMETRY_TOGGLE_GUIDE.md` - Telemetry on/off toggle instructions
+
 ## [1.6.1] - 2026-03-14 — "Telemetry Hotfix"
 
 ### Fixed
