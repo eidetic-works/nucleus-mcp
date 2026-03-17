@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Nucleus implements three governance policies that distinguish it from raw MCP server connections. These policies form the **Governance Moat**—the security layer that makes the MCP ecosystem trustworthy for autonomous agents.
+Nucleus implements three governance policies that distinguish it from raw MCP server connections. These policies form the **Governance Layer**—the security layer that makes the MCP ecosystem trustworthy for autonomous agents.
 
 ---
 
@@ -152,9 +152,9 @@ assert stored_hash == expected_hash
 
 ---
 
-## The Governance Moat
+## The Governance Layer
 
-These three policies combine to create a **Governance Moat**—a security layer that:
+These three policies combine to create a **Governance Layer**—a security layer that:
 
 1. **Prevents unauthorized access** (Default-Deny)
 2. **Limits blast radius** (Isolation Boundaries)

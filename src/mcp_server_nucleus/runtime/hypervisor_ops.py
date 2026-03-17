@@ -17,23 +17,59 @@ from ..hypervisor.watchdog import Watchdog
 logger = logging.getLogger("mcp_nucleus")
 
 # ============================================================
-# SINGLETON INITIALIZATION
+# LAZY SINGLETON INITIALIZATION (Phase 14 Resilience)
 # ============================================================
 
-_locker = Locker()
+_locker_inst = None
+_injector_inst = None
+_watchdog_inst = None
 
-_injector = Injector(os.environ.get("NUCLEAR_BRAIN_PATH", "."))
-
+# Backward-compatible module-level exports (used by tests on main)
 _brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
 _workspace_root = _brain_path.parent
-_watchdog = Watchdog(str(_workspace_root))
+
+def get_locker():
+    global _locker_inst
+    if _locker_inst is None:
+        from ..hypervisor.locker import Locker
+        _locker_inst = Locker()
+    return _locker_inst
+
+def get_injector():
+    global _injector_inst
+    if _injector_inst is None:
+        from ..hypervisor.injector import Injector
+        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+        _injector_inst = Injector(str(brain_path))
+    return _injector_inst
+
+def get_watchdog():
+    global _watchdog_inst
+    if _watchdog_inst is None:
+        from ..hypervisor.watchdog import Watchdog
+        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+        workspace_root = brain_path.parent
+        _watchdog_inst = Watchdog(str(workspace_root))
+    return _watchdog_inst
+
+# For backward compatibility with existing tool implementations
+@property
+def _locker(): return get_locker()
+@property
+def _injector(): return get_injector()
+@property
+def _watchdog(): return get_watchdog()
 
 # Auto-start watchdog on server boot (Shielded for security and CLI cleanliness)
-if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
-    try:
-        _watchdog.start()
-    except Exception as e:
-        logger.warning(f"Failed to start Hypervisor Watchdog: {e}")
+def autostart_watchdog():
+    # Skip in CI/test environments — Observer thread blocks pytest exit
+    if os.environ.get("CI") or os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+    if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
+        try:
+            get_watchdog().start()
+        except Exception as e:
+            logger.warning(f"Failed to start Hypervisor Watchdog: {e}")
 
 
 # ============================================================
@@ -42,31 +78,45 @@ if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
 
 def lock_resource_impl(path: str) -> str:
     """Lock a file or directory using chflags uchg (Immutable)."""
-    if _locker.lock(path):
+    if get_locker().lock(path):
         return f"🔒 LOCKED: {path} (Immutable flag set)"
     else:
         return f"❌ FAILED to lock: {path}"
 
 
-def unlock_resource_impl(path: str) -> str:
-    """Unlock a file or directory (removes uchg flag)."""
-    if _locker.unlock(path):
+def unlock_resource_impl(path: str, token_id: str = None) -> str:
+    """Unlock a file or directory (removes uchg flag). Requires IPC Token for T3."""
+    if not token_id:
+        return f"❌ UNLOCK DENIED: IPC token_id required for Tier 3 operation."
+    
+    from .auth.ipc_provider import get_ipc_auth_manager
+    
+    manager = get_ipc_auth_manager()
+    # Enforce Tier 3 for unlock
+    is_valid, error = manager.validate_token(token_id, scope="nucleus_governance:unlock", required_tier="T3")
+    
+    if not is_valid:
+        return f"❌ UNLOCK DENIED: {error}"
+
+    locker = get_locker()
+    if locker.unlock(path, secret=locker._internal_secret):
         return f"🔓 UNLOCKED: {path}"
     else:
-        return f"❌ FAILED to unlock: {path}"
+        return f"❌ FAILED to unlock: {path} (Secret mismatch)"
 
 
 def set_hypervisor_mode_impl(mode: str) -> str:
     """Switch IDE visual context (Layer 2 Injection)."""
     mode = mode.lower()
+    injector = get_injector()
     if mode == "red":
-        _injector.inject_identity("RED TEAM", "#ff0000")
+        injector.inject_identity("RED TEAM", "#ff0000")
         return "🔴 Hypervisor Mode: RED TEAM (Audit Active)"
     elif mode == "blue":
-        _injector.inject_identity("BLUE TEAM", "#007acc")
+        injector.inject_identity("BLUE TEAM", "#007acc")
         return "🔵 Hypervisor Mode: BLUE TEAM (Build Active)"
     elif mode == "reset":
-        _injector.reset_identity()
+        injector.reset_identity()
         return "⚪ Hypervisor Mode: RESET (Default)"
     else:
         return "❌ Invalid mode. Use 'red', 'blue', or 'reset'."
@@ -80,11 +130,12 @@ def nucleus_list_directory_impl(path: str) -> str:
             return f"❌ ERROR: Path not found: {path}"
 
         items = os.listdir(resolved_path)
+        locker = get_locker()
 
         status_lines = []
         for item in items:
             p = resolved_path / item
-            locked = "🔒 LOCKED" if _locker.is_locked(str(p)) else "🔓 OPEN"
+            locked = "🔒 LOCKED" if locker.is_locked(str(p)) else "🔓 OPEN"
             status_lines.append(f"{locked} | {item}")
 
         return "\n".join(status_lines)
@@ -111,7 +162,8 @@ def nucleus_delete_file_impl(path: str, emit_event_fn=None, confirm: bool = Fals
                 f"Re-call with confirm=true to proceed. This is a destructive operation."
             )
 
-        if _locker.is_locked(str(resolved_path)):
+        locker = get_locker()
+        if locker.is_locked(str(resolved_path)):
             if emit_event_fn:
                 emit_event_fn("access_denied", "hypervisor_l4", {
                     "path": str(resolved_path),
@@ -137,7 +189,7 @@ def nucleus_delete_file_impl(path: str, emit_event_fn=None, confirm: bool = Fals
 
 def watch_resource_impl(path: str) -> str:
     """Register a file/folder with the Hypervisor watchdog."""
-    _watchdog.protect(path)
+    get_watchdog().protect(path)
     return f"👁️ WATCHING: {path} (Security Sentinel Active)"
 
 
@@ -145,10 +197,15 @@ def hypervisor_status_impl() -> str:
     """Report the current security state of the Agent OS."""
     status = []
     status.append("🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)")
-    status.append(f"📍 Workspace: {_workspace_root}")
-    status.append(f"👁️  Watchdog: {'Active' if _watchdog.observer.is_alive() else 'Inactive'}")
-    status.append(f"🔒 Protected Paths: {len(_watchdog.protected_paths)}")
-    for p in _watchdog.protected_paths:
+    
+    brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+    workspace_root = brain_path.parent
+    watchdog = get_watchdog()
+
+    status.append(f"📍 Workspace: {workspace_root}")
+    status.append(f"👁️  Watchdog: {'Active' if watchdog.observer.is_alive() else 'Inactive'}")
+    status.append(f"🔒 Protected Paths: {len(watchdog.protected_paths)}")
+    for p in watchdog.protected_paths:
         status.append(f"   - {p}")
 
     status.append("🎨 Injector: Ready")

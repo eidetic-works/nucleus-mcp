@@ -160,7 +160,7 @@ def check_hardening() -> Dict[str, Any]:
             "status": HealthStatus.HEALTHY,
             "version": status.get("hardening_version", "unknown"),
             "components": status.get("components", {}),
-            "goldman_sachs_ready": status.get("goldman_sachs_ready", False),
+            "enterprise_ready": status.get("enterprise_ready", False),
         }
     except ImportError:
         return {

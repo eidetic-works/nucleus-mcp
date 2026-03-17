@@ -321,7 +321,7 @@ Actions:
         tier_status_path = brain / "tier_status.json"
         output = "## 🧠 LLM Tier Status\n\n"
         current_tier = os.environ.get("NUCLEUS_LLM_TIER", "auto (standard)")
-        force_vertex = os.environ.get("FORCE_VERTEX", "1")
+        force_vertex = os.environ.get("FORCE_VERTEX", "0")
         output += f"**Current Tier:** {current_tier}\n**Vertex Mode:** {'Enabled' if force_vertex == '1' else 'Disabled'}\n\n"
         if tier_status_path.exists():
             try:

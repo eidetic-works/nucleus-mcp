@@ -33,9 +33,8 @@ def _morning_brief_impl() -> Dict:
     """
     Generate the Nucleus Morning Brief.
 
-    The brief answers the founder's core question:
-    "I just opened my IDE. What should I work on? What did I do yesterday?
-     What does Nucleus remember?"
+    The brief answers the core question:
+    "What should I work on? What happened yesterday?
 
     Returns:
         Dict with sections: memory, tasks, yesterday, recommendation, meta.

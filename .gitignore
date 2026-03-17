@@ -58,3 +58,20 @@ build/
 *.pem
 *.key
 secrets/
+
+# Cloudflare local dev cache
+.wrangler/
+
+# Test brain instances
+.brain_test*/
+.telemetry/
+
+# Engrams (brain data, never public)
+engrams/
+
+# Strategy docs (SOVEREIGN)
+docs/strategy/
+docs/COMPARISON.md
+docs/REDDIT_LAUNCH_POST.md
+docs/architecture/BINARY_SHIELDING_TRACK_1_5.md
+HARDENING_CONVERGENCE_REPORT*.md

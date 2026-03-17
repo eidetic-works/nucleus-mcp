@@ -9,7 +9,6 @@ Tier 1: Project-Level Multi-Agent Sync
 - Auto-sync with watchdog file watcher
 - Conflict detection and resolution
 
-Author: Boss Opus (CORE_SYN)
 Date: 2026-02-08
 """
 

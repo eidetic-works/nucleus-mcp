@@ -46,7 +46,7 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 - **Hypervisor**: Default-deny governance, file locking, kill switch, watchdog
 - **Compliance**: 4 jurisdictions (EU-DORA, SG-MAS-TRM, US-SOC2, Global)
 - **12 Facade Tools**: ~170 actions consolidated into clean MCP interface
-- **IPC Authentication**: Per-request tokens (CVE-2026-001 remediation)
+- **IPC Authentication**: Per-request tokens (NUC-SEC-001 remediation)
 - **KYC Demo**: 5 automated compliance checks
 
 ### Pre-1.0 (January 2026) ✅

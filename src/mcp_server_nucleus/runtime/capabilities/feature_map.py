@@ -32,10 +32,10 @@ class FeatureMap(Capability):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "product": {"type": "string", "description": "'gentlequest' or 'nucleus'"},
+                        "product": {"type": "string", "description": "Product name (e.g., 'nucleus')"},
                         "name": {"type": "string", "description": "Human-readable feature name"},
                         "description": {"type": "string", "description": "What the feature does"},
-                        "source": {"type": "string", "description": "Where it lives (e.g., 'gentlequest_app', 'pypi_mcp')"},
+                        "source": {"type": "string", "description": "Where it lives (e.g., 'pypi_mcp', 'cli')"},
                         "version": {"type": "string", "description": "Which version it shipped in"},
                         "status": {"type": "string", "description": "development/staged/production/released"},
                         "how_to_test": {"type": "array", "items": {"type": "string"}, "description": "List of test steps"},
@@ -152,13 +152,7 @@ class FeatureMap(Capability):
     # --- Core Logic ---
 
     def _add_feature(self, args: Dict) -> Dict:
-        product = args.get("product").lower()
-        if product not in ["gentlequest", "nucleus"]:
-            # Default to gentlequest if unknown product? 
-            # Or enforce schema. Let's strictly enforce supported products for MVP
-            if product not in ["gentlequest", "nucleus"]:
-                 # Just treat it as a new product file
-                 pass
+        product = (args.get("product") or "nucleus").lower()
         
         store = self._load_store(product)
         
@@ -193,10 +187,12 @@ class FeatureMap(Capability):
         return {"success": True, "feature": new_feature}
 
     def _list_features(self, args: Dict) -> List[Dict]:
-        products = ["gentlequest", "nucleus"]
         target_product = args.get("product")
         if target_product:
             products = [target_product]
+        else:
+            # Auto-discover product stores from brain directory
+            products = self._discover_products()
         
         all_features = []
         for p in products:
@@ -214,9 +210,19 @@ class FeatureMap(Capability):
             
         return all_features[:50] # Limit output
 
+    def _discover_products(self) -> List[str]:
+        """Auto-discover product stores from brain directory."""
+        try:
+            features_dir = self._brain / "features"
+            if features_dir.exists():
+                return [f.stem for f in features_dir.glob("*.json")]
+        except Exception:
+            pass
+        return ["nucleus"]
+
     def _get_find_feature(self, feature_id: str) -> Optional[Dict]:
         # Helper to search across all products
-        for p in ["gentlequest", "nucleus"]:
+        for p in self._discover_products():
             store = self._load_store(p)
             for f in store.get("features", []):
                 if f["id"] == feature_id:

@@ -19,6 +19,7 @@ try:
     import msvcrt
 except ImportError:
     msvcrt = None
+import tempfile
 import time
 import os
 import contextlib
@@ -238,7 +239,7 @@ def get_lock(resource_name: str, base_dir: Optional[Path] = None) -> BrainLock:
     if base_dir is None:
         # Default to a .locks directory in the user's home or project root
         # For now, let's use the .brain/.locks directory if possible, or /tmp/nucleus
-        base_dir = Path(os.environ.get("NUCLEUS_LOCK_DIR", "/tmp/nucleus_locks"))
+        base_dir = Path(os.environ.get("NUCLEUS_LOCK_DIR", str(Path(tempfile.gettempdir()) / "nucleus_locks")))
     
     lock_path = base_dir / f"{resource_name}.lock"
     return FileBrainLock(str(lock_path))

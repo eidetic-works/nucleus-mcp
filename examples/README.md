@@ -9,7 +9,7 @@ This directory contains example scripts demonstrating Nucleus usage.
 | `basic_usage.py` | Overview of core Nucleus features |
 | `engram_demo.py` | Engram Ledger tutorial (persistent memory) |
 | `depth_tracker_demo.py` | Depth Tracker tutorial (rabbit hole protection) |
-| `governance_demo.py` | Governance Moat tutorial (security features) |
+| `governance_demo.py` | Governance Layer tutorial (security features) |
 | `task_management_demo.py` | Task Queue tutorial (orchestration) |
 | `mounter_demo.py` | Recursive Mounter tutorial (MCP aggregation) |
 

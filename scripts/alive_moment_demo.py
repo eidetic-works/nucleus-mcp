@@ -192,8 +192,7 @@ def main():
         print("  • brain_session_inject     — Load yesterday's context")
         print()
         print("=" * 70)
-        print("  'Nucleus ka kaam khud pe compound hona chahiye.'")
-        print("                                    — Founder Rant, Feb 19 2026")
+        print("  'Nucleus should compound on itself.'")
         print("=" * 70)
         
     except Exception as e:

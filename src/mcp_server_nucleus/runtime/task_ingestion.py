@@ -14,7 +14,6 @@ Features:
 
 Scales: 1 → 1000 sources, 10K tasks/sec
 
-Author: NOP V3.1 - January 2026
 """
 
 import json

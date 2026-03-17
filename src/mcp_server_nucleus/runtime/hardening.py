@@ -6,7 +6,7 @@ Enterprise-grade security and reliability hardening for Nucleus-MCP.
 This module integrates ALL hardening components identified in the 
 Feb 24, 2026 Exhaustive Design Thinking Analysis:
 
-CRITICAL FIXES (Goldman Sachs / Military Grade):
+CRITICAL FIXES (Enterprise Hardening):
 - C20: Path Traversal Prevention
 - C25: Concurrent Write Safety  
 - C33: Error Information Leakage Prevention
@@ -316,8 +316,8 @@ def get_hardening_status() -> Dict[str, Any]:
             "C18_timeout_bounds": "FIXED",
             "C30_utf8_encoding": "PARTIAL",
         },
-        "goldman_sachs_ready": True,
-        "military_grade": True,
+        "enterprise_ready": True,
+        "hardened": True,
         "antigravity_synergy": {
             "agent_pool_integration": "ready",
             "federation_integration": "ready",
@@ -380,4 +380,4 @@ def hardened_tool(timeout: float = 30.0, category: str = "internal_error"):
 # INITIALIZATION
 # ============================================================================
 
-logger.info("Nucleus hardening module loaded - Goldman Sachs / Military grade active")
+logger.info("Nucleus hardening module loaded - enterprise hardening active")

@@ -1,10 +1,21 @@
 import logging
 import time
 import os
-from collections import deque
+from collections import deque, OrderedDict
 from pathlib import Path
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+    HAS_WATCHDOG = True
+except ImportError:
+    Observer = None
+    FileSystemEventHandler = object
+    HAS_WATCHDOG = False
+try:
+    from mcp_server_nucleus.runtime.common import assert_path_in_workspace
+except ImportError:
+    def assert_path_in_workspace(path: str, workspace_root=None):
+        return Path(path).resolve()
 
 from .locker import Locker
 
@@ -66,8 +77,8 @@ class SecurityEventHandler(FileSystemEventHandler):
                 
         if path in self.watchdog.shadow_cache:
             try:
-                # 1. Unlock to allow writing
-                self.locker.unlock(path)
+                # 1. Unlock to allow writing (with authorization secret)
+                self.locker.unlock(path, secret=self.locker._internal_secret)
                 
                 # 2. Write with POSIX flock
                 data = self.watchdog.shadow_cache[path]
@@ -93,16 +104,35 @@ class Watchdog:
     The Nucleus Hypervisor Sentinel (Layer 1).
     Monitors critical files and reinforces locks.
     """
-    def __init__(self, workspace_root: str):
+    def __init__(self, workspace_root: str, max_cache_size: int = 500):
+        if not HAS_WATCHDOG:
+            logger.warning("watchdog package not installed — file monitoring disabled")
         self.workspace_root = Path(workspace_root)
+        # Ensure workspace_root is safe (Phase 14)
+        assert_path_in_workspace(str(self.workspace_root))
+
         self.locker = Locker()
-        self.observer = Observer()
+        self.observer = Observer() if HAS_WATCHDOG else None
         self.protected_paths = []
-        self.shadow_cache = {}
+        # OrderedDict for LRU eviction (Phase 14)
+        self.shadow_cache = OrderedDict()
+        self.max_cache_size = max_cache_size
+
+    def _cache_file(self, path: str, data: bytes):
+        """Add to shadow_cache with LRU eviction (Phase 14)."""
+        if path in self.shadow_cache:
+            self.shadow_cache.move_to_end(path)
+        self.shadow_cache[path] = data
+        
+        if len(self.shadow_cache) > self.max_cache_size:
+            # Evict oldest (at the beginning)
+            evicted, _ = self.shadow_cache.popitem(last=False)
+            logger.debug(f"Watchdog: Evicted {evicted} from shadow_cache (LRU)")
 
     def protect(self, path: str):
         """Adds a path to the protected list and starts watching it."""
-        abs_path = str((self.workspace_root / path).resolve())
+        # Use common utility for path safety (Phase 14)
+        abs_path = str(assert_path_in_workspace(path, workspace_root=str(self.workspace_root)))
         if abs_path not in self.protected_paths:
             self.protected_paths.append(abs_path)
             
@@ -110,7 +140,7 @@ class Watchdog:
             try:
                 if os.path.exists(abs_path) and not os.path.isdir(abs_path):
                     with open(abs_path, 'rb') as f:
-                        self.shadow_cache[abs_path] = f.read()
+                        self._cache_file(abs_path, f.read())
             except Exception as e:
                 logger.warning(f"Watchdog: Could not cache {abs_path}: {e}")
                 
@@ -119,25 +149,30 @@ class Watchdog:
     
     def start(self):
         """Starts the background monitoring thread."""
+        if not HAS_WATCHDOG or self.observer is None:
+            return
         if self.observer.is_alive():
             return
 
         try:
             handler = SecurityEventHandler(self, self.locker)
             self.observer.schedule(handler, str(self.workspace_root), recursive=True)
+            self.observer.daemon = True  # Don't block process exit (fixes pytest hang)
             self.observer.start()
             import sys
-            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json', 'chat']) or any('--format' in arg for arg in sys.argv) or (len(sys.argv) == 1)
             if not _is_quiet:
                 sys.stderr.write(f"[Nucleus] 👁️  Watchdog active: {self.workspace_root}\n")
                 sys.stderr.flush()
         except (RuntimeError, Exception) as e:
             import sys
             # Only log to stderr, never stdout
-            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json', 'chat']) or any('--format' in arg for arg in sys.argv) or (len(sys.argv) == 1)
             if not _is_quiet:
                 sys.stderr.write(f"[Nucleus] ⚠️  Watchdog Quiet: {e}\n")
                 sys.stderr.flush()
     def stop(self):
+        if self.observer is None:
+            return
         self.observer.stop()
         self.observer.join()

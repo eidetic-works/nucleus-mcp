@@ -12,8 +12,8 @@ Tiers:
 
 Set NUCLEUS_BETA_TOKEN to control which tier is active:
 - (unset):                    Tier 0 — Journal Mode (default)
-- "sovereign-launch-alpha":   Tier 1 — Manager Suite
-- "titan-sovereign-godmode":  Tier 2 — Everything
+- (set NUCLEUS_BETA_TOKEN):    Tier 1 — Manager Suite
+- (set NUCLEUS_BETA_TOKEN):    Tier 2 — Everything
 
 Author: Nucleus Team
 Version: 2.0.0
@@ -72,15 +72,18 @@ def get_active_tier() -> int:
     if _ACTIVE_TIER_CACHE is not None:
         return _ACTIVE_TIER_CACHE
         
-    # Security through Obscurity (v0.6.0 Friction)
-    # Prevents casual users from flipping a simple '1' switch.
-    # Hackers who read source will find this. That is acceptable marketing.
     beta_token = os.environ.get("NUCLEUS_BETA_TOKEN", "").strip()
-    
-    if beta_token == "sovereign-launch-alpha":
-        _ACTIVE_TIER_CACHE = 1  # Unlock Manager Suite
-    elif beta_token == "titan-sovereign-godmode":
-        _ACTIVE_TIER_CACHE = 2  # Unlock Everything
+
+    if beta_token:
+        # Token validation: tier 2 if token matches full access, tier 1 otherwise
+        import hashlib
+        token_hash = hashlib.sha256(beta_token.encode()).hexdigest()[:16]
+        if token_hash == os.environ.get("_NT2H", ""):
+            _ACTIVE_TIER_CACHE = 2
+        elif token_hash == os.environ.get("_NT1H", ""):
+            _ACTIVE_TIER_CACHE = 1
+        else:
+            _ACTIVE_TIER_CACHE = 0
     else:
         _ACTIVE_TIER_CACHE = 0  # Default to Journal Mode
         

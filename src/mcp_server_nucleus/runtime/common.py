@@ -7,6 +7,7 @@ Shared utilities and constants for the Nucleus runtime.
 import os
 import json
 import logging
+import shutil
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
@@ -54,9 +55,18 @@ def setup_nucleus_logging(name: str = "nucleus", level: int = logging.INFO):
 # Common logger
 logger = setup_nucleus_logging()
 
+def get_nucleus_bin_path() -> str:
+    """Return the directory containing the nucleus executable."""
+    nucleus_bin = shutil.which("nucleus")
+    if nucleus_bin:
+        return str(Path(nucleus_bin).resolve().parent)
+    # Fallback: same directory as the running Python interpreter
+    return str(Path(sys.executable).resolve().parent)
+
+
 def get_brain_path() -> Path:
     """Get the brain path from environment variable or auto-detect from working directory."""
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")
     
     if brain_path:
         path = Path(brain_path)

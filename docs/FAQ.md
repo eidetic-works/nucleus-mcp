@@ -30,7 +30,7 @@ CLAUDE.md tells agents what to do. Nucleus **enforces** what they can do.
 
 ### Is Nucleus open source?
 
-The PyPI package (`mcp-server-nucleus`) is publicly available. The source code follows the **Citadel Strategy** - selective access for validated partners. Contact us for enterprise licensing.
+Yes. Nucleus is open source under the MIT license. Install via PyPI (`pip install mcp-server-nucleus`) or clone the repository.
 
 ---
 
@@ -200,7 +200,7 @@ brain_export(format="json")  # Export full state
 ## Getting Help
 
 - **Documentation**: [docs/](./docs/)
-- **Issues**: [GitHub Issues](https://github.com/NucleusSovereign/mcp-server-nucleus/issues)
+- **Issues**: [GitHub Issues](https://github.com/eidetic-works/nucleus-mcp/issues)
 - **Discord**: Coming soon
 - **Email**: hello@nucleusos.dev
 

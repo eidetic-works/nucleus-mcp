@@ -4,9 +4,9 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.5.x   | ✅ Active support  |
-| 0.4.x   | ⚠️ Security fixes only |
-| < 0.4   | ❌ No longer supported |
+| 1.6.x   | ✅ Active support  |
+| 1.5.x   | ⚠️ Security fixes only |
+| < 1.5   | ❌ No longer supported |
 
 ## Reporting a Vulnerability
 
@@ -131,9 +131,9 @@ The hash chain makes tampering detectable.
 ### Bytecode Extraction
 
 Python bytecode can be decompiled. We address this via:
-- Citadel Strategy (private source)
-- Track 1.5: Cython compilation (planned)
-- Track 2.0: Rust migration (roadmap)
+- Runtime-only secret management (no secrets in source)
+- Planned: Cython compilation for performance-critical paths
+- Planned: Rust migration for core modules
 
 ### MCP Protocol
 

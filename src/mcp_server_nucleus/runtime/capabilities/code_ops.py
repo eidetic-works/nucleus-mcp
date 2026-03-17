@@ -98,20 +98,11 @@ class CodeOps(Capability):
             if candidate.exists():
                 return candidate
         else:
-            # If absolute but invalid, try re-rooting
-            # e.g. /gentlequest-blog/... -> PROJECT_ROOT/gentlequest-blog/...
-            if 'ai-mvp-backend' in path_str:
-                relative = path_str.split('ai-mvp-backend')[-1].lstrip('/')
-                candidate = project_root / relative
-                if candidate.exists():
-                    return candidate
-            else:
-                # Try just the relative part of the absolute path
-                # e.g. /foo/bar -> PROJECT_ROOT/foo/bar
-                relative = path_str.lstrip('/')
-                candidate = project_root / relative
-                if candidate.exists():
-                    return candidate
+            # If absolute but invalid, try re-rooting relative to project
+            relative = path_str.lstrip('/')
+            candidate = project_root / relative
+            if candidate.exists():
+                return candidate
 
         return path
 
@@ -141,7 +132,7 @@ class CodeOps(Capability):
             # ENTERPRISE PATH RESOLUTION (Fix for Read-Only Filesystem Bug)
             # ============================================================
             # Problem: Agent subprocess may not have NUCLEUS_BRAIN_PATH set,
-            # causing relative paths like 'gentlequest-blog/...' to resolve to '/'
+            # causing relative paths to resolve to '/'
             # Solution: Robust fallback chain with explicit validation
             
             PROJECT_ROOT = Path(".")

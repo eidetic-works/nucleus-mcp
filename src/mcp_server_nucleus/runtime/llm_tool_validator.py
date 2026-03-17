@@ -107,10 +107,9 @@ class LLMToolValidator:
             if api_key:
                 self._client = genai.Client(api_key=api_key)
             else:
-                project_id = os.environ.get(
-                    "GCP_PROJECT_ID",
-                    os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576")
-                )
+                project_id = os.environ.get("GCP_PROJECT_ID", os.environ.get("GOOGLE_CLOUD_PROJECT"))
+                if not project_id:
+                    raise ValueError("GCP_PROJECT_ID or GOOGLE_CLOUD_PROJECT is required for Vertex AI mode.")
                 self._client = genai.Client(vertexai=True, project=project_id, location="us-central1")
             return self._client
         except Exception as e:

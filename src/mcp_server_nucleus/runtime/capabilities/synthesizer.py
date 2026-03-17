@@ -8,6 +8,7 @@ Capabilities:
 """
 
 import os
+import tempfile
 from pathlib import Path
 from typing import Dict, Optional
 import logging
@@ -72,8 +73,8 @@ def brain_synthesize_status_report(
     # Logs (Last 20 lines of key logs)
     log_paths = [
         root_path / ".brain/ledger/cron.log",
-        Path("/tmp/nucleus_nightly.log"),
-        Path("/tmp/nucleus_orchestrator.log")
+        Path(tempfile.gettempdir()) / "nucleus_nightly.log",
+        Path(tempfile.gettempdir()) / "nucleus_orchestrator.log"
     ]
     logs_summary = ""
     for log_p in log_paths:

@@ -11,6 +11,7 @@ MDR_010 Compliant: Ensures high availability and reliability.
 import os
 import logging
 import json
+import tempfile
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, Union
@@ -272,7 +273,7 @@ class DualEngineLLM:
         
         # Determine platform from tier config
         use_vertex = self.tier_config.get("platform", "vertex") == "vertex" if self.tier_config else True
-        force_vertex_env = os.environ.get("FORCE_VERTEX", "1") == "1"
+        force_vertex_env = os.environ.get("FORCE_VERTEX", "0") == "1"
         
         # For local tiers, don't use vertex
         if self.tier in [LLMTier.LOCAL_PAID, LLMTier.LOCAL_FREE]:
@@ -290,9 +291,10 @@ class DualEngineLLM:
                 proxy_url = os.environ.get("GEMINI_API_BASE_URL")
                 
                 # Phase 14 Hardening: Auto-discovery of local proxy
-                if not proxy_url and Path("/tmp/gemini_proxy.port").exists():
+                _proxy_port_file = Path(tempfile.gettempdir()) / "gemini_proxy.port"
+                if not proxy_url and _proxy_port_file.exists():
                     try:
-                        port = Path("/tmp/gemini_proxy.port").read_text().strip()
+                        port = _proxy_port_file.read_text().strip()
                         proxy_url = f"http://127.0.0.1:{port}/v1"
                         logger.info(f"📍 Auto-discovered Gemini Proxy at {proxy_url}")
                     except Exception as e:
@@ -731,20 +733,144 @@ class AnthropicLLM:
 
     # ── Native Tool Calling ─────────────────────────────────
 
-    SHELL_TOOL = {
-        "name": "shell_execute",
-        "description": "Execute a shell command on the user's local machine. Use this to run any CLI command, inspect files, check system state, or run nucleus CLI commands (e.g. 'nucleus task list', 'nucleus engram search Q').",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "string",
-                    "description": "The shell command to execute (e.g. 'ls -la', 'nucleus task list')",
-                }
+    TOOLS = [
+        {
+            "name": "shell_execute",
+            "description": "Execute a shell command. Use for CLI commands, system operations, and nucleus CLI (e.g. 'nucleus task list', 'nucleus engram search Q').",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "The shell command to execute"},
+                },
+                "required": ["command"],
             },
-            "required": ["command"],
         },
-    }
+        {
+            "name": "read_file",
+            "description": "Read the contents of a file. Use to understand code before editing, check configs, or review any text file.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path (absolute or relative to cwd)"},
+                    "offset": {"type": "integer", "description": "Start reading from this line number (1-based). Optional."},
+                    "limit": {"type": "integer", "description": "Maximum number of lines to read. Optional, defaults to 500."},
+                },
+                "required": ["path"],
+            },
+        },
+        {
+            "name": "write_file",
+            "description": "Create or overwrite a file with the given content. Use to create new files or completely rewrite existing ones.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to write to"},
+                    "content": {"type": "string", "description": "The full file content to write"},
+                },
+                "required": ["path", "content"],
+            },
+        },
+        {
+            "name": "edit_file",
+            "description": "Make a surgical edit to a file by finding and replacing an exact string. Use for targeted code changes — safer than rewriting the whole file.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to edit"},
+                    "old_string": {"type": "string", "description": "The exact text to find (must match uniquely)"},
+                    "new_string": {"type": "string", "description": "The replacement text"},
+                },
+                "required": ["path", "old_string", "new_string"],
+            },
+        },
+        {
+            "name": "search_files",
+            "description": "Find files by name pattern using glob. Use to locate files in the project (e.g. '**/*.py', 'src/**/test_*.py').",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "pattern": {"type": "string", "description": "Glob pattern (e.g. '**/*.py', 'src/**/*.ts')"},
+                    "path": {"type": "string", "description": "Directory to search in. Defaults to cwd."},
+                },
+                "required": ["pattern"],
+            },
+        },
+        {
+            "name": "search_code",
+            "description": "Search file contents for a regex pattern (like grep/ripgrep). Use to find function definitions, imports, usage patterns, or any text in code.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "pattern": {"type": "string", "description": "Regex pattern to search for"},
+                    "path": {"type": "string", "description": "File or directory to search in. Defaults to cwd."},
+                    "glob": {"type": "string", "description": "Filter files by glob (e.g. '*.py'). Optional."},
+                },
+                "required": ["pattern"],
+            },
+        },
+        {
+            "name": "write_engram",
+            "description": "Save a piece of knowledge to the Sovereign Brain's persistent memory. Use to remember important facts about the codebase, architecture decisions, user preferences, or anything that should persist across sessions. The brain remembers what you write here.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Short identifier (alphanumeric + _.-). E.g. 'fastapi_pattern', 'db.schema', 'user-pref-testing'"},
+                    "value": {"type": "string", "description": "The knowledge to store. Be specific and useful for future sessions."},
+                    "context": {"type": "string", "enum": ["Feature", "Architecture", "Brand", "Strategy", "Decision"], "description": "Category. Use Architecture for code patterns, Feature for capabilities, Decision for choices made, Strategy for plans."},
+                    "intensity": {"type": "integer", "description": "Importance 1-10 (10=critical). Default 5."},
+                },
+                "required": ["key", "value", "context"],
+            },
+        },
+        {
+            "name": "search_engrams",
+            "description": "Search the Sovereign Brain's persistent memory for relevant knowledge. Use before making assumptions about the codebase, to recall past decisions, or to find context from previous sessions. Returns matching engrams sorted by importance.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search term to match against engram keys and values"},
+                    "limit": {"type": "integer", "description": "Max results to return. Default 5."},
+                },
+                "required": ["query"],
+            },
+        },
+        {
+            "name": "list_tasks",
+            "description": "List tasks from the Sovereign Brain's task backlog. Use to see what needs to be done, check task status, or find tasks to work on.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "Filter by status. Optional — omit to list all."},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "add_task",
+            "description": "Create a new task in the Sovereign Brain's backlog. Use to track work that needs to be done, plan next steps, or create follow-ups from the current conversation.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string", "description": "What needs to be done. Be specific and actionable."},
+                    "priority": {"type": "integer", "description": "1 (highest) to 5 (lowest). Default 3."},
+                },
+                "required": ["description"],
+            },
+        },
+        {
+            "name": "update_task",
+            "description": "Update an existing task's status or fields. Use to mark tasks done, change priority, or update descriptions.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string", "description": "Task ID or exact description to find"},
+                    "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "New status"},
+                    "priority": {"type": "integer", "description": "New priority (1-5)"},
+                },
+                "required": ["task_id"],
+            },
+        },
+    ]
 
     def stream_with_tools(self, messages, **kwargs):
         """
@@ -762,7 +888,7 @@ class AnthropicLLM:
             "model": self.model_name,
             "max_tokens": max_tokens,
             "messages": messages,
-            "tools": [self.SHELL_TOOL],
+            "tools": self.TOOLS,
         }
         if self.system_instruction:
             msg_kwargs["system"] = self.system_instruction
@@ -1030,23 +1156,100 @@ class GroqLLM:
 
     # ── Native Tool Calling (OpenAI-compatible function calling) ──
 
-    SHELL_TOOL = {
-        "type": "function",
-        "function": {
+    TOOLS = [
+        {"type": "function", "function": {
             "name": "shell_execute",
-            "description": "Execute a shell command on the user's local machine. Use this to run any CLI command, inspect files, check system state, or run nucleus CLI commands.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": {
-                        "type": "string",
-                        "description": "The shell command to execute (e.g. 'ls -la', 'nucleus task list')",
-                    }
-                },
-                "required": ["command"],
-            },
-        },
-    }
+            "description": "Execute a shell command. Use for CLI commands, system operations, and nucleus CLI.",
+            "parameters": {"type": "object", "properties": {
+                "command": {"type": "string", "description": "The shell command to execute"},
+            }, "required": ["command"]},
+        }},
+        {"type": "function", "function": {
+            "name": "read_file",
+            "description": "Read the contents of a file. Use to understand code before editing.",
+            "parameters": {"type": "object", "properties": {
+                "path": {"type": "string", "description": "File path (absolute or relative to cwd)"},
+                "offset": {"type": "integer", "description": "Start line number (1-based). Optional."},
+                "limit": {"type": "integer", "description": "Max lines to read. Optional, defaults to 500."},
+            }, "required": ["path"]},
+        }},
+        {"type": "function", "function": {
+            "name": "write_file",
+            "description": "Create or overwrite a file with given content.",
+            "parameters": {"type": "object", "properties": {
+                "path": {"type": "string", "description": "File path to write to"},
+                "content": {"type": "string", "description": "Full file content to write"},
+            }, "required": ["path", "content"]},
+        }},
+        {"type": "function", "function": {
+            "name": "edit_file",
+            "description": "Surgical edit: find exact old_string in file and replace with new_string.",
+            "parameters": {"type": "object", "properties": {
+                "path": {"type": "string", "description": "File path to edit"},
+                "old_string": {"type": "string", "description": "Exact text to find (must match uniquely)"},
+                "new_string": {"type": "string", "description": "Replacement text"},
+            }, "required": ["path", "old_string", "new_string"]},
+        }},
+        {"type": "function", "function": {
+            "name": "search_files",
+            "description": "Find files by name pattern using glob (e.g. '**/*.py').",
+            "parameters": {"type": "object", "properties": {
+                "pattern": {"type": "string", "description": "Glob pattern (e.g. '**/*.py', 'src/**/*.ts')"},
+                "path": {"type": "string", "description": "Directory to search in. Defaults to cwd."},
+            }, "required": ["pattern"]},
+        }},
+        {"type": "function", "function": {
+            "name": "search_code",
+            "description": "Search file contents for a regex pattern (like grep). Find functions, imports, usage.",
+            "parameters": {"type": "object", "properties": {
+                "pattern": {"type": "string", "description": "Regex pattern to search for"},
+                "path": {"type": "string", "description": "File or directory to search. Defaults to cwd."},
+                "glob": {"type": "string", "description": "Filter files by glob (e.g. '*.py'). Optional."},
+            }, "required": ["pattern"]},
+        }},
+        {"type": "function", "function": {
+            "name": "write_engram",
+            "description": "Save knowledge to the Sovereign Brain's persistent memory. Survives across sessions.",
+            "parameters": {"type": "object", "properties": {
+                "key": {"type": "string", "description": "Short identifier (alphanumeric + _.-). E.g. 'fastapi_pattern', 'db.schema'"},
+                "value": {"type": "string", "description": "The knowledge to store."},
+                "context": {"type": "string", "enum": ["Feature", "Architecture", "Brand", "Strategy", "Decision"], "description": "Category."},
+                "intensity": {"type": "integer", "description": "Importance 1-10 (10=critical). Default 5."},
+            }, "required": ["key", "value", "context"]},
+        }},
+        {"type": "function", "function": {
+            "name": "search_engrams",
+            "description": "Search the Sovereign Brain's persistent memory for relevant knowledge from past sessions.",
+            "parameters": {"type": "object", "properties": {
+                "query": {"type": "string", "description": "Search term to match against engram keys and values"},
+                "limit": {"type": "integer", "description": "Max results. Default 5."},
+            }, "required": ["query"]},
+        }},
+        {"type": "function", "function": {
+            "name": "list_tasks",
+            "description": "List tasks from the brain's backlog. See what needs doing.",
+            "parameters": {"type": "object", "properties": {
+                "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "Filter by status. Optional."},
+            }, "required": []},
+        }},
+        {"type": "function", "function": {
+            "name": "add_task",
+            "description": "Create a new task in the brain's backlog.",
+            "parameters": {"type": "object", "properties": {
+                "description": {"type": "string", "description": "What needs to be done."},
+                "priority": {"type": "integer", "description": "1 (highest) to 5 (lowest). Default 3."},
+            }, "required": ["description"]},
+        }},
+        {"type": "function", "function": {
+            "name": "update_task",
+            "description": "Update a task's status or priority.",
+            "parameters": {"type": "object", "properties": {
+                "task_id": {"type": "string", "description": "Task ID or description"},
+                "status": {"type": "string", "enum": ["PENDING", "IN_PROGRESS", "DONE", "BLOCKED"], "description": "New status"},
+                "priority": {"type": "integer", "description": "New priority (1-5)"},
+            }, "required": ["task_id"]},
+        }},
+    ]
 
     def stream_with_tools(self, messages, **kwargs):
         """
@@ -1076,7 +1279,7 @@ class GroqLLM:
                 model=self.model_name,
                 messages=api_messages,
                 max_tokens=max_tokens,
-                tools=[self.SHELL_TOOL],
+                tools=self.TOOLS,
                 stream=True,
             )
 

@@ -1,7 +1,7 @@
 
 """
 Strategic Hooks for Nucleus Daemon.
-The "Billion Dollar Extensions" for Network Effects, Identity, and Scale.
+Platform extensions for Network Effects, Identity, and Scale.
 
 Strategic Role:
 - Turn the Daemon into a Platform (App Store).
