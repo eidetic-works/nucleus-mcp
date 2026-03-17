@@ -2,7 +2,7 @@
 """
 Governance Demo
 
-Demonstrates Nucleus's Governance Moat - the security features that make
+Demonstrates Nucleus's Governance Layer - the security features that make
 Nucleus an Agent CONTROL Plane rather than just an Agent Context file.
 """
 
@@ -17,11 +17,11 @@ os.environ["NUCLEAR_BRAIN_PATH"] = str(TEST_BRAIN)
 
 def main():
     print("=" * 60)
-    print("GOVERNANCE MOAT DEMO")
+    print("GOVERNANCE LAYER DEMO")
     print("=" * 60)
     
     print("""
-The Governance Moat is what separates Nucleus from static context files
+The Governance Layer is what separates Nucleus from static context files
 like CLAUDE.md or .cursorrules. It provides ACTIVE CONTROL, not just context.
 
 THE THREE PILLARS

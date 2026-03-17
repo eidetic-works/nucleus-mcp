@@ -106,10 +106,9 @@ class LLMIntentAnalyzer:
                 self._engine = "api_key"
             else:
                 # Try Vertex AI
-                project_id = os.environ.get(
-                    "GCP_PROJECT_ID", 
-                    os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576")
-                )
+                project_id = os.environ.get("GCP_PROJECT_ID", os.environ.get("GOOGLE_CLOUD_PROJECT"))
+                if not project_id:
+                    raise ValueError("GCP_PROJECT_ID or GOOGLE_CLOUD_PROJECT is required for Vertex AI mode.")
                 self._client = genai.Client(vertexai=True, project=project_id, location="us-central1")
                 self._engine = "vertex"
             return self._client, self._engine

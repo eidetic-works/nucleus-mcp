@@ -7,10 +7,8 @@ Inspired by:
 - Mem0: Explicit memory ops (ADD/UPDATE/DELETE/NOOP) with forgetting/decay.
 - MemGPT/Letta: Memory editing via tool calling, not implicit prompt drift.
 
-Soul Document Reference:
-- "Engram writing/reading tools super critical hain, lekin abhi tak clearly nahi pata:
-   Inko kab call karna hai, kaise long-term memory banaani hai bina system corrupt kiye."
-   — NUCLEUS_FOUNDER_RANT_FEB19_PROBLEM_STATEMENT.md
+Design goal: Make engram read/write deterministic — know exactly when to persist
+long-term memory without corrupting the store.
 
 Usage:
     pipeline = MemoryPipeline(brain_path)

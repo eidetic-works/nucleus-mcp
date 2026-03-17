@@ -2,11 +2,8 @@
 
 v1.5.0: "The Alive Brain"
 
-Design Thinking Output Reference:
-  "Transform Nucleus from a reactive tool into an alive companion by adding
-   context-triggered proactive engagement — the same pattern that made 
-   Peter's agent check on him in the hospital, but sovereign and local-first."
-  — design_thinking_heartbeat_proactive/10_stage8_synthesis.md
+Transform Nucleus from a reactive tool into an alive companion by adding
+context-triggered proactive engagement — sovereign and local-first.
 
 What it does:
   1. CHECK   — Read engrams, evaluate 4 context trigger signals
@@ -161,14 +158,10 @@ YOUR MANDATE:
                 env={
                     **os.environ, 
                     "NUCLEAR_BRAIN_PATH": str(brain),
-                    "GOOGLE_APPLICATION_CREDENTIALS": os.environ.get(
-                        "GOOGLE_APPLICATION_CREDENTIALS", 
-                        str(brain / "config" / "gcloud" / "application_default_credentials.json") if (brain / "config" / "gcloud" / "application_default_credentials.json").exists()
-                        else str(Path.home() / ".config/gcloud/application_default_credentials.json")
-                    ),
-                    "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0894185576"),
+                    "GOOGLE_APPLICATION_CREDENTIALS": os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""),
+                    "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", os.environ.get("GCP_PROJECT_ID", "")),
                     "GOOGLE_CLOUD_LOCATION": "global",
-                    "PATH": "/Users/lokeshgarg/.nvm/versions/node/v22.18.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/lokeshgarg/ai-mvp-backend/.venv/bin"
+                    "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
                 }
             )
             logger.info(f"🧠 [Autonomic] Spawned TMUX session: {tmux_session}")

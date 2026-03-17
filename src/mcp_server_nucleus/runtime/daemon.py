@@ -40,7 +40,7 @@ class DaemonManager:
         self.policy_engine = DirectivesLoader(brain_path)
         self.orchestrator = SwarmsOrchestrator(brain_path)
         
-        # Strategic Hooks (The Billion Dollar Extensions)
+        # Platform Hooks (Network, Identity, Scale)
         self.identity = IdentityKey(brain_path)
         self.pulse = AmbientTelemetry(brain_path, identity=self.identity)
         self.insight_exchange = InsightExchange(brain_path)

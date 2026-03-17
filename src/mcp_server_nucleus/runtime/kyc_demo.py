@@ -8,7 +8,7 @@ by simulating a KYC (Know Your Customer) document review with:
   4. Produces audit-ready report
   5. Surfaces HITL approval request for human sign-off
 
-This is the 15-minute demo to show BFSI contacts.
+Run this demo to see Nucleus governance in action (~15 minutes).
 """
 
 import json

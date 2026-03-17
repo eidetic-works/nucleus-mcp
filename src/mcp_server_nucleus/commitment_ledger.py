@@ -110,9 +110,9 @@ def suggest_action(commitment: Dict) -> tuple[str, str]:
     if age > 30:
         return ("archive", f"Stale ({age} days old)")
     
-    # High novelty always needs Chairman
+    # High novelty always needs human review
     if context["novelty"] == "high":
-        return ("schedule", "High novelty, needs Chairman attention")
+        return ("schedule", "High novelty, needs human review")
     
     # Low dopamine tasks schedule for morning
     if context["dopamine"] == "low" and age < 7:

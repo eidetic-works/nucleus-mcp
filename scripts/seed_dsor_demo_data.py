@@ -3,7 +3,7 @@
 Seed DSoR Demo Data
 ===================
 Generates realistic but simulated DSoR trace data for the current brain to make 
-the Sovereignty Dashboard heavily populated for external enterprise / BFSI demos.
+the Sovereignty Dashboard heavily populated for demonstrations.
 """
 import os
 import sys

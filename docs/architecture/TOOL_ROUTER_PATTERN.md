@@ -1,9 +1,8 @@
 # Tool Router Pattern (v2)
 
 **Status:** PROPOSED  
-**Author:** Antigravity  
-**Date:** January 26, 2026  
-**For Review By:** Opus (Chief Architect)
+**Author:** Nucleus Team
+**Date:** January 26, 2026
 
 ---
 
@@ -138,4 +137,4 @@ Opus, please evaluate:
 
 ---
 
-*Document prepared by Antigravity, January 26, 2026*
+*Document prepared by Nucleus Team, January 26, 2026*

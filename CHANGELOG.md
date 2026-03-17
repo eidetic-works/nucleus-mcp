@@ -188,8 +188,8 @@ Production-ready integration enabling Google Gemini CLI to use Nucleus as its pe
 
 ### Added — Agent-Native CLI Polish (5 features)
 
-Nucleus CLI graduates from ⚠️ "Human-only" to ✅ "Agent-native" in the competitive matrix.
-Audit score: 6/16 → 11/16 on the industry "8 Rules for Agent-Callable CLIs" checklist.
+Nucleus CLI graduates from "Human-only" to "Agent-native".
+Audit score: 6/16 → 11/16 on the "8 Rules for Agent-Callable CLIs" checklist.
 
 #### Structured Error Envelope
 - JSON errors on stdout when `--format json`: `{"ok": false, "error": "not_found", "message": "...", "exit_code": 3}`

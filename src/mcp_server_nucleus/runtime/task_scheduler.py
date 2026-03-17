@@ -10,7 +10,6 @@ Path A: Simple, deterministic, scales 1→1000 agents
 - Deadline-aware scheduling
 - Zero conflicts guarantee
 
-Author: NOP V3 - January 2026
 """
 
 import time

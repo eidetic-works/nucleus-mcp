@@ -2,7 +2,7 @@
 
 **Status:** IMPLEMENTED  
 **Date:** January 30, 2026  
-**Author:** Titan/Opus Handover Protocol
+**Author:** Nucleus Team
 
 ---
 
@@ -81,7 +81,7 @@ snapshot = cm.take_snapshot()
 
 ### 3. IPC Auth (`ipc_auth.py`)
 
-Per-request authentication tokens (remediates CVE-2026-001):
+Per-request authentication tokens (remediates NUC-SEC-001):
 
 ```python
 from mcp_server_nucleus.runtime.ipc_auth import get_ipc_auth_manager
@@ -125,7 +125,7 @@ Every token consumption creates a metering entry:
 
 ## V9 Vulnerabilities Addressed
 
-### CVE-2026-001: Sidecar Exploit
+### NUC-SEC-001: Sidecar Exploit
 
 **Before:** IPC socket trusted any connection after initial auth.
 **After:** Per-request tokens required. Single-use. 30s TTL.

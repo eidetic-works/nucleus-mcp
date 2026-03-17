@@ -1,5 +1,12 @@
-# Precision Sync: Exclude internal tools and private scripts from public repository
+# Export-ignore: files excluded from public archive via git archive
+# Stale CI pipeline (not Nucleus)
+.github/workflows/ci_cd_pipeline.yml export-ignore
+
+# Internal tools and private scripts
 scripts/sync_public_repo.sh export-ignore
+scripts/validate_public_surface.sh export-ignore
+scripts/llm_review_gate.py export-ignore
+llm_review_findings.json export-ignore
 scripts/publish_pypi.sh export-ignore
 scripts/build_dual_artifacts.sh export-ignore
 scripts/build_dark_wheel.py export-ignore
@@ -13,6 +20,30 @@ scripts/monolith_decomposition.py export-ignore
 scripts/bootstrap_node_beta.ps1 export-ignore
 scripts/analyze-telemetry-moat.cjs export-ignore
 scripts/build_public_decoy.py export-ignore
+# Scripts with hardcoded paths or identity info
+scripts/verify_tool_discovery.py export-ignore
+scripts/mac_diagnostic.sh export-ignore
+scripts/invoke_v9_swarm.py export-ignore
+scripts/invoke_v10_swarm.py export-ignore
+scripts/test_llm_tiers.py export-ignore
+scripts/first-user-alert.sh export-ignore
+scripts/smart-drain.sh export-ignore
+scripts/seed_engrams.py export-ignore
+scripts/migrate_task_sources.py export-ignore
+scripts/verify_mounter_persistence.py export-ignore
+scripts/demo_c_recursive_mounting.py export-ignore
+scripts/generate_fuzzer_data.py export-ignore
+scripts/incident-controller.py export-ignore
+scripts/nucleus_chat.py export-ignore
+scripts/self_heal_test_suite.sh export-ignore
+scripts/test-anon-metrics.py export-ignore
+scripts/test-coordinator-autopilot.sh export-ignore
+scripts/test-metrics-immediate.py export-ignore
+scripts/test_e2e_critical_path.py export-ignore
+scripts/monitor_terminal_sync.py export-ignore
+scripts/terminal_sync.sh export-ignore
+scripts/telemetry*.sh export-ignore
+scripts/setup-*.sh export-ignore
 
 # Internal Release Manifests
 RELEASE_v1.6.0_EXECUTION_GUIDE.md export-ignore
@@ -38,10 +69,37 @@ tests/test_*.py export-ignore
 tests/test_core.py -export-ignore
 tests/test_integration.py -export-ignore
 tests/test_uchg.py -export-ignore
+# Test helpers with hardcoded paths
+tests/update_playbook.py export-ignore
+tests/update_sync_playbook.py export-ignore
+tests/append_21_rows.py export-ignore
+tests/append_all_playbooks.py export-ignore
+tests/append_remaining_2.py export-ignore
+tests/generate_matrix.py export-ignore
+tests/find_missing_matrix.py export-ignore
+tests/deep_audit.py export-ignore
+tests/routing_fuzzer_architecture.py export-ignore
+tests/swarm_chaos.py export-ignore
+tests/verify_federation_cli.py export-ignore
+tests/fuzzer_data.json export-ignore
+tests/double_check.py export-ignore
+tests/cli_harness.py export-ignore
+
+# Root scratch files
+test_card.py export-ignore
+test_client.py export-ignore
+test_parse.py export-ignore
+test_tools.py export-ignore
 test_*.lock export-ignore
 test_*.txt export-ignore
+test_report_*.txt export-ignore
 pytest_*.txt export-ignore
+patch_orchestration.py export-ignore
+install_phase73.sh export-ignore
+demo_governance.sh export-ignore
 fuzzer_report.txt export-ignore
+test3.txt export-ignore
+tests/test3.txt export-ignore
 hr_report_sample.txt export-ignore
 *.log export-ignore
 shortcut_plan.md export-ignore
@@ -50,18 +108,71 @@ microservices_analysis.json export-ignore
 aws_microservices.json export-ignore
 
 # Internal docs/notes
+docs/TITAN_HANDOVER_PROTOCOL.md export-ignore
+docs/TELEMETRY_SCALING_PLAN.md export-ignore
+docs/TELEMETRY_UPSTASH_WORKER.md export-ignore
 AGENTS.md export-ignore
 GEMINI.md export-ignore
 NOTES.md export-ignore
 TODO.md export-ignore
 docs/internal/ export-ignore
+docs/strategy/ export-ignore
+docs/COMPARISON.md export-ignore
+docs/REDDIT_LAUNCH_POST.md export-ignore
+docs/architecture/BINARY_SHIELDING_TRACK_1_5.md export-ignore
+docs/COORDINATOR_AUTOPILOT.md export-ignore
+docs/DEMO_STORYBOARD.md export-ignore
+docs/index.html export-ignore
 README_GODMODE.md export-ignore
 README_TELEMETRY.md export-ignore
+README-TELEMETRY-STORY.md export-ignore
 COMBOS.md export-ignore
 DAILY_USAGE_GUIDE.md export-ignore
+GOVERNANCE.md export-ignore
+SMART_DRAIN_GUIDE.md export-ignore
+TERMINAL_SYNC_QUICKSTART.md export-ignore
+examples/claude_desktop_config.example.json export-ignore
+package.json export-ignore
+
+# ── Internal-only modules ──
+src/mcp_server_nucleus/runtime/growth_ops.py export-ignore
+src/mcp_server_nucleus/runtime/outbound_ops.py export-ignore
+src/mcp_server_nucleus/runtime/dogfood_tracker.py export-ignore
+src/mcp_server_nucleus/runtime/capabilities/marketing_engine.py export-ignore
+src/mcp_server_nucleus/runtime/compounding_loop.py export-ignore
+src/share_to_spotify.py export-ignore
+docs/Sovereign_Compliance_Officer_Handbook.md export-ignore
+scripts/telemetry-validate.mjs export-ignore
+
+# ── Feature Exposure Gate: HOLD modules (assessed 2026-03-17) ──
+# Scored >= 8 on competitive moat, security risk, or reversibility.
+# Private/hosted builds only. To re-enable for public, remove the line
+# here AND remove the corresponding entry from validate_public_surface.sh
+# SOVEREIGN_FILES array, then re-run the gate.
+src/mcp_server_nucleus/siphon.py export-ignore
+src/mcp_server_nucleus/distill.py export-ignore
+src/mcp_server_nucleus/replay.py export-ignore
+src/mcp_server_nucleus/validate.py export-ignore
+src/mcp_server_nucleus/runtime/token_budget.py export-ignore
+src/mcp_server_nucleus/runtime/recovery_ops.py export-ignore
+src/mcp_server_nucleus/runtime/firestore_bridge.py export-ignore
+src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
+
+# ── Hosted-only modules (not included in open-source distribution) ──
+src/mcp_server_nucleus/runtime/autopilot.py export-ignore
+src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py export-ignore
+src/mcp_server_nucleus/runtime/god_combos/pulse_and_polish.py export-ignore
+src/mcp_server_nucleus/runtime/god_combos/self_healing_v2.py export-ignore
+src/mcp_server_nucleus/runtime/emergence_rate.py export-ignore
+src/mcp_server_nucleus/runtime/siphon_engine.py export-ignore
+src/mcp_server_nucleus/runtime/llm_pattern_learner.py export-ignore
 
 # Infrastructure/State
+engrams/ export-ignore
+.agent/ export-ignore
+brain/ export-ignore
 .brain*/ export-ignore
+debug*.py export-ignore
 .gemini/ export-ignore
 .vscode/ export-ignore
 .idea/ export-ignore

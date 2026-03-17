@@ -62,9 +62,9 @@ class RenderOps:
             {
                 "service": {
                     "id": "srv-mock-2",
-                    "name": "gentlequest-app",
+                    "name": "my-app",
                     "type": "static_site",
-                    "repo": "https://github.com/nucleus-os/gentlequest",
+                    "repo": "https://github.com/example/my-app",
                     "branch": "production"
                 },
                 "cursor": "c2"

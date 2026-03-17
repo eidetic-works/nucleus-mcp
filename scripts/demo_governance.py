@@ -111,7 +111,7 @@ def demo_governance_status():
     
     print_header("GOVERNANCE STATUS DEMO")
     
-    print("🛡️  The Governance Moat\n")
+    print("🛡️  The Governance Layer\n")
     
     result = _brain_governance_status_impl()
     print_result(result)

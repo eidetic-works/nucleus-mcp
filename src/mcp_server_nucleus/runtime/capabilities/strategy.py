@@ -97,7 +97,7 @@ class StrategyTool(Capability):
         # Assuming for now we need a 'name' or 'action' in params, or we implement separate capabilities.
         # Let's assume the caller passes the tool name or strict params.
         
-        # Hack for MVP: Check keys
+        # Key-based dispatch
         filename = params.get("filename")
         content = params.get("content")
         reason = params.get("reason")

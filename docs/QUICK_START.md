@@ -15,15 +15,15 @@ pip install nucleus-mcp
 ### Option 2: From Source
 
 ```bash
-git clone https://github.com/nucleus-mcp/nucleus.git
-cd nucleus
+git clone https://github.com/eidetic-works/nucleus-mcp.git
+cd nucleus-mcp
 pip install -e .
 ```
 
 ### Option 3: Docker
 
 ```bash
-docker pull ghcr.io/nucleus-mcp/nucleus:latest
+docker pull ghcr.io/eidetic-works/nucleus-mcp:latest
 docker run -v ~/.brain:/data/.brain nucleus
 ```
 
