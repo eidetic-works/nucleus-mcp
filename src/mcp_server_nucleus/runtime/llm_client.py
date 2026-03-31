@@ -497,7 +497,7 @@ class DualEngineLLM:
                 # task_type mapping
                 # content
                 result = genai_legacy.embed_content(
-                    model="models/text-embedding-004", # Hardcoded or passed in
+                    model="models/gemini-embedding-001",
                     content=text,
                     task_type=task_type,
                     title=title
@@ -1414,6 +1414,8 @@ def get_llm_client(
 
     if provider == "groq":
         return GroqLLM(**kwargs)
+
+        return LocalLLM(**kwargs)
 
     raise ValueError(
         f"Unknown LLM provider '{provider}'. "

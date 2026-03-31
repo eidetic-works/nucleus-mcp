@@ -65,7 +65,7 @@ def _morning_brief_impl() -> Dict:
     # ── SECTION 5: ADHD GUARDRAIL STATUS ────────────────────────
     brief["sections"]["adhd_status"] = _retrieve_adhd_status()
 
-    # ── SECTION 6: RECOMMENDATION ──────────────────────────────
+    # ── SECTION 7: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
 
     # ── META ────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
             if line.strip():
                 try:
                     e = json.loads(line)
-                    if e.get("deleted", False):
+                    if e.get("deleted", False) or e.get("quarantined", False):
                         continue
 
                     # Compute score: intensity × 2 + recency_bonus + context_bonus
@@ -151,12 +151,12 @@ def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
                                 score += 2
                             elif age.days < 30:
                                 score += 1
-                        except (ValueError, TypeError):
+                        except Exception:
                             pass
 
                     e["_score"] = score
                     engrams.append(e)
-                except json.JSONDecodeError:
+                except Exception:
                     continue
 
     # Sort by score DESC, take top N
@@ -207,7 +207,7 @@ def _retrieve_tasks(brain: Path) -> Dict:
                         pending.append(entry)
                     elif status in ("in_progress", "in-progress", "claimed", "active"):
                         in_progress.append(entry)
-                except json.JSONDecodeError:
+                except Exception:
                     continue
 
     # Sort by priority (highest first)
@@ -227,7 +227,9 @@ def _retrieve_yesterday(brain: Path) -> Dict:
     if not events_path.exists():
         return {"events": [], "count": 0, "message": "No events logged yet."}
 
-    cutoff = datetime.now() - timedelta(hours=24)
+    # On Monday, look back to Friday (72h) to cover the weekend gap
+    lookback_hours = 72 if datetime.now().weekday() == 0 else 24
+    cutoff = datetime.now() - timedelta(hours=lookback_hours)
     recent = []
 
     with open(events_path, "r", encoding='utf-8') as f:
@@ -246,9 +248,9 @@ def _retrieve_yesterday(brain: Path) -> Dict:
                                     "time": ts,
                                     "detail": str(ev.get("data", ev.get("metadata", "")))[:100],
                                 })
-                        except (ValueError, TypeError):
+                        except Exception:
                             pass
-                except json.JSONDecodeError:
+                except Exception:
                     continue
 
     # Most recent first
@@ -388,6 +390,7 @@ def _format_brief(brief: Dict) -> str:
         lines.append(f"  Context switches: {switch_count}/{adhd.get('max_switches', 5)}  |  Depth: {depth}/{adhd.get('max_depth', 5)}")
         if adhd.get("recommendation"):
             lines.append(f"  {adhd['recommendation']}")
+
 
     # Recommendation
     rec = brief.get("recommendation", {})

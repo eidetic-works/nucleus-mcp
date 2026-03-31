@@ -182,7 +182,7 @@ class StdioServer:
                 },
                 {
                     "name": "nucleus_sync",
-                    "description": "Sync, artifact, trigger & deploy management.\nActions: identify_agent, sync_status, sync_now, sync_auto, sync_resolve, read_artifact, write_artifact, list_artifacts, trigger_agent, get_triggers, evaluate_triggers, start_deploy_poll, check_deploy, complete_deploy, smoke_test",
+                    "description": "Sync, artifact, trigger & deploy management.\nActions: identify_agent, sync_status, sync_now, sync_auto, sync_resolve, read_artifact, write_artifact, list_artifacts, trigger_agent, get_triggers, evaluate_triggers, start_deploy_poll, check_deploy, complete_deploy, smoke_test, shared_read, shared_write, shared_list",
                     "inputSchema": FACADE_SCHEMA
                 },
                 {

@@ -1,0 +1,61 @@
+name: "Founder OS"
+description: "Daily workflow for solo founders and indie hackers. Morning context, decision tracking, end-of-day synthesis."
+version: "1.0.0"
+author: "eidetic-works"
+persona: "Solo founder / indie hacker building with AI tools (Claude, Cursor, Windsurf)"
+tags:
+  - founder
+  - productivity
+  - daily-workflow
+  - solo
+
+engram_templates:
+  - key: "welcome_nucleus"
+    value: "Nucleus is your sovereign Agent OS. It remembers what you did, what you decided, and what's next — across every AI tool you use. Everything stays on your machine."
+    context: "Feature"
+    intensity: 8
+
+  - key: "workflow_founder"
+    value: "Your daily loop: (1) nucleus morning-brief — what happened, what's pending, what to focus on. (2) Work in any IDE — Nucleus captures context via MCP. (3) nucleus combo pulse — end-of-day health check + synthesis engram. After 7 days, morning-brief knows your project better than you do."
+    context: "Strategy"
+    intensity: 9
+
+  - key: "quick_reference"
+    value: "Top commands: nucleus morning-brief (daily context), nucleus combo pulse (health + summary), nucleus engrams search <query> (search memory), nucleus status (satellite view), nucleus compliance-check (governance score)."
+    context: "Feature"
+    intensity: 7
+
+  - key: "decisions_matter"
+    value: "Every decision you make is worth recording. When you choose a library, pick an architecture, or kill a feature — that's an engram. In 3 months, you'll search for 'why did we use X' and the answer will be there."
+    context: "Decision"
+    intensity: 6
+
+  - key: "founder_tip_shipping"
+    value: "The trap is building > shipping. Nucleus exists so you ship faster, not so you have a prettier workflow. If morning-brief isn't useful after 3 days, something is wrong — fix it or kill it."
+    context: "Strategy"
+    intensity: 8
+
+recommended_combos:
+  - pulse_and_polish
+
+scheduled_tasks:
+  - name: "Morning Brief"
+    description: "Daily context retrieval — what happened, what's pending, what to focus on"
+    schedule: "daily 8:00"
+    combo: "morning-brief"
+    priority: 1
+
+  - name: "End of Day Pulse"
+    description: "Health check + synthesis engram — captures what you shipped today"
+    schedule: "daily 22:00"
+    combo: "pulse_and_polish"
+    priority: 2
+
+brain_config:
+  mode: "founder"
+  focus: "Ship the next thing"
+
+first_run_tips:
+  - "nucleus morning-brief    — Start your day with full context"
+  - "nucleus combo pulse      — End your day with a health summary"
+  - "nucleus engrams search   — Search your memory anytime"

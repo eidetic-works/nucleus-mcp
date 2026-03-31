@@ -112,6 +112,7 @@ def register(mcp, helpers):
 
     from ..runtime.artifact_ops import _read_artifact, _write_artifact, _list_artifacts
     from ..runtime.trigger_ops import _trigger_agent_impl, _get_triggers_impl, _evaluate_triggers_impl
+    from ..runtime.shared_state_ops import brain_sync_read, brain_sync_write, brain_sync_list
 
     ROUTER = {
         "identify_agent": _identify_agent,
@@ -129,6 +130,9 @@ def register(mcp, helpers):
         "check_deploy": lambda service_id: _check_deploy_status(service_id),
         "complete_deploy": lambda service_id, success, deploy_url=None, error=None, run_smoke_test=True: _complete_deploy(service_id, success, deploy_url, error, run_smoke_test),
         "smoke_test": lambda url, endpoint="/api/health": _run_smoke_test(url, endpoint),
+        "shared_read": lambda key: json.dumps(brain_sync_read(key), indent=2),
+        "shared_write": lambda key, value, agent_id="": json.dumps(brain_sync_write(key, value, agent_id), indent=2),
+        "shared_list": lambda: json.dumps(brain_sync_list(), indent=2),
     }
 
     @mcp.tool()
@@ -151,6 +155,9 @@ Actions:
   check_deploy     - Check deploy poll status. params: {service_id}
   complete_deploy  - Mark deploy complete. params: {service_id, success, deploy_url?, error?, run_smoke_test?}
   smoke_test       - Run a smoke test. params: {url, endpoint?}
+  shared_read      - Read shared state. params: {key}
+  shared_write     - Write shared state. params: {key, value, agent_id?}
+  shared_list      - List all shared state keys
 """
         return dispatch(action, params, ROUTER, "nucleus_sync")
 

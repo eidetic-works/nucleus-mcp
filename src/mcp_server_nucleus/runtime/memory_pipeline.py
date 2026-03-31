@@ -36,6 +36,27 @@ class EngramOp(str, Enum):
     NOOP = "NOOP"
 
 
+_SECRET_PATTERNS = [
+    (re.compile(r"(?:api[_-]?key|apikey)\s*[:=]\s*\S+", re.IGNORECASE), "API key"),
+    (re.compile(r"Bearer\s+[A-Za-z0-9\-._~+/]+=*", re.IGNORECASE), "Bearer token"),
+    (re.compile(r"(?:password|passwd|pwd)\s*[:=]\s*\S+", re.IGNORECASE), "password"),
+    (re.compile(r"(?:AWS_SECRET|aws_secret_access_key)\s*[:=]\s*\S+", re.IGNORECASE), "AWS secret"),
+    (re.compile(r"(?:PRIVATE[_-]?KEY|private_key)\s*[:=]\s*\S+", re.IGNORECASE), "private key"),
+    (re.compile(r"sk-[A-Za-z0-9]{20,}", re.IGNORECASE), "OpenAI/Stripe secret key"),
+    (re.compile(r"ghp_[A-Za-z0-9]{36,}", re.IGNORECASE), "GitHub PAT"),
+    (re.compile(r"-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----"), "PEM private key"),
+]
+
+
+def _scan_for_secrets(text: str) -> list[str]:
+    """Scan text for common secret patterns. Returns list of match descriptions."""
+    found = []
+    for pattern, label in _SECRET_PATTERNS:
+        if pattern.search(text):
+            found.append(label)
+    return found
+
+
 class MemoryPipeline:
     """
     Deterministic Engram State Machine (ADUN Protocol).
@@ -361,6 +382,11 @@ class MemoryPipeline:
 
     def _append_to_ledger(self, engram: Dict):
         """Append a new engram to the ledger."""
+        secrets = _scan_for_secrets(engram.get("value", ""))
+        if secrets:
+            logger.warning("Possible credential in engram '%s': %s — review before sharing brain",
+                           engram.get("key", "?"), ", ".join(secrets))
+            engram["_secret_warning"] = secrets
         with open(self.ledger_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(engram, ensure_ascii=False) + "\n")
 

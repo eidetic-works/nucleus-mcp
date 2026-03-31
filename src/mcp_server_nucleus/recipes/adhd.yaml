@@ -1,0 +1,45 @@
+name: "ADHD Brain"
+description: "Zero-maintenance memory for neurodivergent builders. Passive capture, Monday morning context, no daily upkeep required."
+version: "1.0.0"
+author: "eidetic-works"
+persona: "Developer with ADHD or working-memory challenges"
+tags:
+  - adhd
+  - neurodivergent
+  - passive
+  - zero-maintenance
+
+engram_templates:
+  - key: "welcome_adhd"
+    value: "Nucleus ADHD Brain captures context passively. You don't maintain it — it maintains itself. Work in whatever chaotic order your brain wants. Monday morning, everything is still here."
+    context: "Feature"
+    intensity: 9
+
+  - key: "workflow_adhd"
+    value: "There is no 'workflow'. That's the point. Nucleus hooks auto-write engrams as you work. When you context-switch (and you will), the previous context is saved. When you come back (even 3 days later), nucleus morning-brief tells you exactly where you left off."
+    context: "Strategy"
+    intensity: 9
+
+  - key: "adhd_no_guilt"
+    value: "This tool is designed to survive abandonment. If you forget about it for 2 weeks, it doesn't break. When you come back, your memory is intact. No streak to maintain. No inbox to clear. No guilt."
+    context: "Feature"
+    intensity: 8
+
+recommended_combos:
+  - pulse_and_polish
+
+scheduled_tasks:
+  - name: "Monday Morning Brief"
+    description: "Weekly context recovery — what happened last week, what's open, what you promised"
+    schedule: "weekly monday 9:00"
+    combo: "morning-brief"
+    priority: 1
+
+brain_config:
+  mode: "adhd"
+  focus: "Remember everything, require nothing"
+
+first_run_tips:
+  - "nucleus morning-brief    — See what you forgot (it's a lot, that's fine)"
+  - "nucleus engrams search   — Find that thing from last Tuesday"
+  - "Just work. Nucleus captures context automatically."

@@ -353,11 +353,15 @@ Actions:
 
     def _h_agent_cost_dashboard():
         from ..runtime.agent_runtime_v2 import get_execution_manager
-        return get_execution_manager().get_dashboard_metrics()
+        return json.dumps(get_execution_manager().get_dashboard_metrics(), indent=2, default=str)
 
     def _h_dispatch_metrics():
         from ._dispatch import get_dispatch_telemetry
-        return get_dispatch_telemetry().get_metrics()
+        return json.dumps(get_dispatch_telemetry().get_metrics(), indent=2, default=str)
+
+    def _h_rate_limit_status():
+        from ._dispatch import get_dispatch_rate_limiter
+        return json.dumps(get_dispatch_rate_limiter().get_status(), indent=2, default=str)
 
     TELEM_ROUTER = {
         "set_llm_tier": _h_set_llm_tier,
@@ -374,6 +378,7 @@ Actions:
         "get_handoffs": _h_get_handoffs,
         "agent_cost_dashboard": _h_agent_cost_dashboard,
         "dispatch_metrics": _h_dispatch_metrics,
+        "rate_limit_status": _h_rate_limit_status,
     }
 
     @mcp.tool()
@@ -395,6 +400,7 @@ Actions:
   get_handoffs         - Get pending handoffs. params: {agent_id?}
   agent_cost_dashboard - Get agent cost tracking dashboard
   dispatch_metrics     - Get dispatch telemetry (per-action timing, error rates)
+  rate_limit_status    - Get dispatch rate limiter status (calls per facade, window)
 """
         return dispatch(action, params, TELEM_ROUTER, "nucleus_telemetry")
 
@@ -549,16 +555,18 @@ Actions:
     def _h_manage_strategy(action, content=None):
         try:
             from ..runtime.strategy import _manage_strategy
-            return _manage_strategy(action, content)
+            result = _manage_strategy(action, content)
+            return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
         except Exception as e:
-            return {"error": f"Tool execution failed: {str(e)}"}
+            return json.dumps({"error": f"Tool execution failed: {str(e)}"})
 
     def _h_update_roadmap(action, item=None):
         try:
             from ..runtime.strategy import _update_roadmap
-            return _update_roadmap(action, item)
+            result = _update_roadmap(action, item)
+            return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
         except Exception as e:
-            return {"error": f"Tool execution failed: {str(e)}"}
+            return json.dumps({"error": f"Tool execution failed: {str(e)}"})
 
     INFRA_ROUTER = {
         "file_changes": _h_file_changes,
@@ -654,20 +662,20 @@ Actions:
                 path_str = path_str.split("artifacts/")[-1]
             content_str = _read_artifact(path_str)
             if content_str.startswith("Error"):
-                return {"error": content_str}
+                return json.dumps({"error": content_str})
             review = json.loads(content_str)
             payload = review.get("payload", {})
             target = payload.get("target")
             issues = payload.get("issues", [])
             if not target or not issues:
-                return {"error": "Invalid critique format"}
+                return json.dumps({"error": "Invalid critique format"})
             description = f"Fix {len(issues)} issues in {target} identified by Critic.\n\nIssues:\n"
             for i in issues:
                 description += f"- [{i.get('severity')}] {i.get('description')}\n"
             result = _trigger_agent_impl(agent="developer", task_description=description, context_files=[path_str, target])
-            return {"success": True, "message": result}
+            return json.dumps({"success": True, "message": result}, default=str)
         except Exception as e:
-            return {"error": f"Failed: {str(e)}"}
+            return json.dumps({"error": f"Failed: {str(e)}"})
 
     async def _h_orchestrate_swarm(mission, agents=None):
         try:
@@ -793,10 +801,10 @@ Actions:
         "spawn_agent": _h_spawn_agent,
         "apply_critique": _h_apply_critique,
         "orchestrate_swarm": _h_orchestrate_swarm,
-        "search_memory": lambda query: __import__('mcp_server_nucleus.runtime.memory', fromlist=['_search_memory'])._search_memory(query),
-        "read_memory": lambda category: __import__('mcp_server_nucleus.runtime.memory', fromlist=['_read_memory'])._read_memory(category),
-        "respond_to_consent": lambda agent_id, choice="cold": {"success": True, "agent_id": agent_id, "choice": choice.upper(), "message": f"Consent recorded. Agent will respawn in {choice.upper()} mode."},
-        "list_pending_consents": lambda: {"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."},
+        "search_memory": lambda query: json.dumps(__import__('mcp_server_nucleus.runtime.memory', fromlist=['_search_memory'])._search_memory(query), indent=2, default=str),
+        "read_memory": lambda category: json.dumps(__import__('mcp_server_nucleus.runtime.memory', fromlist=['_read_memory'])._read_memory(category), indent=2, default=str),
+        "respond_to_consent": lambda agent_id, choice="cold": json.dumps({"success": True, "agent_id": agent_id, "choice": choice.upper(), "message": f"Consent recorded. Agent will respawn in {choice.upper()} mode."}),
+        "list_pending_consents": lambda: json.dumps({"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}),
         "critique_code": _h_critique_code,
         "fix_code": _fix_code_impl,
         "session_briefing": _h_session_briefing,

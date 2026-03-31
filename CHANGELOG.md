@@ -7,17 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-03-31 — "First User"
+
 ### Added
-- **Universal Session Recovery** - Zero-shot recovery workflow for frozen/bloated IDE sessions
-  - `nucleus recover auto <conversation-id>` - One-shot automatic recovery
-  - `nucleus recover detect` - Detect bloated conversations
-  - `nucleus recover extract <conversation-id>` - Extract context from conversation
-  - `nucleus recover quarantine <conversation-id>` - Quarantine bloated files with checksums
-  - `nucleus recover bootstrap <conversation-id>` - Generate fresh session with context inheritance
-  - `nucleus recover rewrite <old-id> <new-id>` - Update test script paths
-  - `nucleus_sessions(action="recover", params={...})` - MCP facade integration
-  - Works across any IDE (Windsurf, Cursor, Antigravity) and CLI
-  - Comprehensive test suite (test_recovery.py) with 50+ tests
+- **Recipe System** — YAML-based workflow packs for instant persona setup
+  - `nucleus init --recipe founder` — Founder OS with engram templates, God Combos, scheduled tasks
+  - `nucleus init --recipe sre` — SRE Brain with self-healing combo
+  - `nucleus init --recipe adhd` — ADHD Brain with zero-maintenance design
+  - `nucleus recipe list` — Browse available recipes
+  - `nucleus recipe show <name>` — Preview recipe contents
+- **Curated CLI Help** — `nucleus help` shows 15 user-facing commands instead of 60+ raw argparse
+  - Bare `nucleus` (no args) also shows curated help
+- **First-Run Experience** — Recipe-first onboarding: install → init with recipe → morning-brief
+- **Universal Session Recovery** — Zero-shot recovery workflow for frozen/bloated IDE sessions
+  - `nucleus recover auto <conversation-id>` — One-shot automatic recovery
+  - `nucleus recover detect` — Detect bloated conversations
+  - `nucleus recover extract <conversation-id>` — Extract context from conversation
+  - `nucleus recover quarantine <conversation-id>` — Quarantine bloated files with checksums
+  - `nucleus recover bootstrap <conversation-id>` — Generate fresh session with context inheritance
+
+### Fixed
+- **Engram store canonical path** — Recipe engrams now write to `engrams/ledger.jsonl` (JSONL), not `memory/engrams.json`
+- **`datetime.utcnow()` deprecation** — Replaced with `datetime.now(tz=timezone.utc)`
+
+### Changed
+- README quickstart updated to recipe-first flow: `pip install → init --recipe founder → morning-brief`
 
 ## [1.6.2] - 2026-03-16 — "Telemetry Pipeline Optimization"
 

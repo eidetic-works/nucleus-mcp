@@ -21,7 +21,7 @@ class VectorStore:
         self.enabled = STORAGE_TYPE == "firestore"
         
         if self.enabled:
-            self.llm = DualEngineLLM(model_name="text-embedding-004")
+            self.llm = DualEngineLLM(model_name="gemini-embedding-001")
         else:
             self.llm = None
             # Initialize Local SQLite Store for fallback

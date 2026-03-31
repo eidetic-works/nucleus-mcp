@@ -1,0 +1,45 @@
+name: "SRE Brain"
+description: "Incident diagnosis, post-mortem memory, and pattern recognition for Site Reliability Engineers."
+version: "1.0.0"
+author: "eidetic-works"
+persona: "SRE / DevOps engineer managing production systems"
+tags:
+  - sre
+  - incident-response
+  - reliability
+  - on-call
+
+engram_templates:
+  - key: "welcome_sre"
+    value: "Nucleus SRE Brain gives you inspectable AI reasoning during incidents. Every tool call is logged, every decision has an audit trail. When the post-mortem asks 'what happened', you have the full trace."
+    context: "Feature"
+    intensity: 8
+
+  - key: "workflow_sre"
+    value: "Incident flow: (1) nucleus combo diagnose — correlate signals, form hypothesis. (2) Every action logged to audit trail — who did what, when, why. (3) nucleus morning-brief — 'this looks like the March incident'. After 3 months, your brain remembers every incident."
+    context: "Strategy"
+    intensity: 9
+
+  - key: "sre_trust"
+    value: "HITL gates are on by default for destructive operations. Nucleus won't auto-remediate without your approval. You can audit every decision the agent made. This is SRE-grade trustworthiness, not chatbot guessing."
+    context: "Architecture"
+    intensity: 7
+
+recommended_combos:
+  - self_healing_sre
+
+scheduled_tasks:
+  - name: "Morning Incident Review"
+    description: "Review overnight events, check for anomalies, surface recurring patterns"
+    schedule: "daily 8:00"
+    combo: "morning-brief"
+    priority: 1
+
+brain_config:
+  mode: "sre"
+  focus: "Reliability and incident response"
+
+first_run_tips:
+  - "nucleus morning-brief       — Review overnight events and patterns"
+  - "nucleus combo diagnose      — Structured incident diagnosis"
+  - "nucleus audit-report        — Full audit trail for post-mortems"

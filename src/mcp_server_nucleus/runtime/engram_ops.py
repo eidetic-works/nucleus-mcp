@@ -120,6 +120,8 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
                         e = json.loads(line)
                     except json.JSONDecodeError:
                         continue  # Skip corrupted lines
+                    if e.get("deleted", False) or e.get("quarantined", False):
+                        continue
                     # Filter by context if specified
                     if context and e.get("context", "").lower() != context.lower():
                         continue
@@ -183,6 +185,8 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
                         e = json.loads(line)
                     except json.JSONDecodeError:
                         continue  # Skip corrupted lines
+                    if e.get("deleted", False) or e.get("quarantined", False):
+                        continue
                     key = e.get("key", "")
                     value = e.get("value", "")
                     

@@ -292,7 +292,7 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
         result = handler(**params)
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms)
-        # If handler returns a string, pass through; otherwise JSON-encode
+        # Ensure result is always a string — guards against structured_content errors
         if isinstance(result, str):
             return result
         return json.dumps(result, indent=2, default=str)
@@ -312,6 +312,19 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
             "error": f"Action '{action}' failed: {e}",
             "module": module_name,
         }, indent=2)
+
+
+def _ensure_str(result: Any) -> str:
+    """Ensure a handler result is always a string.
+
+    This is a safety net: all handlers should return strings,
+    but if one slips through returning a dict/list/other type,
+    this prevents FastMCP 'structured_content must be a dict or None'
+    errors by converting before the result reaches FunctionTool.run().
+    """
+    if isinstance(result, str):
+        return result
+    return json.dumps(result, indent=2, default=str)
 
 
 async def async_dispatch(action: str, params: dict, router: Dict[str, Callable], module_name: str) -> str:
