@@ -57,23 +57,29 @@ def register(mcp, helpers):
             return make_response(False, error=result)
         return make_response(True, data={"event_id": result})
 
+    def _wrap_str(result: str) -> str:
+        """Wrap a raw string result in make_response for consistent API contract."""
+        if isinstance(result, str) and (result.startswith("❌") or result.startswith("Error")):
+            return make_response(False, error=result)
+        return make_response(True, data={"message": result})
+
     ROUTER = {
         "save": _h_save,
         "resume": _h_resume,
         "list": lambda: make_response(True, data=_list_sessions()),
         "check_recent": lambda: make_response(True, data=_check_for_recent_session()),
         "end": _h_end,
-        "start": lambda: _brain_session_start_impl(),
-        "archive_resolved": lambda: _archive_resolved_files(),
-        "propose_merges": lambda: _generate_merge_proposals(),
-        "garbage_collect": lambda max_age_hours=72, dry_run=False: _garbage_collect_tasks(max_age_hours=max_age_hours, dry_run=dry_run),
+        "start": lambda: _wrap_str(_brain_session_start_impl()),
+        "archive_resolved": lambda: make_response(True, data=_archive_resolved_files()),
+        "propose_merges": lambda: make_response(True, data=_generate_merge_proposals()),
+        "garbage_collect": lambda max_age_hours=72, dry_run=False: make_response(True, data=_garbage_collect_tasks(max_age_hours=max_age_hours, dry_run=dry_run)),
         "emit_event": _h_emit,
         "read_events": lambda limit=10: make_response(True, data={"events": _read_events(limit)}),
-        "get_state": lambda path=None: _get_state(path),
-        "update_state": lambda updates: _update_state(updates),
-        "checkpoint": lambda task_id, step=None, progress_percent=None, context=None, artifacts=None, resumable=True: _brain_checkpoint_task_impl(task_id, step, progress_percent, context, artifacts, resumable),
-        "resume_checkpoint": lambda task_id: _brain_resume_from_checkpoint_impl(task_id),
-        "handoff_summary": lambda task_id, summary, key_decisions=None, handoff_notes="": _brain_generate_handoff_summary_impl(task_id, summary, key_decisions, handoff_notes),
+        "get_state": lambda path=None: make_response(True, data=_get_state(path)),
+        "update_state": lambda updates: _wrap_str(_update_state(updates)),
+        "checkpoint": lambda task_id, step=None, progress_percent=None, context=None, artifacts=None, resumable=True: _wrap_str(_brain_checkpoint_task_impl(task_id, step, progress_percent, context, artifacts, resumable)),
+        "resume_checkpoint": lambda task_id: _wrap_str(_brain_resume_from_checkpoint_impl(task_id)),
+        "handoff_summary": lambda task_id, summary, key_decisions=None, handoff_notes="": _wrap_str(_brain_generate_handoff_summary_impl(task_id, summary, key_decisions, handoff_notes)),
     }
 
     @mcp.tool()

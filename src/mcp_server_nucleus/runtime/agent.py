@@ -475,10 +475,31 @@ CRITICAL RULES (MDR_002):
                                  "status": "COMPLETE"
                              }
                              log_path.write_text(json.dumps(mission_data, indent=2, ensure_ascii=False))
-                             
+
                              log.append(f"💾 Mission persisted to {mission_dir}")
                          except Exception as persist_error:
                              log.append(f"⚠️ Persistence warning: {persist_error}")
+
+                         # Archive pipeline: record this as a loop turn for third brother training data
+                         try:
+                             from .archive_pipeline import ArchivePipeline
+                             archive = ArchivePipeline()
+                             decisions_text = [d.reasoning for d in self._decision_ledger[-5:]]
+                             archive.record_turn(
+                                 brother="code",
+                                 intent=self.context.get('intent', ''),
+                                 actions=log[-10:],
+                                 tools_used=self._tools_called,
+                                 decisions=decisions_text,
+                                 outcome=text[:500] if text else "Mission complete",
+                                 signal_absorbed=[],
+                                 signal_produced=[f"mission/{session_id}"],
+                                 confidence=sum(d.confidence for d in self._decision_ledger) / max(len(self._decision_ledger), 1),
+                                 context=f"Agent {self.context.get('persona', 'unknown')} turn {turn}/{max_turns}",
+                             )
+                             log.append("📊 Loop turn archived for training")
+                         except Exception:
+                             pass  # Non-blocking archive
                          
                          break
                          

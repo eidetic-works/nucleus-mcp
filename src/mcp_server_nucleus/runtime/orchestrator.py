@@ -50,7 +50,6 @@ def _setup_flywheel_logger():
         if not any(isinstance(h, logging.FileHandler) for h in nucleus_logger.handlers):
             nucleus_logger.addHandler(handler)
             nucleus_logger.setLevel(logging.INFO)
-            
     except Exception as e:
         import sys
         sys.stderr.write(f"[Flywheel] Failed to setup logger: {e}\n"); sys.stderr.flush()
@@ -74,11 +73,23 @@ class PrivateGraphTrainer:
         Future: Fine-tune local SLM on this session.
         Current: Log intent.
         """
-        logger.info(f"🎓 [TRAINER] Would fine-tune on session {session_id}")
-        # Append to training dataset
-        dataset_path = self.brain_path / "training" / "dataset.jsonl"
-        dataset_path.parent.mkdir(parents=True, exist_ok=True)
-        pass
+        logger.info(f"🎓 [TRAINER] Recording session {session_id} to archive")
+        try:
+            archive = ArchivePipeline(brain_path=self.brain_path)
+            archive.record_turn(
+                brother="code",
+                intent=f"Orchestrated session {session_id}",
+                actions=[content[:200] if content else ""],
+                tools_used=[],
+                decisions=[],
+                outcome=f"Session {session_id} completed",
+                signal_absorbed=[],
+                signal_produced=[f"session/{session_id}"],
+                confidence=0.8,
+                context="Orchestrator auto-archive",
+            )
+        except Exception:
+            pass  # Non-blocking
 
 
 class SwarmsOrchestrator:
@@ -97,7 +108,14 @@ class SwarmsOrchestrator:
         self.trainer = PrivateGraphTrainer(brain_path)
         
         self._active_missions = {}
+        self._local_checked_at = 0.0  # Timestamp of last check
+        self._LOCAL_TTL = 300  # Re-check every 5 minutes
         self._load_state()
+
+    def _get_best_model(self, job_type: str = "ORCHESTRATION"):
+        """Get the best available LLM for the given job type."""
+        from .llm_client import DualEngineLLM
+        return DualEngineLLM(job_type=job_type)
 
     def _load_state(self):
         """Load swarm state with BrainLock"""
@@ -262,12 +280,10 @@ CRITICAL: When using files or tools, always search within the Project Root first
 """
                     context["system_prompt"] = awareness_injection + context["system_prompt"]
                     
-                    # 2. Get LLM with correct tier routing
-                    # DualEngineLLM takes job_type in constructor and IS the model (has generate_content)
                     job_type = context.get('job_type', 'ORCHESTRATION')
-                    model = DualEngineLLM(job_type=job_type)
-                    
-                    logger.info(f"📡 Agent {agent_persona} using job_type={job_type}, tier={model.tier}")
+                    model = self._get_best_model(job_type)
+
+                    logger.info(f"📡 Agent {agent_persona} using {model.__class__.__name__}, job_type={job_type}")
                     
                     # 3. Spawn and run agent (DualEngineLLM has generate_content method)
                     agent = EphemeralAgent(context, model)
@@ -284,7 +300,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
                     state["artifacts"].append(artifact)
                     
                     logger.info(f"✅ Agent {agent_persona} completed step {i+1}")
-                    
+
                 except Exception as agent_error:
                     logger.error(f"💥 Agent {agent_persona} failed: {agent_error}")
                     mission_artifacts.append({
@@ -314,7 +330,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
             # Final save
             self._active_missions[mission_id] = state
             self._save_state()
-                
+
         except Exception as e:
             logger.error(f"💥 Mission {mission_id} Failed: {e}")
             state["status"] = "failed"
@@ -363,7 +379,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
             # Also save raw JSON
             raw_file = mission_dir / "artifacts.json"
             raw_file.write_text(json.dumps(artifacts, indent=2, ensure_ascii=False))
-            
+
         except Exception as e:
             logger.error(f"Failed to save mission artifacts: {e}")
             

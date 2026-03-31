@@ -292,7 +292,7 @@ def install_recipe(brain_path: Path, recipe_data: Dict[str, Any]) -> Dict[str, A
     Returns a summary dict of what was installed.
     """
     recipe_name = recipe_data.get("name", "unknown")
-    now = datetime.utcnow().isoformat() + "Z"
+    now = datetime.now(tz=__import__('datetime').timezone.utc).isoformat()
     summary = {
         "recipe": recipe_name,
         "version": recipe_data.get("version", "0.0.0"),
@@ -304,37 +304,40 @@ def install_recipe(brain_path: Path, recipe_data: Dict[str, Any]) -> Dict[str, A
         "tips": [],
     }
 
-    # 1. Write engram templates
+    # 1. Write engram templates to the canonical engram ledger (JSONL)
     engrams = recipe_data.get("engram_templates", [])
     if engrams:
-        engrams_file = brain_path / "memory" / "engrams.json"
-        existing = []
-        if engrams_file.exists():
-            try:
-                existing = json.loads(engrams_file.read_text())
-                if not isinstance(existing, list):
-                    existing = []
-            except Exception:
-                existing = []
+        ledger_file = brain_path / "engrams" / "ledger.jsonl"
+        ledger_file.parent.mkdir(parents=True, exist_ok=True)
 
-        existing_keys = {e.get("key") for e in existing}
-        new_engrams = []
-        for eng in engrams:
-            if eng["key"] not in existing_keys:
-                new_engrams.append({
-                    "key": eng["key"],
-                    "value": eng["value"],
-                    "context": eng.get("context", "Feature"),
-                    "intensity": eng.get("intensity", 5),
-                    "timestamp": now,
-                    "source": f"recipe:{recipe_name}",
-                })
+        # Read existing keys to avoid duplicates
+        existing_keys = set()
+        if ledger_file.exists():
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            existing_keys.add(json.loads(line).get("key", ""))
+                        except Exception:
+                            pass
 
-        if new_engrams:
-            all_engrams = existing + new_engrams
-            engrams_file.parent.mkdir(parents=True, exist_ok=True)
-            engrams_file.write_text(json.dumps(all_engrams, indent=2))
-            summary["engrams_written"] = len(new_engrams)
+        new_count = 0
+        with open(ledger_file, "a", encoding="utf-8") as f:
+            for eng in engrams:
+                if eng["key"] not in existing_keys:
+                    record = {
+                        "key": eng["key"],
+                        "value": eng["value"],
+                        "context": eng.get("context", "Feature"),
+                        "intensity": eng.get("intensity", 5),
+                        "version": 1,
+                        "timestamp": now,
+                        "source": f"recipe:{recipe_name}",
+                    }
+                    f.write(json.dumps(record) + "\n")
+                    new_count += 1
+
+        summary["engrams_written"] = new_count
 
     # 2. Create scheduled tasks
     tasks = recipe_data.get("scheduled_tasks", [])
@@ -471,16 +474,28 @@ def uninstall_recipe(brain_path: Path, recipe_name: str) -> Dict[str, Any]:
         "tasks_removed": 0,
     }
 
-    # Remove engrams sourced from this recipe
-    engrams_file = brain_path / "memory" / "engrams.json"
-    if engrams_file.exists():
+    # Remove engrams sourced from this recipe (mark deleted in JSONL ledger)
+    ledger_file = brain_path / "engrams" / "ledger.jsonl"
+    if ledger_file.exists():
         try:
-            engrams = json.loads(engrams_file.read_text())
             source_tag = f"recipe:{recipe_name}"
-            before = len(engrams)
-            engrams = [e for e in engrams if e.get("source") != source_tag]
-            summary["engrams_removed"] = before - len(engrams)
-            engrams_file.write_text(json.dumps(engrams, indent=2))
+            lines = []
+            removed = 0
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    try:
+                        e = json.loads(line)
+                        if e.get("source") == source_tag:
+                            e["deleted"] = True
+                            removed += 1
+                        lines.append(json.dumps(e) + "\n")
+                    except json.JSONDecodeError:
+                        lines.append(line)
+            with open(ledger_file, "w", encoding="utf-8") as f:
+                f.writelines(lines)
+            summary["engrams_removed"] = removed
         except Exception:
             pass
 
