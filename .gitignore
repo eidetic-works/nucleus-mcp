@@ -62,6 +62,9 @@ secrets/
 # Cloudflare local dev cache
 .wrangler/
 
+# Override parent gitignore rule that ignores test_*.py
+!tests/test_*.py
+
 # Test brain instances
 .brain_test*/
 .telemetry/

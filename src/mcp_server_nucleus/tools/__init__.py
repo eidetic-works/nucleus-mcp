@@ -28,6 +28,7 @@ from . import (
     observability,
     federation,
     engrams,
+    align,
 )
 
 _ALL_MODULES = {
@@ -40,6 +41,7 @@ _ALL_MODULES = {
     "observability": observability,
     "federation": federation,
     "engrams": engrams,
+    "align": align,
 }
 
 
@@ -71,6 +73,14 @@ def register_all(mcp, helpers):
             for name, func in result:
                 setattr(parent, name, func)
                 total_tools += 1
+
+    # Register Phase 2 Delta event hook (auto-records Deltas from task/session events)
+    try:
+        from ..runtime.event_ops import register_event_hook
+        from ..runtime.delta_ops import delta_event_hook
+        register_event_hook(delta_event_hook)
+    except Exception:
+        pass  # Never let hook registration block server startup
 
     _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
     if not _is_quiet:

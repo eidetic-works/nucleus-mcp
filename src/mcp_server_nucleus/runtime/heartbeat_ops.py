@@ -219,6 +219,62 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
     # ── Autonomic Nervous System (The Chief of Staff) ───────────
     _trigger_autonomic_nervous_system(brain, triggers)
 
+    # ── Artery 2: Create corrective tasks for non-blocker signals ──
+    corrective_tasks_created = 0
+    corrective_details = []
+    if not os.environ.get("NUCLEUS_DISABLE_ARTERY_2"):
+        try:
+            from .task_ops import _add_task, _list_tasks
+
+            existing_tasks = []
+            try:
+                existing_tasks = _list_tasks()
+            except Exception:
+                pass  # If listing fails, create anyway
+
+            for signal in triggers:
+                if signal.get("signal") == "STALE_BLOCKER":
+                    continue  # Handled by autonomic nervous system above
+
+                sig_type = signal.get("signal", "UNKNOWN").lower()
+
+                # Dedup: skip if heartbeat task for this signal type already PENDING
+                has_existing = any(
+                    "[heartbeat]" in (t.get("description") or "")
+                    and f"[{sig_type}]" in (t.get("description") or "").lower()
+                    and t.get("status", "").upper() in ("PENDING", "READY", "BLOCKED")
+                    for t in existing_tasks
+                )
+                if has_existing:
+                    continue
+
+                if signal.get("signal") == "STALE_DECISION":
+                    desc = (f"[heartbeat][{sig_type}] Review stale decision: "
+                            f"{signal.get('key', 'unknown')}. "
+                            f"Age: {signal.get('age_hours', '?')}h.")
+                    pri = 3
+                elif signal.get("signal") == "VELOCITY_DROP":
+                    desc = (f"[heartbeat][{sig_type}] Velocity dropped — "
+                            f"{signal.get('recent_writes', 0)} writes in 48h.")
+                    pri = 4
+                elif signal.get("signal") == "SESSION_GAP":
+                    desc = (f"[heartbeat][{sig_type}] No activity for "
+                            f"{signal.get('gap_hours', '?')}h.")
+                    pri = 5
+                else:
+                    continue
+
+                add_result = _add_task(description=desc, priority=pri, source="heartbeat")
+                if add_result.get("success"):
+                    corrective_tasks_created += 1
+                    corrective_details.append({
+                        "signal": signal.get("signal"),
+                        "description": desc,
+                        "task_id": add_result["task"].get("id"),
+                    })
+        except Exception:
+            pass  # Never let corrective task creation break heartbeat
+
     # Log the check
     _log_heartbeat_check(brain, triggers, elapsed_ms)
     
@@ -236,7 +292,13 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
         result["notification_body"] = triggers[0]["message"]
     else:
         result["formatted"] = "💚 All clear — nothing needs attention right now."
-    
+
+    # Artery 2 enrichment
+    result["corrective_tasks_created"] = corrective_tasks_created
+    result["corrective_details"] = corrective_details
+    if corrective_tasks_created > 0:
+        result["formatted"] += f"\n🔧 Auto-created {corrective_tasks_created} corrective task(s)"
+
     return result
 
 

@@ -21,12 +21,62 @@ Usage via MCP:
 
 import json
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 logger = logging.getLogger("nucleus.morning_brief")
+
+
+def _find_engram_by_key(brain: Path, key: str) -> Optional[dict]:
+    """Find a specific engram by exact key match. Returns None if not found."""
+    ledger = brain / "engrams" / "ledger.jsonl"
+    if not ledger.exists():
+        return None
+    result = None
+    try:
+        with open(ledger, "r") as f:
+            for line in f:
+                try:
+                    e = json.loads(line.strip())
+                    if e.get("key") == key and not e.get("deleted", False):
+                        result = e
+                except (json.JSONDecodeError, KeyError):
+                    continue
+    except OSError:
+        return None
+    return result
+
+
+def _check_recommendation_followed(yesterday_rec: dict, tasks_data: dict, events_list: list) -> bool:
+    """Check if yesterday's brief recommendation was acted upon."""
+    rec_value = yesterday_rec.get("value", "")
+    task_ref = ""
+    if "]" in rec_value:
+        after_bracket = rec_value.split("]", 1)[1]
+        task_ref = after_bracket.split("|")[0].strip()
+    if not task_ref:
+        return False
+    ref_words = set(task_ref.lower().split())
+    if len(ref_words) < 2:
+        return False
+    for event in events_list:
+        event_type = event.get("event", event.get("type", ""))
+        if event_type in ("task_completed", "task_claimed", "slot_task_completed",
+                          "task_completed_with_fence", "task_state_changed"):
+            event_data = json.dumps(event.get("detail", event.get("data", {}))).lower()
+            matches = sum(1 for w in ref_words if w in event_data)
+            if matches >= 2:
+                return True
+    for status_key in ("in_progress", "pending"):
+        for task in (tasks_data.get(status_key) or []):
+            task_desc = task.get("description", "").lower()
+            matches = sum(1 for w in ref_words if w in task_desc)
+            if matches >= 2 and status_key == "in_progress":
+                return True
+    return False
 
 
 def _morning_brief_impl() -> Dict:
@@ -65,8 +115,51 @@ def _morning_brief_impl() -> Dict:
     # ── SECTION 5: ADHD GUARDRAIL STATUS ────────────────────────
     brief["sections"]["adhd_status"] = _retrieve_adhd_status()
 
-    # ── SECTION 7: RECOMMENDATION ──────────────────────────────
+    try:
+        ap = ArchivePipeline(brain_path=brain)
+    # ── SECTION 7: GROWTH (Phase 4 — Business Functions) ─────
+    brief["sections"]["growth"] = _retrieve_growth_status(brain)
+
+    # ── SECTION 8: FRONTIER HEALTH (Phase 4 — Three Frontiers) ─
+    brief["sections"]["frontier_health"] = _retrieve_frontier_health(brain)
+
+    # ── SECTION 9: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
+
+    # ── ARTERY 1: Persist recommendation as Strategy engram ───
+    if not os.environ.get("NUCLEUS_DISABLE_ARTERY_1"):
+        try:
+            from .memory_pipeline import MemoryPipeline
+            today_str = datetime.now().strftime('%Y%m%d')
+            rec = brief["recommendation"]
+            rec_key = f"brief_rec_{today_str}"
+            rec_value = f"[{rec.get('action', '?')}] {rec.get('task', '')}"
+            if rec.get("context_reminder"):
+                rec_value += f" | Context: {rec['context_reminder'][:80]}"
+
+            pipeline = MemoryPipeline(brain_path=brain)
+            pipeline.process(
+                text=rec_value,
+                context="Strategy",
+                intensity=7,
+                source_agent="morning_brief",
+                key=rec_key,
+            )
+
+            # Compare to yesterday's recommendation
+            yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
+            yesterday_rec = _find_engram_by_key(brain, f"brief_rec_{yesterday_str}")
+            if yesterday_rec:
+                events_list = brief["sections"].get("yesterday", {}).get("events", [])
+                tasks_data = brief["sections"].get("tasks", {})
+                followed = _check_recommendation_followed(yesterday_rec, tasks_data, events_list)
+                brief["sections"]["yesterday_recommendation"] = {
+                    "recommendation": yesterday_rec.get("value", ""),
+                    "followed": followed,
+                    "delta": "ALIGNED" if followed else "DIVERGED",
+                }
+        except Exception:
+            pass  # Never let recommendation persistence break the brief
 
     # ── META ────────────────────────────────────────────────────
     elapsed = (time.time() - start) * 1000
@@ -121,6 +214,86 @@ def _retrieve_adhd_status() -> Dict:
         return {"focus_status": "🟢 FOCUSED", "switch_count": 0, "message": "ADHD metrics unavailable"}
 
 
+def _retrieve_growth_status(brain: Path) -> Dict:
+    """Retrieve latest growth gate metrics for the brief (Phase 4)."""
+    try:
+        from .growth_ops import capture_metrics, GATES
+        # Read the most recent growth metrics engram instead of hitting APIs
+        ledger = brain / "engrams" / "ledger.jsonl"
+        if not ledger.exists():
+            return {"message": "No growth data yet"}
+
+        latest = None
+        with open(ledger, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        e = json.loads(line)
+                        if e.get("key", "").startswith("growth_metrics_"):
+                            latest = e
+                    except json.JSONDecodeError:
+                        continue
+
+        if not latest:
+            return {"message": "No growth metrics engrams found. Run growth_pulse first."}
+
+        # Parse the engram value for gate status
+        return {
+            "latest_date": latest.get("key", "").replace("growth_metrics_", ""),
+            "value": latest.get("value", "")[:200],
+            "gates_target": GATES,
+        }
+    except Exception as e:
+        return {"message": f"Growth data unavailable: {e}"}
+
+
+def _retrieve_frontier_health(brain: Path) -> Dict:
+    """Retrieve Three Frontiers health summary for the brief (Phase 4)."""
+    try:
+        from .hardening import safe_read_jsonl
+        from .delta_ops import extract_patterns
+
+        result = {}
+
+        # GROUND: verification pass rate
+        vlog = brain / "verification_log.jsonl"
+        if vlog.exists():
+            receipts = safe_read_jsonl(vlog)
+            if receipts:
+                passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                result["ground"] = {
+                    "total": len(receipts),
+                    "pass_rate": round(passed / len(receipts) * 100, 1),
+                }
+
+        # ALIGN: review counts
+        vpath = brain / "driver" / "human_verdicts.jsonl"
+        if vpath.exists():
+            verdicts = safe_read_jsonl(vpath)
+            non_pending = [v for v in verdicts if v.get("verdict") != "pending"]
+            if non_pending:
+                result["align"] = {
+                    "total_reviews": len(non_pending),
+                    "pending": len(verdicts) - len(non_pending),
+                }
+
+        # COMPOUND: delta count + rate
+        try:
+            patterns = extract_patterns(since="7d")
+            if patterns.get("total_deltas", 0) > 0:
+                result["compound"] = {
+                    "deltas_7d": patterns["total_deltas"],
+                    "compound_rate": patterns.get("compound_rate", 0),
+                }
+        except Exception:
+            pass
+
+        return result if result else {"message": "No frontier data yet"}
+    except Exception as e:
+        return {"message": f"Frontier health unavailable: {e}"}
+
+
 def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
     """Retrieve top engrams by intensity, with recency bonus."""
     engram_path = brain / "engrams" / "ledger.jsonl"
@@ -151,12 +324,12 @@ def _retrieve_top_engrams(brain: Path, limit: int = 10) -> Dict:
                                 score += 2
                             elif age.days < 30:
                                 score += 1
-                        except Exception:
+                        except (ValueError, TypeError):
                             pass
 
                     e["_score"] = score
                     engrams.append(e)
-                except Exception:
+                except json.JSONDecodeError:
                     continue
 
     # Sort by score DESC, take top N
@@ -207,7 +380,7 @@ def _retrieve_tasks(brain: Path) -> Dict:
                         pending.append(entry)
                     elif status in ("in_progress", "in-progress", "claimed", "active"):
                         in_progress.append(entry)
-                except Exception:
+                except json.JSONDecodeError:
                     continue
 
     # Sort by priority (highest first)
@@ -248,9 +421,9 @@ def _retrieve_yesterday(brain: Path) -> Dict:
                                     "time": ts,
                                     "detail": str(ev.get("data", ev.get("metadata", "")))[:100],
                                 })
-                        except Exception:
+                        except (ValueError, TypeError):
                             pass
-                except Exception:
+                except json.JSONDecodeError:
                     continue
 
     # Most recent first

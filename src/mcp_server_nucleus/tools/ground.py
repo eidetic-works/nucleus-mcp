@@ -27,6 +27,7 @@ def register(mcp, helpers):
             elif isinstance(tiers, list):
                 tier_list = [int(t) for t in tiers]
 
+        # run_ground() now handles receipt logging + event emission in runtime layer
         receipt = run_ground(
             project_root=project_root,
             python_path=python_path,
@@ -34,9 +35,6 @@ def register(mcp, helpers):
             timeout_s=int(timeout_s),
             pre_head=pre_head,
         )
-
-        # Log receipt
-        _log_receipt(receipt)
 
         return json.dumps(receipt, indent=2, default=str)
 
@@ -58,21 +56,10 @@ def register(mcp, helpers):
             return json.dumps({"error": "Could not parse last log entry"})
 
     def _get_log_path():
-        """Find verification log in .brain or cwd."""
-        brain = Path.cwd() / ".brain"
-        if brain.exists():
-            return brain / "verification_log.jsonl"
-        return Path.cwd() / "verification_log.jsonl"
-
-    def _log_receipt(receipt):
-        """Append receipt to verification log."""
-        try:
-            log_path = _get_log_path()
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(log_path, "a") as f:
-                f.write(json.dumps(receipt, default=str) + "\n")
-        except Exception:
-            pass  # logging is best-effort
+        """Find verification log via brain path (not CWD)."""
+        from ..runtime.common import get_brain_path
+        brain = get_brain_path()
+        return brain / "verification_log.jsonl"
 
     def _hook(files=None, project_root=None, tiers=None):
         """Post-edit verification: run Tiers 1-2 on specific files.

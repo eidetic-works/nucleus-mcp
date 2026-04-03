@@ -1,15 +1,43 @@
 # Nucleus
 
-> A personal AI operating system — persistent memory, governance, and coordination for AI agents.
+> The MCP server that makes AI outputs more reliable every week.
 
 [![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 [![NPM](https://img.shields.io/badge/npm-nucleus--mcp-red)](https://www.npmjs.com/package/nucleus-mcp)
 
-Nucleus is an MCP server that gives AI agents a persistent brain. Sessions survive restarts, decisions leave audit trails, and governance rules enforce boundaries — all running locally on your machine.
+AI agents hallucinate, break code, and repeat mistakes. Nucleus catches this. Every AI output is verified, every correction is recorded, and every mistake trains the system to not repeat it. Locally, on your machine.
 
-This is a solo founder project. Built because I needed it, open-sourced because others might too.
+---
+
+## Three Frontiers
+
+The core loop that makes AI reliability compound over time:
+
+```
+  GROUND              ALIGN               COMPOUND
+  ──────              ─────               ────────
+  Machine verifies    Human corrects      System learns
+
+  AI writes code  →  You fix a mistake →  Delta recorded
+  GROUND checks   →  Verdict stored    →  DPO pair created
+  Receipt logged  →  Event emitted     →  Training data grows
+       │                   │                    │
+       └───────────────────┴────────────────────┘
+                    Reliability improves
+```
+
+**GROUND** — 5-tier execution verification. Syntax, imports, tests, runtime. Goes outside the formal system to check the AI's work.
+
+**ALIGN** — One-call corrections. `nucleus_align(action="correct", params={context, correction})`. Each correction automatically records a verdict, creates a training pair, and emits an event.
+
+**COMPOUND** — Deltas measure the gap between intent and reality. Recurring patterns become strategy. Negative deltas become training signal.
+
+Every tool response shows frontier health:
+```
+[frontiers: GROUND 42 | ALIGN 12 | COMPOUND 28]
+```
 
 ---
 
@@ -18,49 +46,24 @@ This is a solo founder project. Built because I needed it, open-sourced because 
 ```bash
 pip install nucleus-mcp
 nucleus init --recipe founder
-nucleus morning-brief
 ```
 
-Three commands. You now have a persistent brain with memory, governance, and a daily workflow.
-
-Other recipes: `nucleus recipe list` (SRE, ADHD, and more).
+Two commands. Nucleus is running. AI outputs are now verified.
 
 ---
 
 ## What It Does
 
-```
-┌──────────────────────────────────────────────────────┐
-│  Nucleus                                             │
-│                                                      │
-│  ┌─ Memory ──────┐  ┌─ Governance ──┐  ┌─ Audit ──┐ │
-│  │ Engrams       │  │ HITL gates    │  │ Decision │ │
-│  │ Sessions      │  │ Kill switch   │  │ trails   │ │
-│  │ Commitments   │  │ Compliance    │  │ Reports  │ │
-│  │ Heartbeat     │  │ Resource lock │  │ Traces   │ │
-│  └───────────────┘  └──────────────┘  └──────────┘ │
-│                                                      │
-│  ┌─ Coordination ┐  ┌─ CLI ────────┐               │
-│  │ Task queue    │  │ Engram CRUD  │               │
-│  │ Agent slots   │  │ Session mgmt │               │
-│  │ Multi-brain   │  │ Chat (multi- │               │
-│  │ sync          │  │  provider)   │               │
-│  └───────────────┘  └──────────────┘               │
-│                                                      │
-│  100% local  ·  Zero cloud dependency  ·  MIT        │
-└──────────────────────────────────────────────────────┘
-```
+**114 MCP tools** across 14 facades:
 
-### Key Features
-
-- **Engrams** — Persistent knowledge that survives across sessions. Write once, recall forever.
-- **Session persistence** — Save work context, resume later. No more "where was I?"
-- **Commitment tracking** — Open loops tracked with age tiers (green/yellow/red) and health scores.
-- **Heartbeat** — Proactive check-ins that catch stale blockers, velocity drops, and idle sessions.
-- **Multi-agent coordination** — Task queues, agent slots, and brain sync for multi-agent setups.
-- **Governance** — HITL approval gates, kill switch, resource locking, compliance configuration.
-- **Decision trails** — Every agent decision logged with reasoning. Full audit trail.
-- **170+ MCP tools** — Organized into facade tools for memory, governance, orchestration, sessions, and more.
+- **GROUND** — Execution verification (5 tiers: diff, syntax, imports, tests, runtime)
+- **ALIGN** — Human corrections (verdict + delta + DPO + event in one call)
+- **Memory** — Engrams that persist across sessions. Write once, recall forever.
+- **Sessions** — Save context, resume later. Session arc shows your last 3 sessions.
+- **Tasks** — Priority queue with escalation, HITL gates, and heartbeat monitoring.
+- **Governance** — Kill switch, compliance configs (EU DORA, MAS TRM, SOC2), audit trails.
+- **Orchestration** — Agent slots, multi-brain sync, task dispatch.
+- **Archive** — Training pipeline (SFT + DPO), delta tracking, frontier health dashboard.
 
 ---
 
@@ -78,7 +81,7 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 | | Free | Pro |
 |---|---|---|
-| 170+ MCP tools | Yes | Yes |
+| 114 MCP tools | Yes | Yes |
 | Persistent memory | Yes | Yes |
 | Governance & HITL | Yes | Yes |
 | Audit trails (DSoR) | Yes | Yes |
