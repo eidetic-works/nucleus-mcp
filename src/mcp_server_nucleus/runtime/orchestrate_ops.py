@@ -6,8 +6,11 @@ Contains:
 """
 
 import json
+import os
 import time
 import uuid
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 from .common import get_brain_path
 from .db import get_storage_backend
@@ -18,6 +21,45 @@ from .db import get_storage_backend
 def _lazy(name):
     import mcp_server_nucleus as m
     return getattr(m, name)
+
+
+# ── Artery 3: Strategy engram helpers ─────────────────────────
+
+def _load_strategy_context(brain: Path) -> list:
+    """Load recent high-intensity Strategy engrams for scheduling context."""
+    ledger_path = brain / "engrams" / "ledger.jsonl"
+    if not ledger_path.exists():
+        return []
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    strategy = []
+    try:
+        with open(ledger_path, "r") as f:
+            for line in f:
+                try:
+                    e = json.loads(line.strip())
+                    if (e.get("context") == "Strategy"
+                        and e.get("intensity", 0) >= 7
+                        and not e.get("deleted", False)
+                        and e.get("timestamp", "") > cutoff):
+                        strategy.append(e)
+                except (json.JSONDecodeError, KeyError):
+                    continue
+    except OSError:
+        pass
+    return strategy
+
+
+def _compute_engram_boost(task: dict, strategy_engrams: list) -> float:
+    """Compute priority boost from matching strategy engrams."""
+    boost = 0.0
+    task_text = (task.get("description", "") + " " + task.get("id", "")).lower()
+    task_words = set(task_text.split())
+    for engram in strategy_engrams:
+        engram_words = set(engram.get("value", "").lower().split())
+        overlap = len(task_words & engram_words)
+        if overlap >= 2:
+            boost += engram.get("intensity", 7) * 0.1 * min(overlap / max(len(task_words), 1), 0.5)
+    return min(boost, 3.0)
 
 
 # ── Implementation ─────────────────────────────────────────────
@@ -241,9 +283,26 @@ def _brain_orchestrate_impl(
         response["queue"]["blocked"] = blocked
         response["queue"]["available_for_claim"] = [t.get("id") for t in available]
         
-        # SORT BY PRIORITY
-        available.sort(key=lambda t: t.get("priority", 99))
-        
+        # SORT BY PRIORITY (Artery 3: strategy engram boost)
+        strategy_engrams = []
+        if not os.environ.get("NUCLEUS_DISABLE_ARTERY_3"):
+            try:
+                strategy_engrams = _load_strategy_context(brain)
+                if strategy_engrams:
+                    for task in available:
+                        boost = _compute_engram_boost(task, strategy_engrams)
+                        task['_effective_priority'] = task.get('priority', 99) - boost
+                        if boost > 0:
+                            task['_strategy_boost'] = round(boost, 2)
+            except Exception:
+                pass  # Fall back to raw priority
+        available.sort(key=lambda t: t.get("_effective_priority", t.get("priority", 99)))
+        if strategy_engrams:
+            response["strategy_context"] = {
+                "engrams_loaded": len(strategy_engrams),
+                "top_engram": strategy_engrams[0].get("key") if strategy_engrams else None,
+            }
+
         # HANDLE MODES
         if mode == "report":
             response["action"] = {

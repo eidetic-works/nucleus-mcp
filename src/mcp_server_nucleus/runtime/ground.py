@@ -13,8 +13,10 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+
+from .common import get_brain_path, logger
 
 
 def detect_project_root(start: Path = None) -> Path:
@@ -100,5 +102,28 @@ def run_ground(project_root: str = None, python_path: str = None,
     result["python_used"] = python
     result["timestamp"] = datetime.now().isoformat()
     result["ground_version"] = "1.0.0"
+
+    # Log receipt to verification_log.jsonl (evidence trail for frontier_health)
+    try:
+        brain = get_brain_path()
+        log_path = brain / "verification_log.jsonl"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, "a") as f:
+            f.write(json.dumps(result, default=str) + "\n")
+    except Exception:
+        pass  # best-effort
+
+    # Emit ground_verified event (Three Frontiers: GROUND signal)
+    try:
+        from .event_ops import _emit_event
+        _emit_event("ground_verified", "execution_verifier", {
+            "receipt_id": result.get("receipt_id", ""),
+            "tier_reached": result.get("tier_reached", 0),
+            "verified": len(result.get("tiers_failed", [])) == 0,
+            "tiers_passed": result.get("tiers_passed", []),
+            "tiers_failed": result.get("tiers_failed", []),
+        })
+    except Exception:
+        pass  # never break verification
 
     return result

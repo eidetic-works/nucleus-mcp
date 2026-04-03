@@ -50,6 +50,7 @@ def _setup_flywheel_logger():
         if not any(isinstance(h, logging.FileHandler) for h in nucleus_logger.handlers):
             nucleus_logger.addHandler(handler)
             nucleus_logger.setLevel(logging.INFO)
+            
     except Exception as e:
         import sys
         sys.stderr.write(f"[Flywheel] Failed to setup logger: {e}\n"); sys.stderr.flush()
@@ -117,7 +118,7 @@ class SwarmsOrchestrator:
         from .llm_client import DualEngineLLM
         return DualEngineLLM(job_type=job_type)
 
-    def _load_state(self):
+_load_state(self):
         """Load swarm state with BrainLock"""
         if not self.state_file.exists():
             return
@@ -300,7 +301,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
                     state["artifacts"].append(artifact)
                     
                     logger.info(f"✅ Agent {agent_persona} completed step {i+1}")
-
+                    
                 except Exception as agent_error:
                     logger.error(f"💥 Agent {agent_persona} failed: {agent_error}")
                     mission_artifacts.append({
@@ -330,7 +331,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
             # Final save
             self._active_missions[mission_id] = state
             self._save_state()
-
+                
         except Exception as e:
             logger.error(f"💥 Mission {mission_id} Failed: {e}")
             state["status"] = "failed"
@@ -379,7 +380,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
             # Also save raw JSON
             raw_file = mission_dir / "artifacts.json"
             raw_file.write_text(json.dumps(artifacts, indent=2, ensure_ascii=False))
-
+            
         except Exception as e:
             logger.error(f"Failed to save mission artifacts: {e}")
             

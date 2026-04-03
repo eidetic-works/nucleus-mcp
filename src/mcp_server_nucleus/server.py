@@ -74,6 +74,47 @@ def register_resources(mcp, helpers):
         except Exception as e:
             return json.dumps({"success": False, "error": str(e)})
 
+    @mcp.resource("brain://health")
+    def resource_health() -> str:
+        """Three Frontiers health — GROUND/ALIGN/COMPOUND status at a glance."""
+        try:
+            from .runtime.common import get_brain_path
+            from .runtime.hardening import safe_read_jsonl
+            from datetime import datetime, timezone
+            brain = get_brain_path()
+            result = {}
+            # GROUND
+            vlog = brain / "verification_log.jsonl"
+            if vlog.exists():
+                receipts = safe_read_jsonl(vlog)
+                passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                result["ground"] = {"total": len(receipts), "pass_rate": round(passed / max(len(receipts), 1) * 100, 1)}
+            else:
+                result["ground"] = {"total": 0}
+            # ALIGN
+            vpath = brain / "driver" / "human_verdicts.jsonl"
+            if vpath.exists():
+                verdicts = safe_read_jsonl(vpath)
+                non_pending = [v for v in verdicts if v.get("verdict") != "pending"]
+                result["align"] = {
+                    "total": len(non_pending),
+                    "corrected": sum(1 for v in non_pending if v.get("verdict") == "corrected"),
+                    "accepted": sum(1 for v in non_pending if v.get("verdict") == "accepted"),
+                }
+            else:
+                result["align"] = {"total": 0}
+            # COMPOUND
+            deltas_path = brain / "deltas" / "deltas.jsonl"
+            if deltas_path.exists():
+                deltas = safe_read_jsonl(deltas_path)
+                result["compound"] = {"deltas": len(deltas)}
+            else:
+                result["compound"] = {"deltas": 0}
+            result["last_updated"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            return json.dumps(result, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
 # ============================================================
 # MCP PROMPTS (Pre-built orchestration)
 # ============================================================
@@ -173,6 +214,16 @@ def main():
     except Exception as e:
         log_debug(f"File monitor init failed: {e}")
     
+    # Emit session_started — triggers cycle bootstrap + growth hooks
+    try:
+        from .runtime.event_ops import _emit_event
+        import uuid as _uuid
+        _session_id = f"mcp-{int(time.time())}-{str(_uuid.uuid4())[:8]}"
+        _emit_event("session_started", "mcp_server", {"session_id": _session_id})
+        log_debug(f"🟢 session_started emitted: {_session_id}")
+    except Exception as e:
+        log_debug(f"session_started emission failed: {e}")
+
     try:
         log_debug(f"Entering mcp.run() (Version {__version__})")
         mcp.run()

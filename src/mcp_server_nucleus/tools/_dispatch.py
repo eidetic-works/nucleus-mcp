@@ -21,6 +21,46 @@ logger = logging.getLogger("nucleus.dispatch")
 
 
 # ============================================================
+# AMBIENT FRONTIER HEALTH (appended to every tool response)
+# ============================================================
+
+_health_cache = {"line": "", "expires": 0.0}
+_HEALTH_CACHE_TTL = 60  # seconds
+
+
+def _ambient_health_line() -> str:
+    """One-line frontier health summary, cached 60s. Silent fail."""
+    if not os.environ.get("NUCLEUS_AMBIENT_HEALTH"):
+        return ""
+    now = time.time()
+    if now < _health_cache["expires"] and _health_cache["line"]:
+        return _health_cache["line"]
+    try:
+        from ..runtime.common import get_brain_path
+        brain = get_brain_path()
+        # GROUND
+        vlog = brain / "verification_log.jsonl"
+        g_count = sum(1 for _ in open(vlog)) if vlog.exists() else 0
+        # ALIGN
+        verdicts = brain / "driver" / "human_verdicts.jsonl"
+        a_count = sum(1 for _ in open(verdicts)) if verdicts.exists() else 0
+        # COMPOUND
+        deltas = brain / "deltas" / "deltas.jsonl"
+        c_count = sum(1 for _ in open(deltas)) if deltas.exists() else 0
+
+        parts = []
+        parts.append(f"GROUND {g_count}" if g_count else "GROUND —")
+        parts.append(f"ALIGN {a_count}" if a_count else "ALIGN —")
+        parts.append(f"COMPOUND {c_count}" if c_count else "COMPOUND —")
+        line = "\n[frontiers: " + " | ".join(parts) + "]"
+        _health_cache["line"] = line
+        _health_cache["expires"] = now + _HEALTH_CACHE_TTL
+        return line
+    except Exception:
+        return ""
+
+
+# ============================================================
 # DISPATCH TELEMETRY
 # ============================================================
 
@@ -293,9 +333,8 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms)
         # Ensure result is always a string — guards against structured_content errors
-        if isinstance(result, str):
-            return result
-        return json.dumps(result, indent=2, default=str)
+        result_str = result if isinstance(result, str) else json.dumps(result, indent=2, default=str)
+        return result_str + _ambient_health_line()
     except TypeError as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))

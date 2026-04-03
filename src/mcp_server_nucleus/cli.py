@@ -366,7 +366,44 @@ def init_brain_solo(brain_path: Path) -> bool:
 
 
 
-def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str, Any]):
+def _build_nucleus_mcp_config(brain_path: str) -> dict:
+    """Single source of truth for generating MCP config."""
+    from .runtime.common import get_nucleus_mcp_command
+    cmd = get_nucleus_mcp_command()
+    config = {"command": cmd[0]}
+    if len(cmd) > 1:
+        config["args"] = cmd[1:]
+    config["env"] = {
+        "NUCLEUS_BRAIN_PATH": brain_path,
+        "NUCLEAR_BRAIN_PATH": brain_path,  # legacy compat
+    }
+    return config
+
+
+def _get_ide_config_paths() -> list:
+    """Return list of (Path, display_name) for all known MCP clients."""
+    import platform
+    home = Path.home()
+    paths = []
+    # Claude Desktop (platform-specific)
+    if platform.system() == "Darwin":
+        paths.append((home / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json", "Claude Desktop"))
+    elif platform.system() == "Linux":
+        paths.append((home / ".config" / "Claude" / "claude_desktop_config.json", "Claude Desktop"))
+    else:
+        paths.append((Path(os.environ.get("APPDATA", "")) / "Claude" / "claude_desktop_config.json", "Claude Desktop"))
+    # Claude Code
+    paths.append((home / ".claude" / ".mcp.json", "Claude Code"))
+    # Cursor
+    paths.append((home / ".cursor" / "mcp.json", "Cursor"))
+    # Windsurf
+    paths.append((home / ".codeium" / "windsurf" / "mcp_config.json", "Windsurf"))
+    # Antigravity
+    paths.append((home / ".gemini" / "antigravity" / "mcp_config.json", "Antigravity"))
+    return paths
+
+
+def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str, Any], force: bool = False):
     """Inject nucleus server into IDE-specific MCP configuration."""
     if not config_path.exists():
         return False
@@ -377,23 +414,29 @@ def _patch_mcp_config(config_path: Path, ide_name: str, nucleus_config: Dict[str
         if not backup_path.exists():
             shutil.copy2(config_path, backup_path)
             print(f"  📦 Created backup at {backup_path}")
-        
+
         with open(config_path, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
-        
+
         # Normalize to standard 'mcpServers' block
         target_key = "mcpServers"
         if target_key not in config_data:
             config_data[target_key] = {}
-        
+
         if "nucleus" not in config_data[target_key]:
             config_data[target_key]["nucleus"] = nucleus_config
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(config_data, f, indent=2, ensure_ascii=False)
             print(f"  ✅ Auto-configured 'nucleus' in {ide_name} settings!")
             return True
+        elif force:
+            config_data[target_key]["nucleus"] = nucleus_config
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, indent=2, ensure_ascii=False)
+            print(f"  ✅ Overwrote 'nucleus' config in {ide_name}!")
+            return True
         else:
-            print(f"  ℹ️  'nucleus' already configured in {ide_name}.")
+            print(f"  ℹ️  'nucleus' already configured in {ide_name} (use --force to overwrite).")
             return True
     except Exception as e:
         print(f"  ⚠️  Could not auto-configure {ide_name}: {e}")
@@ -446,19 +489,11 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
     
     # Generate config and auto-configure
     abs_path = str(brain_path.absolute())
-    nucleus_config = {
-        "command": "python3",
-        "args": ["-m", "mcp_server_nucleus"],
-        "env": {"NUCLEAR_BRAIN_PATH": abs_path}
-    }
-    
+    nucleus_config = _build_nucleus_mcp_config(abs_path)
+
     # Paths to known MCP configs
-    ide_configs = [
-        (Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json", "Claude Desktop"),
-        (Path.home() / ".cursor" / "mcp.json", "Cursor"),
-        (Path.home() / ".codeium" / "windsurf" / "mcp_config.json", "Windsurf")
-    ]
-    
+    ide_configs = _get_ide_config_paths()
+
     auto_configured_any = False
     for path_obj, name in ide_configs:
         if _patch_mcp_config(path_obj, name, nucleus_config):
@@ -518,25 +553,13 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
         print("=" * 60)
         
         # OS-specific config file locations
-        import platform
-        system = platform.system()
         print("\n📍 Config file locations:")
-        if system == "Darwin":
-            print("   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json")
-            print("   Cursor:         ~/.cursor/mcp.json")
-            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
-        elif system == "Linux":
-            print("   Claude Desktop: ~/.config/Claude/claude_desktop_config.json")
-            print("   Cursor:         ~/.cursor/mcp.json")
-            print("   Windsurf:       ~/.codeium/windsurf/mcp_config.json")
-        else:  # Windows
-            print("   Claude Desktop: %APPDATA%\\Claude\\claude_desktop_config.json")
-            print("   Cursor:         %USERPROFILE%\\.cursor\\mcp.json")
-            print("   Windsurf:       %USERPROFILE%\\.codeium\\windsurf\\mcp_config.json")
+        for ide_path, ide_name in _get_ide_config_paths():
+            print(f"   {ide_name}: {ide_path}")
     else:
         print("\n✅ Auto-configured your MCP client(s). Config used:")
         print(f'   Brain path: {abs_path}')
-        print('   Command:    python3 -m mcp_server_nucleus')
+        print(f'   Command:    {nucleus_config["command"]}')
     
     # ── Progressive Disclosure: Persona-Aware Next Steps ──────
     print("\n" + "=" * 60)
@@ -1055,13 +1078,6 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         except Exception:
             pass
     
-    # ── Archive Setup (before batch — both paths need it) ──────
-    _archive_dir = brain_dir / "chat" / "archive" if brain_dir else None
-    _archive_file = None
-    if _archive_dir:
-        _archive_dir.mkdir(parents=True, exist_ok=True)
-        _archive_file = _archive_dir / "thread.jsonl"
-
     # Secret patterns — same as pre-commit hook for consistency
     import re as _re
     _SECRET_PATTERNS = [
@@ -1196,14 +1212,6 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
             _response_text = response.text if hasattr(response, 'text') else str(response)
             _batch_elapsed = __import__('time').time() - _batch_start
-
-            # Archive the batch turn
-            if _archive_file:
-                try:
-                    _archive_turn("user", batch_prompt)
-                    _archive_turn("assistant", _response_text, {"batch": True})
-                except Exception:
-                    pass
 
             if output_format == "json":
                 import json as _bj
@@ -1416,28 +1424,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         if path and path not in _session_files.get(op, []):
             _session_files.setdefault(op, []).append(path)
 
-    # ── Conversation Archive (search + stats — setup already done above) ──
-    # _archive_dir, _archive_file, _archive_turn already defined before batch mode
 
     def _search_archive(query: str, limit: int = 10) -> list:
         """Search the conversation archive for past turns matching query."""
-        if not _archive_file or not _archive_file.exists():
-            return []
         results = []
         query_lower = query.lower()
         try:
-            with open(_archive_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        entry = json.loads(line)
-                        content = entry.get("content", "")
-                        if query_lower in content.lower():
-                            results.append(entry)
-                    except json.JSONDecodeError:
-                        continue
             # Return most recent matches
             return results[-limit:]
         except Exception:
@@ -1445,25 +1437,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     def _archive_stats() -> dict:
         """Get archive stats (total turns, file size, date range)."""
-        if not _archive_file or not _archive_file.exists():
-            return {"turns": 0, "size_kb": 0}
         try:
-            size = _archive_file.stat().st_size
             turns = 0
             first_ts = None
             last_ts = None
-            with open(_archive_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        turns += 1
-                        try:
-                            entry = json.loads(line)
-                            ts = entry.get("ts", "")
-                            if not first_ts:
-                                first_ts = ts
-                            last_ts = ts
-                        except json.JSONDecodeError:
-                            pass
             return {
                 "turns": turns,
                 "size_kb": round(size / 1024, 1),
@@ -1759,7 +1736,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error reading file: {e}"
 
-        elif tool_name == "write_file":
+        if tool_name == "write_file":
             fpath = tool_input.get("path", "")
             content = tool_input.get("content", "")
             print(f"   [Step {step}: write {fpath}]")
@@ -1804,7 +1781,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error editing file: {e}"
 
-        elif tool_name == "search_files":
+        if tool_name == "search_files":
             pattern = tool_input.get("pattern", "")
             search_path = tool_input.get("path", ".")
             print(f"   [Step {step}: glob {pattern}]")
@@ -1842,7 +1819,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error searching code: {e}"
 
-        elif tool_name == "write_engram":
+        if tool_name == "write_engram":
             key = tool_input.get("key", "")
             value = tool_input.get("value", "")
             context = tool_input.get("context", "Architecture")
@@ -1862,7 +1839,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error writing engram: {e}"
 
-        elif tool_name == "search_engrams":
+        if tool_name == "search_engrams":
             query = tool_input.get("query", "")
             limit = tool_input.get("limit", 5)
             print(f"   [Step {step}: 🧠 search engrams '{query}']")
@@ -1887,7 +1864,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error searching engrams: {e}"
 
-        elif tool_name == "list_tasks":
+        if tool_name == "list_tasks":
             status_filter = tool_input.get("status")
             print(f"   [Step {step}: 📋 list tasks{' (' + status_filter + ')' if status_filter else ''}]")
             try:
@@ -1910,7 +1887,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             except Exception as e:
                 return f"Error listing tasks: {e}"
 
-        elif tool_name == "add_task":
+        if tool_name == "add_task":
             desc = tool_input.get("description", "")
             priority = tool_input.get("priority", 3)
             print(f"   [Step {step}: 📋 add task '{desc[:50]}']")
@@ -2017,7 +1994,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"❓ Unknown brain command '{_bcmd}'. Try /brain help\n")
                 continue
 
-            elif cmd in ("/clear", "/reset"):
+            if cmd in ("/clear", "/reset"):
                 history.clear()
                 turn_count = 0
                 print("🔄 Conversation cleared.\n")
@@ -2077,7 +2054,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print(f"   Next message will resume this session's full context.\n")
                 continue
 
-            elif cmd == "/recall":
+            if cmd == "/recall":
                 if not cmd_arg:
                     stats = _archive_stats()
                     if stats["turns"]:
@@ -2121,11 +2098,10 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             print(f"   💉 Injected {min(len(results), 5)} turns into context. The AI can now reference them.\n")
                 continue
 
-            elif cmd == "/archive":
+            if cmd == "/archive":
                 stats = _archive_stats()
                 if stats["turns"]:
                     print(f"📚 Conversation Archive:")
-                    print(f"   File: {_archive_file}")
                     print(f"   Turns: {stats['turns']}  |  Size: {stats['size_kb']} KB")
                     print(f"   Range: {stats.get('first', '?')[:10]} → {stats.get('last', '?')[:10]}")
                     print(f"   Search: /recall <query>")
@@ -2147,7 +2123,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print()
                 continue
 
-            elif cmd == "/escalate":
+            if cmd == "/escalate":
                 if not cmd_arg:
                     print(f"🚨 Escalate a decision to the operator.")
                     print(f"   Usage: /escalate <question>")
@@ -2212,7 +2188,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print(f"⚠️  Escalation '{_esc_id}' not found.\n")
                 continue
 
-            elif cmd == "/model":
+            if cmd == "/model":
                 if not cmd_arg:
                     # Show current + available
                     print(f"📊 Current model: {llm.model_name}")
@@ -2246,7 +2222,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print(f"❌ Failed to switch: {e}\n")
                 continue
 
-            elif cmd == "/auth":
+            if cmd == "/auth":
                 if _provider == "gemini":
                     if not cmd_arg:
                         key = os.environ.get("GEMINI_API_KEY", "")
@@ -2281,7 +2257,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             print(f"❌ Key set but LLM init failed: {e}\n")
                 continue
 
-            elif cmd == "/dual":
+            if cmd == "/dual":
                 if not cmd_arg or cmd_arg.lower() == "off":
                     if _dual_mode:
                         _dual_mode = False
@@ -2316,7 +2292,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"❌ Unknown provider '{cmd_arg}'. Available: gemini, anthropic, groq, anthropic\n")
                 continue
 
-            elif cmd == "/provider":
+            if cmd == "/provider":
                 available = ["gemini", "anthropic", "groq"]
                 if not cmd_arg:
                     print(f"🔌 Current provider: {_provider}")
@@ -2398,7 +2374,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print()
                 continue
 
-            elif cmd == "/status":
+            if cmd == "/status":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
                 _tool_count = "11 tools (native)" if _native_tools else "11 tools (<execute> tags)"
                 print(f"📊 Nucleus Brother Status")
@@ -2439,7 +2415,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print()
                 continue
 
-            elif cmd == "/tools":
+            if cmd == "/tools":
                 _native_tools = hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name)
                 _mode = "native API" if _native_tools else "<execute> tags"
                 print(f"🛠  Available Tools ({_mode})")
@@ -2463,7 +2439,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print()
                 continue
 
-            elif cmd == "/brain":
+            if cmd == "/brain":
                 print("🧠 Brain Dashboard")
                 if not brain_dir:
                     print("   ⚪ No brain found. Run `nucleus init` first.\n")
@@ -2497,7 +2473,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print()
                 continue
 
-            elif cmd == "/learn":
+            if cmd == "/learn":
                 if not cmd_arg:
                     print("Usage: /learn <key> <value>  (e.g. /learn db_pattern Uses SQLAlchemy async)\n")
                 elif not brain_dir:
@@ -2545,7 +2521,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"📎 Compacted: {old_count} → {len(history)} messages\n")
                 continue
 
-            elif cmd == "/clear":
+            if cmd == "/clear":
                 history.clear()
                 turn_count = 0
                 for k in _session_files:
@@ -2582,7 +2558,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print(f"❌ Undo failed for {fname}: {e}\n")
                 continue
 
-            elif cmd in ("/cost", "/stats"):
+            if cmd in ("/cost", "/stats"):
                 print(f"📊 Session Stats")
                 print(f"   Turns: {turn_count} | Messages: {len(history)}")
                 print(f"   Model: {llm.model_name} | Provider: {_provider}")
@@ -2619,7 +2595,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print()
                 continue
 
-            elif cmd == "/chat":
+            if cmd == "/chat":
                 if not brain_dir:
                     print("❌ Cannot save/resume chat: No .brain directory found.\n")
                     continue
@@ -2683,7 +2659,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   (If no tag is provided, defaults to active Mother ID: {default_chat_tag})\n")
                 continue
 
-            elif cmd == "/retry":
+            if cmd == "/retry":
                 if history:
                     # Capture the rejected response BEFORE trimming history
                     for _ri in range(len(history) - 1, -1, -1):
@@ -2781,7 +2757,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                                     continue
                                 else:
                                     break
-                elif _provider in ():
+                if _provider in ():
                     # --- Claude Code: tools handled internally by claude CLI ---
                     # Claude Code has its own agent loop (Read, Edit, Bash, etc.)
                     # We just stream the final response — no ReAct loop needed.
@@ -2801,7 +2777,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     except Exception as e:
                         last_err = str(e)
 
-                elif hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name):
+                if hasattr(llm, "stream_with_tools") and _model_supports_tools(llm.model_name):
                     # --- Native Tool Calling (Anthropic / Groq 70b+) ---
                     _tool_stop_reasons = ("tool_use", "tool_calls")
                     try:
@@ -3065,43 +3041,6 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 history.append(("assistant", reply))
                 turn_count += 1
 
-                # Archive to disk (permanent, append-only — survives /compact and session end)
-                _archive_turn("user", current_input)
-                _archive_turn("assistant", reply, {"tools_used": react_step})
-
-
-                if (turn_count > 1 and len(history) >= 4
-                        and not current_input.startswith("[Tool Result")):
-                    try:
-                            # Previous turn: user asked X, got bad response
-                            # Current turn: user corrected, got better response
-                            _prev_user = None
-                            _prev_asst = None
-                            for _di in range(len(history) - 3, -1, -1):
-                                if history[_di][0] == "user" and not history[_di][1].startswith("[Tool Result"):
-                                    _prev_user = history[_di][1]
-                                    # Look for the assistant response right after
-                                    if _di + 1 < len(history) and history[_di + 1][0] == "assistant":
-                                        _prev_asst = history[_di + 1][1]
-                                    break
-                    except Exception:
-                        pass
-
-                if reply and current_input and brain_dir:
-                    try:
-                        if _active_model and _active_model.get("status") in ("shadow", "canary"):
-                            import threading
-                            def _shadow_task():
-                                try:
-                                    from mcp_server_nucleus.runtime.llm_client import get_llm_client
-                                    _shadow_llm = get_llm_client("local")
-                                    _shadow_fn = lambda p: _shadow_llm.generate_content(p).text
-                                except Exception:
-                                    pass
-                            # Run in background — don't block the user
-                            threading.Thread(target=_shadow_task, daemon=True).start()
-                    except Exception:
-                        pass
 
                 # Auto-save (context window state — overwrites each time)
                 if brain_dir:
@@ -3161,7 +3100,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     print(f"   📎 Compacted: {old_count} → {len(history)} messages. Try your message again.\n")
                 else:
                     print(f"   History too short to compact. Try /provider groq (free) or wait for budget reset.\n")
-            elif "credit balance" in _el or "purchase credits" in _el:
+            if "credit balance" in _el or "purchase credits" in _el:
                 _is_oauth = getattr(llm, "_oauth_mode", False)
                 if _is_oauth:
                     print(f"\n⚠️  Claude Code OAuth error. Raw: {err[:200]}")
@@ -3290,6 +3229,16 @@ def main():
     recipe_sub.add_parser('list', help='List available recipes')
     recipe_install_parser = recipe_sub.add_parser('install', help='Install a recipe into your brain')
     recipe_install_parser.add_argument('recipe_name', help='Recipe name (e.g., founder, sre, adhd)')
+
+    # nucleus setup — Configure MCP clients for your brain
+    setup_ide_parser = subparsers.add_parser('setup',
+        help='Configure MCP clients (Claude, Cursor, Windsurf, etc.) for your brain')
+    setup_ide_parser.add_argument('--brain-path', type=str, default=None,
+        help='Path to .brain directory (auto-detects if not set)')
+    setup_ide_parser.add_argument('--dry-run', action='store_true',
+        help='Show what would be configured without writing')
+    setup_ide_parser.add_argument('--force', action='store_true',
+        help='Overwrite existing nucleus config in each IDE')
 
     # nucleus self-setup - Meta-config: Automatically add Nucleus paths to your shell profile
     setup_parser = subparsers.add_parser('self-setup', help='🛠 Meta-config: Automatically add Nucleus paths to your shell profile')
@@ -3941,36 +3890,7 @@ def main():
     archive_dpo_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/dpo_training.jsonl)')
     archive_dpo_export.add_argument('--exclude-unjudged', action='store_true', help='Drop shadow pairs without LLM judge verification')
     archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
-    archive_spin = archive_subparsers.add_parser('spin', help='Iterative self-play: trained model vs base model (SPIN)')
-    archive_spin.add_argument('--current', type=str, required=True, help='Current trained model provider (e.g., local)')
-    archive_spin.add_argument('--base', type=str, default='gemini', help='Base model provider (default: gemini)')
-    archive_spin.add_argument('--judge', type=str, default=None, help='LLM judge provider (default: heuristic)')
-    archive_spin.add_argument('--count', type=int, default=100, help='Number of comparisons (default: 100)')
-    archive_spin.add_argument('--round', type=int, default=1, help='SPIN round number (default: 1)')
-    archive_active = archive_subparsers.add_parser('active-learn', help='Active learning: generate targeted data for model weaknesses')
-    archive_active.add_argument('--provider', type=str, default='gemini', help='LLM provider for generation')
-    archive_active.add_argument('--eval-provider', type=str, default=None, help='Run eval first against this provider to find weaknesses')
-    archive_active.add_argument('--count', type=int, default=20, help='Pairs per weakness (default: 20)')
-    archive_conductor = archive_subparsers.add_parser('conductor', help='Training conductor: show status + next recommended action')
-    archive_constitutional.add_argument('--provider', type=str, default='gemini', help='LLM for critique and revision')
-    archive_constitutional.add_argument('--count', type=int, default=100, help='Number of turns to process (default: 100)')
-    archive_quality = archive_subparsers.add_parser('quality', help='Score training data quality and show distribution')
-    archive_quality.add_argument('--export', type=str, default=None, help='Export filtered data to path')
-    archive_quality.add_argument('--min-quality', type=float, default=0.4, help='Minimum quality threshold (default: 0.4)')
-    archive_quality.add_argument('--format', choices=['openai', 'gemini', 'anthropic'], default='openai', help='Export format')
-    archive_quality.add_argument('--curriculum', action='store_true', help='Sort training data easy→hard (curriculum learning)')
-    archive_register = archive_subparsers.add_parser('register', help='Register a trained model version in the registry')
-    archive_register.add_argument('version', help='Version string (e.g., v1, v2.1)')
-    archive_register.add_argument('--base', type=str, default='llama3.2:3b', help='Base model used (default: llama3.2:3b)')
     archive_subparsers.add_parser('registry', help='Show all registered model versions')
-    archive_promote = archive_subparsers.add_parser('promote', help='Promote a model version (shadow → canary → primary)')
-    archive_promote.add_argument('version', help='Version to promote')
-    archive_promote.add_argument('--to', type=str, required=True, choices=['shadow', 'canary', 'primary', 'retired'], help='Target status')
-    archive_vault = archive_subparsers.add_parser('vault', help='List all model versions stored in the vault (SSD)')  # noqa: F841
-    archive_vault_restore = archive_subparsers.add_parser('vault-restore', help='Restore a model version from the vault')
-    archive_vault_restore.add_argument('version', help='Version to restore (e.g., v1)')
-    archive_rollback = archive_subparsers.add_parser('rollback', help='Rollback to a previous model version (retire current, restore target)')
-    archive_rollback.add_argument('version', help='Version to rollback to (e.g., v1)')
 
     # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
@@ -4095,7 +4015,56 @@ def main():
         elif cli_command == 'recipe':
             _handle_recipe_command(args)
 
-        elif cli_command == 'self-setup':
+        elif cli_command == 'setup':
+            # Auto-detect brain path
+            brain_path_str = args.brain_path
+            if not brain_path_str:
+                # Try to find .brain in cwd or parents
+                cwd = Path.cwd()
+                if (cwd / ".brain").exists():
+                    brain_path_str = str((cwd / ".brain").absolute())
+                else:
+                    for parent in cwd.parents:
+                        if (parent / ".brain").exists():
+                            brain_path_str = str((parent / ".brain").absolute())
+                            break
+            if not brain_path_str:
+                print("❌ No .brain directory found. Run 'nucleus init' first or pass --brain-path.")
+                sys.exit(1)
+
+            nucleus_config = _build_nucleus_mcp_config(brain_path_str)
+            ide_configs = _get_ide_config_paths()
+
+            print(f"🧠 Brain path: {brain_path_str}")
+            print(f"   Command:    {nucleus_config['command']}")
+
+            if args.dry_run:
+                print("\n[DRY RUN] Would configure these IDEs:\n")
+                for ide_path, ide_name in ide_configs:
+                    status = "EXISTS" if ide_path.exists() else "not found"
+                    print(f"  {ide_name}: {ide_path} [{status}]")
+                print("\nConfig that would be written:")
+                print(json.dumps({"mcpServers": {"nucleus": nucleus_config}}, indent=2))
+            else:
+                configured = 0
+                for ide_path, ide_name in ide_configs:
+                    if _patch_mcp_config(ide_path, ide_name, nucleus_config, force=args.force):
+                        configured += 1
+
+                if configured == 0:
+                    full_config = json.dumps({"mcpServers": {"nucleus": nucleus_config}}, indent=2)
+                    print("\n⚠️  No IDE config files found. Copy this config manually:\n")
+                    print(full_config)
+                else:
+                    print(f"\n✅ Configured {configured} IDE(s). Restart them to pick up changes.")
+
+                # Perplexity manual instructions (GUI-only, no config file)
+                print("\n📝 Perplexity (manual — GUI only):")
+                print("   Settings → MCP Servers → Add Server")
+                print(f'   Name: nucleus | Command: {nucleus_config["command"]}')
+                print(f'   Env: NUCLEUS_BRAIN_PATH={brain_path_str}')
+
+        if cli_command == 'self-setup':
             from .setup import install_nucleus_path
             install_nucleus_path(dry_run=args.dry_run)
             
@@ -4235,7 +4204,7 @@ def main():
             handle_config_command(args)
 
         # ── Project Purple 2: Daemon + Drive + Train ──────────────
-        elif cli_command == 'start':
+        if cli_command == 'start':
             handle_start_command(args)
 
         elif cli_command == 'stop':
@@ -4266,7 +4235,7 @@ def main():
             handle_heartbeat_command(args)
 
         # ── Agent CLI Commands (v1.4.0) ──────────────────────────────
-        elif cli_command == 'federation':
+        if cli_command == 'federation':
             sys.exit(handle_federation_command(args))
 
         elif cli_command == 'engram':
@@ -4501,6 +4470,20 @@ def handle_review_command(args):
 
     if updated:
         verdicts_path.write_text("\n".join(new_lines) + "\n")
+
+        # Emit align_reviewed event (Phase 3: Three Frontiers)
+        try:
+            from .runtime.event_ops import _emit_event
+            verdict_type = entry.get("verdict", "unknown")
+            _emit_event("align_reviewed", "human", {
+                "task_id": task_id,
+                "verdict": verdict_type,
+                "human_notes": entry.get("human_notes", ""),
+                "correction": entry.get("correction", ""),
+            })
+        except Exception:
+            pass  # Never let event emission break the review command
+
         print(f"Task {task_id} updated.")
     else:
         print(f"Task {task_id} not found or not pending.")
@@ -4816,2667 +4799,3 @@ def handle_growth_command(args) -> int:
         return 1
 
 
-
-
-def handle_outbound_command(args) -> int:
-    """Handle outbound check/record/plan — direct runtime calls."""
-    from .cli_output import output
-    _setup_agent_env(args)
-    fmt = _get_fmt(args)
-    action = getattr(args, 'outbound_action', None)
-
-    if action == 'check':
-        from .runtime.outbound_ops import outbound_check
-        result = outbound_check(args.channel, args.identifier, getattr(args, 'body', ''))
-        return output(result, fmt)
-
-    elif action == 'record':
-        from .runtime.outbound_ops import outbound_record
-        result = outbound_record(
-            args.channel, args.identifier,
-            body=getattr(args, 'body', ''),
-            permalink=getattr(args, 'permalink', ''),
-            workhorse=getattr(args, 'workhorse', 'manual'))
-        return output(result, fmt)
-
-    elif action == 'plan':
-        from .runtime.outbound_ops import outbound_plan
-        result = outbound_plan(channel=getattr(args, 'channel', None))
-        return output(result, fmt)
-
-    else:
-        print("Usage: nucleus outbound <check|record|plan>", file=sys.stderr)
-        return 1
-
-
-def handle_depth_command(args):
-    """Handle depth subcommands."""
-    # Import the core functions from __init__
-    try:
-        from .runtime.depth_ops import _depth_show, _depth_pop, _depth_reset, _depth_set_max, _depth_push, _generate_depth_map
-    except ImportError:
-        try:
-            from mcp_server_nucleus.runtime.depth_ops import _depth_show, _depth_pop, _depth_reset, _depth_set_max, _depth_push, _generate_depth_map
-        except ImportError:
-            print("Error: Could not import depth functions. Make sure NUCLEAR_BRAIN_PATH is set.")
-            return
-    
-    if args.depth_action == 'show' or args.depth_action is None:
-        result = _depth_show()
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        
-        print()
-        print("╔═══════════════════════════════════════════════════════════╗")
-        print(f"║ {result.get('indicator', '?'):^59} ║")
-        print("╟───────────────────────────────────────────────────────────╢")
-        print(f"║ Status: {result.get('status', 'unknown'):<51} ║")
-        print("╟───────────────────────────────────────────────────────────╢")
-        if result.get('breadcrumbs'):
-            print(f"║ Path: {result.get('breadcrumbs', '')[:53]:<53} ║")
-        else:
-            print("║ Path: (root level)                                       ║")
-        print("╟───────────────────────────────────────────────────────────╢")
-        print("║ Tree:                                                     ║")
-        for line in result.get('tree', '').split('\n')[:5]:  # Max 5 lines
-            print(f"║   {line:<56} ║")
-        print("╚═══════════════════════════════════════════════════════════╝")
-        print()
-        print("Commands: nucleus depth up | nucleus depth reset | nucleus depth push <topic>")
-        
-    elif args.depth_action == 'up':
-        to_level = getattr(args, 'to', None)
-        if to_level is not None:
-            # Pop multiple times to reach target level
-            result = _depth_show()
-            current = result.get('current_depth', 0)
-            pops_needed = current - to_level
-            if pops_needed <= 0:
-                print(f"Already at or below level {to_level}")
-                return
-            for _ in range(pops_needed):
-                result = _depth_pop()
-        else:
-            result = _depth_pop()
-        
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        
-        print(result.get('message', '✅ Popped up one level'))
-        print(f"  {result.get('indicator', '')}")
-        if result.get('breadcrumbs'):
-            print(f"  Path: {result.get('breadcrumbs')}")
-        
-    elif args.depth_action == 'reset':
-        result = _depth_reset()
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        print(result.get('message', '✅ Reset to root'))
-        if result.get('session_id'):
-            print(f"  New session: {result.get('session_id')}")
-        
-    elif args.depth_action == 'max':
-        result = _depth_set_max(args.level)
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        print(f"✅ {result.get('message', 'Max depth updated')}")
-        print(f"  {result.get('indicator', '')}")
-        
-    elif args.depth_action == 'push':
-        result = _depth_push(args.topic)
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        print(f"📍 Diving into: {args.topic}")
-        print(f"  {result.get('indicator', '')}")
-        if result.get('warning'):
-            print(f"  {result.get('warning')}")
-        print(f"  Path: {result.get('breadcrumbs', '')}")
-        
-    elif args.depth_action == 'map':
-        result = _generate_depth_map()
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        print(f"🗺️  {result.get('message', 'Depth map')}")
-        print(f"  Path: {result.get('path', '(root)')}")
-        print()
-        print("─" * 50)
-        print(result.get('mermaid', '(no graph data)'))
-        print("─" * 50)
-        print()
-        print("💡 Copy the mermaid code block to visualize in any markdown viewer!")
-        
-    else:
-        # Show depth help
-        print("Usage: nucleus depth <action>")
-        print()
-        print("Actions:")
-        print("  show    Show current depth indicator")
-        print("  up      Come back up one level")
-        print("  reset   Reset to root level")
-        print("  max N   Set max safe depth")
-        print("  push X  Go deeper into topic X")
-        print("  map     Show visual exploration map")
-
-
-def handle_features_command(args):
-    """Handle features subcommands."""
-    # Import feature functions from main module
-    from .runtime.feature_ops import _list_features, _get_feature, _search_features
-    from .runtime.proof_ops import _brain_get_proof_impl as _get_proof
-    
-    if args.features_action == 'list':
-        result = _list_features(args.product, args.status, None)
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        
-        features = result.get("features", [])
-        if not features:
-            print("📋 No features found.")
-            if args.product or args.status:
-                print("   Try removing filters to see all features.")
-            return
-        
-        # Group by product
-        by_product = {}
-        for f in features:
-            prod = f.get("product", "unknown")
-            by_product.setdefault(prod, []).append(f)
-        
-        print(f"\n📋 Features ({len(features)} total)")
-        print("=" * 60)
-        
-        for product, prod_features in by_product.items():
-            print(f"\n{product.upper()} ({len(prod_features)} features):")
-            print("-" * 40)
-            for f in prod_features:
-                status_icon = {
-                    "production": "✅",
-                    "released": "✅",
-                    "development": "🚧",
-                    "staged": "🔄",
-                    "broken": "❌",
-                    "deprecated": "⚠️"
-                }.get(f.get("status"), "❓")
-                
-                validated = f.get("validation_result")
-                val_icon = "✅" if validated == "passed" else "❌" if validated == "failed" else "⏳"
-                
-                print(f"  {status_icon} {f.get('name'):<30} v{f.get('version'):<8} {val_icon}")
-        
-        print()
-        
-    elif args.features_action == 'test':
-        result = _get_feature(args.id)
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        
-        f = result.get("feature", {})
-        print(f"\n🧪 How to Test: {f.get('name')}")
-        print("=" * 60)
-        print(f"\n📝 Description: {f.get('description')}")
-        print(f"📦 Product: {f.get('product')}")
-        print(f"🏷️  Version: {f.get('version')}")
-        print(f"📊 Status: {f.get('status')}")
-        
-        print("\n📋 Test Steps:")
-        for i, step in enumerate(f.get("how_to_test", []), 1):
-            print(f"   {i}. {step}")
-        
-        print("\n✅ Expected Result:")
-        print(f"   {f.get('expected_result')}")
-        
-        if f.get("deployed_url"):
-            print(f"\n🌐 URL: {f.get('deployed_url')}")
-        
-        validated = f.get("validation_result")
-        last_val = f.get("last_validated")
-        if validated:
-            val_icon = "✅" if validated == "passed" else "❌"
-            print(f"\n📅 Last Validated: {last_val} - {val_icon} {validated.upper()}")
-        else:
-            print("\n⏳ Not yet validated")
-        
-        print()
-        
-    elif args.features_action == 'search':
-        result = _search_features(args.query)
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        
-        features = result.get("features", [])
-        if not features:
-            print(f"🔍 No features found matching '{args.query}'")
-            return
-        
-        print(f"\n🔍 Search results for '{args.query}' ({len(features)} matches)")
-        print("-" * 50)
-        for f in features:
-            print(f"  • {f.get('name')} ({f.get('product')}) - {f.get('description')[:50]}...")
-        print()
-        
-    elif args.features_action == 'proof':
-        result = _get_proof(args.id)
-        if isinstance(result, str):
-            if result.startswith("Error"):
-                print(f"❌ {result}")
-                return
-            if "not found" in result.lower():
-                print(f"📋 {result}")
-                print()
-                print("💡 Generate a proof with:")
-                print(f"   nucleus_features(action='generate_proof', params={{feature_id: '{args.id}', thinking: '...'}})")
-                return
-            print(result)
-        elif isinstance(result, dict):
-            if "error" in result:
-                print(f"❌ Error: {result.get('error')}")
-                return
-            print(result.get("content", str(result)))
-        
-    else:
-        # Show features help
-        print("Usage: nucleus features <action>")
-        print()
-
-
-def handle_mount_command(args):
-    """Handle mount subcommands."""
-    brain_path = get_brain_path()
-    
-    mounts_file = brain_path / "mounts.json"
-    
-    if args.mount_action == 'add':
-        if not mounts_file.exists():
-            mounts = {}
-        else:
-            try:
-                mounts = json.loads(mounts_file.read_text())
-            except Exception:
-                mounts = {}
-        
-        config = {
-            "transport": args.transport,
-            "status": "configured" # CLI configure only
-        }
-        
-        if args.transport == 'stdio':
-            if not args.command:
-                print("❌ Error: --command is required for stdio transport")
-                return
-            config["command"] = args.command
-            config["args"] = args.args or []
-            
-            env_vars = {}
-            if args.env:
-                for e in args.env:
-                    if '=' in e:
-                        k, v = e.split('=', 1)
-                        env_vars[k] = v
-            if env_vars:
-                config["env"] = env_vars
-                
-        elif args.transport == 'sse':
-            if not args.url:
-                print("❌ Error: --url is required for sse transport")
-                return
-            config["url"] = args.url
-            
-        mounts[args.id] = config
-        mounts_file.write_text(json.dumps(mounts, indent=2, ensure_ascii=False))
-        print(f"✅ Mount '{args.id}' added to configuration.")
-        print("   Restart Nucleus to activate.")
-        
-    elif args.mount_action == 'remove':
-        if not mounts_file.exists():
-            print("❌ No mounts configured.")
-            return
-            
-        try:
-            mounts = json.loads(mounts_file.read_text())
-        except Exception:
-             print("❌ Failed to parse mounts file.")
-             return
-             
-        if args.id in mounts:
-            del mounts[args.id]
-            mounts_file.write_text(json.dumps(mounts, indent=2, ensure_ascii=False))
-            print(f"✅ Mount '{args.id}' removed.")
-            print("   Restart Nucleus to apply.")
-        else:
-            print(f"❌ Mount '{args.id}' not found.")
-            
-    elif args.mount_action == 'list':
-        if not mounts_file.exists():
-            print("No mounts configured.")
-            return
-            
-        try:
-            mounts = json.loads(mounts_file.read_text())
-        except Exception:
-             print("❌ Failed to parse mounts file.")
-             return
-             
-        print(f"\n🔌 Configured Mounts ({len(mounts)})")
-        print("=" * 60)
-        for mid, cfg in mounts.items():
-            t = cfg.get("transport")
-            details = f"{cfg.get('command')} {' '.join(cfg.get('args', []))}" if t == 'stdio' else cfg.get('url')
-            print(f"  • {mid:<15} [{t}] {details}")
-        print()
-    
-    else:
-        print("Usage: nucleus mount <add|remove|list>")
-        print("Actions:")
-        print("  list              List all features")
-        print("  list --product=X  Filter by product")
-        print("  list --status=X   Filter by status")
-        print("  test <id>         Show test instructions")
-        print("  search <query>    Search features")
-        print("  proof <id>        Show proof document")
-
-
-def handle_sessions_command(args):
-    """Handle sessions subcommands."""
-    from .runtime.session_ops import _list_sessions, _save_session, _resume_session
-    
-    if args.sessions_action == 'list':
-        result = _list_sessions()
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        
-        sessions = result.get("sessions", [])
-        if not sessions:
-            print("📋 No saved sessions found.")
-            return
-
-        print(f"\n📋 Saved Sessions ({len(sessions)})")
-        print("=" * 60)
-        for s in sessions:
-            print(f"• {s.get('timestamp', 'unknown')} - {s.get('context', 'Unknown Context')}")
-            print(f"  ID: {s.get('id', 'unknown')}")
-            print(f"  Task: {s.get('active_task', 'None')}")
-            print("-" * 40)
-        print()
-            
-    elif args.sessions_action == 'save':
-        result = _save_session(
-            args.context,
-            active_task=args.task,
-            pending_decisions=[],
-            breadcrumbs=[],
-            next_steps=[]
-        )
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        print(f"✅ Session saved: {result.get('session_id', 'unknown')}")
-        
-    elif args.sessions_action == 'resume':
-        result = _resume_session(args.id)
-        if "error" in result:
-            print(f"❌ Error: {result.get('error')}")
-            return
-        print("✅ Session resumed")
-        print(f"Context: {result.get('context')}")
-        print(f"Task: {result.get('active_task')}")
-
-
-def handle_install_command(args):
-    """Handle install command."""
-    # Import Installer lazily
-    from .runtime.installer import Installer
-    
-    try:
-        nuke_path = Path(args.path)
-        if not nuke_path.exists():
-            print(f"❌ Error: File not found: {nuke_path}")
-            return
-
-        # Initialize installer with environment brain path or default
-        brain_path = get_brain_path()
-        
-        installer = Installer(brain_path)
-        print(f"📦 Installing agent from {nuke_path}...")
-        
-        manifest = installer.install_from_file(nuke_path)
-        
-        print("\n✅ Installation Complete!")
-        print(f"  Agent: {manifest.agent.name} ({manifest.agent.id})")
-        print(f"  Version: {manifest.agent.version}")
-        
-        caps = [c.scope.value for c in manifest.capabilities]
-        if caps:
-            print(f"  Capabilities: {', '.join(caps)}")
-        else:
-            print("  Capabilities: None declared")
-        
-    except Exception as e:
-        print(f"\n❌ Installation Failed: {e}")
-        # import traceback
-        # traceback.print_exc()
-
-
-
-
-def handle_search_command(args):
-    """Handle agent search."""
-    # Local imports to avoid circular deps during init
-    try:
-        from .runtime.team import TeamManager
-        from .runtime.registry import RegistryClient
-    except ImportError:
-        # Fallback if running from source without install
-        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-        from mcp_server_nucleus.runtime.team import TeamManager
-        from mcp_server_nucleus.runtime.registry import RegistryClient
-
-    brain_path = get_brain_path()
-    
-    # 1. Resolve Registry URL
-    team_mgr = TeamManager(brain_path)
-    registry_url = team_mgr.get_registry_url()
-    
-    print(f"🔍 Searching registry: {registry_url or 'Default Public'}...")
-    
-    # 2. Init Client
-    if registry_url:
-        client = RegistryClient(registry_url=registry_url)
-    else:
-        client = RegistryClient()
-        
-    # 3. Search
-    try:
-        # In a real CLI verify_client logic, we'd want to handle errors if registry is unreachable
-        # For Phase 57, we assume success or catch
-        client.fetch_index()
-        results = client.search(args.query)
-        
-        if not results:
-            print("No agents found.")
-            return
-
-        print(f"\nFound {len(results)} agents:")
-        print("=" * 60)
-        for agent in results:
-            print(f"  • {agent.name} ({agent.id})")
-            print(f"    v{agent.latest_version} | {agent.description}")
-            print(f"    Tags: {', '.join(agent.tags)}")
-            print(f"    Repo: {agent.repo_url}")
-            print()
-            
-    except Exception as e:
-        print(f"❌ Error during search: {e}")
-
-
-
-def handle_consolidate_command(args):
-    """Handle consolidate subcommands."""
-    try:
-        from .runtime.consolidation_ops import _archive_resolved_files, _get_archive_path
-    except ImportError:
-        try:
-            from mcp_server_nucleus.runtime.consolidation_ops import _archive_resolved_files, _get_archive_path
-        except ImportError:
-            print("Error: Could not import consolidation functions. Make sure NUCLEAR_BRAIN_PATH is set.")
-            return
-    
-        
-        
-        
-        
-        
-        
-    if args.consolidate_action == 'propose':
-        try:
-            from .runtime.consolidation_ops import _generate_merge_proposals
-        except ImportError:
-            try:
-                from mcp_server_nucleus.runtime.consolidation_ops import _generate_merge_proposals
-            except ImportError:
-                print("Error: Could not import proposal functions.")
-                return
-        
-        print("🔍 Scanning brain for redundant artifacts...")
-        print()
-        
-        result = _generate_merge_proposals()
-        
-        if not result.get("success"):
-            print(f"❌ Error: {result.get('error', 'Unknown error')}")
-            return
-        
-        total = result.get("total_proposals", 0)
-        summary = result.get("summary", {})
-        
-        if total == 0:
-            print("✅ Brain is clean! No consolidation proposals found.")
-            return
-        
-        # Print summary table
-        print(f"📋 Found {total} consolidation proposals:")
-        print()
-        print(f"   Versioned Duplicates: {summary.get('versioned_duplicates', 0)}")
-        print(f"   Related Series:       {summary.get('related_series', 0)}")
-        print(f"   Stale Files (30d):    {summary.get('stale_files', 0)}")
-        print(f"   Archive Candidates:   {summary.get('archive_candidates', 0)}")
-        print()
-        
-        # Print full proposal document
-        print("─" * 60)
-        print(result.get("proposal_text", ""))
-        
-    elif args.consolidate_action == 'status':
-        try:
-            archive_path = _get_archive_path()
-            resolved_archive = archive_path / "resolved"
-            
-            if not resolved_archive.exists():
-                print("📊 Consolidation Status")
-                print()
-                print("   Archive: Not yet created")
-                print("   Run: nucleus consolidate archive")
-                return
-            
-            # Count files in archive
-            archived_count = len(list(resolved_archive.glob("*")))
-            
-            print("📊 Consolidation Status")
-            print()
-            print(f"   Archive path: {resolved_archive}")
-            print(f"   Archived files: {archived_count}")
-            print()
-            print("💡 Run 'nucleus consolidate archive' to archive new backup files.")
-            
-        except Exception as e:
-            print(f"❌ Error: {e}")
-        
-    elif args.consolidate_action == 'tasks':
-        try:
-            from .runtime.consolidation_ops import _garbage_collect_tasks
-        except ImportError:
-            try:
-                from mcp_server_nucleus.runtime.consolidation_ops import _garbage_collect_tasks
-            except ImportError:
-                print("Error: Could not import task garbage collection.")
-                return
-        
-        dry_run = getattr(args, 'dry_run', False)
-        max_age = getattr(args, 'max_age', 72)
-        
-        if dry_run:
-            print(f"🔍 Previewing task garbage collection (max age: {max_age}h)...")
-        else:
-            print(f"🧹 Garbage collecting stale tasks (max age: {max_age}h)...")
-        print()
-        
-        result = _garbage_collect_tasks(max_age_hours=max_age, dry_run=dry_run)
-        
-        if not result.get("success"):
-            print(f"❌ Error: {result.get('error', 'Unknown error')}")
-            return
-        
-        archived = result.get("archived", 0)
-        kept = result.get("kept", 0)
-        breakdown = result.get("breakdown", {})
-        
-        if archived == 0:
-            print("✅ No stale tasks found. Task queue is clean!")
-            print(f"   Active tasks: {kept}")
-            return
-        
-        mode = "Would archive" if dry_run else "Archived"
-        print(f"{'🔍' if dry_run else '✅'} {mode} {archived} tasks, kept {kept}")
-        print()
-        print(f"   Auto-generated noise: {breakdown.get('auto_generated', 0)}")
-        print(f"   Stale (>{max_age}h):    {breakdown.get('stale', 0)}")
-        print()
-        
-        sample = result.get("sample_archived", [])
-        if sample:
-            print("📋 Sample archived tasks:")
-            for t in sample[:5]:
-                print(f"   • {t.get('id', '?')}: {t.get('description', '?')}")
-            if len(sample) > 5:
-                print(f"   ... and {archived - 5} more")
-        
-        if dry_run:
-            print()
-            print("💡 Run without --dry-run to execute: nucleus consolidate tasks")
-    
-    else:
-        # Show consolidate help
-        print("Usage: nucleus consolidate <action>")
-        print()
-        print("Actions:")
-        print("  archive    Archive .resolved.* backup files (safe, reversible)")
-        print("  tasks      Garbage collect stale/auto-generated tasks")
-        print("  propose    Detect redundant artifacts and generate merge proposals")
-        print("  status     Show consolidation status and archive info")
-
-
-def _install_recipe_into_brain(brain_path: Path, recipe_name: str):
-    """Install a recipe into an existing brain directory."""
-    from .runtime.recipes import load_recipe, install_recipe, RecipeNotFoundError, RecipeValidationError
-
-    print(f"\n📦 Installing recipe: {recipe_name}...")
-    try:
-        recipe_data = load_recipe(recipe_name)
-        summary = install_recipe(brain_path, recipe_data)
-
-        print(f"  ✅ Recipe '{summary['recipe']}' v{summary['version']} installed!")
-        if summary["engrams_written"]:
-            print(f"  🧠 {summary['engrams_written']} welcome engrams written")
-        if summary["tasks_created"]:
-            print(f"  📋 {summary['tasks_created']} scheduled tasks created")
-        if summary["combos_enabled"]:
-            print(f"  ⚡ Combos enabled: {', '.join(summary['combos_enabled'])}")
-
-        if summary["tips"]:
-            print("\n🎯 Try these commands:")
-            for tip in summary["tips"]:
-                print(f"   {tip}")
-
-    except RecipeNotFoundError as e:
-        print(f"  ❌ {e}")
-    except RecipeValidationError as e:
-        print(f"  ❌ Recipe validation failed: {e}")
-
-
-def _print_curated_help():
-    """Print a curated, user-friendly command guide."""
-    print("""
-============================================================
-  NUCLEUS — Sovereign Agent OS
-============================================================
-
-  Getting Started:
-    nucleus init [--recipe <name>]   Initialize a .brain directory
-    nucleus recipe list              Browse available recipes
-    nucleus recipe install <name>    Install a workflow recipe
-
-  Daily Workflow:
-    nucleus morning-brief            Your daily context brief
-    nucleus combo pulse              Health check + synthesis
-    nucleus end-of-day               Capture end-of-day learnings
-    nucleus status                   Satellite view of the brain
-
-  Memory:
-    nucleus engram search <query>    Search your memory
-    nucleus engram write             Record a decision or insight
-    nucleus combo learn <topic>      Compound an observation into memory
-
-  Governance:
-    nucleus compliance-check         Score your AI governance posture
-    nucleus audit-report             Generate audit-ready report
-    nucleus trace list               Browse decision trails
-
-  Tasks:
-    nucleus task list                Show all tasks
-    nucleus task add <desc>          Add a new task
-
-  Advanced:
-    nucleus --help                   Full command list (60+ commands)
-    nucleus <command> --help         Help for a specific command
-
-============================================================
-""")
-
-
-def _handle_recipe_command(args):
-    """Handle nucleus recipe list/install."""
-    from .runtime.recipes import list_recipes, load_recipe, install_recipe, RecipeNotFoundError, RecipeValidationError
-    from .runtime.common import get_brain_path
-
-    action = getattr(args, 'recipe_action', None)
-
-    if action == 'list':
-        recipes = list_recipes()
-        if not recipes:
-            print("No recipes available.")
-            return
-        print(f"\n📚 Available Recipes ({len(recipes)}):\n")
-        for r in recipes:
-            badge = "📦" if r["source"] == "builtin" else "👤"
-            print(f"  {badge} {r['name']:<20} {r['description']}")
-            if r.get("persona"):
-                print(f"     Persona: {r['persona']}")
-            if r.get("tags"):
-                print(f"     Tags: {', '.join(r['tags'])}")
-            print()
-        print("Install a recipe: nucleus recipe install <name>")
-
-    elif action == 'install':
-        brain_path = get_brain_path()
-        if not brain_path or not Path(brain_path).exists():
-            print("❌ No .brain directory found. Run 'nucleus init' first.")
-            return
-        _install_recipe_into_brain(Path(brain_path), args.recipe_name)
-
-    else:
-        print("Usage:")
-        print("  nucleus recipe list              — Browse available recipes")
-        print("  nucleus recipe install <name>    — Install a recipe")
-        print("\nAvailable recipes: founder, sre, adhd")
-
-
-def handle_activate_command(args):
-    """Handle nucleus activate <key>."""
-    from .runtime.license import validate_license_key, save_license
-    key = args.key.strip()
-    info = validate_license_key(key)
-    if info.valid:
-        path = save_license(key)
-        print(f"Nucleus Pro activated! Tier: {info.tier.upper()}")
-        print(f"  Email: {info.email}")
-        print(f"  Expires: {info.expires.strftime('%Y-%m-%d') if info.expires else 'never'}")
-        print(f"  Saved to: {path}")
-    else:
-        print(f"Invalid license key: {info.error}")
-        sys.exit(1)
-
-
-def handle_trial_command(args):
-    """Handle nucleus trial — generate a 14-day self-signed trial."""
-    from .runtime.license import generate_trial_key, validate_license_key, save_license, LICENSE_FILE
-    if LICENSE_FILE.exists():
-        from .runtime.license import load_license
-        existing = load_license()
-        if existing.valid and existing.tier == "pro":
-            print("You already have an active Nucleus Pro license. No trial needed.")
-            return
-        if existing.valid and existing.tier == "trial":
-            print(f"Trial already active (expires {existing.expires.strftime('%Y-%m-%d')}).")
-            return
-    key = generate_trial_key()
-    save_license(key)
-    info = validate_license_key(key)
-    print("Nucleus Pro trial activated! (14 days)")
-    print(f"  Expires: {info.expires.strftime('%Y-%m-%d') if info.expires else '?'}")
-    print(f"  Features: signed audit reports, compliance export")
-    print(f"\n  Subscribe at https://nucleusos.dev/pricing to keep Pro after trial.")
-
-
-def handle_license_command(args):
-    """Handle nucleus license — show current license status."""
-    from .runtime.license import load_license
-    info = load_license()
-    if info.valid:
-        badge = "PRO" if info.tier == "pro" else "TRIAL"
-        print(f"Nucleus [{badge}]")
-        print(f"  Email: {info.email}")
-        print(f"  Tier: {info.tier}")
-        print(f"  Expires: {info.expires.strftime('%Y-%m-%d') if info.expires else 'never'}")
-    else:
-        print("Nucleus [FREE]")
-        if info.error:
-            print(f"  ({info.error})")
-        print(f"\n  Start a trial: nucleus trial")
-        print(f"  Subscribe: https://nucleusos.dev/pricing")
-
-
-def handle_status_command(args):
-    """Handle nucleus status command (Satellite View + EnvironmentGuard)."""
-    import logging as _logging
-    import asyncio
-    from .runtime.satellite_ops import (
-        _get_satellite_view,
-        _format_satellite_cli
-    )
-    from .runtime.daemon import DaemonManager
-    from .runtime.locking import get_lock
-
-    brain_path = get_brain_path()
-    
-    # 1. Active Health Check (--health)
-    if getattr(args, 'health', False):
-        print(f"🔍 Performing EnvironmentGuard health check on {brain_path}...")
-        daemon = DaemonManager(brain_path)
-        try:
-            health = asyncio.run(daemon.get_status())
-            print(f"\n🌐 Overall Status: {health.status.upper()}")
-            print("-" * 40)
-            for comp, info in health.components.items():
-                state = info.get("state", "unknown")
-                icon = "✅" if state in ["online", "active", "held"] else "❌"
-                print(f" {icon} {comp:<15} : {state}")
-                if "latency_ms" in info:
-                    print(f"    - Latency: {info['latency_ms']:.1f}ms")
-                if "error" in info:
-                    print(f"    - Error: {info['error']}")
-            print("-" * 40)
-            print(f"⏰ Snapshot: {health.timestamp}")
-            return
-        except Exception as e:
-            print(f"❌ Health check failed: {e}")
-            return
-
-    # 2. Stale Lock Cleanup (--cleanup-lock)
-    if getattr(args, 'cleanup_lock', False):
-        print(f"🧹 Scanning for stale locks in {brain_path}/.locks...")
-        # We check specific important locks
-        locks_to_check = ["chief_session", "brain_write", "mcp_runtime"]
-        cleaned_any = False
-        for lock_name in locks_to_check:
-            lock = get_lock(lock_name, base_dir=brain_path / ".locks")
-            report = lock.check_stale_locks()
-            if report["state"] == "stale":
-                print(f"   ⚠️  Found stale lock: {lock_name} (PID {report.get('pid')})")
-                if lock.cleanup_stale():
-                    print(f"   ✅ Cleaned {lock_name}")
-                    cleaned_any = True
-                else:
-                    print(f"   ❌ Failed to clean {lock_name}")
-        
-        if not cleaned_any:
-            print("✅ No stale locks found.")
-        return
-
-    # 3. Standard Satellite View
-    # Determine detail level from flags
-    if getattr(args, 'minimal', False):
-        detail_level = "minimal"
-    elif getattr(args, 'sprint', False):
-        detail_level = "sprint"
-    elif getattr(args, 'full', False):
-        detail_level = "full"
-    else:
-        detail_level = "standard"
-    
-    # Determine if JSON output requested (--json flag OR --format json)
-    as_json = getattr(args, 'json', False) or getattr(args, 'format', None) == 'json'
-    
-    # When JSON output requested, suppress ALL logging to keep stdout clean
-    if as_json:
-        _logging.disable(_logging.CRITICAL)
-    
-    try:
-        view = _get_satellite_view(detail_level)
-        if as_json:
-            import json as _json
-            # Include license info in JSON output
-            from .runtime.license import load_license
-            lic = load_license()
-            view["license"] = {"tier": lic.tier, "valid": lic.valid,
-                               "expires": str(lic.expires) if lic.expires else None}
-            print(_json.dumps(view, indent=2, default=str))
-        else:
-            # Show license badge at top of status
-            from .runtime.license import load_license
-            lic = load_license()
-            if lic.valid and lic.tier == "pro":
-                print("Nucleus [PRO]")
-            elif lic.valid and lic.tier == "trial":
-                exp = lic.expires.strftime('%Y-%m-%d') if lic.expires else '?'
-                print(f"Nucleus [TRIAL expires {exp}]")
-
-            output = _format_satellite_cli(view)
-            print(output)
-
-            # Append daemon/scheduler status if daemon is running
-            _show_daemon_status(brain_path)
-    except Exception as e:
-        if as_json:
-            import json as _json
-            print(_json.dumps({"ok": False, "error": str(e)}, indent=2))
-        else:
-            print(f"❌ Error getting satellite view: {e}")
-            print()
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-
-
-
-
-
-def _show_daemon_status(brain_path):
-    """Show daemon + scheduler status if daemon is running."""
-    pid_path = brain_path / "daemon" / "daemon.pid"
-    state_path = brain_path / "daemon" / "scheduler_state.json"
-
-    if not pid_path.exists():
-        print("\n  Daemon: not running")
-        print("  Start:  nucleus start")
-        return
-
-    try:
-        pid = int(pid_path.read_text().strip())
-        os.kill(pid, 0)  # Check if alive
-        print(f"\n  Daemon: running (PID {pid})")
-    except (ProcessLookupError, ValueError):
-        print("\n  Daemon: not running (stale PID)")
-        return
-
-    if state_path.exists():
-        try:
-            state = json.loads(state_path.read_text())
-            running = [k for k, v in state.items() if v.get("last_result") == "never"]
-            completed = [k for k, v in state.items() if v.get("last_result") not in ("never", None)]
-            print(f"  Jobs: {len(state)} registered, {len(completed)} have run")
-            # Show next 3 due jobs
-            from .runtime.scheduler import NucleusScheduler
-            sched = NucleusScheduler(brain_path)
-            # Restore just for display
-            for name, info in state.items():
-                from .runtime.scheduler import ScheduledJob, ScheduleType
-                # We don't have full job info, just show last_run times
-                lr = info.get("last_run")
-                result = info.get("last_result", "?")
-                dur = info.get("last_duration", 0)
-                if lr:
-                    print(f"    {name:<22} last: {lr[:16]}  ({result}, {dur:.0f}s)")
-        except Exception:
-            pass
-
-
-def handle_schema_command(args):
-    """Handle schema export command."""
-    import asyncio
-    from .runtime.schema_gen import generate_tool_schema, export_schema_to_file
-    
-    # We need an initialized MCP instance
-    try:
-        from . import mcp
-    except ImportError:
-        print("Error: Could not import mcp instance. Ensure you are in the package root.")
-        return
-
-    async def run_gen():
-        tool_names = await mcp.get_tools()
-        print(f"🔍 Generating schema for {len(tool_names)} tools...")
-        schema = await generate_tool_schema(mcp)
-        export_schema_to_file(schema, args.output)
-        print(f"✅ Schema exported to: {args.output}")
-
-    asyncio.run(run_gen())
-
-
-# ============================================================
-# ALIVE WORKFLOW CLI HANDLERS (MDR_015)
-def _trigger_siphon(brain_path: Path):
-    """Helper to trigger the artifact siphon pulse."""
-    try:
-        from .runtime.siphon_engine import SiphonEngine, AntigravityAdapter, WindsurfAdapter
-        
-        # 1. Discover Workspace Root (Adaptive Discovery)
-        workspace_root = os.getcwd() 
-        
-        # 2. Extract Session ID (Mission Context)
-        session_id = None
-        current_id_path = brain_path / "session" / "current_id"
-        if current_id_path.exists():
-            session_id = current_id_path.read_text().strip()
-        
-        # 3. Target Vault: .brain/vault/artifacts
-        vault_path = str(brain_path / "vault" / "artifacts")
-        
-        # 4. Initialize Adapters
-        adapters = [
-            AntigravityAdapter(workspace_root, session_id=session_id),
-            WindsurfAdapter(workspace_root)
-        ]
-        
-        # 4. Run Siphon
-        engine = SiphonEngine(vault_path, adapters)
-        count = engine.siphon_now()
-        
-        if count > 0:
-            print(f"📡 Siphon Pulse: Synchronized {count} mission artifacts.")
-        return count
-    except Exception as e:
-        # Siphon failures should not block the main command (Mission First)
-        # But we log them for Duality Audit
-        print(f"⚠️  Siphon Warning: Could not sync mission context: {e}")
-        return 0
-
-# ============================================================
-
-def handle_morning_brief_command(args):
-    """Handle nucleus morning-brief command — THE Alive Workflow."""
-    import json
-    from .runtime.common import get_brain_path
-    from .runtime.morning_brief_ops import _morning_brief_impl
-    
-    brain_path = get_brain_path()
-    
-    # 0. Siphon Pre-flight
-    _trigger_siphon(brain_path)
-    
-    try:
-        result = _morning_brief_impl()
-        
-        if args.json:
-            # JSON output for programmatic use
-            print(json.dumps({
-                "recommendation": result.get("recommendation", {}),
-                "sections": result.get("sections", {}),
-                "meta": result.get("meta", {}),
-            }, indent=2))
-        else:
-            # Formatted output for terminal
-            print(result.get("formatted", "No brief generated"))
-    except Exception as e:
-        print(f"❌ Error generating morning brief: {e}")
-        print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-        print("  export NUCLEAR_BRAIN_PATH=/path/to/.brain")
-
-
-def handle_loop_command(args):
-    """Handle nucleus loop command — Compounding v0 Loop status."""
-    import json
-    from .runtime.compounding_loop import _compounding_loop_status_impl
-    
-    try:
-        result = _compounding_loop_status_impl()
-        
-        if args.json:
-            print(json.dumps({
-                "day": result.get("day_of_week"),
-                "week": result.get("week_number"),
-                "today": result.get("today", {}),
-                "metrics": result.get("metrics", {}),
-            }, indent=2))
-        else:
-            print(result.get("formatted", "No loop status generated"))
-    except Exception as e:
-        print(f"❌ Error getting loop status: {e}")
-        print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-
-def handle_end_of_day_command(args):
-    """Handle nucleus end-of-day command — Capture learnings."""
-    import json
-    from .runtime.compounding_loop import _end_of_day_capture_impl
-    
-    try:
-        result = _end_of_day_capture_impl(
-            summary=args.summary,
-            key_decisions=args.decisions,
-            blockers=args.blockers)
-        
-        print("=" * 60)
-        print("📝 END OF DAY CAPTURED")
-        print("=" * 60)
-        print(f"  Day: {result.get('day')}")
-        print(f"  Week: {result.get('week')}")
-        print(f"  Engrams written: {result.get('engrams_written', 0)}")
-        print()
-        print("✅ These learnings will surface in tomorrow's morning brief.")
-        print()
-        print("Next step: Run `nucleus morning-brief` tomorrow morning.")
-        print("=" * 60)
-    except Exception as e:
-        print(f"❌ Error capturing end-of-day: {e}")
-        print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-
-def handle_graph_command(args):
-    """Handle nucleus graph command — Context Graph visualization."""
-    import json
-
-    try:
-        if args.neighbors:
-            from .runtime.context_graph import get_engram_neighbors
-            result = get_engram_neighbors(key=args.neighbors, max_depth=args.depth)
-            if "error" in result:
-                print(f"❌ {result.get('error')}")
-                return
-            if args.json:
-                print(json.dumps(result, indent=2))
-            else:
-                target = result.get("target") or {}
-                print(f"🎯 Neighborhood of '{target.get('id', '?')}' (depth={args.depth})")
-                print(f"   Context: {target.get('context', '?')} | Intensity: {target.get('intensity', 0)}")
-                print(f"   Neighbors: {result.get('neighbor_count', 0)}")
-                print()
-                for n in result.get("neighbors", []):
-                    print(f"   ├─ {n.get('id', '?')} [{n.get('context', '?')}] intensity={n.get('intensity', 0)}")
-                if result.get("edges"):
-                    print()
-                    print(f"   Edges ({len(result.get('edges', []))}):")  
-                    for e in result.get("edges", []):
-                        print(f"   │  {e.get('source', '?')} ─({e.get('type', '?')})─ {e.get('target', '?')}")
-        elif args.json:
-            from .runtime.context_graph import build_context_graph
-            result = build_context_graph(
-                include_edges=True,
-                min_intensity=args.min_intensity)
-            print(json.dumps(result, indent=2))
-        else:
-            from .runtime.context_graph import render_ascii_graph
-            output = render_ascii_graph(
-                max_nodes=args.max_nodes,
-                min_intensity=args.min_intensity)
-            print(output)
-    except Exception as e:
-        print(f"❌ Error generating context graph: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-
-def handle_billing_command(args):
-    """Handle nucleus billing command — Usage cost tracking."""
-    import json
-    from .runtime.billing import compute_usage_summary
-
-    try:
-        result = compute_usage_summary(
-            since_hours=args.hours,
-            group_by=args.group_by)
-
-        if args.json:
-            print(json.dumps(result, indent=2))
-        else:
-            print("=" * 60)
-            print("💰 NUCLEUS USAGE BILLING")
-            print("=" * 60)
-            print(f"  Total cost: {result.get('total_cost_units', 0)} units")
-            print(f"  Total interactions: {result.get('total_interactions', 0)}")
-            print(f"  Time filter: {result.get('time_filter', 'all time')}")
-            print(f"  Group by: {result.get('group_by', 'tool')}")
-            print()
-
-            breakdown = result.get("breakdown", {})
-            if breakdown:
-                print(f"  {'Name':<30} {'Cost':>8} {'Count':>6}")
-                print("  " + "-" * 46)
-                for name, data in breakdown.items():
-                    cost = data.get("cost", 0)
-                    count = data.get("count", 0)
-                    extra = ""
-                    if "tier" in data:
-                        extra = f"  (T{data['tier']})"
-                    elif "label" in data:
-                        extra = f"  ({data['label']})"
-                    print(f"  {name:<30} {cost:>8.2f} {count:>6}{extra}")
-            else:
-                print("  No data found.")
-
-            print()
-            cm = result.get("cost_model", {})
-            print(f"  Cost model: T1={cm.get('tier_1_read', '?')} T2={cm.get('tier_2_write', '?')} "
-                  f"T3={cm.get('tier_3_compute', '?')} T4={cm.get('tier_4_destructive', '?')} ({cm.get('currency', '?')})")
-
-            ds = result.get("data_sources", {})
-            print(f"  Data sources: audit_log={ds.get('audit_log', 0)} events={ds.get('events', 0)} metering={ds.get('metering', 0)}")
-            print("=" * 60)
-    except Exception as e:
-        print(f"❌ Error generating billing summary: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-
-def handle_combo_command(args):
-    """Handle nucleus combo command — God Combo shortcuts."""
-    import json
-
-    if args.combo_action is None:
-        print("Usage: nucleus combo <action>")
-        print()
-        print("God Combos — multi-tool automation pipelines:")
-        print("  pulse              Pulse & Polish — automated health check")
-        print("  diagnose <symptom> Self-Healing SRE — diagnose an issue")
-        print("  learn <observation> Fusion Reactor — compound knowledge")
-        print()
-        print("Examples:")
-        print('  nucleus combo pulse')
-        print('  nucleus combo diagnose "high latency"')
-        print('  nucleus combo learn "cache fix reduced p99 by 40%"')
-        return
-
-    if args.combo_action == 'pulse':
-        from .runtime.god_combos.pulse_and_polish import run_pulse_and_polish
-        try:
-            result = run_pulse_and_polish(write_engram=True)
-            synthesis = result.get("synthesis", {})
-            meta = result.get("meta", {})
-            print()
-            print("=" * 60)
-            print("  PULSE & POLISH — Automated Health Check")
-            print("=" * 60)
-            print(f"  Overall: {synthesis.get('overall_health', 'UNKNOWN')}")
-            print(f"  Dispatches: {synthesis.get('dispatch_total', 0)}")
-            print(f"  Error rate: {synthesis.get('error_rate_pct', 0)}%")
-            print(f"  Tasks: {synthesis.get('task_count', 0)}")
-            print(f"  Recommendation: {synthesis.get('recommendation', 'none')}")
-            print(f"  Steps: {meta.get('steps_completed', 0)}/4 | {meta.get('execution_time_ms', 0):.0f}ms")
-            if meta.get("engram_written"):
-                print("  Engram: written")
-            print("=" * 60)
-        except Exception as e:
-            print(f"❌ Pulse & Polish failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-    elif args.combo_action == 'diagnose':
-        from .runtime.god_combos.self_healing_sre import run_self_healing_sre
-        try:
-            result = run_self_healing_sre(symptom=args.symptom, write_engram=True)
-            diagnosis = result.get("diagnosis", {})
-            rec = result.get("recommendation", {})
-            meta = result.get("meta", {})
-            print()
-            print("=" * 60)
-            print(f"  SELF-HEALING SRE — Diagnosis: \"{args.symptom}\"")
-            print("=" * 60)
-            print(f"  Severity: {diagnosis.get('severity', 'UNKNOWN')}")
-            for finding in diagnosis.get("findings", []):
-                print(f"    - {finding}")
-            if diagnosis.get("correlated_contexts"):
-                print(f"  Contexts: {', '.join(diagnosis['correlated_contexts'])}")
-            print(f"  Action: {rec.get('action', 'none')}")
-            print(f"  Auto-fixable: {'yes' if rec.get('auto_fixable') else 'no'}")
-            print(f"  Steps: {meta.get('steps_completed', 0)}/4 | {meta.get('execution_time_ms', 0):.0f}ms")
-            print("=" * 60)
-        except Exception as e:
-            print(f"❌ SRE Diagnosis failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-    elif args.combo_action == 'learn':
-        from .runtime.god_combos.fusion_reactor import run_fusion_reactor
-        try:
-            result = run_fusion_reactor(
-                observation=args.observation,
-                context=args.context,
-                intensity=args.intensity,
-                write_engrams=True)
-            synthesis = result.get("synthesis", {})
-            meta = result.get("meta", {})
-            print()
-            print("=" * 60)
-            print("  FUSION REACTOR — Knowledge Compounding")
-            print("=" * 60)
-            print(f"  Type: {synthesis.get('type', 'unknown')}")
-            print(f"  Priors: {synthesis.get('prior_count', 0)} related engrams found")
-            print(f"  Factor: {synthesis.get('compounding_factor', 1.0)}x")
-            print(f"  Intensity: {synthesis.get('intensity', 0)}/10")
-            print(f"  Engrams written: {meta.get('engrams_written', 0)}")
-            print(f"  Steps: {meta.get('steps_completed', 0)}/5 | {meta.get('execution_time_ms', 0):.0f}ms")
-            print("=" * 60)
-        except Exception as e:
-            print(f"❌ Fusion Reactor failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-
-    else:
-        print(f"Unknown combo: {args.combo_action}")
-        print("Available: pulse, diagnose, learn")
-
-
-# ============================================================
-# COMPLY COMMAND HANDLER (MVE-2/MVE-3)
-# ============================================================
-
-def handle_comply_command(args):
-    """Handle nucleus comply command — jurisdiction-aware compliance configuration."""
-    from .runtime.compliance_config import (
-        list_jurisdictions,
-        apply_jurisdiction,
-        generate_compliance_report,
-        format_compliance_report)
-
-    # Find brain path
-    brain_path = Path(args.brain) if args.brain else _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    if args.list:
-        # List available jurisdictions
-        jurisdictions = list_jurisdictions()
-        print("")
-        print("  🏛️  Available Jurisdictions")
-        print("  " + "=" * 50)
-        for jid, name in jurisdictions.items():
-            print(f"    {jid:20s} → {name}")
-        print("")
-        print("  Usage: nucleus comply --jurisdiction eu-dora")
-        print("")
-        return
-
-    if args.report:
-        # Generate compliance report
-        report = generate_compliance_report(brain_path)
-        print(format_compliance_report(report))
-        return
-
-    if args.jurisdiction:
-        # Apply jurisdiction
-        result = apply_jurisdiction(brain_path, args.jurisdiction)
-        if result.get("error"):
-            print(f"❌ {result['error']}")
-            print(f"   Available: {result.get('available', '')}")
-            return
-
-        print("")
-        print("  🏛️  JURISDICTION APPLIED")
-        print("  " + "=" * 50)
-        print(f"    Jurisdiction: {result['name']}")
-        print(f"    Region:       {result['region']}")
-        print(f"    Status:       ✅ {result['status']}")
-        print("")
-        print("  Key Requirements:")
-        reqs = result.get("key_requirements", {})
-        print(f"    Data Residency:     {'✅ Required' if reqs.get('data_residency') else '⚪ Not required'}")
-        print(f"    Audit Retention:    {reqs.get('audit_retention_days', '?')} days")
-        print(f"    HITL Operations:    {reqs.get('hitl_operations', '?')} types")
-        print(f"    Max Auto Actions:   {reqs.get('max_autonomous_actions', '?')}")
-        print(f"    Kill Switch:        {'✅ Required' if reqs.get('kill_switch') else '⚪ Not required'}")
-        print("")
-        print("  Files Written:")
-        for f in result.get("files_written", []):
-            print(f"    📄 {f}")
-        print("")
-        print("  Next: Run `nucleus comply --report` to verify compliance status.")
-        print("")
-        return
-
-    # No flag given
-    print("")
-    print("  nucleus comply — Configure jurisdiction-specific compliance")
-    print("")
-    print("  Usage:")
-    print("    nucleus comply --list                  List available jurisdictions")
-    print("    nucleus comply --jurisdiction eu-dora   Apply EU DORA compliance")
-    print("    nucleus comply --report                Show compliance status")
-    print("")
-
-
-def handle_compliance_check_command(args):
-    """Handle nucleus compliance-check — score AI governance posture."""
-    from .runtime.compliance_config import JURISDICTIONS
-    from .runtime.license import is_pro
-
-    brain_path = Path(args.brain) if args.brain else _find_brain_path()
-    if not brain_path:
-        print("No .brain directory found. Run `nucleus init` first.")
-        return
-
-    # Detect or use specified jurisdiction
-    jurisdiction_id = args.jurisdiction
-    compliance_file = brain_path / "governance" / "compliance.json"
-    if not jurisdiction_id and compliance_file.exists():
-        with open(compliance_file) as f:
-            jurisdiction_id = json.load(f).get("jurisdiction", "global-default")
-    if not jurisdiction_id:
-        jurisdiction_id = "global-default"
-
-    config = JURISDICTIONS.get(jurisdiction_id, {})
-    reqs = config.get("requirements", {})
-
-    # Run checks
-    checks = []
-    gov_dir = brain_path / "governance"
-
-    def check(name, condition, weight=1):
-        checks.append({"name": name, "pass": bool(condition), "weight": weight})
-
-    check("Brain directory exists", brain_path.exists())
-    check("Governance configured", compliance_file.exists())
-    check("HITL policy defined", (gov_dir / "hitl_policy.json").exists())
-    check("Audit policy defined", (gov_dir / "audit_policy.json").exists())
-    check("Kill switch config", (gov_dir / "kill_switch.json").exists() or
-          (brain_path / "governance").exists())
-    check("Event ledger active", (brain_path / "ledger" / "events.jsonl").exists())
-    check("DSoR traces present", (brain_path / "dsor").exists() or
-          any((brain_path / "ledger").glob("events*.jsonl")) if (brain_path / "ledger").exists() else False)
-    check("Engram memory active", (brain_path / "engrams").exists() or
-          (brain_path / "ledger" / "engrams.jsonl").exists())
-    check("Data residency (local-only)", True)  # Always true for Nucleus
-    check("Explainability (DSoR reasoning)", (brain_path / "ledger").exists())
-
-    passed = sum(1 for c in checks if c["pass"])
-    total = len(checks)
-    score = round(passed / total * 100)
-    grade = "A+" if score == 100 else ("A" if score >= 90 else ("B" if score >= 70 else "C"))
-
-    if args.format == "json":
-        result = {
-            "jurisdiction": jurisdiction_id,
-            "jurisdiction_name": config.get("name", jurisdiction_id),
-            "score": score,
-            "grade": grade,
-            "passed": passed,
-            "total": total,
-            "checks": checks,
-        }
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"\nNucleus Compliance Check")
-        print(f"========================")
-        print(f"  Jurisdiction: {config.get('name', jurisdiction_id)}")
-        print(f"  Score: {score}% ({passed}/{total}) — Grade {grade}")
-        print()
-        for c in checks:
-            icon = "PASS" if c["pass"] else "FAIL"
-            print(f"  [{icon}] {c['name']}")
-        print()
-
-    # Export gating
-    if args.output:
-        if not is_pro():
-            print("  Exportable compliance reports require Nucleus Pro.")
-            print("  Run: nucleus trial")
-            return
-        from .runtime.audit_report import generate_audit_report
-        report = generate_audit_report(
-            brain_path=brain_path,
-            report_format=args.format if args.format != "text" else "html",
-            signed=True)
-        Path(args.output).write_text(report.get("formatted", ""))
-        print(f"  Compliance report exported to {args.output}")
-    elif not is_pro():
-        print("  Export this report: nucleus compliance-check -o report.html (Pro)")
-
-
-def handle_audit_report_command(args):
-    """Handle nucleus audit-report command — generate audit-ready compliance report."""
-    from .runtime.audit_report import generate_audit_report
-
-    # Find brain path
-    brain_path = Path(args.brain) if args.brain else _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    try:
-        signed = getattr(args, 'signed', False)
-        report = generate_audit_report(
-            brain_path=brain_path,
-            report_format=args.format,
-            since_hours=args.hours,
-            signed=signed)
-
-        output_text = report.get("formatted", "No report generated")
-
-        if args.output:
-            output_path = Path(args.output)
-            output_path.write_text(output_text)
-            print(f"Audit report written to {output_path}")
-            print(f"   Format: {args.format}")
-            if signed and report.get("signature", {}).get("signed"):
-                print(f"   Signed: Yes (Ed25519, key {report['signature']['key_id']}...)")
-            elif signed:
-                print(f"   Signed: No ({report.get('signature', {}).get('reason', 'unknown')})")
-            if args.format == 'html':
-                print(f"   Open in browser: file://{output_path.absolute()}")
-        else:
-            print(output_text)
-    except Exception as e:
-        print(f"Error generating audit report: {e}")
-
-
-# ============================================================
-# KYC COMMAND HANDLER (MVE-2 Compliance Demo)
-# ============================================================
-
-def handle_kyc_command(args):
-    """Handle nucleus kyc command — simulated KYC review workflow."""
-    from .runtime.kyc_demo import (
-        run_kyc_review,
-        format_kyc_review,
-        DEMO_APPLICATIONS)
-
-    brain_path = _find_brain_path()
-
-    if not hasattr(args, 'kyc_action') or args.kyc_action is None:
-        print("")
-        print("  nucleus kyc — Simulated KYC Review (Compliance Demo)")
-        print("")
-        print("  Usage:")
-        print("    nucleus kyc list                  List demo applications")
-        print("    nucleus kyc review APP-001        Review a low-risk application")
-        print("    nucleus kyc review APP-002        Review a medium-risk application (PEP)")
-        print("    nucleus kyc review APP-003        Review a high-risk application (sanctions)")
-        print("    nucleus kyc demo                  Run full demo (all 3 applications)")
-        print("")
-        return
-
-    if args.kyc_action == 'list':
-        print("")
-        print("  📋 Available Demo Applications:")
-        print("  " + "=" * 55)
-        for app_id, app_data in DEMO_APPLICATIONS.items():
-            risk_icon = {"approved": "🟢", "escalate": "🟡", "reject": "🔴"}.get(
-                app_data["expected_result"], "❓"
-            )
-            print(f"    {risk_icon} {app_id}: {app_data['applicant']}")
-            print(f"       Type: {app_data['type']}")
-            print(f"       Nationality: {app_data['nationality']}")
-            print(f"       Expected: {app_data['expected_result'].upper()}")
-            print("")
-        print("  Run: nucleus kyc review APP-001")
-        print("")
-        return
-
-    if args.kyc_action == 'review':
-        review = run_kyc_review(
-            application_id=args.application,
-            brain_path=brain_path,
-            write_dsor=brain_path is not None)
-
-        if review.get("error"):
-            print(f"❌ {review['error']}")
-            return
-
-        if hasattr(args, 'json') and args.json:
-            print(json.dumps(review, indent=2, default=str))
-        else:
-            print(format_kyc_review(review))
-
-        if brain_path and not review.get("error"):
-            dsor_file = brain_path / "dsor" / f"{review['review_id']}.json"
-            if dsor_file.exists():
-                print(f"\n  📄 DSoR trace saved: {dsor_file}")
-                print("  → Generate audit report: nucleus audit-report")
-        return
-
-    if args.kyc_action == 'demo':
-        print("")
-        print("  " + "=" * 65)
-        print("  🏛️  NUCLEUS KYC COMPLIANCE DEMO")
-        print("  " + "=" * 65)
-        print("  Running 3 simulated KYC reviews to demonstrate:")
-        print("    1. Automated multi-check review pipeline")
-        print("    2. Full decision trail (DSoR) for each review")
-        print("    3. HITL approval requests for risky applications")
-        print("    4. Sovereignty: all processing is local, no data leaves")
-        print("  " + "=" * 65)
-        print("")
-
-        for app_id in ["APP-001", "APP-002", "APP-003"]:
-            review = run_kyc_review(
-                application_id=app_id,
-                brain_path=brain_path,
-                write_dsor=brain_path is not None)
-            print(format_kyc_review(review))
-            print("")
-
-        if brain_path:
-            dsor_dir = brain_path / "dsor"
-            if dsor_dir.exists():
-                traces = list(dsor_dir.glob("KYC-*.json"))
-                print(f"  📁 {len(traces)} DSoR traces saved to {dsor_dir}/")
-                print("  → Generate full audit report: nucleus audit-report --format html -o report.html")
-        print("")
-        return
-
-
-# ============================================================
-# SOVEREIGN COMMAND HANDLER (Identity & Status)
-# ============================================================
-
-def handle_secure_command(args):
-    """Handle nucleus secure — one-command security hardening + posture report."""
-    from .runtime.sovereign_status import generate_sovereign_status, format_sovereign_status
-    from .runtime.compliance_config import apply_jurisdiction, generate_compliance_report, format_compliance_report
-
-    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    print("🔐 Nucleus Security Hardening\n")
-
-    # Step 1: Apply jurisdiction if not already configured
-    jurisdiction = args.jurisdiction
-    governance_file = brain_path / "governance" / "compliance.json"
-    if not jurisdiction and governance_file.exists():
-        try:
-            existing = json.loads(governance_file.read_text())
-            jurisdiction = existing.get("jurisdiction")
-            print(f"   ✅ Jurisdiction already configured: {jurisdiction}")
-        except Exception:
-            pass
-    if not jurisdiction:
-        jurisdiction = "global-default"
-    if not governance_file.exists() or args.jurisdiction:
-        try:
-            result = apply_jurisdiction(brain_path, jurisdiction)
-            print(f"   ✅ Applied jurisdiction: {result.get('name', jurisdiction)}")
-        except Exception as e:
-            print(f"   ⚠️  Jurisdiction config: {e}")
-
-    # Step 2: Enable DSoR tracing (ensure decisions directory exists)
-    dsor_dir = brain_path / "ledger" / "decisions"
-    dsor_dir.mkdir(parents=True, exist_ok=True)
-    print("   ✅ DSoR tracing enabled")
-
-    # Step 3: Enable kill switch marker
-    kill_switch_file = brain_path / "governance" / "kill_switch_armed.json"
-    kill_switch_file.parent.mkdir(parents=True, exist_ok=True)
-    if not kill_switch_file.exists():
-        kill_switch_file.write_text(json.dumps({
-            "armed": True,
-            "armed_at": datetime.now(timezone.utc).isoformat() + "Z",
-            "armed_by": "nucleus secure",
-        }, indent=2))
-    print("   ✅ Kill switch armed")
-
-    # Step 4: Generate sovereignty report
-    print()
-    report = generate_sovereign_status(brain_path)
-    score = report.get("sovereignty_score", 0)
-
-    # Step 5: Generate compliance report
-    compliance = generate_compliance_report(brain_path)
-
-    if hasattr(args, 'json') and args.json:
-        print(json.dumps({"sovereignty": report, "compliance": compliance}, indent=2, default=str))
-    else:
-        print(format_sovereign_status(report))
-        print()
-        print(format_compliance_report(compliance))
-
-        # Security certificate
-        grade = "A" if score >= 80 else "B" if score >= 60 else "C" if score >= 40 else "D"
-        print(f"""
-╔══════════════════════════════════════════════════════════════╗
-║                 🔐 Security Certificate                      ║
-╠══════════════════════════════════════════════════════════════╣
-║  Sovereignty Score: {score:>3}/100 (Grade {grade})                       ║
-║  Jurisdiction:      {jurisdiction:<39s} ║
-║  Kill Switch:       ARMED                                    ║
-║  DSoR Tracing:      ACTIVE                                   ║
-║  Audit Trail:       SHA-256 HASHED                           ║
-╠══════════════════════════════════════════════════════════════╣
-║  Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'):<47s} ║
-╚══════════════════════════════════════════════════════════════╝""")
-
-
-def handle_sovereign_command(args):
-    """Handle nucleus sovereign command — sovereignty status report."""
-    from .runtime.sovereign_status import generate_sovereign_status, format_sovereign_status
-
-    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    report = generate_sovereign_status(brain_path)
-
-    if hasattr(args, 'json') and args.json:
-        print(json.dumps(report, indent=2, default=str))
-    else:
-        print(format_sovereign_status(report))
-
-
-# ============================================================
-# TRACE COMMAND HANDLER (DSoR Viewer)
-# ============================================================
-
-def handle_trace_command(args):
-    """Handle nucleus trace command — browse DSoR decision trails."""
-    from .runtime.trace_viewer import (
-        list_traces, get_trace,
-        format_trace_list, format_trace_detail,
-        get_interference_report, format_interference_report)
-
-    brain_path = _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    if not hasattr(args, 'trace_action') or args.trace_action is None:
-        print("")
-        print("  nucleus trace — Browse DSoR Decision Trails")
-        print("")
-        print("  Usage:")
-        print("    nucleus trace list                List all DSoR traces")
-        print("    nucleus trace list --type TYPE    Filter by type")
-        print("    nucleus trace view <ID>           View detailed trace")
-        print("    nucleus trace interference <ID>   Detect cross-context conflicts")
-        print("")
-        return
-
-    if args.trace_action == 'list':
-        trace_type = getattr(args, 'type', None)
-        data = list_traces(brain_path, trace_type=trace_type)
-        print(format_trace_list(data))
-        return
-
-    if args.trace_action == 'view':
-        trace = get_trace(brain_path, args.trace_id)
-        if not trace:
-            print(f"❌ Trace not found: {args.trace_id}")
-            return
-
-        if hasattr(args, 'json') and args.json:
-            print(json.dumps(trace, indent=2, default=str))
-        else:
-            print(format_trace_detail(trace))
-        return
-
-    if args.trace_action == 'interference':
-        report = get_interference_report(brain_path, args.node_id)
-        if hasattr(args, 'json') and args.json:
-            print(json.dumps(report, indent=2))
-        else:
-            print(format_interference_report(report))
-        return
-
-
-# ============================================================
-# DASHBOARD COMMAND HANDLER (UI API Server)
-# ============================================================
-
-def handle_dashboard_command(args):
-    """Handle nucleus dashboard command — Launch Sovereign Governance Web UI."""
-    try:
-        from .dashboard.server import run_dashboard_server
-    except ImportError:
-        try:
-            from mcp_server_nucleus.dashboard.server import run_dashboard_server
-        except ImportError:
-            print("❌ Error: Could not import dashboard server. Ensure installation is correct.")
-            return
-
-    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    if getattr(args, 'hr', False) or getattr(args, 'ascii', False):
-        from .runtime.dashboard_ops import _brain_enhanced_dashboard_impl
-        category = "agents" if getattr(args, 'hr', False) else None
-        
-        # Determine details
-        if getattr(args, 'hr', False):
-            # Special combo for HR report
-            print("\n🧬 [Sovereign HR] Team Health & Sentiment Report")
-            print("=" * 60)
-            print(_brain_enhanced_dashboard_impl(category="agents", detail_level="verbose"))
-        else:
-            print(_brain_enhanced_dashboard_impl(detail_level="standard"))
-        return
-
-    run_dashboard_server(port=args.port, brain_path=brain_path)
-
-
-def _find_brain_path() -> Path:
-    """Auto-detect the brain path via centralized runtime discovery."""
-    return get_brain_path()
-
-
-# ============================================================
-# DEPLOY COMMAND (MVE-3)
-# ============================================================
-
-def handle_deploy_command(args):
-    """Handle nucleus deploy command — Jurisdiction-aware deployment."""
-    from .runtime.compliance_config import apply_jurisdiction
-    from .runtime.sovereign_status import generate_sovereign_status
-    import json
-
-    brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
-    if not brain_path:
-        print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
-
-    if not hasattr(args, 'jurisdiction') or not args.jurisdiction:
-        print("")
-        print("  🚀 nucleus deploy — Sovereign Agent OS Deployment")
-        print("")
-        print("  Usage:")
-        print("    nucleus deploy --jurisdiction eu-dora       # Deploy with DORA compliance")
-        print("    nucleus deploy --jurisdiction sg-mas-trm    # Deploy with MAS TRM compliance")
-        print("    nucleus deploy --jurisdiction us-soc2       # Deploy with SOC2 alignment")
-        print("    nucleus deploy --jurisdiction global-default # Deploy with standard governance")
-        print("")
-        return
-
-    print(f"\n🚀 Deploying Sovereign Agent OS [{args.jurisdiction.upper()}]...")
-    
-    if args.dry_run:
-        print("   [DRY RUN] Simulating deployment checks...")
-        print("   ✅ MCP connectivity check passed")
-        print("   ✅ Hypervisor locks available")
-        print(f"   ✅ Governance policies ready: {args.jurisdiction}")
-        print("\n   Deployment simulation successful. Remove --dry-run to apply.")
-        return
-
-    apply_jurisdiction(brain_path, args.jurisdiction)
-    print("   ✅ Compliance policies applied")
-    
-    # Generate status report
-    report = generate_sovereign_status(brain_path)
-    print("   ✅ Sovereignty posture verified")
-    
-    # Provide a manifest output
-    manifest = {
-        "environment": "Local Sovereign Core",
-        "jurisdiction": args.jurisdiction.upper(),
-        "brain_path": str(brain_path),
-        "data_residency": "100% Local Guardrails",
-        "sovereign_score": f"{report.get('score', 0)}/100 ({report.get('grade', '?')})"
-    }
-    manifest_path = brain_path / "deploy_manifest.json"
-    with open(manifest_path, "w", encoding='utf-8') as f:
-         json.dump(manifest, f, indent=2)
-         
-    print("\n  📦 DEPLOYMENT MANIFEST")
-    print("  " + "=" * 45)
-    print(f"   Environment:   {manifest['environment']}")
-    print(f"   Jurisdiction:  {manifest['jurisdiction']}")
-    print(f"   Brain Path:    {manifest['brain_path']}")
-    print(f"   Data Res:      {manifest['data_residency']}")
-    print(f"   Sovereignty:   Score {manifest['sovereign_score']}")
-    print("  " + "=" * 45)
-    print("\n   Deployment successful! Your Agent OS is now compliant.")
-    print("   Run `nucleus comply --report` to view auditor details.\n")
-
-
-def handle_dogfood_command(args):
-    """Handle nucleus dogfood command — 30-day dog food test tracker."""
-    from .runtime.dogfood_tracker import log_daily, get_status, format_status
-
-    brain_path = _find_brain_path()
-
-    if not hasattr(args, 'dogfood_action') or args.dogfood_action is None:
-        print("")
-        print("  🐕 nucleus dogfood — 30-Day Dog Food Test")
-        print("")
-        print("  Track daily usage to validate Experiment 1 (Stage 5).")
-        print("  Kill Gate: avg pain < 5/10 after 30 days = KILL")
-        print("")
-        print("  Usage:")
-        print("    nucleus dogfood log 8                   Log today's pain score (8/10)")
-        print("    nucleus dogfood log 9 --pay             Also mark 'would pay $29/mo'")
-        print("    nucleus dogfood log 7 --faster 3        3 decisions made faster today")
-        print("    nucleus dogfood log 8 --notes 'Engrams saved 20m on context rebuild'")
-        print("    nucleus dogfood status                  Show experiment dashboard")
-        print("")
-        return
-
-    if args.dogfood_action == 'log':
-        result = log_daily(
-            pain_score=args.score,
-            would_pay=args.pay,
-            decisions_faster=args.faster,
-            notes=args.notes,
-            brain_path=brain_path)
-        if result.get("error"):
-            print(f"❌ {result['error']}")
-            return
-
-        entry = result["entry"]
-        summary = result["summary"]
-        gate = result["kill_gate"]
-
-        print("")
-        print(f"  ✅ Day {entry['day_number']} logged:")
-        print(f"     Pain: {entry['pain_if_broken']}/10  |  Pay: {'Yes' if entry['would_pay'] else 'No'}  |  Faster: {entry['decisions_faster']}")
-        if entry['notes']:
-            print(f"     Notes: {entry['notes']}")
-        print("")
-        print(f"  Running avg: {summary['avg_pain_score']}/10 {summary['pain_trend']}  |  Pay rate: {summary['would_pay_rate']}")
-        print(f"  Kill gate: {'🟢 SAFE' if gate['status'] == 'SAFE' else '🔴 AT RISK'} (threshold: pain < 5)")
-        if summary['total_days'] >= 30:
-            print(f"  🏁 30 days reached! Final avg: {summary['avg_pain_score']}/10")
-        print("")
-        return
-
-    if args.dogfood_action == 'status':
-        status = get_status(brain_path)
-        print(format_status(status))
-        return
-
-
-def handle_heartbeat_command(args):
-    """Handle nucleus heartbeat command — proactive context-triggered check-ins."""
-    from .runtime.heartbeat_ops import (
-        _heartbeat_check_impl,
-        _heartbeat_install_impl,
-        _heartbeat_uninstall_impl,
-        _heartbeat_status_impl,
-        _notify_native)
-
-    if not hasattr(args, 'heartbeat_action') or args.heartbeat_action is None:
-        print("")
-        print("  💓 nucleus heartbeat — Proactive Context-Triggered Check-Ins")
-        print("")
-        print("  Your agent brain that thinks about you when you're not looking.")
-        print("  Checks for stale blockers, forgotten decisions, and momentum drops.")
-        print("")
-        print("  Usage:")
-        print("    nucleus heartbeat check                  Run a proactive check-in now")
-        print("    nucleus heartbeat check --notify          Check + send OS notification")
-        print("    nucleus heartbeat check --format json     Machine-readable output")
-        print("    nucleus heartbeat check -q                Bare trigger messages only")
-        print("    nucleus heartbeat install                 Install 30-min scheduling")
-        print("    nucleus heartbeat install --interval 15   Custom interval (minutes)")
-        print("    nucleus heartbeat uninstall               Remove scheduling")
-        print("    nucleus heartbeat status                  Show installation & recent checks")
-        print("")
-        return
-
-    brain_path = getattr(args, 'brain_path', None)
-
-    if args.heartbeat_action == 'check':
-        result = _heartbeat_check_impl(brain_path=brain_path)
-
-        # Handle --notify flag
-        if getattr(args, 'notify', False) and result.get("should_notify"):
-            _notify_native(
-                result.get("notification_title", "🧠 Nucleus"),
-                result.get("notification_body", "Check-in required"))
-
-        # Output formatting
-        fmt = getattr(args, 'format', None)
-        quiet = getattr(args, 'quiet', False)
-
-        if quiet:
-            # Bare trigger messages only
-            for t in result.get("triggers", []):
-                print(t["message"])
-            return
-
-        if fmt == 'json':
-            import json as _json
-            print(_json.dumps(result, indent=2, default=str))
-            return
-
-        # Default: formatted table output
-        print(result.get("formatted", ""))
-        return
-
-    if args.heartbeat_action == 'install':
-        interval = getattr(args, 'interval', 30)
-        result = _heartbeat_install_impl(
-            interval_minutes=interval,
-            brain_path=brain_path)
-        if result.get("success"):
-            print("")
-            print(f"  {result['message']}")
-            print(f"  Platform: {result.get('platform', '?')}")
-            print(f"  Interval: every {result.get('interval_minutes', 30)} minutes")
-            print(f"  Command:  {result.get('command', '?')}")
-            print("")
-            print(f"  Uninstall: {result.get('uninstall', 'nucleus heartbeat uninstall')}")
-            print("")
-        else:
-            print(f"  ❌ {result.get('error', 'Unknown error')}")
-        return
-
-    if args.heartbeat_action == 'uninstall':
-        result = _heartbeat_uninstall_impl()
-        if result.get("success"):
-            print(f"  {result['message']}")
-        else:
-            print(f"  ❌ {result.get('error', 'Unknown error')}")
-        return
-
-    if args.heartbeat_action == 'status':
-        result = _heartbeat_status_impl(brain_path=brain_path)
-
-        fmt = getattr(args, 'format', None)
-        if fmt == 'json':
-            import json as _json
-            print(_json.dumps(result, indent=2, default=str))
-            return
-
-        print(result.get("formatted", ""))
-        return
-
-
-# ════════════════════════════════════════════════════════════════
-# v1.6.0 SOVEREIGN SUMMON — "nucleus summon <agent> <task>"
-# ════════════════════════════════════════════════════════════════
-
-def handle_summon_command(args):
-    """Handle the 'nucleus summon' command to scale specialized agents."""
-    session_id = os.environ.get("NUCLEUS_SESSION_ID")
-    brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH") 
-    
-    if not brain_path_str or not session_id:
-        # Fallback for unexpected direct calls or missing env
-        print("❌ Error: Summoning requires an active brain context and session ID.")
-        print("   NUCLEUS_SESSION_ID and NUCLEUS_BRAIN_PATH must be set.")
-        return 1
-    
-    print(f"🧬 Summoning {args.agent} to join session {session_id}...")
-    
-    # 3. Build Python-native command (Calling 'nucleus chief' instead of shell script)
-    # Phase 23 Tinker: Law of Cognitive Diversity
-    diversity_prompt = ""
-    if agent_type.lower() == "researcher":
-        diversity_prompt = " | RULE: Seek contradictory evidence to prevent homogenization."
-    
-    # Phase 24: Specialized Critic Agent
-    if agent_type.lower() == "critic":
-        cmd = [sys.executable, str(_PROJECT_ROOT / "nucleus" / "agents" / "critic.py")]
-        if getattr(args, 'audit_plan', None):
-            cmd.extend(["--audit-plan", args.audit_plan])
-        if getattr(args, 'audit_decision', None):
-            cmd.extend(["--audit-decision", args.audit_decision])
-    else:
-        cmd = [sys.executable, "-m", "mcp_server_nucleus.cli", "chief", f"AGENT: {agent_type} | TASK: {task}{diversity_prompt}"]
-    
-    if getattr(args, 'yolo', False):
-        cmd.append("--yolo")
-    
-    # 4. Linkage Integrity: Pass parent session ID
-    env = os.environ.copy()
-    env["NUCLEUS_SESSION_ID"] = session_id
-    env["NUCLEUS_PARENT_SESSION_ID"] = session_id
-    env["NUCLEUS_BRAIN_PATH"] = brain_path_str
-    
-    # 5. Proxy Sovereignty: Propagate API Base URL if set (Resilience against 429)
-    if "GEMINI_API_BASE_URL" in os.environ:
-        env["GEMINI_API_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
-        env["GEMINI_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
-        env["GEMINI_NEXT_GEN_API_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
-        env["GOOGLE_GEMINI_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
-    elif Path(tempfile.gettempdir()) / "gemini_proxy.port".exists():
-        # Auto-detect local proxy (Phase 23 Hardening)
-        try:
-            port = Path(tempfile.gettempdir()) / "gemini_proxy.port".read_text().strip()
-            env["GEMINI_API_BASE_URL"] = f"http://localhost:{port}/v1"
-            env["GEMINI_BASE_URL"] = f"http://localhost:{port}/v1"
-            env["GEMINI_NEXT_GEN_API_BASE_URL"] = f"http://localhost:{port}/v1"
-            env["GOOGLE_GEMINI_BASE_URL"] = f"http://localhost:{port}/v1"
-        except: pass
-    
-    import subprocess
-    log_dir = Path(brain_path_str) / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / "summon.log"
-    
-    try:
-        # Phase 24 UX: Critic audits should be synchronous for immediate CLI feedback
-        if agent_type.lower() == "critic" and (getattr(args, 'audit_plan', None) or getattr(args, 'audit_decision', None)):
-            subprocess.run(cmd, env=env)
-            return 0
-            
-        # We log to summon.log instead of DEVNULL for sustainability
-        with open(log_path, "a") as log_file:
-            subprocess.Popen(cmd, env=env, stdout=log_file, stderr=log_file)
-        print(f"✅ {agent_type} summoned successfully. Linkage: {session_id}")
-        return 0
-    except Exception as e:
-        print(f"❌ Summon failed: {e}")
-        return 1
-
-
-# ════════════════════════════════════════════════════════════════
-# v1.5.1 CHIEF DELEGATOR — "nucleus chief <task>"
-# ════════════════════════════════════════════════════════════════
-
-def _ensure_gemini_proxy(repo_root: Path) -> None:
-    """Check if gemini_proxy.py is running on port 5056; start it if not."""
-    import socket
-    proxy_port = 5056
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.connect(("127.0.0.1", proxy_port))
-            return
-        except ConnectionRefusedError:
-            pass
-
-    print("🚀 Auto-starting Gemini Key Rotation Proxy (Phase 23)...")
-    proxy_script = repo_root / "gemini_proxy.py"
-    if not proxy_script.exists():
-        print(f"⚠️  Warning: {proxy_script} not found. Proxy might be elsewhere.", file=sys.stderr)
-        return
-
-    brain_path = get_brain_path()
-    log_dir = brain_path / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file_path = log_dir / "gemini_proxy.log"
-    
-    log_file = open(log_file_path, "a")
-    subprocess.Popen(
-        [sys.executable, str(proxy_script)],
-        cwd=str(repo_root),
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        start_new_session=True
-    )
-    # Phase 23: Persist port for auto-discovery
-    try:
-        Path(tempfile.gettempdir()) / "gemini_proxy.port".write_text(str(proxy_port))
-    except: pass
-    time.sleep(3)
-
-
-def _watch_startup_heartbeats(log_path: Path, timeout: float = 20.0):
-    """Monitor coordinator log for startup heartbeats and print status."""
-    import os
-    import json
-    import time
-
-    if not log_path.exists():
-        # Wait a few seconds for it to be created
-        start = time.time()
-        while not log_path.exists() and time.time() - start < 5:
-            time.sleep(0.5)
-    
-    if not log_path.exists():
-        print("  ⏳ Waiting for coordinator to initialize...", file=sys.stderr)
-        return False
-
-    print("  👁️  Monitoring startup sequence...", file=sys.stderr)
-    start_time = time.time()
-    seen_actions = set()
-    
-    try:
-        with open(log_path, "r") as f:
-            # Seek to end
-            f.seek(0, os.SEEK_END)
-            while time.time() - start_time < timeout:
-                line = f.readline()
-                if not line:
-                    time.sleep(0.3)
-                    continue
-                
-                try:
-                    data = json.loads(line)
-                    action = data.get("action")
-                    if action and action not in seen_actions:
-                        seen_actions.add(action)
-                        if action == "coord_bootstrapping":
-                            print("  [Bootstrap] Coordinator initialized.", file=sys.stderr)
-                        elif action == "coordinator_attempt":
-                            task_preview = data.get('task', '')[:50]
-                            print(f"  [Thinking] Spawning Gemini CLI: {task_preview}...", file=sys.stderr)
-                            # Target state reached
-                            print("  ✅ Startup sequence complete. Finalizing connection...", file=sys.stderr)
-                            return True
-                        elif action == "self_heal":
-                             print(f"  [Self-Heal] Diagnosing error...", file=sys.stderr)
-                except:
-                    pass
-    except Exception as e:
-        print(f"  ⚠️  Heartbeat monitor error: {e}", file=sys.stderr)
-    
-    return False
-
-
-def handle_chief_command(args) -> int:
-    """
-    Handle 'nucleus chief <task>' — Python-native Resident Loop bootstrap.
-    Strategic Role: Eliminates chief.sh bootstrap paradox.
-    """
-    task = getattr(args, 'task', None)
-    
-    # 1. Initialize EnvironmentGuard
-    from .runtime.daemon import DaemonManager
-    from .runtime.locking import get_lock
-    
-    brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH")
-    
-    if not brain_path_str:
-        # AUTO-INIT: The Zero-Conf Bootstrap (MDR_001)
-        # If no brain found in hierarchy, we create one in CWD.
-        print("🌱 No .brain found in hierarchy. Auto-initializing local brain...")
-        init_brain(".brain")
-        brain_path_str = str(Path(".brain").resolve())
-        os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
-        os.environ["NUCLEAR_BRAIN_PATH"] = brain_path_str
-    
-    brain_path = Path(brain_path_str)
-    daemon = DaemonManager(brain_path)
-    
-    # 2. Check Environment Health (Relaxed for Bootstrap)
-    import asyncio
-    try:
-        health = asyncio.run(daemon.get_status())
-        # If proxy is offline, we'll auto-start it below.
-        if health.status == "degraded":
-            print("⚠️  Warning: Nucleus environment is degraded.", file=sys.stderr)
-            for comp, info in health.components.items():
-                if info.get("state") not in ["online", "active", "held", "stopped", "released"]:
-                    print(f"   - {comp}: {info.get('state')} ({info.get('error', 'unknown error')})")
-            if not getattr(args, 'yolo', False):
-                print("\n   Aborting. Use --yolo to proceed anyway.", file=sys.stderr)
-                return 1
-    except Exception as e:
-        print(f"⚠️  Health Check Encountered Issues (expected for first-time boot): {e}", file=sys.stderr)
-
-    # 3. Check for existing Chief session (BrainLock)
-    chief_lock = get_lock("chief_session", base_dir=brain_path / ".locks")
-    if chief_lock.check_stale_locks()["state"] == "held":
-        print("❌ Error: Another Chief session is active.", file=sys.stderr)
-        return 1
-
-    # 4. Delegate to Coordinator (Python-Native Bootstrap)
-    repo_root = Path(__file__).resolve().parent.parent.parent.parent
-    master_session_id = os.environ.get("NUCLEUS_SESSION_ID")
-    
-    # Ensure proxy is alive (Bypass only if we can actually connect)
-    _ensure_gemini_proxy(repo_root)
-
-    # Resolve Nucleus binary (Hardened for TMUX)
-    nucleus_bin = f"{sys.executable} -m mcp_server_nucleus.cli"
-
-    # Build the task string
-    if not task:
-        task = "AUTONOMIC DIRECTIVE - CHIEF OF STAFF OVERRIDE: Perform a standard metacognition and system health review. Check for any stale blockers in .brain/task.md and resolve them."
-    
-    # Construct TMUX session name
-    import datetime
-    task_slug = "".join(c for c in task[:15] if c.isalnum() or c.isspace()).lower().replace(" ", "_")
-    session_name = f"chief_{task_slug}_{os.getpid()}"
-    
-    # Construct inner command for TMUX
-    inner_cmd = [
-        nucleus_bin, "run", "coordinator",
-        "--autopilot", "--gemini-yolo", "--quiet", "--no-resume"
-    ]
-    if args.resident:
-        inner_cmd.append("--resident")
-    
-    inner_cmd.extend(["--task", f'"{task}"'])
-    inner_cmd_str = " ".join(inner_cmd)
-    
-    # Phase 24 Hardening: Explicit PYTHONPATH and Environment Injection
-    python_path = str(Path(__file__).resolve().parent.parent)
-    env_str = f"export NUCLEUS_BRAIN_PATH='{brain_path}'; export NUCLEUS_SESSION_ID='{master_session_id}'; export PYTHONPATH='{python_path}';"
-    
-    if os.environ.get("GEMINI_API_BASE_URL"):
-        env_str += f" export GEMINI_API_BASE_URL='{os.environ['GEMINI_API_BASE_URL']}';"
-        env_str += f" export GEMINI_BASE_URL='{os.environ['GEMINI_API_BASE_URL']}';"
-        env_str += f" export GEMINI_NEXT_GEN_API_BASE_URL='{os.environ['GEMINI_API_BASE_URL']}';"
-        env_str += f" export GOOGLE_GEMINI_BASE_URL='{os.environ['GEMINI_API_BASE_URL']}';"
-    if getattr(args, 'popcorn', False):
-        env_str += " export NUCLEUS_POPCORN='true';"
-    if getattr(args, 'critic', False):
-        env_str += " export NUCLEUS_CRITIC='true';"
-
-    full_cmd_str = f"{env_str} {inner_cmd_str}"
-
-    if getattr(args, 'direct', False):
-        print(f"🧠 Starting LLM Coordinator (Direct Mode) in session: {master_session_id}")
-        import subprocess
-        return subprocess.call(full_cmd_str, shell=True)
-    
-    # Construct TMUX session name (slugified task + PID for uniqueness)
-    import datetime
-    task_slug = "".join(c for c in task[:15] if c.isalnum() or c.isspace()).lower().replace(" ", "_")
-    session_name = f"chief_{task_slug}_{os.getpid()}"
-    
-    # Wrap in shell for TMUX cleanup/persistence
-    tmux_launch_str = f"echo '🧠 Chief of Staff Initializing...'; {full_cmd_str}; echo '✅ Mission Accomplished. Press Ctrl+D to exit.'; bash"
-    
-    tmux_cmd = ["tmux", "new-session", "-d", "-s", session_name, tmux_launch_str]
-
-    print(f"🧠 Spawning LLM Coordinator in: {session_name}")
-    
-    import subprocess
-    env = os.environ.copy()
-    env["NUCLEUS_SESSION_ID"] = master_session_id
-    env["NUCLEUS_BRAIN_PATH"] = str(brain_path)
-    env["GEMINI_API_BASE_URL"] = "http://127.0.0.1:5056"
-    env["GEMINI_BASE_URL"] = "http://127.0.0.1:5056"
-    env["GEMINI_NEXT_GEN_API_BASE_URL"] = "http://127.0.0.1:5056"
-    env["GOOGLE_GEMINI_BASE_URL"] = "http://127.0.0.1:5056"
-    if getattr(args, 'yolo', False):
-        env["GEMINI_YOLO"] = "true"
-    if getattr(args, 'popcorn', False):
-        env["NUCLEUS_POPCORN"] = "true"
-    if getattr(args, 'critic', False):
-        env["NUCLEUS_CRITIC"] = "true"
-        
-    try:
-        # 1. Start the TMUX session
-        subprocess.run(tmux_cmd, env=env, cwd=str(repo_root), check=True)
-        
-        # 2. Split window for proxy logs (as in chief.sh)
-        log_path_proxy = brain_path / "logs" / "gemini_proxy.log"
-        split_cmd = ["tmux", "split-window", "-v", "-p", "30", "-t", session_name, 
-                     f"echo '🚀 Proxy Live Logs:'; tail -f {log_path_proxy}"]
-        subprocess.run(split_cmd, env=env, cwd=str(repo_root))
-        
-        # 3. Select AI pane
-        subprocess.run(["tmux", "select-pane", "-t", f"{session_name}:0.0"], env=env)
-
-        # Phase 23 UX: Heartbeat Monitor
-        # This replaces the 'spawning void' with live status heartbeats
-        if sys.stdin.isatty():
-            coord_log = brain_path / "logs" / "coordinator.log"
-            _watch_startup_heartbeats(coord_log)
-
-        # 4. Handle attachment if interactive
-        if sys.stdin.isatty():
-            print("🔗 Attaching...")
-            subprocess.call(["tmux", "attach-session", "-t", session_name])
-        else:
-            print("✅ Chief of Staff successfully spawned in the background!")
-            print(f"👉 To watch execution: tmux attach -t {session_name}")
-            
-        return 0
-    except Exception as e:
-        print(f"❌ Error invoking native chief loop: {e}", file=sys.stderr)
-        return 1
-
-
-# ════════════════════════════════════════════════════════════════
-# v1.5.0 AGENT RUNNER — "nucleus run <agent>"
-# ════════════════════════════════════════════════════════════════
-
-def handle_run_command(args) -> int:
-    """Handle 'nucleus run <agent>' — launch Nucleus agents."""
-    agent = getattr(args, 'run_agent', None)
-
-    if agent == 'coordinator':
-        # Import and run the coordinator agent
-        import importlib.util
-        from .runtime.common import get_brain_path
-        brain_path = get_brain_path()
-        coord_path = Path(__file__).resolve().parent.parent.parent.parent / "nucleus" / "agents" / "coordinator.py"
-        if not coord_path.exists():
-            print(f"❌ Coordinator not found at: {coord_path}", file=sys.stderr)
-            print("  Expected: nucleus/agents/coordinator.py in project root", file=sys.stderr)
-            return 1
-        spec = importlib.util.spec_from_file_location("coordinator", coord_path)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-
-        # Resolve common kwargs
-        resume_id = os.environ.get("NUCLEUS_SESSION_ID")
-        if not resume_id:
-            if getattr(args, 'resume_main', False):
-                resume_id = mod._load_session_id("main")
-            elif getattr(args, 'resume_test', False):
-                resume_id = mod._load_session_id("test")
-            elif not resume_id:
-                resume_id = mod._load_session_id("main") or None
-
-        # Route: autopilot vs one-shot
-        if getattr(args, 'autopilot', False) or getattr(args, 'prompt_file', None):
-            initial_prompts = []
-            task = getattr(args, 'task', None)
-            if task:
-                initial_prompts.append(task)
-            return mod.watch_gemini_autopilot(
-                prompts=initial_prompts if initial_prompts else None,
-                resume=False if resume_id else not getattr(args, 'no_resume', False),
-                gemini_yolo=getattr(args, 'gemini_yolo', False),
-                resume_id=resume_id,
-                gemini_auto_wait=getattr(args, 'gemini_auto_wait', False),
-                idle_timeout=getattr(args, 'idle_timeout', 15.0),
-                prompt_file=getattr(args, 'prompt_file', None))
-
-        if getattr(args, 'resident', False):
-            return mod.watch_gemini_resident(
-                brain_path=brain_path,
-                resume=False if resume_id else not getattr(args, 'no_resume', False),
-                gemini_yolo=getattr(args, 'gemini_yolo', False),
-                resume_id=resume_id,
-                gemini_auto_wait=getattr(args, 'gemini_auto_wait', False))
-
-        return mod.watch_gemini_output(
-            resume=False if resume_id else not getattr(args, 'no_resume', False),
-            task=getattr(args, 'task', None),
-            gemini_yolo=getattr(args, 'gemini_yolo', False),
-            resume_id=resume_id,
-            gemini_auto_wait=getattr(args, 'gemini_auto_wait', False))
-    else:
-        print("Usage: nucleus run <coordinator>", file=sys.stderr)
-        print("Available agents:", file=sys.stderr)
-        print("  coordinator  — Dual-agent pair programming loop (Gemini CLI + Cascade)", file=sys.stderr)
-        return 1
-
-
-def handle_recover_command(args) -> int:
-    """Handle 'nucleus recover' — universal session recovery."""
-    from .runtime.recovery_ops import (
-        _detect_bloated_conversations, _extract_conversation_context,
-        _quarantine_bloated_files, _generate_inheritance_package,
-        _generate_bootstrap_session, _rewrite_test_paths,
-        _recover_conversation_auto
-    )
-    
-    action = args.recover_action
-    
-    if action == 'detect':
-        print("🔍 Detecting bloated conversations...")
-        bloated = _detect_bloated_conversations()
-        if not bloated:
-            print("✅ No bloated conversations detected.")
-            return 0
-        
-        print(f"\n⚠️  Found {len(bloated)} bloated conversation(s):\n")
-        for conv in bloated:
-            print(f"  • {conv['conversation_id']}")
-            print(f"    Size: {conv['total_size_mb']} MB, Files: {conv['file_count']}")
-            print(f"    Bloat types: {', '.join(conv['bloat_types'])}")
-            if conv['pb_files']:
-                print(f"    Large .pb files: {len(conv['pb_files'])}")
-            print()
-        return 0
-    
-    elif action == 'extract':
-        conv_id = args.conversation_id
-        print(f"📦 Extracting context from {conv_id}...")
-        result = _extract_conversation_context(conv_id)
-        if not result.get('success'):
-            print(f"❌ {result.get('error')}")
-            return 1
-        
-        artifacts = result.get('artifacts', {})
-        print(f"✅ Extracted {len(artifacts)} artifacts:")
-        for name, data in artifacts.items():
-            if 'error' in data:
-                print(f"  ⚠️  {name}: {data['error']}")
-            else:
-                print(f"  ✓ {name}: {data.get('lines', 0)} lines")
-        return 0
-    
-    elif action == 'quarantine':
-        conv_id = args.conversation_id
-        print(f"🗂️  Quarantining bloated files from {conv_id}...")
-        result = _quarantine_bloated_files(conv_id)
-        if not result.get('success'):
-            print(f"❌ {result.get('error')}")
-            return 1
-        
-        print(f"✅ Quarantined {result['files_quarantined']} files")
-        print(f"   Location: {result['quarantine_path']}")
-        print(f"   Checksums: {result['checksums_created']}")
-        return 0
-    
-    elif action == 'bootstrap':
-        conv_id = args.conversation_id
-        print(f"🚀 Bootstrapping fresh session from {conv_id}...")
-        
-        # Extract and generate package
-        context = _extract_conversation_context(conv_id)
-        if not context.get('success'):
-            print(f"❌ {context.get('error')}")
-            return 1
-        
-        package = _generate_inheritance_package(conv_id, context)
-        result = _generate_bootstrap_session(conv_id, package)
-        
-        if not result.get('success'):
-            print(f"❌ {result.get('error')}")
-            return 1
-        
-        print(f"✅ Fresh session created: {result['new_session_id']}")
-        print(f"   Path: {result['session_path']}")
-        print(f"   Bootstrap: {result['bootstrap_file']}")
-        print(f"\n💡 Next: Load this context in your IDE and resume work")
-        return 0
-    
-    elif action == 'rewrite':
-        old_id = args.old_id
-        new_id = args.new_id
-        dry_run = args.dry_run
-        
-        mode = "DRY RUN" if dry_run else "APPLYING"
-        print(f"🔧 {mode}: Rewriting test paths from {old_id[:8]}... to {new_id[:8]}...")
-        
-        result = _rewrite_test_paths(old_id, new_id, dry_run)
-        
-        if dry_run:
-            print(f"\n📋 Would rewrite {len(result['rewrites'])} files:")
-        else:
-            print(f"\n✅ Rewrote {result['files_rewritten']} files:")
-        
-        for rewrite in result['rewrites']:
-            if 'error' in rewrite:
-                print(f"  ❌ {rewrite['file']}: {rewrite['error']}")
-            else:
-                status = "would update" if dry_run else "updated"
-                print(f"  ✓ {rewrite['file']}: {rewrite['occurrences']} occurrences {status}")
-        
-        if dry_run:
-            print(f"\n💡 Run without --dry-run to apply changes")
-        return 0
-    
-    elif action == 'auto':
-        conv_id = args.conversation_id
-        print(f"🆘 AUTO RECOVERY: {conv_id}")
-        print("=" * 60)
-        
-        result = _recover_conversation_auto(conv_id)
-        
-        # Report each step
-        for step_name, step_result in result.get('steps', {}).items():
-            if step_result.get('success'):
-                print(f"✅ {step_name.upper()}: Success")
-            else:
-                print(f"❌ {step_name.upper()}: {step_result.get('error', 'Failed')}")
-        
-        if result.get('success'):
-            print(f"\n🎉 RECOVERY COMPLETE")
-            print(f"   New session: {result['new_session_id']}")
-            print(f"   {result['bootstrap_prompt']}")
-            return 0
-        else:
-            print(f"\n❌ Recovery failed. Check steps above.")
-            return 1
-    
-    else:
-        print(f"❌ Unknown recover action: {action}")
-        print("Available actions: detect, extract, quarantine, bootstrap, rewrite, auto")
-        return 1
-
-
-def handle_rescue_command(args) -> int:
-    """Handle 'nucleus rescue' — recover session from stable anchors."""
-    from .runtime.common import get_brain_path
-    brain_path = get_brain_path()
-    current_id_path = brain_path / "session" / "current_id"
-    
-    if not current_id_path.exists():
-        print("❌ Rescue Failed: No stable session anchor (current_id) found.")
-        return 1
-        
-    session_id = current_id_path.read_text().strip()
-    print(f"🆘 Nucleus Rescue Protocol Initiated (ID: {session_id})")
-    
-    # 0. Siphon Pre-flight (Artifact Sovereignty)
-    _trigger_siphon(brain_path)
-    
-    # 1. Resolve Artifact Paths
-    # Attempt to find the IDE-specific artifact path first
-    ide_path = Path.home() / ".gemini" / "antigravity" / "brain" / session_id
-    if ide_path.exists():
-        print(f"📂 Found IDE Mission Memory: {ide_path}")
-    else:
-        print(f"📂 Using DSoR Mission Memory: {brain_path / 'session' / session_id}")
-
-    # 2. Re-possess the Session
-    os.environ["NUCLEUS_SESSION_ID"] = session_id
-    os.environ["NUCLEUS_RES_RESCUED"] = "true"
-    
-    # 3. Report Success with Instructions
-    print("\n✅ Context Siphon Complete.")
-    print(f"📦 Current Session Status: PERSISTENT")
-    print(f"📦 Active Token: {session_id[:8]}...")
-    print("\n💡 TO RESUME IN A FRESH IDE THREAD:")
-    print("1. Open the project.")
-    print("2. Simply ask the agent: 'I just ran a rescue. Give me a status update on current work.'")
-    print("3. The agent will read the local walkthroughs/tasks and continue immediately.")
-    
-    return 0
-
-
-def handle_config_command(args):
-    """Handle 'nucleus config' — view or change Nucleus settings."""
-    from .runtime.common import get_brain_path
-    brain_path = get_brain_path()
-    config_dir = brain_path / "config"
-    config_file = config_dir / "nucleus.yaml"
-
-    # ── Show current config ──
-    if getattr(args, 'show', False) or (
-        not getattr(args, 'no_telemetry', False)
-        and not getattr(args, 'telemetry', False)
-        and not getattr(args, 'telemetry_endpoint', None)
-    ):
-        if config_file.exists():
-            print(f"⚙️  Nucleus config ({config_file}):\n")
-            print(config_file.read_text(encoding="utf-8"))
-        else:
-            print(f"⚙️  No config file found at {config_file}")
-            print("   Using defaults (anonymous telemetry: enabled)")
-        return
-
-    # ── Load or create config ──
-    config_dir.mkdir(parents=True, exist_ok=True)
-    config = {}
-    if config_file.exists():
-        try:
-            import yaml
-            config = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
-        except Exception:
-            config = {}
-
-    # Ensure nested structure
-    config.setdefault("telemetry", {})
-    config["telemetry"].setdefault("anonymous", {})
-
-    changed = False
-
-    # ── --no-telemetry ──
-    if getattr(args, 'no_telemetry', False):
-        config["telemetry"]["anonymous"]["enabled"] = False
-        print("✅ Anonymous telemetry disabled.")
-        print("   No usage data will be sent.")
-        changed = True
-
-    # ── --telemetry ──
-    if getattr(args, 'telemetry', False):
-        config["telemetry"]["anonymous"]["enabled"] = True
-        print("✅ Anonymous telemetry enabled.")
-        print("   Thank you for helping improve Nucleus!")
-        changed = True
-
-    # ── --telemetry-endpoint ──
-    endpoint = getattr(args, 'telemetry_endpoint', None)
-    if endpoint:
-        config["telemetry"]["anonymous"]["endpoint"] = endpoint
-        print(f"✅ Telemetry endpoint set to: {endpoint}")
-        changed = True
-
-    if changed:
-        try:
-            import yaml
-            config_file.write_text(
-                yaml.dump(config, default_flow_style=False, sort_keys=False),
-                encoding="utf-8")
-            print(f"\n   Config saved to {config_file}")
-        except Exception as e:
-            print(f"❌ Failed to save config: {e}")
-
-        # Reset cached state so next command picks up change
-        try:
-            from .runtime.anon_telemetry import reset_anon_telemetry_state
-            reset_anon_telemetry_state()
-        except Exception:
-            pass
-
-
-if __name__ == "__main__":
-    main()

@@ -13,6 +13,54 @@ from pathlib import Path
 from .common import get_brain_path
 from .event_ops import _emit_event
 
+
+def _load_session_arc(brain: Path) -> dict:
+    """Load session history + today's brief recommendation.
+
+    Shared between session start (human dashboard) and context injection.
+    """
+    from datetime import datetime
+    ledger_path = brain / "engrams" / "ledger.jsonl"
+    if not ledger_path.exists():
+        return {"recent_sessions": [], "todays_focus": None, "arc_summary": ""}
+
+    session_engrams = []
+    brief_rec = None
+    today_key = f"brief_rec_{datetime.now().strftime('%Y%m%d')}"
+
+    try:
+        with open(ledger_path, "r") as f:
+            for line in f:
+                try:
+                    e = json.loads(line.strip())
+                    if e.get("deleted", False):
+                        continue
+                    if e.get("key", "").startswith("session_"):
+                        session_engrams.append(e)
+                    elif e.get("key") == today_key:
+                        brief_rec = e
+                except (json.JSONDecodeError, KeyError):
+                    continue
+    except OSError:
+        return {"recent_sessions": [], "todays_focus": None, "arc_summary": ""}
+
+    session_engrams.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
+    recent = session_engrams[:3]
+
+    arc_parts = []
+    for s in reversed(recent):
+        ts = s.get("timestamp", "")[:10]
+        val = s.get("value", "")[:40]
+        arc_parts.append(f"{ts}: {val}")
+    arc_summary = " → ".join(arc_parts)
+
+    return {
+        "recent_sessions": recent,
+        "todays_focus": brief_rec.get("value", "") if brief_rec else None,
+        "arc_summary": arc_summary,
+    }
+
+
 def _get_sessions_path() -> Path:
     """Get path to sessions directory."""
     brain = get_brain_path()
@@ -387,6 +435,23 @@ def _brain_session_start_impl() -> str:
             output.append("   Run: nucleus_sessions action='handoff_summary' for details")
             output.append("")
         
+        # Session Arc (Artery 6: session continuity)
+        if not os.environ.get("NUCLEUS_DISABLE_ARTERY_6"):
+            try:
+                arc = _load_session_arc(brain)
+                if arc.get("recent_sessions"):
+                    output.append("📋 RECENT SESSIONS:")
+                    for s in arc["recent_sessions"]:
+                        ts = s.get("timestamp", "?")[:10]
+                        val = s.get("value", "")[:80]
+                        output.append(f"   [{ts}] {val}")
+                    output.append("")
+                if arc.get("todays_focus"):
+                    output.append(f"🎯 TODAY'S FOCUS: {arc['todays_focus'][:100]}")
+                    output.append("")
+            except Exception:
+                pass  # Never let session arc break session start
+
         # Recommendations
         output.append("💡 RECOMMENDATIONS:")
         if pending_handoffs:

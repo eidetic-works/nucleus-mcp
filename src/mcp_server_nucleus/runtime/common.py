@@ -64,6 +64,15 @@ def get_nucleus_bin_path() -> str:
     return str(Path(sys.executable).resolve().parent)
 
 
+def get_nucleus_mcp_command() -> list:
+    """Return the command list for MCP config. Prefers nucleus-mcp binary (full path)."""
+    bin_path = shutil.which("nucleus-mcp")
+    if bin_path:
+        return [str(Path(bin_path).resolve())]
+    # Fallback: exact python that has nucleus installed + module
+    return [sys.executable, "-m", "mcp_server_nucleus"]
+
+
 def get_brain_path() -> Path:
     """Get the brain path from environment variable or auto-detect from working directory."""
     brain_path = os.environ.get("NUCLEAR_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")

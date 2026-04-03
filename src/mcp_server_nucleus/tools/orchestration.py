@@ -568,6 +568,22 @@ Actions:
         except Exception as e:
             return json.dumps({"error": f"Tool execution failed: {str(e)}"})
 
+    def _h_growth_pulse(write_engrams=True):
+        try:
+            from ..runtime.growth_ops import growth_pulse
+            result = growth_pulse(write_engrams=write_engrams)
+            return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
+        except Exception as e:
+            return json.dumps({"error": f"Growth pulse failed: {str(e)}"})
+
+    def _h_capture_metrics(write_engram=True):
+        try:
+            from ..runtime.growth_ops import capture_metrics
+            result = capture_metrics(write_engram=write_engram)
+            return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
+        except Exception as e:
+            return json.dumps({"error": f"Capture metrics failed: {str(e)}"})
+
     INFRA_ROUTER = {
         "file_changes": _h_file_changes,
         "gcloud_status": _h_gcloud_status,
@@ -579,6 +595,8 @@ Actions:
         "optimize_workflow": _h_optimize_workflow,
         "manage_strategy": _h_manage_strategy,
         "update_roadmap": _h_update_roadmap,
+        "growth_pulse": lambda write_engrams=True: _h_growth_pulse(write_engrams),
+        "capture_metrics": lambda write_engram=True: _h_capture_metrics(write_engram),
     }
 
     @mcp.tool()
@@ -596,6 +614,8 @@ Actions:
   optimize_workflow   - Self-optimize workflow cheatsheet
   manage_strategy     - Read/Update strategy doc. params: {action, content?}
   update_roadmap      - Read/Update roadmap. params: {action, item?}
+  growth_pulse        - Full growth pipeline: brief→metrics→streak→compound. params: {write_engrams?}
+  capture_metrics     - Refresh GitHub+PyPI metrics + gate evaluation. params: {write_engram?}
 """
         return dispatch(action, params, INFRA_ROUTER, "nucleus_infra")
 
