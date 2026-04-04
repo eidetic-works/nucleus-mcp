@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.8.4"
+version = "1.8.6"
 description = "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents"
 readme = "README.md"
 authors = [
