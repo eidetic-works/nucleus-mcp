@@ -30,7 +30,7 @@ CLAUDE.md tells agents what to do. Nucleus **enforces** what they can do.
 
 ### Is Nucleus open source?
 
-Yes. Nucleus is open source under the MIT license. Install via PyPI (`pip install mcp-server-nucleus`) or clone the repository.
+Yes. Nucleus is open source under the MIT license. Install via PyPI (`pip install nucleus-mcp`) or clone the repository.
 
 ---
 
@@ -39,7 +39,7 @@ Yes. Nucleus is open source under the MIT license. Install via PyPI (`pip instal
 ### How do I install Nucleus?
 
 ```bash
-pip install mcp-server-nucleus
+pip install nucleus-mcp
 ```
 
 ### What Python version is required?
@@ -135,7 +135,7 @@ Or in your MCP client config:
 
 Ensure you're running the latest version:
 ```bash
-pip install --upgrade mcp-server-nucleus
+pip install --upgrade nucleus-mcp
 ```
 
 ### Tests failing
