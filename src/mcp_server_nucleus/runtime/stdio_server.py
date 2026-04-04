@@ -49,6 +49,7 @@ import traceback
 import time
 import os
 from typing import Any, Dict, Optional
+from mcp_server_nucleus import __version__ as _nucleus_version
 from mcp_server_nucleus.hypervisor.locker import Locker
 from mcp_server_nucleus.hypervisor.watchdog import Watchdog
 from mcp_server_nucleus.hypervisor.injector import Injector
@@ -132,16 +133,22 @@ class StdioServer:
                 "jsonrpc": "2.0",
                 "id": msg_id,
                 "result": {
-                    "protocolVersion": "2024-11-05", # Updated protocol version
+                    "protocolVersion": "2025-03-26",
                     "capabilities": {
-                        "tools": {
-                            "listChanged": True
-                        }
+                        "tools": {"listChanged": True},
+                        "resources": {},
+                        "prompts": {},
                     },
                     "serverInfo": {
                         "name": "nucleus",
-                        "version": "1.0.9"
-                    }
+                        "version": _nucleus_version
+                    },
+                    "instructions": (
+                        "Nucleus is a persistent Agent OS providing memory, governance, "
+                        "and compliance for AI agents. Use brain:// resources for live "
+                        "context, nucleus_* tools for actions. Start with the cold_start "
+                        "prompt or brain://context resource for orientation."
+                    ),
                 }
             }
         
@@ -348,15 +355,232 @@ class StdioServer:
                 # --- UNKNOWN TOOL ---
                 raise ValueError(f"Unknown tool: {name}")
 
+            except ValueError as e:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32602, "message": str(e)}
+                }
             except Exception as e:
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
-                    "error": {
-                        "code": -32000,
-                        "message": str(e)
+                    "error": {"code": -32603, "message": str(e)}
+                }
+
+        elif method == "resources/list":
+            return {
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {"resources": self._get_resources_list()}
+            }
+
+        elif method == "resources/read":
+            uri = request.get("params", {}).get("uri", "")
+            try:
+                content = self._read_resource(uri)
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "contents": [{"uri": uri, "mimeType": "application/json", "text": content}]
                     }
                 }
+            except Exception as e:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32602, "message": str(e)}
+                }
+
+        elif method == "prompts/list":
+            return {
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {
+                    "prompts": [
+                        {
+                            "name": "activate_synthesizer",
+                            "description": "Activate Synthesizer agent to orchestrate the current sprint.",
+                            "arguments": []
+                        },
+                        {
+                            "name": "start_sprint",
+                            "description": "Initialize a new sprint with the given goal.",
+                            "arguments": [
+                                {"name": "goal", "description": "Sprint goal (default: 'MVP Launch')", "required": False}
+                            ]
+                        },
+                        {
+                            "name": "cold_start",
+                            "description": "Get instant context when starting a new session. Call this first.",
+                            "arguments": []
+                        },
+                    ]
+                }
+            }
+
+        elif method == "prompts/get":
+            prompt_name = request.get("params", {}).get("name", "")
+            prompt_args = request.get("params", {}).get("arguments", {})
+            try:
+                text = self._get_prompt(prompt_name, prompt_args)
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "description": f"Prompt: {prompt_name}",
+                        "messages": [
+                            {"role": "user", "content": {"type": "text", "text": text}}
+                        ]
+                    }
+                }
+            except Exception as e:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32602, "message": str(e)}
+                }
+
+        elif method == "ping":
+            return {"jsonrpc": "2.0", "id": msg_id, "result": {}}
+
+        elif method.startswith("notifications/"):
+            # All notifications (initialized, cancelled, etc.) — no response per spec
+            return None
+
+        else:
+            # JSON-RPC 2.0: unknown methods MUST return -32601
+            if msg_id is not None:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32601, "message": f"Method not found: {method}"}
+                }
+            return None
+
+    def _get_resources_list(self):
+        """Return 8 brain:// resource descriptors."""
+        return [
+            {"uri": "brain://state", "name": "Brain State",
+             "description": "Live state.json content — current session, active tasks, config",
+             "mimeType": "application/json"},
+            {"uri": "brain://events", "name": "Brain Events",
+             "description": "Recent events from the event ledger with timestamps",
+             "mimeType": "application/json"},
+            {"uri": "brain://triggers", "name": "Trigger Definitions",
+             "description": "Automation trigger rules and their evaluation state",
+             "mimeType": "application/json"},
+            {"uri": "brain://depth", "name": "Depth Tracking",
+             "description": "Current cognitive depth state — shows nesting level in task tree",
+             "mimeType": "application/json"},
+            {"uri": "brain://context", "name": "Cold Start Context",
+             "description": "Full context for new sessions — read this first in any new conversation",
+             "mimeType": "text/plain"},
+            {"uri": "brain://changes", "name": "Change Ledger",
+             "description": "Monotonic version tracker — poll to detect staleness across all resources",
+             "mimeType": "application/json"},
+            {"uri": "brain://traces", "name": "Decision Traces",
+             "description": "Recent DecisionMade traces from the DSoR decision ledger",
+             "mimeType": "application/json"},
+            {"uri": "brain://health", "name": "Three Frontiers Health",
+             "description": "GROUND/ALIGN/COMPOUND status — verification pass rates, alignment verdicts, delta counts",
+             "mimeType": "application/json"},
+        ]
+
+    def _read_resource(self, uri: str) -> str:
+        """Read a brain:// resource by URI. Lazy imports to avoid startup cost."""
+        try:
+            if uri == "brain://state":
+                from mcp_server_nucleus.runtime.common import _get_state
+                return json.dumps(_get_state(), indent=2)
+            elif uri == "brain://events":
+                from mcp_server_nucleus.runtime.event_ops import _read_events
+                return json.dumps(_read_events(limit=20), indent=2)
+            elif uri == "brain://triggers":
+                from mcp_server_nucleus.runtime.trigger_ops import _get_triggers_impl
+                return json.dumps(_get_triggers_impl(), indent=2)
+            elif uri == "brain://depth":
+                from mcp_server_nucleus.runtime.depth_ops import _depth_show
+                return json.dumps(_depth_show(), indent=2)
+            elif uri == "brain://context":
+                from mcp_server_nucleus.runtime.context_ops import _resource_context_impl
+                return _resource_context_impl()
+            elif uri == "brain://changes":
+                from mcp_server_nucleus.runtime.event_bus import get_change_ledger
+                return json.dumps(get_change_ledger().get_snapshot(), indent=2)
+            elif uri == "brain://traces":
+                from mcp_server_nucleus.runtime.engram_ops import _dsor_query_decisions_impl
+                return _dsor_query_decisions_impl(limit=50)
+            elif uri == "brain://health":
+                return self._read_health_resource()
+            else:
+                raise ValueError(f"Unknown resource URI: {uri}")
+        except ValueError:
+            raise
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    def _read_health_resource(self) -> str:
+        """Three Frontiers health — shared with server.py."""
+        try:
+            from mcp_server_nucleus.runtime.common import get_brain_path
+            from mcp_server_nucleus.runtime.hardening import safe_read_jsonl
+            from datetime import datetime, timezone
+            brain = get_brain_path()
+            result = {}
+            # GROUND
+            vlog = Path(brain) / "verification_log.jsonl"
+            if vlog.exists():
+                receipts = safe_read_jsonl(vlog)
+                passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                result["ground"] = {"total": len(receipts), "pass_rate": round(passed / max(len(receipts), 1) * 100, 1)}
+            else:
+                result["ground"] = {"total": 0}
+            # ALIGN
+            vpath = Path(brain) / "driver" / "human_verdicts.jsonl"
+            if vpath.exists():
+                verdicts = safe_read_jsonl(vpath)
+                non_pending = [v for v in verdicts if v.get("verdict") != "pending"]
+                result["align"] = {
+                    "total": len(non_pending),
+                    "corrected": sum(1 for v in non_pending if v.get("verdict") == "corrected"),
+                    "accepted": sum(1 for v in non_pending if v.get("verdict") == "accepted"),
+                }
+            else:
+                result["align"] = {"total": 0}
+            # COMPOUND
+            deltas_path = Path(brain) / "deltas" / "deltas.jsonl"
+            if deltas_path.exists():
+                deltas = safe_read_jsonl(deltas_path)
+                result["compound"] = {"deltas": len(deltas)}
+            else:
+                result["compound"] = {"deltas": 0}
+            result["last_updated"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            return json.dumps(result, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    def _get_prompt(self, name: str, arguments: dict) -> str:
+        """Get a prompt by name. Lazy imports."""
+        try:
+            from mcp_server_nucleus.runtime.context_ops import (
+                _activate_synthesizer_prompt,
+                _start_sprint_prompt,
+                _cold_start_prompt,
+            )
+        except ImportError:
+            return f"Prompt '{name}' not available (context_ops not installed)"
+
+        if name == "activate_synthesizer":
+            return _activate_synthesizer_prompt()
+        elif name == "start_sprint":
+            goal = arguments.get("goal", "MVP Launch")
+            return _start_sprint_prompt(goal)
+        elif name == "cold_start":
+            return _cold_start_prompt()
+        else:
+            raise ValueError(f"Unknown prompt: {name}")
 
     def _get_facade_routers(self) -> Dict[str, Dict[str, Any]]:
         """Build facade routers lazily. Same _impl functions as FastMCP facades."""
@@ -479,7 +703,7 @@ def main():
     # Handle diagnostic flags for smoke tests
     if "--help" in sys.argv or "--status" in sys.argv:
         print("NUCLEUS MCP SERVER - OPERATIONAL")
-        print(f"Version: 1.0.9")
+        print(f"Version: {_nucleus_version}")
         print(f"Platform: {sys.platform}")
         print(f"Python: {sys.version.split()[0]}")
         
