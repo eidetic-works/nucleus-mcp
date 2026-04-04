@@ -1,0 +1,48 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.eidetic-works/nucleus",
+  "description": "MCP server for persistent memory, execution verification, governance, and compliance.",
+  "repository": {
+    "url": "https://github.com/eidetic-works/nucleus-mcp",
+    "source": "github"
+  },
+  "version": "1.8.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "nucleus-mcp",
+      "version": "1.8.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Path to .brain/ directory (defaults to .brain in current directory)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "NUCLEUS_BRAIN_PATH"
+        }
+      ]
+    },
+    {
+      "registryType": "pypi",
+      "identifier": "nucleus-mcp",
+      "version": "1.8.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Path to .brain/ directory (defaults to .brain in current directory)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "NUCLEUS_BRAIN_PATH"
+        }
+      ]
+    }
+  ]
+}

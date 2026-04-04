@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.eidetic-works/nucleus -->
 # Nucleus
 
 > The MCP server that makes AI outputs more reliable every week.
@@ -6,6 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 [![NPM](https://img.shields.io/badge/npm-nucleus--mcp-red)](https://www.npmjs.com/package/nucleus-mcp)
+[![nucleus-mcp MCP server](https://glama.ai/mcp/servers/eidetic-works/nucleus-mcp/badges/score.svg)](https://glama.ai/mcp/servers/eidetic-works/nucleus-mcp)
 
 AI agents hallucinate, break code, and repeat mistakes. Nucleus catches this. Every AI output is verified, every correction is recorded, and every mistake trains the system to not repeat it. Locally, on your machine.
 
