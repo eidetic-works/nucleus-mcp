@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.eidetic-works/nucleus",
-  "description": "MCP server for persistent memory, execution verification, governance, and compliance.",
+  "description": "Persistent Agent OS — memory, governance, and compliance for AI agents. 12 tools, 8 resources, 3 prompts.",
   "repository": {
     "url": "https://github.com/eidetic-works/nucleus-mcp",
     "source": "github"
   },
-  "version": "1.8.0",
+  "version": "1.8.7",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "nucleus-mcp",
-      "version": "1.8.1",
+      "version": "1.8.7",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
@@ -29,7 +29,7 @@
     {
       "registryType": "pypi",
       "identifier": "nucleus-mcp",
-      "version": "1.8.0",
+      "version": "1.8.7",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
