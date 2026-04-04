@@ -150,75 +150,121 @@ class StdioServer:
             return None
             
         elif method == "tools/list":
-            # ── 12 Facade Tools (post-facade refactor) ──────────────
-            FACADE_SCHEMA = {
-                "type": "object",
-                "properties": {
-                    "action": {"type": "string", "description": "Action to execute (see tool description)"},
-                    "params": {"type": "object", "description": "Action parameters", "default": {}}
-                },
-                "required": ["action"]
-            }
+            # ── 12 Facade Tools with rich schemas for TDQS ──────────────
+            def _schema(actions, param_desc="Action-specific parameters. Pass as key-value pairs."):
+                return {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": actions,
+                            "description": "The action to execute."
+                        },
+                        "params": {
+                            "type": "object",
+                            "description": param_desc,
+                            "default": {}
+                        }
+                    },
+                    "required": ["action"]
+                }
+
             tools = [
                 {
                     "name": "nucleus_governance",
-                    "description": "Governance, Hypervisor & security tools.\nActions: auto_fix_loop, lock, unlock, set_mode, list_directory, delete_file, watch, status, curl, pip_install",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Governance, hypervisor, and security controls for the Nucleus Agent OS. Lock and unlock files with immutable flags, set red/blue security modes, run auto-fix verification loops (verify-diagnose-fix-retry), list directories, watch file changes, check governance status, and manage system-level operations like curl and pip_install.",
+                    "inputSchema": _schema(
+                        ["auto_fix_loop", "lock", "unlock", "set_mode", "list_directory", "delete_file", "watch", "status", "curl", "pip_install"],
+                        "Parameters vary by action. auto_fix_loop: {file_path, verification_command}. lock/unlock: {path}. set_mode: {mode: 'red'|'blue'}. list_directory: {path}. delete_file: {path}. watch: {path, duration}. curl: {url, method, headers, body}. pip_install: {package}."
+                    )
                 },
                 {
                     "name": "nucleus_engrams",
-                    "description": "Engrams, health, observability, DSoR, God Combos, Context Graph & Billing.\nActions: health, version, audit_log, write_engram, query_engrams, search_engrams, governance_status, morning_brief, pulse_and_polish, self_healing_sre, fusion_reactor, context_graph, engram_neighbors, render_graph, billing_summary",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Persistent memory (engrams), health checks, observability, and context graph for the Nucleus Agent OS. Write and query engrams that survive across sessions. Run health checks, version info, audit logs. Generate morning briefs, pulse-and-polish reports, self-healing SRE diagnostics. Build and traverse context graphs of related engrams. Track billing summaries.",
+                    "inputSchema": _schema(
+                        ["health", "version", "audit_log", "write_engram", "query_engrams", "search_engrams", "governance_status", "morning_brief", "pulse_and_polish", "self_healing_sre", "fusion_reactor", "context_graph", "engram_neighbors", "render_graph", "billing_summary"],
+                        "Parameters vary by action. write_engram: {content, tags[], source, metadata{}}. query_engrams: {query, limit, tags[]}. search_engrams: {query, limit}. audit_log: {limit, level}. context_graph: {engram_id}. engram_neighbors: {engram_id, depth}."
+                    )
                 },
                 {
                     "name": "nucleus_tasks",
-                    "description": "Task management, depth tracking & ADHD context-switch tools.\nActions: list, get_next, claim, update, add, import_jsonl, escalate, depth_push, depth_pop, depth_show, depth_reset, depth_set_max, depth_map, context_switch, context_switch_status, context_switch_reset",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Task queue management with priority, escalation, and ADHD-aware context-switch protection. Add tasks with priority levels, claim and update task status, import tasks from JSONL files. Track cognitive depth to prevent rabbit-holing (push/pop/show/reset depth). Context-switch tools save and restore working state when switching between tasks.",
+                    "inputSchema": _schema(
+                        ["list", "get_next", "claim", "update", "add", "import_jsonl", "escalate", "depth_push", "depth_pop", "depth_show", "depth_reset", "depth_set_max", "depth_map", "context_switch", "context_switch_status", "context_switch_reset"],
+                        "Parameters vary by action. add: {title, description, priority: 'critical'|'high'|'medium'|'low', tags[]}. update: {task_id, status: 'pending'|'in_progress'|'done'|'blocked', notes}. claim: {task_id}. escalate: {task_id, reason}. depth_set_max: {max_depth}. context_switch: {to_task_id}. import_jsonl: {file_path}."
+                    )
                 },
                 {
                     "name": "nucleus_sessions",
-                    "description": "Session management, events, state & checkpoint tools.\nActions: save, resume, list, check_recent, end, start, archive_resolved, propose_merges, garbage_collect, emit_event, read_events, get_state, update_state, checkpoint, resume_checkpoint, handoff_summary",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Session lifecycle management with save/resume, events, state, and checkpoints. Start and end work sessions with automatic context capture. Save session state and resume later with full context restoration. Emit and read structured events. Create checkpoints for rollback. Generate handoff summaries for session transitions. Archive resolved sessions and garbage collect stale ones.",
+                    "inputSchema": _schema(
+                        ["save", "resume", "list", "check_recent", "end", "start", "archive_resolved", "propose_merges", "garbage_collect", "emit_event", "read_events", "get_state", "update_state", "checkpoint", "resume_checkpoint", "handoff_summary"],
+                        "Parameters vary by action. start: {goal, tags[]}. save: {session_id, notes}. resume: {session_id}. emit_event: {event_type, data{}}. read_events: {session_id, limit, event_type}. update_state: {key, value}. checkpoint: {label}. resume_checkpoint: {checkpoint_id}."
+                    )
                 },
                 {
                     "name": "nucleus_sync",
-                    "description": "Sync, artifact, trigger & deploy management.\nActions: identify_agent, sync_status, sync_now, sync_auto, sync_resolve, read_artifact, write_artifact, list_artifacts, trigger_agent, get_triggers, evaluate_triggers, start_deploy_poll, check_deploy, complete_deploy, smoke_test, shared_read, shared_write, shared_list",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Multi-agent synchronization, artifact management, trigger system, and deployment orchestration. Identify agents and sync state across distributed brains. Read and write named artifacts for cross-session data sharing. Define and evaluate triggers for automated workflows. Manage deployment lifecycles with poll, check, complete, and smoke test stages.",
+                    "inputSchema": _schema(
+                        ["identify_agent", "sync_status", "sync_now", "sync_auto", "sync_resolve", "read_artifact", "write_artifact", "list_artifacts", "trigger_agent", "get_triggers", "evaluate_triggers", "start_deploy_poll", "check_deploy", "complete_deploy", "smoke_test", "shared_read", "shared_write", "shared_list"],
+                        "Parameters vary by action. write_artifact: {name, content, mime_type}. read_artifact: {name}. trigger_agent: {agent_id, event, payload{}}. start_deploy_poll: {service, environment}. smoke_test: {url, expected_status}. shared_write: {key, value}. shared_read: {key}."
+                    )
                 },
                 {
                     "name": "nucleus_features",
-                    "description": "Feature tracking, proof generation & MCP server mounting.\nActions: add, list, get, update, validate, search, mount_server, thanos_snap, unmount_server, list_mounted, discover_tools, invoke_tool, traverse_mount, generate_proof, get_proof, list_proofs",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Feature tracking, execution proof generation, and MCP server mounting. Track features through their lifecycle (add, update, validate, search). Generate cryptographic proofs of code execution for audit trails. Mount external MCP servers as sub-tools, discover their capabilities, and invoke their tools through Nucleus orchestration.",
+                    "inputSchema": _schema(
+                        ["add", "list", "get", "update", "validate", "search", "mount_server", "thanos_snap", "unmount_server", "list_mounted", "discover_tools", "invoke_tool", "traverse_mount", "generate_proof", "get_proof", "list_proofs"],
+                        "Parameters vary by action. add: {name, description, status}. update: {feature_id, status, notes}. get: {feature_id}. search: {query}. mount_server: {name, command, args[], env{}}. invoke_tool: {server_name, tool_name, arguments{}}. generate_proof: {action, evidence{}}."
+                    )
                 },
                 {
                     "name": "nucleus_federation",
-                    "description": "Federation management for multi-brain coordination.\nActions: status, join, leave, peers, sync, route, health",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Federation management for multi-brain coordination across distributed Nucleus instances. Check federation status, join or leave federations, list connected peers, sync state between brains, route requests to the appropriate brain, and monitor federation health. Enables multiple AI agents to share memory and coordinate work.",
+                    "inputSchema": _schema(
+                        ["status", "join", "leave", "peers", "sync", "route", "health"],
+                        "Parameters vary by action. join: {federation_id, brain_path}. leave: {federation_id}. route: {target_brain, action, params{}}. sync: {peer_id, mode: 'full'|'delta'}."
+                    )
                 },
                 {
                     "name": "nucleus_orchestration",
-                    "description": "Satellite view, commitments, loops, patterns & metrics.\nActions: satellite, scan_commitments, archive_stale, export, list_commitments, close_commitment, commitment_health, open_loops, add_loop, weekly_challenge, patterns, metrics",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "High-level orchestration with satellite view, commitment tracking, open loops, patterns, and metrics. Get a satellite overview of all active work. Scan and manage commitments (promises made during sessions). Track open loops that need closure. Detect recurring patterns in work. Export data and generate weekly challenges. View system-wide metrics.",
+                    "inputSchema": _schema(
+                        ["satellite", "scan_commitments", "archive_stale", "export", "list_commitments", "close_commitment", "commitment_health", "open_loops", "add_loop", "weekly_challenge", "patterns", "metrics"],
+                        "Parameters vary by action. close_commitment: {commitment_id, resolution}. add_loop: {description, context, priority}. export: {format: 'json'|'csv'|'markdown', target}. archive_stale: {days_old}. scan_commitments: {session_id}."
+                    )
                 },
                 {
                     "name": "nucleus_telemetry",
-                    "description": "LLM tiers, telemetry, PEFS notifications & protocol tools.\nActions: set_llm_tier, get_llm_status, record_interaction, value_ratio, check_kill_switch, pause_notifications, resume_notifications, record_feedback, mark_high_impact, check_protocol, request_handoff, get_handoffs, agent_cost_dashboard, dispatch_metrics",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "LLM tier management, interaction telemetry, cost tracking, and notification controls. Set and query LLM tier preferences (which models to use for which tasks). Record interactions for training signal generation. Track value ratios and cost dashboards. Manage kill switches for emergency stops. Control PEFS notification pausing/resuming. Record user feedback and mark high-impact interactions.",
+                    "inputSchema": _schema(
+                        ["set_llm_tier", "get_llm_status", "record_interaction", "value_ratio", "check_kill_switch", "pause_notifications", "resume_notifications", "record_feedback", "mark_high_impact", "check_protocol", "request_handoff", "get_handoffs", "agent_cost_dashboard", "dispatch_metrics"],
+                        "Parameters vary by action. set_llm_tier: {tier: 'opus'|'sonnet'|'haiku', context}. record_interaction: {tool_name, tokens_in, tokens_out, latency_ms}. record_feedback: {interaction_id, rating, comment}. mark_high_impact: {interaction_id, reason}. request_handoff: {from_agent, to_agent, context{}}."
+                    )
                 },
                 {
                     "name": "nucleus_slots",
-                    "description": "Orchestration slots, sprints & mission management.\nActions: orchestrate, slot_complete, slot_exhaust, status_dashboard, autopilot_sprint, force_assign, autopilot_sprint_v2, start_mission, mission_status, halt_sprint, resume_sprint",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Orchestration slot management, sprint automation, and mission control. Assign work to time-boxed slots for focused execution. Run autopilot sprints that automatically claim and execute tasks. Start and track missions (multi-sprint goals). View status dashboards, halt and resume sprints, force-assign tasks to specific slots.",
+                    "inputSchema": _schema(
+                        ["orchestrate", "slot_complete", "slot_exhaust", "status_dashboard", "autopilot_sprint", "force_assign", "autopilot_sprint_v2", "start_mission", "mission_status", "halt_sprint", "resume_sprint"],
+                        "Parameters vary by action. orchestrate: {strategy, max_slots}. slot_complete: {slot_id, result}. force_assign: {slot_id, task_id}. start_mission: {name, goal, sprint_count}. autopilot_sprint: {duration_minutes, focus_tags[]}."
+                    )
                 },
                 {
                     "name": "nucleus_infra",
-                    "description": "Infrastructure: file changes, cloud, marketing & strategy tools.\nActions: file_changes, gcloud_status, gcloud_services, list_services, scan_marketing_log, synthesize_strategy, status_report, optimize_workflow, manage_strategy, update_roadmap",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Infrastructure monitoring, cloud operations, and strategic planning tools. Track file changes across the project. Check Google Cloud status and services. List running services. Scan marketing logs and synthesize strategy recommendations. Generate status reports, optimize workflows, manage strategy documents, and update roadmaps.",
+                    "inputSchema": _schema(
+                        ["file_changes", "gcloud_status", "gcloud_services", "list_services", "scan_marketing_log", "synthesize_strategy", "status_report", "optimize_workflow", "manage_strategy", "update_roadmap"],
+                        "Parameters vary by action. file_changes: {since, path}. gcloud_services: {project_id}. status_report: {format: 'markdown'|'json', scope}. update_roadmap: {item, status, notes}. optimize_workflow: {target_area}."
+                    )
                 },
                 {
                     "name": "nucleus_agents",
-                    "description": "Agent spawning, critic, swarm, memory, ingestion & dashboard tools.\nActions: spawn_agent, apply_critique, orchestrate_swarm, search_memory, read_memory, respond_to_consent, list_pending_consents, critique_code, fix_code, session_briefing, register_session, handoff_task, ingest_tasks, rollback_ingestion, ingestion_stats, dashboard, snapshot_dashboard, list_dashboard_snapshots, get_alerts, set_alert_threshold",
-                    "inputSchema": FACADE_SCHEMA
+                    "description": "Multi-agent spawning, code review, swarm orchestration, memory search, task ingestion, and real-time dashboards. Spawn specialized sub-agents for parallel work. Apply critic reviews to code changes. Orchestrate agent swarms for complex tasks. Search and read persistent memory. Manage consent flows for sensitive operations. Ingest tasks from external sources. View live dashboards with alerts and thresholds.",
+                    "inputSchema": _schema(
+                        ["spawn_agent", "apply_critique", "orchestrate_swarm", "search_memory", "read_memory", "respond_to_consent", "list_pending_consents", "critique_code", "fix_code", "session_briefing", "register_session", "handoff_task", "ingest_tasks", "rollback_ingestion", "ingestion_stats", "dashboard", "snapshot_dashboard", "list_dashboard_snapshots", "get_alerts", "set_alert_threshold"],
+                        "Parameters vary by action. spawn_agent: {role, goal, tools[]}. critique_code: {file_path, diff}. fix_code: {file_path, issue}. search_memory: {query, limit}. ingest_tasks: {source, file_path}. set_alert_threshold: {metric, threshold, operator: 'gt'|'lt'|'eq'}. handoff_task: {task_id, to_agent, context{}}."
+                    )
                 },
             ]
 
