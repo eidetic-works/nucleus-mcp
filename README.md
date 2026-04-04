@@ -83,7 +83,7 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 | | Free | Pro |
 |---|---|---|
-| 114 MCP tools | Yes | Yes |
+| 12 tools, 8 resources, 3 prompts | Yes | Yes |
 | Persistent memory | Yes | Yes |
 | Governance & HITL | Yes | Yes |
 | Audit trails (DSoR) | Yes | Yes |
