@@ -27,10 +27,16 @@ def register(mcp, helpers):
     )
     from ..runtime.morning_brief_ops import _morning_brief_impl
     from ..runtime.engram_hooks import get_hook_metrics_summary
-    from ..runtime.compounding_loop import (
-        _compounding_loop_status_impl, _end_of_day_capture_impl,
-        _session_start_inject_impl, _weekly_consolidation_impl,
-    )
+    try:
+        from ..runtime.compounding_loop import (
+            _compounding_loop_status_impl, _end_of_day_capture_impl,
+            _session_start_inject_impl, _weekly_consolidation_impl,
+        )
+    except ImportError:
+        def _compounding_loop_status_impl(*a, **kw): return {"status": "unavailable"}
+        def _end_of_day_capture_impl(*a, **kw): return {"status": "unavailable"}
+        def _session_start_inject_impl(*a, **kw): return {"status": "unavailable"}
+        def _weekly_consolidation_impl(*a, **kw): return {"status": "unavailable"}
     from ..tool_tiers import get_tier_info, is_tool_allowed, tier_manager
     from ..runtime.schema_gen import generate_tool_schema
 
