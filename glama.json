@@ -1,14 +1,4 @@
 {
-  "name": "nucleus-mcp",
-  "display_name": "Nucleus MCP",
-  "description": "AI reliability that compounds - 114 MCP tools for persistent memory, execution verification, governance, and compliance. GROUND verifies, ALIGN corrects, COMPOUND learns.",
-  "maintainer": {
-    "github": "eidetic-works",
-    "email": "hello@nucleusos.dev"
-  },
-  "homepage": "https://nucleusos.dev",
-  "repository": "https://github.com/eidetic-works/nucleus-mcp",
-  "license": "MIT",
-  "categories": ["development", "memory", "governance", "orchestration"],
-  "tags": ["mcp", "ai-agents", "memory", "compliance", "local-first", "execution-verification"]
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["eidetic-works"]
 }
