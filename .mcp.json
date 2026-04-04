@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "nucleus": {
+      "command": "uvx",
+      "args": ["nucleus-mcp"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": ".brain"
+      }
+    }
+  }
+}
