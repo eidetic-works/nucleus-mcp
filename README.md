@@ -93,6 +93,18 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 ---
 
+## Install
+
+```bash
+pip install nucleus-mcp
+```
+
+Or use npx (zero Python setup required):
+
+```bash
+npx -y nucleus-mcp
+```
+
 ## Configure Your MCP Client
 
 ### Claude Desktop / Cursor / Windsurf
@@ -103,8 +115,22 @@ Add to your MCP config (`claude_desktop_config.json` or equivalent):
 {
   "mcpServers": {
     "nucleus": {
+      "command": "npx",
+      "args": ["-y", "nucleus-mcp"]
+    }
+  }
+}
+```
+
+<details>
+<summary>Alternative: use pip install directly</summary>
+
+```json
+{
+  "mcpServers": {
+    "nucleus": {
       "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
+      "args": ["-m", "mcp_server_nucleus"],
       "env": {
         "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
       }
@@ -112,6 +138,7 @@ Add to your MCP config (`claude_desktop_config.json` or equivalent):
   }
 }
 ```
+</details>
 
 ### Claude Code
 
@@ -121,11 +148,8 @@ Add to `.mcp.json` in your project root:
 {
   "mcpServers": {
     "nucleus": {
-      "command": "python3",
-      "args": ["-m", "nucleus_mcp"],
-      "env": {
-        "NUCLEAR_BRAIN_PATH": ".brain"
-      }
+      "command": "npx",
+      "args": ["-y", "nucleus-mcp"]
     }
   }
 }

@@ -51,10 +51,8 @@ mkdir -p ~/.brain
 {
   "mcpServers": {
     "nucleus": {
-      "command": "mcp-server-nucleus",
-      "env": {
-        "NUCLEAR_BRAIN_PATH": "/Users/YOUR_USERNAME/.brain"
-      }
+      "command": "npx",
+      "args": ["-y", "nucleus-mcp"]
     }
   }
 }
@@ -66,10 +64,8 @@ mkdir -p ~/.brain
 {
   "mcpServers": {
     "nucleus": {
-      "command": "mcp-server-nucleus",
-      "env": {
-        "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
-      }
+      "command": "npx",
+      "args": ["-y", "nucleus-mcp"]
     }
   }
 }
