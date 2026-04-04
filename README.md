@@ -95,6 +95,16 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 ## Install
 
+### One-Click
+
+| IDE | Install |
+|-----|---------|
+| Cursor | [Add to Cursor](cursor://mcp/install?name=Nucleus%20MCP&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJudWNsZXVzLW1jcCJdfQ==) |
+| Claude Code | `npx -y nucleus-mcp` |
+| Any IDE | `pip install nucleus-mcp` |
+
+### pip / npx
+
 ```bash
 pip install nucleus-mcp
 ```
