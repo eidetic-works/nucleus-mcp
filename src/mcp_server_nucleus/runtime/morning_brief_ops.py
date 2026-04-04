@@ -115,8 +115,6 @@ def _morning_brief_impl() -> Dict:
     # ── SECTION 5: ADHD GUARDRAIL STATUS ────────────────────────
     brief["sections"]["adhd_status"] = _retrieve_adhd_status()
 
-    try:
-        ap = ArchivePipeline(brain_path=brain)
     # ── SECTION 7: GROWTH (Phase 4 — Business Functions) ─────
     brief["sections"]["growth"] = _retrieve_growth_status(brain)
 
