@@ -17,6 +17,10 @@ from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger("nucleus.engram_cache")
 
+# Maximum engrams to hold in memory. When the ledger exceeds this,
+# only the most recent entries are cached (oldest are dropped).
+MAX_CACHED_ENGRAMS = 10_000
+
 
 class EngramCache:
     """In-memory cache for the engram JSONL ledger.
@@ -37,6 +41,8 @@ class EngramCache:
         self._last_mtime: float = 0.0
         self._last_path: Optional[str] = None
         self._load_count: int = 0
+        self._total_on_disk: int = 0
+        self._capped: bool = False
 
     def _needs_reload(self, ledger_path: Path) -> bool:
         """Check if cache is stale (file modified since last load)."""
@@ -78,9 +84,25 @@ class EngramCache:
                         by_context[ctx] = []
                     by_context[ctx].append(e)
 
+            total_on_disk = len(engrams)
+            capped = total_on_disk > MAX_CACHED_ENGRAMS
+            if capped:
+                # Keep only the most recent entries (tail of file)
+                engrams = engrams[-MAX_CACHED_ENGRAMS:]
+                by_key = {e.get("key", ""): e for e in engrams if e.get("key")}
+                by_context = {}
+                for e in engrams:
+                    ctx = e.get("context", "").lower()
+                    if ctx not in by_context:
+                        by_context[ctx] = []
+                    by_context[ctx].append(e)
+                logger.info(f"EngramCache capped: {total_on_disk} on disk, {MAX_CACHED_ENGRAMS} cached")
+
             self._engrams = engrams
             self._by_key = by_key
             self._by_context = by_context
+            self._total_on_disk = total_on_disk
+            self._capped = capped
             self._last_mtime = ledger_path.stat().st_mtime
             self._last_path = str(ledger_path)
             self._load_count += 1
@@ -168,6 +190,9 @@ class EngramCache:
         with self._lock:
             return {
                 "cached_engrams": len(self._engrams),
+                "total_on_disk": self._total_on_disk,
+                "capped": self._capped,
+                "max_cached": MAX_CACHED_ENGRAMS,
                 "contexts": list(self._by_context.keys()),
                 "unique_keys": len(self._by_key),
                 "load_count": self._load_count,

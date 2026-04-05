@@ -207,3 +207,32 @@ class TestEngramCache:
         c1 = get_engram_cache()
         c2 = get_engram_cache()
         assert c1 is c2
+
+    def test_cache_caps_at_max_size(self, brain_path):
+        """Cache trims to MAX_CACHED_ENGRAMS, keeping most recent entries."""
+        import json
+        from unittest.mock import patch
+        from mcp_server_nucleus.runtime.engram_cache import EngramCache
+
+        (brain_path / "engrams").mkdir(exist_ok=True)
+        ledger = brain_path / "engrams" / "ledger.jsonl"
+        # Write 15 engrams
+        with open(ledger, "w") as f:
+            for i in range(15):
+                f.write(json.dumps({
+                    "key": f"cap_test_{i}", "value": f"val_{i}",
+                    "context": "test", "intensity": 5
+                }) + "\n")
+
+        # Fresh cache instance to avoid state from previous tests
+        cache = EngramCache()
+        # Cap at 10 — query inside patch so _load sees the patched constant
+        with patch("mcp_server_nucleus.runtime.engram_cache.MAX_CACHED_ENGRAMS", 10):
+            engrams, total = cache.query(ledger)
+            # Assert inside patch scope since stats reflect the loaded state
+            assert cache.stats["capped"] is True
+            assert cache.stats["total_on_disk"] == 15
+            assert cache.stats["cached_engrams"] == 10
+            # Should keep the LAST 10 (most recent), so cap_test_5 through cap_test_14
+            assert cache._by_key.get("cap_test_0") is None  # oldest dropped
+            assert cache._by_key.get("cap_test_14") is not None  # newest kept
