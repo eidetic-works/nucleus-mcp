@@ -14,12 +14,19 @@ from unittest.mock import patch, MagicMock
 
 @pytest.fixture
 def brain_path(tmp_path):
-    """Get the brain directory (created by conftest autouse fixture) and add subdirs."""
-    brain = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+    """Create a fresh isolated brain directory for each test."""
+    brain = tmp_path / ".brain"
+    brain.mkdir(exist_ok=True)
     (brain / "ledger").mkdir(exist_ok=True)
     (brain / "engrams").mkdir(exist_ok=True)
     (brain / "sessions").mkdir(exist_ok=True)
+    old = os.environ.get("NUCLEAR_BRAIN_PATH")
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
     yield brain
+    if old is not None:
+        os.environ["NUCLEAR_BRAIN_PATH"] = old
+    else:
+        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
 
 # ── Add Task Tests ────────────────────────────────────────────

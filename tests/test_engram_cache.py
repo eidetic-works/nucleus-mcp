@@ -11,9 +11,17 @@ from pathlib import Path
 
 
 @pytest.fixture
-def brain_path():
-    """Get the brain directory from conftest."""
-    return Path(os.environ["NUCLEAR_BRAIN_PATH"])
+def brain_path(tmp_path):
+    """Create a fresh isolated brain directory for each test."""
+    brain = tmp_path / ".brain"
+    brain.mkdir(exist_ok=True)
+    old = os.environ.get("NUCLEAR_BRAIN_PATH")
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
+    yield brain
+    if old is not None:
+        os.environ["NUCLEAR_BRAIN_PATH"] = old
+    else:
+        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
 
 @pytest.fixture

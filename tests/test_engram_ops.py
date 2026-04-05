@@ -13,13 +13,27 @@ from unittest.mock import patch, MagicMock
 
 @pytest.fixture
 def brain_path(tmp_path):
-    """Get the brain directory (created by conftest autouse fixture) and add subdirs."""
-    brain = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+    """Create a fresh isolated brain directory for each test."""
+    brain = tmp_path / ".brain"
+    brain.mkdir(exist_ok=True)
     (brain / "engrams").mkdir(exist_ok=True)
     (brain / "ledger").mkdir(exist_ok=True)
     (brain / "ledger" / "decisions").mkdir(parents=True, exist_ok=True)
     (brain / "ledger" / "snapshots").mkdir(parents=True, exist_ok=True)
+    # Point env to fresh brain so runtime functions pick it up
+    old = os.environ.get("NUCLEAR_BRAIN_PATH")
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
+    # Invalidate the global engram cache to prevent cross-test leakage
+    try:
+        from mcp_server_nucleus.runtime.engram_cache import get_engram_cache
+        get_engram_cache().invalidate()
+    except Exception:
+        pass
     yield brain
+    if old is not None:
+        os.environ["NUCLEAR_BRAIN_PATH"] = old
+    else:
+        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
 
 def _write_engrams(brain_path, engrams):

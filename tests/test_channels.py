@@ -7,73 +7,17 @@ and individual channel implementations (mocked — no real API calls).
 
 import json
 import os
-import sys
-import types
-import importlib.util
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
 
-# ── Isolated imports (bypasses the cffi-broken __init__.py) ──────
-
-SRC = Path(__file__).parent.parent / "src" / "mcp_server_nucleus" / "runtime"
-
-
-def _isolated_import(name, filepath):
-    """Import a module file without triggering the full package __init__."""
-    for pkg in [
-        "mcp_server_nucleus",
-        "mcp_server_nucleus.runtime",
-        "mcp_server_nucleus.runtime.channels",
-    ]:
-        if pkg not in sys.modules:
-            sys.modules[pkg] = types.ModuleType(pkg)
-
-    # Mock secrets module
-    if "mcp_server_nucleus.runtime.secrets" not in sys.modules:
-        secrets_mod = types.ModuleType("mcp_server_nucleus.runtime.secrets")
-        secrets_mod.get_secret = lambda name, **kw: os.environ.get(name, "")
-        secrets_mod.get_telegram_token = lambda: os.environ.get("TELEGRAM_BOT_TOKEN", "")
-        secrets_mod.get_telegram_chat_id = lambda: os.environ.get("TELEGRAM_CHAT_ID", "")
-        sys.modules["mcp_server_nucleus.runtime.secrets"] = secrets_mod
-
-    spec = importlib.util.spec_from_file_location(name, str(filepath))
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
-
-# Load channel modules
-base_mod = _isolated_import(
-    "mcp_server_nucleus.runtime.channels.base",
-    SRC / "channels" / "base.py",
-)
-telegram_mod = _isolated_import(
-    "mcp_server_nucleus.runtime.channels.telegram",
-    SRC / "channels" / "telegram.py",
-)
-slack_mod = _isolated_import(
-    "mcp_server_nucleus.runtime.channels.slack",
-    SRC / "channels" / "slack.py",
-)
-discord_mod = _isolated_import(
-    "mcp_server_nucleus.runtime.channels.discord",
-    SRC / "channels" / "discord.py",
-)
-whatsapp_mod = _isolated_import(
-    "mcp_server_nucleus.runtime.channels.whatsapp",
-    SRC / "channels" / "whatsapp.py",
-)
-
-NotificationChannel = base_mod.NotificationChannel
-ChannelRouter = base_mod.ChannelRouter
-TelegramChannel = telegram_mod.TelegramChannel
-SlackChannel = slack_mod.SlackChannel
-DiscordChannel = discord_mod.DiscordChannel
-WhatsAppChannel = whatsapp_mod.WhatsAppChannel
+from mcp_server_nucleus.runtime.channels.base import NotificationChannel, ChannelRouter
+from mcp_server_nucleus.runtime.channels.telegram import TelegramChannel
+from mcp_server_nucleus.runtime.channels.slack import SlackChannel
+from mcp_server_nucleus.runtime.channels.discord import DiscordChannel
+from mcp_server_nucleus.runtime.channels.whatsapp import WhatsAppChannel
 
 
 # ── Fixtures ─────────────────────────────────────────────────────
@@ -111,12 +55,23 @@ def clean_env():
         "WHATSAPP_TOKEN", "WHATSAPP_PHONE_ID", "WHATSAPP_TO",
     ]
     saved = {k: os.environ.pop(k, None) for k in keys}
+    # Clear secrets module cache so stale values don't leak between tests
+    try:
+        from mcp_server_nucleus.runtime.secrets import clear_cache
+        clear_cache()
+    except ImportError:
+        pass
     yield
     for k, v in saved.items():
         if v is not None:
             os.environ[k] = v
         else:
             os.environ.pop(k, None)
+    try:
+        from mcp_server_nucleus.runtime.secrets import clear_cache
+        clear_cache()
+    except ImportError:
+        pass
 
 
 # ── NotificationChannel ABC ─────────────────────────────────────
