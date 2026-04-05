@@ -149,6 +149,7 @@ def register_prompts(mcp, helpers):
 def main():
     """Main entry point for the MCP server."""
     from . import mcp, get_brain_path, USE_STDIO_FALLBACK, __version__
+    import sys
 
     # Startup summary to stderr (never stdout — that's for JSON-RPC)
     try:
