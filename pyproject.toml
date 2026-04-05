@@ -59,6 +59,15 @@ markers = [
     "timeout: override default test timeout",
 ]
 
+[tool.coverage.run]
+branch = true
+source = ["src/mcp_server_nucleus"]
+omit = ["**/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
