@@ -392,8 +392,9 @@ class MemoryPipeline:
             with get_lock("engrams", self.brain_path).section():
                 with open(self.ledger_path, "a", encoding="utf-8") as f:
                     f.write(json.dumps(engram, ensure_ascii=False) + "\n")
-        except Exception:
+        except Exception as lock_err:
             # Fallback to unlocked write if locking unavailable
+            logger.warning("File locking unavailable for ledger append, falling back to unlocked write: %s", lock_err)
             with open(self.ledger_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(engram, ensure_ascii=False) + "\n")
 
@@ -406,7 +407,8 @@ class MemoryPipeline:
         try:
             from .locking import get_lock
             lock = get_lock("engrams", self.brain_path)
-        except Exception:
+        except Exception as lock_err:
+            logger.warning("File locking unavailable for ledger update — concurrent writes risk corruption: %s", lock_err)
             lock = None
 
         def _do_update():
@@ -443,7 +445,8 @@ class MemoryPipeline:
         try:
             from .locking import get_lock
             lock = get_lock("engrams", self.brain_path)
-        except Exception:
+        except Exception as lock_err:
+            logger.warning("File locking unavailable for ledger delete — concurrent writes risk corruption: %s", lock_err)
             lock = None
 
         def _do_delete():

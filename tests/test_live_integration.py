@@ -469,3 +469,57 @@ class TestModuleRegistration:
 
         # Should not raise
         register_all(mock_mcp, mock_helpers)
+
+
+class TestLockingFallback:
+    """Verify file locking fallback logs warnings instead of failing silently."""
+
+    def test_append_logs_warning_on_lock_failure(self, brain):
+        """Ledger append succeeds and logs warning when locking unavailable."""
+        from unittest.mock import patch
+        from mcp_server_nucleus.runtime.memory_pipeline import MemoryPipeline
+
+        pipeline = MemoryPipeline(brain)
+        engram = {"key": "lock_test_1", "value": "test", "context": "test",
+                  "intensity": 5, "timestamp": "2026-01-01T00:00:00"}
+
+        # Patch the locking module to simulate unavailability
+        with patch.dict("sys.modules", {"mcp_server_nucleus.runtime.locking": None}):
+            pipeline._append_to_ledger(engram)
+
+        # Engram should still be written despite lock failure
+        assert (brain / "engrams" / "ledger.jsonl").read_text().strip()
+
+    def test_update_succeeds_on_lock_failure(self, brain):
+        """Ledger update succeeds when locking unavailable."""
+        from unittest.mock import patch
+        from mcp_server_nucleus.runtime.memory_pipeline import MemoryPipeline
+
+        pipeline = MemoryPipeline(brain)
+        engram = {"key": "lock_test_2", "value": "original", "context": "test",
+                  "intensity": 5, "timestamp": "2026-01-01T00:00:00"}
+        pipeline._append_to_ledger(engram)
+
+        updated = dict(engram, value="updated")
+        with patch.dict("sys.modules", {"mcp_server_nucleus.runtime.locking": None}):
+            pipeline._update_in_ledger("lock_test_2", updated)
+
+        content = (brain / "engrams" / "ledger.jsonl").read_text()
+        assert "updated" in content
+
+    def test_delete_succeeds_on_lock_failure(self, brain):
+        """Ledger delete succeeds when locking unavailable."""
+        from unittest.mock import patch
+        from mcp_server_nucleus.runtime.memory_pipeline import MemoryPipeline
+
+        pipeline = MemoryPipeline(brain)
+        engram = {"key": "lock_test_3", "value": "to_delete", "context": "test",
+                  "intensity": 5, "timestamp": "2026-01-01T00:00:00"}
+        pipeline._append_to_ledger(engram)
+
+        with patch.dict("sys.modules", {"mcp_server_nucleus.runtime.locking": None}):
+            pipeline._delete_in_ledger("lock_test_3")
+
+        content = (brain / "engrams" / "ledger.jsonl").read_text()
+        assert '"deleted": true' in content
+
