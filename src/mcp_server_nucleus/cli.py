@@ -3256,6 +3256,21 @@ def main():
     setup_parser.add_argument('--dry-run', action='store_true', help='Show what changes would be made without applying them')
     
     # ============================================================
+    # CHANNELS COMMAND — Manage notification channels
+    # ============================================================
+    channels_parser = subparsers.add_parser('channels', help='Manage notification channels (Telegram, Slack, Discord, WhatsApp)')
+    channels_sub = channels_parser.add_subparsers(dest='channels_action')
+    channels_sub.add_parser('list', help='List configured notification channels')
+    channels_add = channels_sub.add_parser('add', help='Add a notification channel')
+    channels_add.add_argument('channel_type', choices=['telegram', 'slack', 'discord', 'whatsapp'],
+                              help='Channel type to add')
+    channels_test = channels_sub.add_parser('test', help='Send a test notification')
+    channels_test.add_argument('channel_name', nargs='?', default=None,
+                               help='Channel to test (default: all)')
+    channels_remove = channels_sub.add_parser('remove', help='Remove a channel')
+    channels_remove.add_argument('channel_name', help='Channel name to remove')
+
+    # ============================================================
     # INSTALL COMMAND
     # ============================================================
     install_parser = subparsers.add_parser('install', help='Install an agent from a .nuke artifact')
@@ -4046,6 +4061,9 @@ def main():
         elif cli_command == 'recipe':
             _handle_recipe_command(args)
 
+        elif cli_command == 'channels':
+            handle_channels_command(args)
+
         elif cli_command == 'setup':
             # Auto-detect brain path
             brain_path_str = args.brain_path
@@ -4805,6 +4823,122 @@ def handle_session_command(args) -> int:
 
     else:
         print("Usage: nucleus session <save|resume>", file=sys.stderr)
+        return 1
+
+
+def handle_channels_command(args) -> int:
+    """Handle `nucleus channels` subcommands."""
+    from .runtime.channels import get_channel_router
+    action = getattr(args, 'channels_action', None)
+
+    # Resolve brain path
+    brain_path = None
+    try:
+        from .runtime.common import get_brain_path
+        brain_path = get_brain_path()
+    except Exception:
+        pass
+
+    router = get_channel_router(brain_path)
+
+    if action == 'list':
+        channels = router.list_channels()
+        if not channels:
+            print("No notification channels configured.")
+            print("\nAdd one with:")
+            print("  nucleus channels add telegram")
+            print("  nucleus channels add slack")
+            print("  nucleus channels add discord")
+            print("  nucleus channels add whatsapp")
+            return 0
+        print(f"Configured channels ({len(channels)}):\n")
+        for ch in channels:
+            status = "configured" if ch.get("configured") else "not configured"
+            print(f"  {ch['type']:12s}  {ch['display_name']:20s}  [{status}]")
+            for k, v in ch.items():
+                if k not in ("type", "display_name", "configured"):
+                    print(f"  {'':12s}  {k}: {v}")
+        return 0
+
+    elif action == 'add':
+        ch_type = args.channel_type
+        if ch_type == 'telegram':
+            print("Telegram Bot Setup")
+            print("=" * 40)
+            print("1. Message @BotFather on Telegram")
+            print("2. Create a bot with /newbot")
+            print("3. Set these environment variables:")
+            print("   export TELEGRAM_BOT_TOKEN=<your-bot-token>")
+            print("   export TELEGRAM_CHAT_ID=<your-chat-id>")
+            print("\nTip: Get chat ID by messaging your bot, then visiting:")
+            print("   https://api.telegram.org/bot<TOKEN>/getUpdates")
+        elif ch_type == 'slack':
+            print("Slack Webhook Setup")
+            print("=" * 40)
+            print("1. Go to https://api.slack.com/apps")
+            print("2. Create an app → Incoming Webhooks → Activate")
+            print("3. Add to a channel and copy the webhook URL")
+            print("4. Set: export SLACK_WEBHOOK_URL=<webhook-url>")
+        elif ch_type == 'discord':
+            print("Discord Webhook Setup")
+            print("=" * 40)
+            print("1. Open Discord channel settings → Integrations → Webhooks")
+            print("2. Create a webhook and copy the URL")
+            print("3. Set: export DISCORD_WEBHOOK_URL=<webhook-url>")
+        elif ch_type == 'whatsapp':
+            print("WhatsApp Cloud API Setup")
+            print("=" * 40)
+            print("1. Create a Meta Business account")
+            print("2. Set up WhatsApp Business API at developers.facebook.com")
+            print("3. Set these environment variables:")
+            print("   export WHATSAPP_TOKEN=<permanent-access-token>")
+            print("   export WHATSAPP_PHONE_ID=<phone-number-id>")
+            print("   export WHATSAPP_TO=<recipient-number-e164>")
+
+        print("\nAfter setting env vars, verify with:")
+        print(f"  nucleus channels test {ch_type}")
+        return 0
+
+    elif action == 'test':
+        target = getattr(args, 'channel_name', None)
+        if target:
+            ch = router.get_channel(target)
+            if not ch:
+                print(f"Channel '{target}' not found. Run `nucleus channels list`.")
+                return 1
+            if not ch.is_configured():
+                print(f"Channel '{target}' is not configured (missing credentials).")
+                return 1
+            print(f"Sending test to {target}...")
+            ok = ch.test()
+            print(f"  {'Success' if ok else 'Failed'}")
+            return 0 if ok else 1
+        else:
+            # Test all
+            channels = router.list_channels()
+            if not channels:
+                print("No channels configured. Run `nucleus channels add <type>`.")
+                return 1
+            for ch_info in channels:
+                ch = router.get_channel(ch_info["type"])
+                if ch and ch.is_configured():
+                    print(f"Testing {ch_info['type']}...", end=" ")
+                    ok = ch.test()
+                    print("OK" if ok else "FAILED")
+            return 0
+
+    elif action == 'remove':
+        name = args.channel_name
+        if router.unregister(name):
+            if brain_path:
+                router.save_to_brain(brain_path)
+            print(f"Removed channel: {name}")
+            return 0
+        print(f"Channel '{name}' not found.")
+        return 1
+
+    else:
+        print("Usage: nucleus channels <list|add|test|remove>")
         return 1
 
 
