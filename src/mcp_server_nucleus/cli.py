@@ -3892,6 +3892,7 @@ def main():
     rescue_parser = subparsers.add_parser('rescue', help='🆘 Rescue Protocol: Recover session context into a fresh IDE thread')
     rescue_parser.add_argument('--force', action='store_true', help='Force rescue even if current_id is locked')
 
+    archive_parser = subparsers.add_parser('archive', help='Training data archive management')
     archive_subparsers = archive_parser.add_subparsers(dest='archive_command')
     archive_subparsers.add_parser('status', help='Retrain readiness check — should you train now?')
     archive_subparsers.add_parser('stats', help='Show archive statistics')
@@ -3913,8 +3914,10 @@ def main():
     archive_ingest.add_argument('--brother', choices=['code', 'cowork'], default='code', help='Which brother had this conversation')
     archive_subparsers.add_parser('ingest-threads', help='Bridge thread.jsonl (chat history) into training archive')
     archive_subparsers.add_parser('mark-trained', help='Mark current archive as trained (resets retrain counter)')
+    archive_dpo_export = archive_subparsers.add_parser('dpo-export', help='Export DPO training pairs')
     archive_dpo_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/dpo_training.jsonl)')
     archive_dpo_export.add_argument('--exclude-unjudged', action='store_true', help='Drop shadow pairs without LLM judge verification')
+    archive_cot_export = archive_subparsers.add_parser('cot-export', help='Export chain-of-thought reasoning data')
     archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
     archive_subparsers.add_parser('registry', help='Show all registered model versions')
 
@@ -4113,7 +4116,7 @@ def main():
                 print(f'   Name: nucleus | Command: {nucleus_config["command"]}')
                 print(f'   Env: NUCLEUS_BRAIN_PATH={brain_path_str}')
 
-        if cli_command == 'self-setup':
+        elif cli_command == 'self-setup':
             from .setup import install_nucleus_path
             install_nucleus_path(dry_run=args.dry_run)
             
@@ -4253,7 +4256,7 @@ def main():
             handle_config_command(args)
 
         # ── Project Purple 2: Daemon + Drive + Train ──────────────
-        if cli_command == 'start':
+        elif cli_command == 'start':
             handle_start_command(args)
 
         elif cli_command == 'stop':
@@ -4284,7 +4287,7 @@ def main():
             handle_heartbeat_command(args)
 
         # ── Agent CLI Commands (v1.4.0) ──────────────────────────────
-        if cli_command == 'federation':
+        elif cli_command == 'federation':
             sys.exit(handle_federation_command(args))
 
         elif cli_command == 'engram':
