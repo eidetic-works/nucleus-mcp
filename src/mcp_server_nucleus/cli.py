@@ -3286,7 +3286,12 @@ def main():
 
     subparsers.add_parser('license', help='Show current license status')
 
-    
+    # ============================================================
+    # DOCTOR COMMAND (Environment Diagnostics)
+    # ============================================================
+    subparsers.add_parser('doctor', help='Diagnose your Nucleus setup — check deps, brain, tier, and MCP readiness')
+
+
     # ============================================================
     # DEPTH COMMANDS (ADHD Accommodation)
     # ============================================================
@@ -4300,6 +4305,8 @@ def main():
             sys.exit(handle_growth_command(args))
         elif cli_command == 'outbound':
             sys.exit(handle_outbound_command(args))
+        elif cli_command == 'doctor':
+            sys.exit(handle_doctor_command(args))
 
 
         elif cli_command is None:
@@ -4827,6 +4834,133 @@ def handle_session_command(args) -> int:
     else:
         print("Usage: nucleus session <save|resume>", file=sys.stderr)
         return 1
+
+
+def handle_doctor_command(args) -> int:
+    """Diagnose Nucleus setup — deps, brain, tier, MCP readiness."""
+    import platform
+
+    checks_passed = 0
+    checks_failed = 0
+    checks_warned = 0
+
+    def _pass(label, detail=""):
+        nonlocal checks_passed
+        checks_passed += 1
+        print(f"  [PASS] {label}" + (f" — {detail}" if detail else ""))
+
+    def _fail(label, detail="", fix=""):
+        nonlocal checks_failed
+        checks_failed += 1
+        print(f"  [FAIL] {label}" + (f" — {detail}" if detail else ""))
+        if fix:
+            print(f"         Fix: {fix}")
+
+    def _warn(label, detail=""):
+        nonlocal checks_warned
+        checks_warned += 1
+        print(f"  [WARN] {label}" + (f" — {detail}" if detail else ""))
+
+    print("Nucleus Doctor")
+    print("=" * 50)
+
+    # 1. Python version
+    print("\n1. Python Environment")
+    py_ver = platform.python_version_tuple()
+    if int(py_ver[0]) >= 3 and int(py_ver[1]) >= 9:
+        _pass("Python version", f"{platform.python_version()}")
+    else:
+        _fail("Python version", f"{platform.python_version()}", "Nucleus requires Python >=3.9")
+
+    # 2. Core dependencies
+    print("\n2. Core Dependencies")
+    core_deps = [
+        ("pydantic", "pydantic"),
+        ("fastmcp", "fastmcp"),
+        ("cryptography", "cryptography"),
+        ("cffi", "cffi"),
+        ("watchdog", "watchdog"),
+        ("yaml (PyYAML)", "yaml"),
+        ("nest_asyncio", "nest_asyncio"),
+        ("opentelemetry-sdk", "opentelemetry"),
+    ]
+    for label, mod_name in core_deps:
+        try:
+            __import__(mod_name)
+            _pass(label)
+        except ImportError:
+            _fail(label, "not installed", f"pip install {label.split()[0].lower()}")
+
+    # 3. Optional dependencies
+    print("\n3. Optional Dependencies")
+    opt_deps = [
+        ("google-genai", "google.genai", "pip install 'nucleus-mcp[full]'"),
+        ("psycopg2", "psycopg2", "pip install 'nucleus-mcp[postgres]'"),
+    ]
+    for label, mod_name, install_cmd in opt_deps:
+        try:
+            __import__(mod_name)
+            _pass(label)
+        except ImportError:
+            _warn(label, f"not installed (optional). Install with: {install_cmd}")
+
+    # 4. Brain path
+    print("\n4. Brain Configuration")
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH", "")
+    if brain_path:
+        _pass("NUCLEAR_BRAIN_PATH set", brain_path)
+        bp = Path(brain_path)
+        if bp.exists():
+            _pass("Brain directory exists")
+            expected_dirs = ["ledger", "engrams", "sessions", "memory"]
+            for d in expected_dirs:
+                if (bp / d).exists():
+                    _pass(f"  {d}/")
+                else:
+                    _warn(f"  {d}/ missing", "Run 'nucleus init' to create")
+        else:
+            _fail("Brain directory does not exist", brain_path, "Run 'nucleus init'")
+    else:
+        _warn("NUCLEAR_BRAIN_PATH not set", "Run 'nucleus init' or export NUCLEAR_BRAIN_PATH=~/.brain")
+
+    # 5. Tool tier
+    print("\n5. Tool Tier")
+    try:
+        from .tool_tiers import get_active_tier, get_tier_info, TIER_0_LAUNCH, TIER_1_CORE, TIER_2_ADVANCED
+        tier = get_active_tier()
+        info = get_tier_info()
+        tier_names = {0: "LAUNCH", 1: "CORE", 2: "ADVANCED", 3: "SYSTEM"}
+        tier_label = tier_names.get(tier, f"T{tier}")
+        allowed = info.get("tools_allowed", 0)
+        total = len(TIER_0_LAUNCH | TIER_1_CORE | TIER_2_ADVANCED)
+        _pass(f"Active tier: {tier_label} (T{tier})", f"{allowed}/{total} tool facades enabled")
+        if tier == 0:
+            _warn("Tier 0 loads only governance + engrams tools",
+                  "Set NUCLEUS_BETA_TOKEN to unlock more")
+    except Exception as e:
+        _warn("Could not determine tier", str(e))
+
+    # 6. MCP server
+    print("\n6. MCP Server")
+    try:
+        from . import mcp, USE_STDIO_FALLBACK
+        if USE_STDIO_FALLBACK:
+            _warn("MCP running in fallback/MockMCP mode", "fastmcp may not be properly installed")
+        else:
+            _pass("FastMCP initialized", type(mcp).__name__)
+    except Exception as e:
+        _fail("MCP server import failed", str(e))
+
+    # Summary
+    print("\n" + "=" * 50)
+    total = checks_passed + checks_failed + checks_warned
+    if checks_failed == 0:
+        status = "HEALTHY" if checks_warned == 0 else "OK (with warnings)"
+        print(f"Result: {status} — {checks_passed}/{total} checks passed, {checks_warned} warnings")
+    else:
+        print(f"Result: ISSUES FOUND — {checks_failed} failed, {checks_warned} warnings, {checks_passed} passed")
+
+    return 0 if checks_failed == 0 else 1
 
 
 def handle_channels_command(args) -> int:

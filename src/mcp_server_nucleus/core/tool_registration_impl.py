@@ -114,6 +114,13 @@ def _tiered_tool_wrapper(*args, **kwargs):
                 _REGISTERING_TOOL = False
         else:
             tier_manager.filtered_tools.add(tool_name)
+            # Log skipped tool so users know it was intentionally filtered
+            try:
+                from ..tool_tiers import get_active_tier
+                _active = get_active_tier()
+                print(f"[Nucleus] Tool '{tool_name}' skipped (not in tier {_active})", file=sys.stderr)
+            except Exception:
+                print(f"[Nucleus] Tool '{tool_name}' skipped (tier filter)", file=sys.stderr)
             # Return plain function - NOT registered with MCP
             return fn
     

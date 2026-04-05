@@ -14,6 +14,8 @@ urls = { Homepage = "https://github.com/eidetic-works/nucleus-mcp", Repository =
 requires-python = ">=3.9"
 dependencies = [
     "pydantic",
+    "fastmcp",
+    "cffi",
     "watchdog>=6.0.0",
     "google-cloud-firestore>=2.26.0",
     "duckduckgo-search>=8.1.1",
@@ -28,7 +30,6 @@ dependencies = [
 
 [project.optional-dependencies]
 full = [
-    "fastmcp",
     "google-genai"
 ]
 postgres = [
