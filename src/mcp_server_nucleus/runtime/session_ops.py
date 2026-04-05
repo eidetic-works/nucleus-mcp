@@ -6,12 +6,30 @@ Core logic for session management (Save, Resume, Context switching).
 
 import json
 import os
+import tempfile
 import time
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
 from .common import get_brain_path
 from .event_ops import _emit_event
+
+
+def _atomic_json_write(path: Path, data: Any, indent: int = None):
+    """Write JSON atomically via temp file + rename to prevent corruption on crash."""
+    dir_path = path.parent
+    dir_path.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(dir_path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=indent, ensure_ascii=False)
+        os.replace(tmp, str(path))  # Atomic on POSIX
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def _load_session_arc(brain: Path) -> dict:
@@ -116,11 +134,8 @@ def _save_session(context: str, active_task: Optional[str] = None,
         }
         
         session_path = sessions_dir / f"{session_id}.json"
-        with open(session_path, "w", encoding="utf-8") as f:
-            json.dump(session, f, indent=2, ensure_ascii=False)
-            
-        with open(_get_active_session_path(), "w", encoding="utf-8") as f:
-            json.dump({"active_session_id": session_id}, f, ensure_ascii=False)
+        _atomic_json_write(session_path, session, indent=2)
+        _atomic_json_write(_get_active_session_path(), {"active_session_id": session_id})
             
         _prune_old_sessions(max_sessions=10)
         
