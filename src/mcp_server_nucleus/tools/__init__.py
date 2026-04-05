@@ -94,3 +94,12 @@ def register_all(mcp, helpers):
         if failed_modules:
             msg += f" ({len(failed_modules)} failed: {', '.join(failed_modules)})"
         print(msg, file=sys.stderr)
+
+    # Startup diagnostic summary (non-blocking, silent on error)
+    if not _is_quiet and failed_modules:
+        try:
+            print(f"[NUCLEUS] Startup diagnostics: {len(failed_modules)} module(s) degraded.", file=sys.stderr)
+            print(f"[NUCLEUS]   Failed: {', '.join(failed_modules)}", file=sys.stderr)
+            print(f"[NUCLEUS]   Run 'nucleus doctor' for detailed diagnostics.", file=sys.stderr)
+        except Exception:
+            pass
