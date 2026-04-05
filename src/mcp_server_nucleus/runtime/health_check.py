@@ -202,18 +202,68 @@ def check_rate_limiter() -> Dict[str, Any]:
         }
 
 
+def check_circuit_breakers() -> Dict[str, Any]:
+    """Check circuit breaker status for external dependencies."""
+    try:
+        from .circuit_breaker import get_all_breaker_status
+        breakers = get_all_breaker_status()
+
+        open_breakers = [name for name, s in breakers.items() if s["state"] == "open"]
+        if open_breakers:
+            status = HealthStatus.DEGRADED
+        else:
+            status = HealthStatus.HEALTHY
+
+        return {
+            "component": "circuit_breakers",
+            "status": status,
+            "breakers": breakers,
+            "open_count": len(open_breakers),
+            "open_names": open_breakers,
+        }
+    except Exception as e:
+        return {
+            "component": "circuit_breakers",
+            "status": HealthStatus.HEALTHY,
+            "message": "Circuit breaker module not loaded yet",
+        }
+
+
+def check_engram_cache() -> Dict[str, Any]:
+    """Check engram cache status."""
+    try:
+        from .engram_cache import get_engram_cache
+        cache = get_engram_cache()
+        stats = cache.stats
+
+        return {
+            "component": "engram_cache",
+            "status": HealthStatus.HEALTHY,
+            "cached_engrams": stats["cached_engrams"],
+            "unique_keys": stats["unique_keys"],
+            "contexts": stats["contexts"],
+            "load_count": stats["load_count"],
+        }
+    except Exception as e:
+        return {
+            "component": "engram_cache",
+            "status": HealthStatus.HEALTHY,
+            "message": "Cache not initialized yet",
+        }
+
+
 def get_health_status(include_details: bool = True) -> Dict[str, Any]:
     """
     Get comprehensive health status.
-    
+
     Args:
         include_details: Include detailed component status
-        
+
     Returns:
         Health status dict suitable for JSON response
     """
     start = time.time()
-    
+
     # Run all checks
     checks = [
         check_brain_path(),
@@ -221,6 +271,8 @@ def get_health_status(include_details: bool = True) -> Dict[str, Any]:
         check_event_log(),
         check_hardening(),
         check_rate_limiter(),
+        check_circuit_breakers(),
+        check_engram_cache(),
     ]
     
     # Determine overall status

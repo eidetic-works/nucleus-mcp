@@ -511,7 +511,8 @@ class DualEngineLLM:
     @staticmethod
     def _safe_text(obj) -> str:
         """Extract .text from a Gemini response/chunk, suppressing SDK warnings."""
-        import io, contextlib
+        import io
+        import contextlib
         with contextlib.redirect_stderr(io.StringIO()):
             return getattr(obj, 'text', None) or ""
 

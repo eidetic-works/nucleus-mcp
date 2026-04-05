@@ -114,6 +114,54 @@ def register(mcp, helpers):
     from ..runtime.trigger_ops import _trigger_agent_impl, _get_triggers_impl, _evaluate_triggers_impl
     from ..runtime.shared_state_ops import brain_sync_read, brain_sync_write, brain_sync_list
 
+    def _channel_notify(title, message, level="info"):
+        from ..runtime.channels import get_channel_router
+        router = get_channel_router()
+        results = router.notify(title, message, level)
+        return json.dumps({"sent": results, "channels_reached": sum(1 for v in results.values() if v)}, indent=2)
+
+    def _channel_list():
+        from ..runtime.channels import get_channel_router
+        router = get_channel_router()
+        return json.dumps({"channels": router.list_channels()}, indent=2)
+
+    def _channel_add(channel_type, **kwargs):
+        from ..runtime.channels import get_channel_router
+        from ..runtime.channels.base import ChannelRouter
+        router = get_channel_router()
+        if channel_type == "telegram":
+            from ..runtime.channels.telegram import TelegramChannel
+            ch = TelegramChannel(**{k: v for k, v in kwargs.items() if k in ("token", "chat_id")})
+        elif channel_type == "slack":
+            from ..runtime.channels.slack import SlackChannel
+            ch = SlackChannel(webhook_url=kwargs.get("webhook_url"))
+        elif channel_type == "discord":
+            from ..runtime.channels.discord import DiscordChannel
+            ch = DiscordChannel(webhook_url=kwargs.get("webhook_url"))
+        elif channel_type == "whatsapp":
+            from ..runtime.channels.whatsapp import WhatsAppChannel
+            ch = WhatsAppChannel(**{k: v for k, v in kwargs.items() if k in ("token", "phone_id", "to_number")})
+        else:
+            return json.dumps({"error": f"Unknown channel type: {channel_type}"}, indent=2)
+        router.register(ch)
+        return json.dumps({"added": channel_type, "configured": ch.is_configured()}, indent=2)
+
+    def _channel_test(channel_name=None):
+        from ..runtime.channels import get_channel_router
+        router = get_channel_router()
+        if channel_name:
+            ch = router.get_channel(channel_name)
+            if not ch:
+                return json.dumps({"error": f"Channel '{channel_name}' not found"}, indent=2)
+            ok = ch.test()
+            return json.dumps({"channel": channel_name, "success": ok}, indent=2)
+        results = {}
+        for ch_info in router.list_channels():
+            ch = router.get_channel(ch_info["type"])
+            if ch and ch.is_configured():
+                results[ch_info["type"]] = ch.test()
+        return json.dumps({"results": results}, indent=2)
+
     ROUTER = {
         "identify_agent": _identify_agent,
         "sync_status": lambda: json.dumps(get_sync_status(), indent=2),
@@ -133,6 +181,10 @@ def register(mcp, helpers):
         "shared_read": lambda key: json.dumps(brain_sync_read(key), indent=2),
         "shared_write": lambda key, value, agent_id="": json.dumps(brain_sync_write(key, value, agent_id), indent=2),
         "shared_list": lambda: json.dumps(brain_sync_list(), indent=2),
+        "notify": lambda title, message, level="info": _channel_notify(title, message, level),
+        "list_channels": lambda: _channel_list(),
+        "add_channel": lambda channel_type, **kwargs: _channel_add(channel_type, **kwargs),
+        "test_channel": lambda channel_name=None: _channel_test(channel_name),
     }
 
     @mcp.tool()
@@ -158,6 +210,10 @@ Actions:
   shared_read      - Read shared state. params: {key}
   shared_write     - Write shared state. params: {key, value, agent_id?}
   shared_list      - List all shared state keys
+  notify           - Send notification to all channels. params: {title, message, level?}
+  list_channels    - List configured notification channels
+  add_channel      - Add a channel. params: {channel_type, webhook_url?}
+  test_channel     - Test a channel. params: {channel_name?}
 """
         return dispatch(action, params, ROUTER, "nucleus_sync")
 

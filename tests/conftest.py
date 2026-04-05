@@ -46,6 +46,12 @@ def _ensure_brain_path(tmp_path):
         (test_brain / "memory").mkdir(exist_ok=True)
         os.environ["NUCLEAR_BRAIN_PATH"] = str(test_brain)
     yield
+    # Clean up circuit breaker registry to prevent test order dependencies
+    try:
+        from mcp_server_nucleus.runtime.circuit_breaker import _breakers
+        _breakers.clear()
+    except Exception:
+        pass
     # Restore original
     if original is None:
         os.environ.pop("NUCLEAR_BRAIN_PATH", None)

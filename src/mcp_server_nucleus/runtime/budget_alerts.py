@@ -8,7 +8,6 @@ Part of Phase 68: Agent Runtime V2 Enhancement
 
 import os
 import json
-import urllib.request
 from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -22,7 +21,6 @@ logger = logging.getLogger("nucleus.budget_alerts")
 BUDGET_ALERT_DAILY_USD = float(os.environ.get("NUCLEUS_BUDGET_DAILY_USD", "10.0"))
 BUDGET_ALERT_HOURLY_USD = float(os.environ.get("NUCLEUS_BUDGET_HOURLY_USD", "2.0"))
 BUDGET_ALERT_PER_AGENT_USD = float(os.environ.get("NUCLEUS_BUDGET_PER_AGENT_USD", "0.50"))
-from .secrets import get_telegram_token, get_telegram_chat_id
 
 
 @dataclass
@@ -150,37 +148,26 @@ class BudgetMonitor:
         self._send_telegram_alert(alert)
     
     def _send_telegram_alert(self, alert: BudgetAlert) -> bool:
-        """Send alert via Telegram."""
-        token = get_telegram_token()
-        chat_id = get_telegram_chat_id()
-        if not token or not chat_id:
-            return False
-        
+        """Send alert via all configured notification channels."""
         emoji = {"daily": "📊", "hourly": "⏰", "per_agent": "🤖"}.get(alert.alert_type, "⚠️")
-        
-        message = f"""{emoji} *Budget Alert: {alert.alert_type.upper()}*
 
-💰 Current: `${alert.current_usd:.4f}`
-📍 Threshold: `${alert.threshold_usd:.4f}`
-📈 Usage: `{alert.percentage:.1f}%`
-🕐 Time: `{alert.timestamp}`"""
-        
+        message = (
+            f"{emoji} Budget Alert: {alert.alert_type.upper()}\n"
+            f"Current: ${alert.current_usd:.4f}\n"
+            f"Threshold: ${alert.threshold_usd:.4f}\n"
+            f"Usage: {alert.percentage:.1f}%\n"
+            f"Time: {alert.timestamp}"
+        )
         if alert.agent_id:
-            message += f"\n🤖 Agent: `{alert.agent_id}` ({alert.persona})"
-        
+            message += f"\nAgent: {alert.agent_id} ({alert.persona})"
+
         try:
-            url = f"https://api.telegram.org/bot{token}/sendMessage"
-            data = json.dumps({
-                "chat_id": chat_id,
-                "text": message,
-                "parse_mode": "Markdown"
-            }).encode()
-            req = urllib.request.Request(url, data=data, method="POST")
-            req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                return resp.status == 200
+            from .channels import get_channel_router
+            router = get_channel_router()
+            results = router.notify("Budget Alert", message, level="warning")
+            return any(results.values())
         except Exception as e:
-            logger.error(f"Telegram alert failed: {e}")
+            logger.error(f"Channel alert failed: {e}")
             return False
     
     def get_status(self) -> Dict[str, Any]:

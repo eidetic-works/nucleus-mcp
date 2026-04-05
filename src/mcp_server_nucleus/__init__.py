@@ -128,6 +128,22 @@ from .core.tool_registration_impl import configure_tiered_tool_registration
 
 configure_tiered_tool_registration(mcp)
 
+# Log tier info to stderr so users know what's active
+try:
+    _tier = get_active_tier()
+    _tier_info = get_tier_info()
+    _tier_names = {0: "LAUNCH", 1: "CORE", 2: "ADVANCED", 3: "SYSTEM"}
+    _tier_label = _tier_names.get(_tier, f"T{_tier}")
+    _allowed_count = _tier_info.get("tools_allowed", 0)
+    import sys as _sys
+    _sys.stderr.write(f"[Nucleus] Tier {_tier} ({_tier_label}): {_allowed_count} tool facades enabled.")
+    if _tier == 0:
+        _sys.stderr.write(" Set NUCLEUS_BETA_TOKEN to unlock more. Run 'nucleus doctor' for details.")
+    _sys.stderr.write("\n")
+    _sys.stderr.flush()
+except Exception:
+    pass
+
 def get_orch():
     """Get the orchestrator singleton (Unified)."""
     from .runtime.orchestrator_unified import get_orchestrator

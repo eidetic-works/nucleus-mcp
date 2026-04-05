@@ -14,22 +14,22 @@ urls = { Homepage = "https://github.com/eidetic-works/nucleus-mcp", Repository =
 requires-python = ">=3.9"
 dependencies = [
     "pydantic",
+    "fastmcp",
+    "cffi",
     "watchdog>=6.0.0",
-    "google-cloud-firestore>=2.26.0",
     "duckduckgo-search>=8.1.1",
     "beautifulsoup4>=4.14.3",
     "nest_asyncio",
     "cryptography>=46.0.6",
     "pyyaml>=6.0.3",
-    "xattr; sys_platform != 'win32'",
     "opentelemetry-sdk>=1.40.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.40.0",
 ]
 
 [project.optional-dependencies]
 full = [
-    "fastmcp",
-    "google-genai"
+    "google-genai",
+    "google-cloud-firestore>=2.26.0",
 ]
 postgres = [
     "psycopg2-binary"
@@ -38,6 +38,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov",
     "pytest-asyncio>=1.3.0",
+    "pytest-timeout",
     "ruff"
 ]
 
@@ -53,6 +54,19 @@ packages = ["src/mcp_server_nucleus"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+markers = [
+    "e2e: end-to-end integration tests",
+    "timeout: override default test timeout",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/mcp_server_nucleus"]
+omit = ["**/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
 
 [tool.ruff]
 line-length = 100
@@ -60,3 +74,11 @@ target-version = "py310"
 
 [tool.ruff.lint]
 ignore = ["E402", "E701", "E712", "E741", "F841", "E722", "E702", "F401", "F541"]
+
+[tool.ruff.lint.per-file-ignores]
+# These files reference sovereign functions stripped during public sync
+"src/mcp_server_nucleus/cli.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/daemon.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/engram_hooks.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/llm_client.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/orchestrator.py" = ["F821"]

@@ -65,7 +65,7 @@ _lock = threading.Lock()
 def _read_yaml_config() -> dict:
     """Read nucleus.yaml config, return empty dict on failure."""
     try:
-        import yaml  # noqa: delayed import to avoid hard dep
+        import yaml  # noqa: F811 -- delayed import to avoid hard dep
     except ImportError:
         return {}
     brain = os.environ.get("NUCLEAR_BRAIN_PATH", "")
