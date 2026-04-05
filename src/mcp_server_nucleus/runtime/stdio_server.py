@@ -644,9 +644,22 @@ class StdioServer:
             _brain_write_engram_impl, _brain_query_engrams_impl,
             _brain_search_engrams_impl, _brain_governance_status_impl,
         )
-        from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
-        from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
-        from mcp_server_nucleus.runtime.billing import compute_usage_summary
+        # Optional modules — guarded so core engram ops survive missing deps
+        try:
+            from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
+        except ImportError:
+            _morning_brief_impl = None
+        try:
+            from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
+        except ImportError:
+            build_context_graph = get_engram_neighbors = render_ascii_graph = None
+        try:
+            from mcp_server_nucleus.runtime.billing import compute_usage_summary
+        except ImportError:
+            compute_usage_summary = None
+
+        def _optional_missing(name):
+            return _make_response(False, error=f"{name} not available in this build")
 
         # God Combos: lazy imports to prevent startup crashes if modules are missing
         def _lazy_pulse_and_polish(write_engram=True):
@@ -669,17 +682,17 @@ class StdioServer:
             "query_engrams": lambda context=None, min_intensity=1, limit=50: _brain_query_engrams_impl(context, min_intensity, limit),
             "search_engrams": lambda query, case_sensitive=False, limit=50: _brain_search_engrams_impl(query, case_sensitive, limit),
             "governance_status": lambda: _brain_governance_status_impl(),
-            "morning_brief": lambda: _make_response(True, data=_morning_brief_impl()),
+            "morning_brief": (lambda: _make_response(True, data=_morning_brief_impl())) if _morning_brief_impl else (lambda: _optional_missing("morning_brief")),
             # Phase 3: God Combos (lazy imports — never block server startup)
             "pulse_and_polish": _lazy_pulse_and_polish,
             "self_healing_sre": _lazy_self_healing_sre,
             "fusion_reactor": _lazy_fusion_reactor,
             # Phase 3: Context Graph
-            "context_graph": lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity)),
-            "engram_neighbors": lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth)),
-            "render_graph": lambda max_nodes=30, min_intensity=1: _make_response(True, data={"ascii": render_ascii_graph(max_nodes=max_nodes, min_intensity=min_intensity)}),
+            "context_graph": (lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity))) if build_context_graph else (lambda **kw: _optional_missing("context_graph")),
+            "engram_neighbors": (lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth))) if get_engram_neighbors else (lambda **kw: _optional_missing("engram_neighbors")),
+            "render_graph": (lambda max_nodes=30, min_intensity=1: _make_response(True, data={"ascii": render_ascii_graph(max_nodes=max_nodes, min_intensity=min_intensity)})) if render_ascii_graph else (lambda **kw: _optional_missing("render_graph")),
             # Phase 3: Billing
-            "billing_summary": lambda since_hours=None, group_by="tool": _make_response(True, data=compute_usage_summary(since_hours=since_hours, group_by=group_by)),
+            "billing_summary": (lambda since_hours=None, group_by="tool": _make_response(True, data=compute_usage_summary(since_hours=since_hours, group_by=group_by))) if compute_usage_summary else (lambda **kw: _optional_missing("billing_summary")),
         }
 
         # ── nucleus_tasks ──
