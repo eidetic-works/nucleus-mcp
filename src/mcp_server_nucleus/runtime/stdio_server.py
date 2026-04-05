@@ -626,9 +626,19 @@ class StdioServer:
         from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
         from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
         from mcp_server_nucleus.runtime.billing import compute_usage_summary
-        from mcp_server_nucleus.runtime.god_combos.pulse_and_polish import run_pulse_and_polish
-        from mcp_server_nucleus.runtime.god_combos.self_healing_sre import run_self_healing_sre
-        from mcp_server_nucleus.runtime.god_combos.fusion_reactor import run_fusion_reactor
+
+        # God Combos: lazy imports to prevent startup crashes if modules are missing
+        def _lazy_pulse_and_polish(write_engram=True):
+            from mcp_server_nucleus.runtime.god_combos.pulse_and_polish import run_pulse_and_polish
+            return _make_response(True, data=run_pulse_and_polish(write_engram=write_engram))
+
+        def _lazy_self_healing_sre(symptom, write_engram=True):
+            from mcp_server_nucleus.runtime.god_combos.self_healing_sre import run_self_healing_sre
+            return _make_response(True, data=run_self_healing_sre(symptom=symptom, write_engram=write_engram))
+
+        def _lazy_fusion_reactor(observation, context="Decision", intensity=6, write_engrams=True):
+            from mcp_server_nucleus.runtime.god_combos.fusion_reactor import run_fusion_reactor
+            return _make_response(True, data=run_fusion_reactor(observation=observation, context=context, intensity=intensity, write_engrams=write_engrams))
 
         engrams_router = {
             "health": lambda: _brain_health_impl(),
@@ -639,10 +649,10 @@ class StdioServer:
             "search_engrams": lambda query, case_sensitive=False, limit=50: _brain_search_engrams_impl(query, case_sensitive, limit),
             "governance_status": lambda: _brain_governance_status_impl(),
             "morning_brief": lambda: _make_response(True, data=_morning_brief_impl()),
-            # Phase 3: God Combos
-            "pulse_and_polish": lambda write_engram=True: _make_response(True, data=run_pulse_and_polish(write_engram=write_engram)),
-            "self_healing_sre": lambda symptom, write_engram=True: _make_response(True, data=run_self_healing_sre(symptom=symptom, write_engram=write_engram)),
-            "fusion_reactor": lambda observation, context="Decision", intensity=6, write_engrams=True: _make_response(True, data=run_fusion_reactor(observation=observation, context=context, intensity=intensity, write_engrams=write_engrams)),
+            # Phase 3: God Combos (lazy imports — never block server startup)
+            "pulse_and_polish": _lazy_pulse_and_polish,
+            "self_healing_sre": _lazy_self_healing_sre,
+            "fusion_reactor": _lazy_fusion_reactor,
             # Phase 3: Context Graph
             "context_graph": lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity)),
             "engram_neighbors": lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth)),
