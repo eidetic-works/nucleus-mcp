@@ -50,32 +50,15 @@ import time
 import os
 from typing import Any, Dict, Optional
 from mcp_server_nucleus import __version__ as _nucleus_version
-
-# Hypervisor imports — graceful degradation if unavailable
-try:
-    from mcp_server_nucleus.hypervisor.locker import Locker
-except ImportError:
-    Locker = None
-try:
-    from mcp_server_nucleus.hypervisor.watchdog import Watchdog
-except ImportError:
-    Watchdog = None
-try:
-    from mcp_server_nucleus.hypervisor.injector import Injector
-except ImportError:
-    Injector = None
-
+from mcp_server_nucleus.hypervisor.locker import Locker
+from mcp_server_nucleus.hypervisor.watchdog import Watchdog
+from mcp_server_nucleus.hypervisor.injector import Injector
 from mcp_server_nucleus.runtime.task_ops import (
     _list_tasks, _add_task, _update_task,
     _claim_task, _get_next_task
 )
 import asyncio
-
-try:
-    from mcp_server_nucleus.runtime.mounter_ops import get_mounter
-except ImportError:
-    get_mounter = None
-
+from mcp_server_nucleus.runtime.mounter_ops import get_mounter
 from mcp_server_nucleus.tools._dispatch import dispatch
 
 # Configure logging to stderr to not corrupt stdout (which is for JSON-RPC)
@@ -102,23 +85,20 @@ class StdioServer:
         self.brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
         workspace_root = self.brain_path
         
-        # Hypervisor components — graceful degradation if unavailable
-        self.locker = Locker() if Locker else None
-        self.injector = Injector(str(workspace_root)) if Injector else None
-        self.watchdog = None
-        if Watchdog:
-            try:
-                self.watchdog = Watchdog(str(workspace_root))
-                self.watchdog.start()
-            except Exception as e:
-                logger.error(f"Failed to start watchdog: {e}")
-
-        self.mounter = get_mounter(self.brain_path) if get_mounter else None
+        self.locker = Locker()
+        self.injector = Injector(str(workspace_root))
+        self.watchdog = Watchdog(str(workspace_root))
+        
+        try:
+            self.watchdog.start()
+        except Exception as e:
+            logger.error(f"Failed to start watchdog: {e}")
+            
+        self.mounter = get_mounter(self.brain_path)
 
     async def run(self):
         # Restore mounts from persistence
-        if self.mounter:
-            await self.mounter.restore_mounts()
+        await self.mounter.restore_mounts()
         
         loop = asyncio.get_running_loop()
         while True:
@@ -319,12 +299,11 @@ class StdioServer:
             ]
 
             # Aggregate Tools from Mounts
-            if self.mounter:
-                try:
-                    mounted_tools = await self.mounter.list_tools()
-                    tools.extend(mounted_tools)
-                except Exception as e:
-                    logger.error(f"Failed to list mounted tools: {e}")
+            try:
+                mounted_tools = await self.mounter.list_tools()
+                tools.extend(mounted_tools)
+            except Exception as e:
+                logger.error(f"Failed to list mounted tools: {e}")
 
             return {
                 "jsonrpc": "2.0",
@@ -341,7 +320,7 @@ class StdioServer:
 
             try:
                 # --- MOUNTER DISPATCH (namespaced tools from mounted servers) ---
-                if "__" in name and self.mounter:
+                if "__" in name:
                     result = await self.mounter.call_tool(name, args)
                     content = []
                     if hasattr(result, "content"):
@@ -644,22 +623,9 @@ class StdioServer:
             _brain_write_engram_impl, _brain_query_engrams_impl,
             _brain_search_engrams_impl, _brain_governance_status_impl,
         )
-        # Optional modules — guarded so core engram ops survive missing deps
-        try:
-            from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
-        except ImportError:
-            _morning_brief_impl = None
-        try:
-            from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
-        except ImportError:
-            build_context_graph = get_engram_neighbors = render_ascii_graph = None
-        try:
-            from mcp_server_nucleus.runtime.billing import compute_usage_summary
-        except ImportError:
-            compute_usage_summary = None
-
-        def _optional_missing(name):
-            return _make_response(False, error=f"{name} not available in this build")
+        from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
+        from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
+        from mcp_server_nucleus.runtime.billing import compute_usage_summary
 
         # God Combos: lazy imports to prevent startup crashes if modules are missing
         def _lazy_pulse_and_polish(write_engram=True):
@@ -682,17 +648,17 @@ class StdioServer:
             "query_engrams": lambda context=None, min_intensity=1, limit=50: _brain_query_engrams_impl(context, min_intensity, limit),
             "search_engrams": lambda query, case_sensitive=False, limit=50: _brain_search_engrams_impl(query, case_sensitive, limit),
             "governance_status": lambda: _brain_governance_status_impl(),
-            "morning_brief": (lambda: _make_response(True, data=_morning_brief_impl())) if _morning_brief_impl else (lambda: _optional_missing("morning_brief")),
+            "morning_brief": lambda: _make_response(True, data=_morning_brief_impl()),
             # Phase 3: God Combos (lazy imports — never block server startup)
             "pulse_and_polish": _lazy_pulse_and_polish,
             "self_healing_sre": _lazy_self_healing_sre,
             "fusion_reactor": _lazy_fusion_reactor,
             # Phase 3: Context Graph
-            "context_graph": (lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity))) if build_context_graph else (lambda **kw: _optional_missing("context_graph")),
-            "engram_neighbors": (lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth))) if get_engram_neighbors else (lambda **kw: _optional_missing("engram_neighbors")),
-            "render_graph": (lambda max_nodes=30, min_intensity=1: _make_response(True, data={"ascii": render_ascii_graph(max_nodes=max_nodes, min_intensity=min_intensity)})) if render_ascii_graph else (lambda **kw: _optional_missing("render_graph")),
+            "context_graph": lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity)),
+            "engram_neighbors": lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth)),
+            "render_graph": lambda max_nodes=30, min_intensity=1: _make_response(True, data={"ascii": render_ascii_graph(max_nodes=max_nodes, min_intensity=min_intensity)}),
             # Phase 3: Billing
-            "billing_summary": (lambda since_hours=None, group_by="tool": _make_response(True, data=compute_usage_summary(since_hours=since_hours, group_by=group_by))) if compute_usage_summary else (lambda **kw: _optional_missing("billing_summary")),
+            "billing_summary": lambda since_hours=None, group_by="tool": _make_response(True, data=compute_usage_summary(since_hours=since_hours, group_by=group_by)),
         }
 
         # ── nucleus_tasks ──
