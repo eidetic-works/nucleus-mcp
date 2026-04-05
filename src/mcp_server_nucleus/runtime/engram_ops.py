@@ -61,6 +61,13 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
             key=key,
         )
         
+        # Invalidate cache after write
+        try:
+            from .engram_cache import get_engram_cache
+            get_engram_cache().invalidate()
+        except Exception:
+            pass
+
         # Emit event for audit trail
         _emit_event("engram_written", "brain_write_engram", {
             "key": key,
@@ -89,7 +96,7 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
 
 def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50) -> str:
     """Implementation for engram querying.
-    
+
     Args:
         context: Filter by context category (case-insensitive). None = all.
         min_intensity: Minimum intensity threshold (1-10).
@@ -98,10 +105,10 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
     try:
         # Clamp limit to safe range
         limit = max(1, min(int(limit), 500))
-        
+
         brain = get_brain_path()
         engram_path = brain / "engrams" / "ledger.jsonl"
-        
+
         if not engram_path.exists():
             return make_response(True, data={
                 "engrams": [],
@@ -111,32 +118,15 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
                 "limit": limit,
                 "message": "No engrams found. Use write_engram to create."
             })
-        
-        engrams = []
-        with open(engram_path, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        e = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue  # Skip corrupted lines
-                    if e.get("deleted", False) or e.get("quarantined", False):
-                        continue
-                    # Filter by context if specified
-                    if context and e.get("context", "").lower() != context.lower():
-                        continue
-                    # Filter by minimum intensity
-                    if e.get("intensity", 5) < min_intensity:
-                        continue
-                    engrams.append(e)
-        
-        # Sort by intensity (highest first)
-        engrams.sort(key=lambda x: x.get("intensity", 5), reverse=True)
-        
-        total_matching = len(engrams)
+
+        # Use in-memory cache for O(1) repeated reads (mtime-invalidated)
+        from .engram_cache import get_engram_cache
+        engrams, total_matching = get_engram_cache().query(
+            engram_path, context=context, min_intensity=min_intensity, limit=limit
+        )
+
         truncated = total_matching > limit
-        engrams = engrams[:limit]
-        
+
         return make_response(True, data={
             "engrams": engrams,
             "count": len(engrams),
@@ -152,7 +142,7 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
 
 def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: int = 50) -> str:
     """Implementation for engram substring search.
-    
+
     Args:
         query: Substring to search for in engram keys and values.
         case_sensitive: Whether to match case. Default False.
@@ -160,10 +150,10 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
     """
     try:
         limit = max(1, min(int(limit), 500))
-        
+
         brain = get_brain_path()
         engram_path = brain / "engrams" / "ledger.jsonl"
-        
+
         if not engram_path.exists():
             return make_response(True, data={
                 "engrams": [],
@@ -174,39 +164,15 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
                 "query": query,
                 "message": "No engrams found. Use write_engram to create."
             })
-        
-        search_query = query if case_sensitive else query.lower()
-        matches = []
-        
-        with open(engram_path, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        e = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue  # Skip corrupted lines
-                    if e.get("deleted", False) or e.get("quarantined", False):
-                        continue
-                    key = e.get("key", "")
-                    value = e.get("value", "")
-                    
-                    key_search = key if case_sensitive else key.lower()
-                    value_search = value if case_sensitive else value.lower()
-                    
-                    if search_query in key_search or search_query in value_search:
-                        e["_match_in"] = []
-                        if search_query in key_search:
-                            e["_match_in"].append("key")
-                        if search_query in value_search:
-                            e["_match_in"].append("value")
-                        matches.append(e)
-        
-        matches.sort(key=lambda x: x.get("intensity", 5), reverse=True)
-        
-        total_matching = len(matches)
+
+        # Use in-memory cache for O(1) repeated reads (mtime-invalidated)
+        from .engram_cache import get_engram_cache
+        matches, total_matching = get_engram_cache().search(
+            engram_path, query=query, case_sensitive=case_sensitive, limit=limit
+        )
+
         truncated = total_matching > limit
-        matches = matches[:limit]
-        
+
         return make_response(True, data={
             "engrams": matches,
             "count": len(matches),
