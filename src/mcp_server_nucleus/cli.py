@@ -1022,7 +1022,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             _test_llm.generate_content("ping", max_tokens=5)
             print(f"  ✅ Local model reachable ({_test_llm.endpoint})")
         except Exception as _local_err:
-            print(f"❌ Local model not reachable at {_endpoint}")
+            print(f"❌ Local model not reachable")
             print(f"   Error: {_local_err}")
             print(f"\n   To set up the local model:")
             print(f"   1. Install Ollama: https://ollama.ai")
@@ -1063,9 +1063,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     if _bridge_age < 86400:  # 24 hours
                         llm._session_id = _bridge.get("anthropic_session")
                         _bridge_src = _bridge.get("source", "brother")
-                        logger.info(f"Auto-bridged to {_bridge_src} session: {llm._session_id}")
-            except Exception as _e:
-                logger.debug(f"Auto-bridge skipped: {_e}")
+                        print(f"  Auto-bridged to {_bridge_src} session: {llm._session_id}", file=sys.stderr)
+            except Exception:
+                pass  # auto-bridge is best-effort
 
     # ── Stdin Piping Support (CLI Parity) ──────────────────────
     # Check for stdin input (enables: echo "prompt" | nucleus chat)
@@ -1320,12 +1320,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: {_tool_count}")
     # Show archive status in banner
     try:
+        from .runtime.archive_pipeline import ArchivePipeline
         _ab = ArchivePipeline()
         _as = _ab.get_stats()
         _at = _as.get('total_turns', 0)
         if _at > 0:
             print(f"  Archive: {_at} turns | /archive for details")
-    except Exception:
+    except (ImportError, Exception):
         pass
     if _workspace_info:
         # Show compact one-liner from workspace
@@ -2108,6 +2109,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 else:
                     print(f"📚 Archive is empty. Auto-saves every turn.")
                 try:
+                    from .runtime.archive_pipeline import ArchivePipeline
                     _ta = ArchivePipeline()
                     _ts = _ta.get_stats()
                     _total = _ts.get('total_turns', 0)
@@ -2407,6 +2409,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"   Auth: ...{_k[-6:]}" if _k else "   Auth: ⚠️ no key")
                 # Training flywheel status
                 try:
+                    from .runtime.archive_pipeline import ArchivePipeline
                     _rt = ArchivePipeline().should_retrain()
                     _rt_label = "RETRAIN READY" if _rt['should_retrain'] else f"{_rt['new_turns']}/{_rt['threshold']} to retrain"
                     print(f"   Training: {_rt['total_turns']} turns | {_rt_label}")
@@ -3149,6 +3152,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"  🧠 Session summary saved to brain ({len(topics)} topic(s))")
 
                 try:
+                    from .runtime.archive_pipeline import ArchivePipeline
                     _archive = ArchivePipeline()
                     _brother = "cowork" if _provider in () else "code"
                     # Build conversation from history — father's words + brother's responses
