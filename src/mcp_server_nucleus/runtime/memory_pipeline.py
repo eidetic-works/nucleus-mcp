@@ -381,64 +381,97 @@ class MemoryPipeline:
         return results
 
     def _append_to_ledger(self, engram: Dict):
-        """Append a new engram to the ledger."""
+        """Append a new engram to the ledger (file-locked for concurrent safety)."""
         secrets = _scan_for_secrets(engram.get("value", ""))
         if secrets:
             logger.warning("Possible credential in engram '%s': %s — review before sharing brain",
                            engram.get("key", "?"), ", ".join(secrets))
             engram["_secret_warning"] = secrets
-        with open(self.ledger_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(engram, ensure_ascii=False) + "\n")
+        try:
+            from .locking import get_lock
+            with get_lock("engrams", self.brain_path).section():
+                with open(self.ledger_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(engram, ensure_ascii=False) + "\n")
+        except Exception as lock_err:
+            # Fallback to unlocked write if locking unavailable
+            logger.warning("File locking unavailable for ledger append, falling back to unlocked write: %s", lock_err)
+            with open(self.ledger_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(engram, ensure_ascii=False) + "\n")
 
     def _update_in_ledger(self, key: str, new_engram: Dict):
-        """Update an existing engram in the ledger (rewrite file)."""
+        """Update an existing engram in the ledger (file-locked rewrite)."""
         if not self.ledger_path.exists():
             self._append_to_ledger(new_engram)
             return
 
-        lines = []
-        updated = False
-        with open(self.ledger_path, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        e = json.loads(line)
-                        if e.get("key") == key and not e.get("deleted", False):
-                            lines.append(json.dumps(new_engram) + "\n")
-                            updated = True
-                        else:
+        try:
+            from .locking import get_lock
+            lock = get_lock("engrams", self.brain_path)
+        except Exception as lock_err:
+            logger.warning("File locking unavailable for ledger update — concurrent writes risk corruption: %s", lock_err)
+            lock = None
+
+        def _do_update():
+            lines = []
+            updated = False
+            with open(self.ledger_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            e = json.loads(line)
+                            if e.get("key") == key and not e.get("deleted", False):
+                                lines.append(json.dumps(new_engram) + "\n")
+                                updated = True
+                            else:
+                                lines.append(line)
+                        except json.JSONDecodeError:
                             lines.append(line)
-                    except json.JSONDecodeError:
-                        lines.append(line)
+            if not updated:
+                lines.append(json.dumps(new_engram) + "\n")
+            with open(self.ledger_path, "w", encoding="utf-8") as f:
+                f.writelines(lines)
 
-        if not updated:
-            lines.append(json.dumps(new_engram) + "\n")
-
-        with open(self.ledger_path, "w", encoding="utf-8") as f:
-            f.writelines(lines)
+        if lock:
+            with lock.section():
+                _do_update()
+        else:
+            _do_update()
 
     def _delete_in_ledger(self, key: str):
-        """Soft-delete an engram by marking it as deleted."""
+        """Soft-delete an engram by marking it as deleted (file-locked)."""
         if not self.ledger_path.exists():
             return
 
-        lines = []
-        with open(self.ledger_path, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        e = json.loads(line)
-                        if e.get("key") == key:
-                            e["deleted"] = True
-                            e["deleted_at"] = datetime.now().isoformat()
-                            lines.append(json.dumps(e) + "\n")
-                        else:
-                            lines.append(line)
-                    except json.JSONDecodeError:
-                        lines.append(line)
+        try:
+            from .locking import get_lock
+            lock = get_lock("engrams", self.brain_path)
+        except Exception as lock_err:
+            logger.warning("File locking unavailable for ledger delete — concurrent writes risk corruption: %s", lock_err)
+            lock = None
 
-        with open(self.ledger_path, "w", encoding="utf-8") as f:
-            f.writelines(lines)
+        def _do_delete():
+            lines = []
+            with open(self.ledger_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            e = json.loads(line)
+                            if e.get("key") == key:
+                                e["deleted"] = True
+                                e["deleted_at"] = datetime.now().isoformat()
+                                lines.append(json.dumps(e) + "\n")
+                            else:
+                                lines.append(line)
+                        except json.JSONDecodeError:
+                            lines.append(line)
+            with open(self.ledger_path, "w", encoding="utf-8") as f:
+                f.writelines(lines)
+
+        if lock:
+            with lock.section():
+                _do_delete()
+        else:
+            _do_delete()
 
     def _append_to_history(self, engram: Dict, op_type: str):
         """Append an entry to the history log for audit-ability."""

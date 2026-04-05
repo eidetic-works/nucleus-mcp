@@ -33,62 +33,70 @@ def _list_tasks(
         # Native DB filtering
         filtered = storage.list_tasks(status, priority, skill, claimed_by)
         
-        # Merge with Commitment Ledger (PEFS)
-        try:
-            from mcp_server_nucleus import commitment_ledger
-            ledger = commitment_ledger.load_ledger(brain)
-            
-            for comm in ledger.get("commitments", []):
-                comm_status = comm.get("status", "open").lower()
-                task_status = "PENDING"
-                if comm_status == "closed":
-                    task_status = "DONE"
-                
-                # Apply filters manually to external tasks
-                if status:
-                    status_map = {"TODO": "PENDING", "COMPLETE": "DONE"}
-                    target_status = status_map.get(status, status)
-                    if task_status.upper() != target_status.upper() and task_status.upper() != status.upper():
+        # Merge with Commitment Ledger (PEFS) — circuit-breaker protected
+        from .circuit_breaker import get_breaker
+        ledger_cb = get_breaker("commitment_ledger", failure_threshold=3, recovery_timeout=60)
+        if ledger_cb.allow_request():
+            try:
+                from mcp_server_nucleus import commitment_ledger
+                ledger = commitment_ledger.load_ledger(brain)
+
+                for comm in ledger.get("commitments", []):
+                    comm_status = comm.get("status", "open").lower()
+                    task_status = "PENDING"
+                    if comm_status == "closed":
+                        task_status = "DONE"
+
+                    # Apply filters manually to external tasks
+                    if status:
+                        status_map = {"TODO": "PENDING", "COMPLETE": "DONE"}
+                        target_status = status_map.get(status, status)
+                        if task_status.upper() != target_status.upper() and task_status.upper() != status.upper():
+                            continue
+                    if priority is not None and comm.get("priority", 3) != priority:
                         continue
-                if priority is not None and comm.get("priority", 3) != priority:
-                    continue
-                req_skills = [s.lower() for s in comm.get("required_skills", [])]
-                if skill and skill.lower() not in req_skills:
-                    continue
-                if claimed_by: # Ledger tasks are never claimed
-                    continue
+                    req_skills = [s.lower() for s in comm.get("required_skills", [])]
+                    if skill and skill.lower() not in req_skills:
+                        continue
+                    if claimed_by: # Ledger tasks are never claimed
+                        continue
 
-                cm_task = {
-                    "id": comm["id"],
-                    "description": comm["description"],
-                    "status": task_status,
-                    "priority": comm.get("priority", 3),
-                    "blocked_by": [],
-                    "required_skills": comm.get("required_skills", []),
-                    "source": f"ledger:{comm.get('source', 'unknown')}",
-                    "created_at": comm.get("created"),
-                    "claimed_by": None
-                }
-                filtered.append(cm_task)
-        except Exception as e:
-            logger.warning(f"Failed to merge commitment ledger: {e}")
+                    cm_task = {
+                        "id": comm["id"],
+                        "description": comm["description"],
+                        "status": task_status,
+                        "priority": comm.get("priority", 3),
+                        "blocked_by": [],
+                        "required_skills": comm.get("required_skills", []),
+                        "source": f"ledger:{comm.get('source', 'unknown')}",
+                        "created_at": comm.get("created"),
+                        "claimed_by": None
+                    }
+                    filtered.append(cm_task)
+                ledger_cb.record_success()
+            except Exception as e:
+                ledger_cb.record_failure()
+                logger.warning(f"Failed to merge commitment ledger: {e}")
 
-        # Merge with Cloud Tasks (if available)
-        try:
-            from mcp_server_nucleus.runtime.firestore_bridge import get_bridge
-            cloud_tasks = get_bridge().list_cloud_tasks()
-            if cloud_tasks:
-                local_ids = {t["id"] for t in filtered}
-                for ct in cloud_tasks:
-                    if ct["id"] not in local_ids:
-                        # Manual filter
-                        if status and ct.get("status") != status: continue
-                        if priority is not None and ct.get("priority") != priority: continue
-                        if claimed_by and ct.get("claimed_by") != claimed_by: continue
-                        if skill and skill not in ct.get("required_skills", []): continue
-                        filtered.append(ct)
-        except Exception:
-            pass
+        # Merge with Cloud Tasks (if available) — circuit-breaker protected
+        cloud_cb = get_breaker("cloud_tasks", failure_threshold=2, recovery_timeout=120)
+        if cloud_cb.allow_request():
+            try:
+                from mcp_server_nucleus.runtime.firestore_bridge import get_bridge
+                cloud_tasks = get_bridge().list_cloud_tasks()
+                if cloud_tasks:
+                    local_ids = {t["id"] for t in filtered}
+                    for ct in cloud_tasks:
+                        if ct["id"] not in local_ids:
+                            # Manual filter
+                            if status and ct.get("status") != status: continue
+                            if priority is not None and ct.get("priority") != priority: continue
+                            if claimed_by and ct.get("claimed_by") != claimed_by: continue
+                            if skill and skill not in ct.get("required_skills", []): continue
+                            filtered.append(ct)
+                cloud_cb.record_success()
+            except Exception:
+                cloud_cb.record_failure()
         
         # Sort by priority (asc) — coerce to int to avoid mixed-type comparisons
         for t in filtered:
