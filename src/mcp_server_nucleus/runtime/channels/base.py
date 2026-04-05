@@ -100,6 +100,7 @@ class ChannelRouter:
         """Send notification to all channels matching the severity routing.
 
         Returns dict of {channel_name: success_bool}.
+        Uses circuit breakers per channel to fail fast when APIs are down.
         """
         results = {}
         target_channels = self._resolve_targets(level)
@@ -107,13 +108,36 @@ class ChannelRouter:
         for ch_name in target_channels:
             ch = self._channels.get(ch_name)
             if ch and ch.is_configured():
+                # Circuit breaker: skip channels whose APIs are confirmed down
+                breaker = self._get_breaker(ch_name)
+                if breaker and not breaker.allow_request():
+                    logger.warning(f"Channel {ch_name} circuit breaker OPEN — skipping")
+                    results[ch_name] = False
+                    continue
                 try:
-                    results[ch_name] = ch.send(title, message, level)
+                    ok = ch.send(title, message, level)
+                    results[ch_name] = ok
+                    if breaker:
+                        if ok:
+                            breaker.record_success()
+                        else:
+                            breaker.record_failure()
                 except Exception as e:
                     logger.error(f"Channel {ch_name} failed: {e}")
                     results[ch_name] = False
+                    if breaker:
+                        breaker.record_failure()
 
         return results
+
+    @staticmethod
+    def _get_breaker(ch_name: str):
+        """Get circuit breaker for a channel, or None if unavailable."""
+        try:
+            from ..circuit_breaker import get_breaker
+            return get_breaker(f"channel_{ch_name}", failure_threshold=3, recovery_timeout=60)
+        except Exception:
+            return None
 
     def _resolve_targets(self, level: str) -> List[str]:
         """Determine which channels should receive a message at this level."""

@@ -342,3 +342,55 @@ class TestAutoDiscover:
         router = ChannelRouter()
         count = router.auto_discover()
         assert count == 2
+
+
+class TestChannelCircuitBreaker:
+    """Circuit breaker integration in ChannelRouter.notify()."""
+
+    def test_breaker_opens_after_repeated_failures(self, clean_env):
+        """Channel circuit breaker opens after failure_threshold (3) failures."""
+        from unittest.mock import MagicMock
+        from mcp_server_nucleus.runtime.circuit_breaker import _breakers
+
+        # Clean up any leftover breakers
+        _breakers.pop("channel_mock_ch", None)
+
+        router = ChannelRouter()
+        mock_ch = MagicMock()
+        mock_ch.name = "mock_ch"
+        mock_ch.display_name = "Mock"
+        mock_ch.is_configured.return_value = True
+        mock_ch.send.side_effect = ConnectionError("API down")
+        router.register(mock_ch)
+
+        # 3 failures should open the breaker
+        for _ in range(3):
+            results = router.notify("test", "msg")
+            assert results["mock_ch"] is False
+
+        # 4th call should be rejected by breaker (send not called)
+        mock_ch.send.reset_mock()
+        results = router.notify("test", "msg")
+        assert results["mock_ch"] is False
+        mock_ch.send.assert_not_called()
+
+        # Cleanup
+        _breakers.pop("channel_mock_ch", None)
+
+    def test_router_works_without_circuit_breaker_module(self, clean_env):
+        """Router degrades gracefully if circuit_breaker import fails."""
+        from unittest.mock import MagicMock, patch
+
+        router = ChannelRouter()
+        mock_ch = MagicMock()
+        mock_ch.name = "fallback_ch"
+        mock_ch.display_name = "Fallback"
+        mock_ch.is_configured.return_value = True
+        mock_ch.send.return_value = True
+        router.register(mock_ch)
+
+        # Patch _get_breaker to simulate import failure
+        with patch.object(ChannelRouter, "_get_breaker", return_value=None):
+            results = router.notify("test", "msg")
+            assert results["fallback_ch"] is True
+            mock_ch.send.assert_called_once()
