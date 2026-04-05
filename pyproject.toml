@@ -74,3 +74,11 @@ target-version = "py310"
 
 [tool.ruff.lint]
 ignore = ["E402", "E701", "E712", "E741", "F841", "E722", "E702", "F401", "F541"]
+
+[tool.ruff.lint.per-file-ignores]
+# These files reference sovereign functions stripped during public sync
+"src/mcp_server_nucleus/cli.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/daemon.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/engram_hooks.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/llm_client.py" = ["F821"]
+"src/mcp_server_nucleus/runtime/orchestrator.py" = ["F821"]

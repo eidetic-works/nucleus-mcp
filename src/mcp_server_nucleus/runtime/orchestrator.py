@@ -118,7 +118,7 @@ class SwarmsOrchestrator:
         from .llm_client import DualEngineLLM
         return DualEngineLLM(job_type=job_type)
 
-_load_state(self):
+    def _load_state(self):
         """Load swarm state with BrainLock"""
         if not self.state_file.exists():
             return

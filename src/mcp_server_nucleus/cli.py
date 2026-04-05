@@ -4400,7 +4400,6 @@ def handle_start_command(args):
 
 def handle_stop_command(args):
     """nucleus stop — graceful shutdown via PID file."""
-    from .runtime.common import get_brain_path
     brain_path = get_brain_path()
     pid_path = brain_path / "daemon" / "daemon.pid"
 
@@ -4702,7 +4701,6 @@ def handle_federation_command(args) -> int:
     action = getattr(args, 'fed_action', None)
     
     from .runtime.federation import create_federation_engine, FederationConfig, PartitionStatus, FederationPeer
-    from .runtime.common import get_brain_path
     
     brain_path = get_brain_path()
     brain_id = os.environ.get("NUCLEUS_BRAIN_ID", "local")
