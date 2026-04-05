@@ -50,15 +50,32 @@ import time
 import os
 from typing import Any, Dict, Optional
 from mcp_server_nucleus import __version__ as _nucleus_version
-from mcp_server_nucleus.hypervisor.locker import Locker
-from mcp_server_nucleus.hypervisor.watchdog import Watchdog
-from mcp_server_nucleus.hypervisor.injector import Injector
+
+# Hypervisor imports — graceful degradation if unavailable
+try:
+    from mcp_server_nucleus.hypervisor.locker import Locker
+except ImportError:
+    Locker = None
+try:
+    from mcp_server_nucleus.hypervisor.watchdog import Watchdog
+except ImportError:
+    Watchdog = None
+try:
+    from mcp_server_nucleus.hypervisor.injector import Injector
+except ImportError:
+    Injector = None
+
 from mcp_server_nucleus.runtime.task_ops import (
     _list_tasks, _add_task, _update_task,
     _claim_task, _get_next_task
 )
 import asyncio
-from mcp_server_nucleus.runtime.mounter_ops import get_mounter
+
+try:
+    from mcp_server_nucleus.runtime.mounter_ops import get_mounter
+except ImportError:
+    get_mounter = None
+
 from mcp_server_nucleus.tools._dispatch import dispatch
 
 # Configure logging to stderr to not corrupt stdout (which is for JSON-RPC)
@@ -85,20 +102,23 @@ class StdioServer:
         self.brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
         workspace_root = self.brain_path
         
-        self.locker = Locker()
-        self.injector = Injector(str(workspace_root))
-        self.watchdog = Watchdog(str(workspace_root))
-        
-        try:
-            self.watchdog.start()
-        except Exception as e:
-            logger.error(f"Failed to start watchdog: {e}")
-            
-        self.mounter = get_mounter(self.brain_path)
+        # Hypervisor components — graceful degradation if unavailable
+        self.locker = Locker() if Locker else None
+        self.injector = Injector(str(workspace_root)) if Injector else None
+        self.watchdog = None
+        if Watchdog:
+            try:
+                self.watchdog = Watchdog(str(workspace_root))
+                self.watchdog.start()
+            except Exception as e:
+                logger.error(f"Failed to start watchdog: {e}")
+
+        self.mounter = get_mounter(self.brain_path) if get_mounter else None
 
     async def run(self):
         # Restore mounts from persistence
-        await self.mounter.restore_mounts()
+        if self.mounter:
+            await self.mounter.restore_mounts()
         
         loop = asyncio.get_running_loop()
         while True:
@@ -299,11 +319,12 @@ class StdioServer:
             ]
 
             # Aggregate Tools from Mounts
-            try:
-                mounted_tools = await self.mounter.list_tools()
-                tools.extend(mounted_tools)
-            except Exception as e:
-                logger.error(f"Failed to list mounted tools: {e}")
+            if self.mounter:
+                try:
+                    mounted_tools = await self.mounter.list_tools()
+                    tools.extend(mounted_tools)
+                except Exception as e:
+                    logger.error(f"Failed to list mounted tools: {e}")
 
             return {
                 "jsonrpc": "2.0",
@@ -320,7 +341,7 @@ class StdioServer:
 
             try:
                 # --- MOUNTER DISPATCH (namespaced tools from mounted servers) ---
-                if "__" in name:
+                if "__" in name and self.mounter:
                     result = await self.mounter.call_tool(name, args)
                     content = []
                     if hasattr(result, "content"):
