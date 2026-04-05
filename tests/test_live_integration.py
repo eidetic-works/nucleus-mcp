@@ -523,3 +523,31 @@ class TestLockingFallback:
         content = (brain / "engrams" / "ledger.jsonl").read_text()
         assert '"deleted": true' in content
 
+
+class TestBrainAutoCreate:
+    """Verify get_brain_path() creates full directory structure."""
+
+    def test_auto_creates_all_expected_subdirs(self, tmp_path):
+        """get_brain_path() creates all standard brain subdirectories."""
+        import os
+        from mcp_server_nucleus.runtime.common import get_brain_path
+
+        new_brain = tmp_path / "fresh_brain"
+        old = os.environ.get("NUCLEAR_BRAIN_PATH")
+        os.environ["NUCLEAR_BRAIN_PATH"] = str(new_brain)
+        try:
+            path = get_brain_path()
+            assert path.exists()
+            expected_dirs = [
+                "engrams", "ledger", "sessions", "memory",
+                "tasks", "artifacts", "proofs", "strategy",
+                "governance", "channels", "federation",
+            ]
+            for d in expected_dirs:
+                assert (path / d).is_dir(), f"Missing brain subdir: {d}"
+        finally:
+            if old is None:
+                os.environ.pop("NUCLEAR_BRAIN_PATH", None)
+            else:
+                os.environ["NUCLEAR_BRAIN_PATH"] = old
+

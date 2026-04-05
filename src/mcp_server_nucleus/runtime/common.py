@@ -83,7 +83,9 @@ def get_brain_path() -> Path:
             # Auto-create brain directory structure instead of crashing
             try:
                 path.mkdir(parents=True, exist_ok=True)
-                for subdir in ["engrams", "ledger", "sessions", "memory"]:
+                for subdir in ["engrams", "ledger", "sessions", "memory",
+                              "tasks", "artifacts", "proofs", "strategy",
+                              "governance", "channels", "federation"]:
                     (path / subdir).mkdir(exist_ok=True)
                 logger.info(f"Auto-created brain directory at {path}")
             except OSError as e:
