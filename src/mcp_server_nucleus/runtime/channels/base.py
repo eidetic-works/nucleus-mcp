@@ -139,6 +139,7 @@ class ChannelRouter:
         except Exception:
             return None
 
+
     def _resolve_targets(self, level: str) -> List[str]:
         """Determine which channels should receive a message at this level."""
         rule = self._routing.get(level, self._routing.get("info", "__all__"))
