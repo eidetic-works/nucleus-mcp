@@ -151,36 +151,20 @@ class IncidentManager:
         return result
 
     def _notify_incident(self, summary: str, artifact_path: Path):
-        """Sends notifications via Telegram/Slack."""
-        from .outbound_ops import outbound_fail
-        
-        # For now, we use a simple Telegram alert via our secrets module
-        from .secrets import get_telegram_token, get_telegram_chat_id
-        import urllib.request
-        
-        token = get_telegram_token()
-        chat_id = get_telegram_chat_id()
-        
-        if not token or not chat_id:
-            logger.debug("Telegram credentials missing, skipping incident notification.")
-            return
-
-        message = f"🚨 *Nucleus Incident Detected*\n\nSummary: `{summary}`\nArtifact: `{artifact_path.name}`\nTimestamp: `{datetime.now(timezone.utc).isoformat()}`"
-        
+        """Sends notifications via all configured channels."""
+        message = (
+            f"Summary: {summary}\n"
+            f"Artifact: {artifact_path.name}\n"
+            f"Timestamp: {datetime.now(timezone.utc).isoformat()}"
+        )
         try:
-            url = f"https://api.telegram.org/bot{token}/sendMessage"
-            data = json.dumps({
-                "chat_id": chat_id,
-                "text": message,
-                "parse_mode": "Markdown"
-            }).encode()
-            req = urllib.request.Request(url, data=data, method="POST")
-            req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                if resp.status == 200:
-                    logger.info("Incident notification sent via Telegram.")
-                else:
-                    logger.error(f"Telegram notification failed with status {resp.status}")
+            from .channels import get_channel_router
+            router = get_channel_router()
+            results = router.notify("Incident Detected", message, level="critical")
+            if any(results.values()):
+                logger.info(f"Incident notification sent via: {[k for k, v in results.items() if v]}")
+            elif not results:
+                logger.debug("No notification channels configured, skipping incident notification.")
         except Exception as e:
             logger.error(f"Failed to send incident notification: {e}")
 

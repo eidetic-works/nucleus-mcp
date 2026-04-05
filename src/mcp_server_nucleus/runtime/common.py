@@ -80,7 +80,16 @@ def get_brain_path() -> Path:
     if brain_path:
         path = Path(brain_path)
         if not path.exists():
-            raise ValueError(f"Brain path does not exist: {brain_path}")
+            # Auto-create brain directory structure instead of crashing
+            try:
+                path.mkdir(parents=True, exist_ok=True)
+                for subdir in ["engrams", "ledger", "sessions", "memory",
+                              "tasks", "artifacts", "proofs", "strategy",
+                              "governance", "channels", "federation"]:
+                    (path / subdir).mkdir(exist_ok=True)
+                logger.info(f"Auto-created brain directory at {path}")
+            except OSError as e:
+                raise ValueError(f"Brain path does not exist and could not be created: {brain_path} ({e})")
         return path
     
     # Smart fallback: Find .brain in cwd or parent directories

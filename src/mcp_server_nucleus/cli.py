@@ -1022,7 +1022,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             _test_llm.generate_content("ping", max_tokens=5)
             print(f"  ✅ Local model reachable ({_test_llm.endpoint})")
         except Exception as _local_err:
-            print(f"❌ Local model not reachable at {_endpoint}")
+            print(f"❌ Local model not reachable")
             print(f"   Error: {_local_err}")
             print(f"\n   To set up the local model:")
             print(f"   1. Install Ollama: https://ollama.ai")
@@ -1063,9 +1063,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     if _bridge_age < 86400:  # 24 hours
                         llm._session_id = _bridge.get("anthropic_session")
                         _bridge_src = _bridge.get("source", "brother")
-                        logger.info(f"Auto-bridged to {_bridge_src} session: {llm._session_id}")
-            except Exception as _e:
-                logger.debug(f"Auto-bridge skipped: {_e}")
+                        print(f"  Auto-bridged to {_bridge_src} session: {llm._session_id}", file=sys.stderr)
+            except Exception:
+                pass  # auto-bridge is best-effort
 
     # ── Stdin Piping Support (CLI Parity) ──────────────────────
     # Check for stdin input (enables: echo "prompt" | nucleus chat)
@@ -1320,12 +1320,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     print(f"  Model: {llm.model_name} | Provider: {_provider} | Tools: {_tool_count}")
     # Show archive status in banner
     try:
+        from .runtime.archive_pipeline import ArchivePipeline
         _ab = ArchivePipeline()
         _as = _ab.get_stats()
         _at = _as.get('total_turns', 0)
         if _at > 0:
             print(f"  Archive: {_at} turns | /archive for details")
-    except Exception:
+    except (ImportError, Exception):
         pass
     if _workspace_info:
         # Show compact one-liner from workspace
@@ -2108,6 +2109,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 else:
                     print(f"📚 Archive is empty. Auto-saves every turn.")
                 try:
+                    from .runtime.archive_pipeline import ArchivePipeline
                     _ta = ArchivePipeline()
                     _ts = _ta.get_stats()
                     _total = _ts.get('total_turns', 0)
@@ -2407,6 +2409,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"   Auth: ...{_k[-6:]}" if _k else "   Auth: ⚠️ no key")
                 # Training flywheel status
                 try:
+                    from .runtime.archive_pipeline import ArchivePipeline
                     _rt = ArchivePipeline().should_retrain()
                     _rt_label = "RETRAIN READY" if _rt['should_retrain'] else f"{_rt['new_turns']}/{_rt['threshold']} to retrain"
                     print(f"   Training: {_rt['total_turns']} turns | {_rt_label}")
@@ -3149,6 +3152,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 print(f"  🧠 Session summary saved to brain ({len(topics)} topic(s))")
 
                 try:
+                    from .runtime.archive_pipeline import ArchivePipeline
                     _archive = ArchivePipeline()
                     _brother = "cowork" if _provider in () else "code"
                     # Build conversation from history — father's words + brother's responses
@@ -3222,6 +3226,17 @@ def main():
         default=None,
         help='Install a recipe after init (e.g., founder, sre, adhd)'
     )
+    init_parser.add_argument(
+        '--wizard',
+        action='store_true',
+        default=None,
+        help='Run interactive onboarding wizard (default in interactive terminals)'
+    )
+    init_parser.add_argument(
+        '--no-wizard',
+        action='store_true',
+        help='Skip the wizard and use defaults'
+    )
     
     # nucleus recipe — Browse and install workflow packs
     recipe_parser = subparsers.add_parser('recipe', help='Browse and install workflow recipe packs')
@@ -3245,6 +3260,21 @@ def main():
     setup_parser.add_argument('--dry-run', action='store_true', help='Show what changes would be made without applying them')
     
     # ============================================================
+    # CHANNELS COMMAND — Manage notification channels
+    # ============================================================
+    channels_parser = subparsers.add_parser('channels', help='Manage notification channels (Telegram, Slack, Discord, WhatsApp)')
+    channels_sub = channels_parser.add_subparsers(dest='channels_action')
+    channels_sub.add_parser('list', help='List configured notification channels')
+    channels_add = channels_sub.add_parser('add', help='Add a notification channel')
+    channels_add.add_argument('channel_type', choices=['telegram', 'slack', 'discord', 'whatsapp'],
+                              help='Channel type to add')
+    channels_test = channels_sub.add_parser('test', help='Send a test notification')
+    channels_test.add_argument('channel_name', nargs='?', default=None,
+                               help='Channel to test (default: all)')
+    channels_remove = channels_sub.add_parser('remove', help='Remove a channel')
+    channels_remove.add_argument('channel_name', help='Channel name to remove')
+
+    # ============================================================
     # INSTALL COMMAND
     # ============================================================
     install_parser = subparsers.add_parser('install', help='Install an agent from a .nuke artifact')
@@ -3260,7 +3290,12 @@ def main():
 
     subparsers.add_parser('license', help='Show current license status')
 
-    
+    # ============================================================
+    # DOCTOR COMMAND (Environment Diagnostics)
+    # ============================================================
+    subparsers.add_parser('doctor', help='Diagnose your Nucleus setup — check deps, brain, tier, and MCP readiness')
+
+
     # ============================================================
     # DEPTH COMMANDS (ADHD Accommodation)
     # ============================================================
@@ -3866,6 +3901,7 @@ def main():
     rescue_parser = subparsers.add_parser('rescue', help='🆘 Rescue Protocol: Recover session context into a fresh IDE thread')
     rescue_parser.add_argument('--force', action='store_true', help='Force rescue even if current_id is locked')
 
+    archive_parser = subparsers.add_parser('archive', help='Training data archive management')
     archive_subparsers = archive_parser.add_subparsers(dest='archive_command')
     archive_subparsers.add_parser('status', help='Retrain readiness check — should you train now?')
     archive_subparsers.add_parser('stats', help='Show archive statistics')
@@ -3887,8 +3923,10 @@ def main():
     archive_ingest.add_argument('--brother', choices=['code', 'cowork'], default='code', help='Which brother had this conversation')
     archive_subparsers.add_parser('ingest-threads', help='Bridge thread.jsonl (chat history) into training archive')
     archive_subparsers.add_parser('mark-trained', help='Mark current archive as trained (resets retrain counter)')
+    archive_dpo_export = archive_subparsers.add_parser('dpo-export', help='Export DPO training pairs')
     archive_dpo_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/dpo_training.jsonl)')
     archive_dpo_export.add_argument('--exclude-unjudged', action='store_true', help='Drop shadow pairs without LLM judge verification')
+    archive_cot_export = archive_subparsers.add_parser('cot-export', help='Export chain-of-thought reasoning data')
     archive_cot_export.add_argument('--output', type=str, default=None, help='Output path (default: .brain/training/exports/reasoning_training.jsonl)')
     archive_subparsers.add_parser('registry', help='Show all registered model versions')
 
@@ -4005,15 +4043,38 @@ def main():
             _print_curated_help()
 
         elif cli_command == 'init':
-            success = init_brain(args.path, args.template)
-            if success and getattr(args, 'recipe', None):
-                _install_recipe_into_brain(Path(args.path), args.recipe)
+            use_wizard = getattr(args, 'wizard', None)
+            no_wizard = getattr(args, 'no_wizard', False)
+            # Default: wizard on for interactive terminals, off otherwise
+            if use_wizard is None and not no_wizard:
+                use_wizard = sys.stdin.isatty()
+            if no_wizard:
+                use_wizard = False
+
+            if use_wizard:
+                from .runtime.onboarding import (
+                    run_onboarding_wizard, seed_project_context, print_post_init_summary,
+                )
+                wizard_config = run_onboarding_wizard(args.path)
+                success = init_brain(wizard_config["brain_path"], wizard_config["template"])
+                if success:
+                    seed_project_context(Path(wizard_config["brain_path"]), wizard_config)
+                    if wizard_config.get("recipe"):
+                        _install_recipe_into_brain(Path(wizard_config["brain_path"]), wizard_config["recipe"])
+                    print_post_init_summary(wizard_config)
+            else:
+                success = init_brain(args.path, args.template)
+                if success and getattr(args, 'recipe', None):
+                    _install_recipe_into_brain(Path(args.path), args.recipe)
             if success and args.sidecar:
                 from .runtime.discovery import start_discovery_sidecar
                 start_discovery_sidecar()
         
         elif cli_command == 'recipe':
             _handle_recipe_command(args)
+
+        elif cli_command == 'channels':
+            handle_channels_command(args)
 
         elif cli_command == 'setup':
             # Auto-detect brain path
@@ -4064,7 +4125,7 @@ def main():
                 print(f'   Name: nucleus | Command: {nucleus_config["command"]}')
                 print(f'   Env: NUCLEUS_BRAIN_PATH={brain_path_str}')
 
-        if cli_command == 'self-setup':
+        elif cli_command == 'self-setup':
             from .setup import install_nucleus_path
             install_nucleus_path(dry_run=args.dry_run)
             
@@ -4204,7 +4265,7 @@ def main():
             handle_config_command(args)
 
         # ── Project Purple 2: Daemon + Drive + Train ──────────────
-        if cli_command == 'start':
+        elif cli_command == 'start':
             handle_start_command(args)
 
         elif cli_command == 'stop':
@@ -4235,7 +4296,7 @@ def main():
             handle_heartbeat_command(args)
 
         # ── Agent CLI Commands (v1.4.0) ──────────────────────────────
-        if cli_command == 'federation':
+        elif cli_command == 'federation':
             sys.exit(handle_federation_command(args))
 
         elif cli_command == 'engram':
@@ -4248,6 +4309,8 @@ def main():
             sys.exit(handle_growth_command(args))
         elif cli_command == 'outbound':
             sys.exit(handle_outbound_command(args))
+        elif cli_command == 'doctor':
+            sys.exit(handle_doctor_command(args))
 
 
         elif cli_command is None:
@@ -4337,7 +4400,6 @@ def handle_start_command(args):
 
 def handle_stop_command(args):
     """nucleus stop — graceful shutdown via PID file."""
-    from .runtime.common import get_brain_path
     brain_path = get_brain_path()
     pid_path = brain_path / "daemon" / "daemon.pid"
 
@@ -4639,7 +4701,6 @@ def handle_federation_command(args) -> int:
     action = getattr(args, 'fed_action', None)
     
     from .runtime.federation import create_federation_engine, FederationConfig, PartitionStatus, FederationPeer
-    from .runtime.common import get_brain_path
     
     brain_path = get_brain_path()
     brain_id = os.environ.get("NUCLEUS_BRAIN_ID", "local")
@@ -4774,6 +4835,249 @@ def handle_session_command(args) -> int:
 
     else:
         print("Usage: nucleus session <save|resume>", file=sys.stderr)
+        return 1
+
+
+def handle_doctor_command(args) -> int:
+    """Diagnose Nucleus setup — deps, brain, tier, MCP readiness."""
+    import platform
+
+    checks_passed = 0
+    checks_failed = 0
+    checks_warned = 0
+
+    def _pass(label, detail=""):
+        nonlocal checks_passed
+        checks_passed += 1
+        print(f"  [PASS] {label}" + (f" — {detail}" if detail else ""))
+
+    def _fail(label, detail="", fix=""):
+        nonlocal checks_failed
+        checks_failed += 1
+        print(f"  [FAIL] {label}" + (f" — {detail}" if detail else ""))
+        if fix:
+            print(f"         Fix: {fix}")
+
+    def _warn(label, detail=""):
+        nonlocal checks_warned
+        checks_warned += 1
+        print(f"  [WARN] {label}" + (f" — {detail}" if detail else ""))
+
+    print("Nucleus Doctor")
+    print("=" * 50)
+
+    # 1. Python version
+    print("\n1. Python Environment")
+    py_ver = platform.python_version_tuple()
+    if int(py_ver[0]) >= 3 and int(py_ver[1]) >= 9:
+        _pass("Python version", f"{platform.python_version()}")
+    else:
+        _fail("Python version", f"{platform.python_version()}", "Nucleus requires Python >=3.9")
+
+    # 2. Core dependencies
+    print("\n2. Core Dependencies")
+    core_deps = [
+        ("pydantic", "pydantic"),
+        ("fastmcp", "fastmcp"),
+        ("cryptography", "cryptography"),
+        ("cffi", "cffi"),
+        ("watchdog", "watchdog"),
+        ("yaml (PyYAML)", "yaml"),
+        ("nest_asyncio", "nest_asyncio"),
+        ("opentelemetry-sdk", "opentelemetry"),
+    ]
+    for label, mod_name in core_deps:
+        try:
+            __import__(mod_name)
+            _pass(label)
+        except ImportError:
+            _fail(label, "not installed", f"pip install {label.split()[0].lower()}")
+
+    # 3. Optional dependencies
+    print("\n3. Optional Dependencies")
+    opt_deps = [
+        ("google-genai", "google.genai", "pip install 'nucleus-mcp[full]'"),
+        ("psycopg2", "psycopg2", "pip install 'nucleus-mcp[postgres]'"),
+    ]
+    for label, mod_name, install_cmd in opt_deps:
+        try:
+            __import__(mod_name)
+            _pass(label)
+        except ImportError:
+            _warn(label, f"not installed (optional). Install with: {install_cmd}")
+
+    # 4. Brain path
+    print("\n4. Brain Configuration")
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH", "")
+    if brain_path:
+        _pass("NUCLEAR_BRAIN_PATH set", brain_path)
+        bp = Path(brain_path)
+        if bp.exists():
+            _pass("Brain directory exists")
+            expected_dirs = ["ledger", "engrams", "sessions", "memory"]
+            for d in expected_dirs:
+                if (bp / d).exists():
+                    _pass(f"  {d}/")
+                else:
+                    _warn(f"  {d}/ missing", "Run 'nucleus init' to create")
+        else:
+            _fail("Brain directory does not exist", brain_path, "Run 'nucleus init'")
+    else:
+        _warn("NUCLEAR_BRAIN_PATH not set", "Run 'nucleus init' or export NUCLEAR_BRAIN_PATH=~/.brain")
+
+    # 5. Tool tier
+    print("\n5. Tool Tier")
+    try:
+        from .tool_tiers import get_active_tier, get_tier_info, TIER_0_LAUNCH, TIER_1_CORE, TIER_2_ADVANCED
+        tier = get_active_tier()
+        info = get_tier_info()
+        tier_names = {0: "LAUNCH", 1: "CORE", 2: "ADVANCED", 3: "SYSTEM"}
+        tier_label = tier_names.get(tier, f"T{tier}")
+        allowed = info.get("tools_allowed", 0)
+        total = len(TIER_0_LAUNCH | TIER_1_CORE | TIER_2_ADVANCED)
+        _pass(f"Active tier: {tier_label} (T{tier})", f"{allowed}/{total} tool facades enabled")
+        if tier == 0:
+            _warn("Tier 0 loads only governance + engrams tools",
+                  "Set NUCLEUS_BETA_TOKEN to unlock more")
+    except Exception as e:
+        _warn("Could not determine tier", str(e))
+
+    # 6. MCP server
+    print("\n6. MCP Server")
+    try:
+        from . import mcp, USE_STDIO_FALLBACK
+        if USE_STDIO_FALLBACK:
+            _warn("MCP running in fallback/MockMCP mode", "fastmcp may not be properly installed")
+        else:
+            _pass("FastMCP initialized", type(mcp).__name__)
+    except Exception as e:
+        _fail("MCP server import failed", str(e))
+
+    # Summary
+    print("\n" + "=" * 50)
+    total = checks_passed + checks_failed + checks_warned
+    if checks_failed == 0:
+        status = "HEALTHY" if checks_warned == 0 else "OK (with warnings)"
+        print(f"Result: {status} — {checks_passed}/{total} checks passed, {checks_warned} warnings")
+    else:
+        print(f"Result: ISSUES FOUND — {checks_failed} failed, {checks_warned} warnings, {checks_passed} passed")
+
+    return 0 if checks_failed == 0 else 1
+
+
+def handle_channels_command(args) -> int:
+    """Handle `nucleus channels` subcommands."""
+    from .runtime.channels import get_channel_router
+    action = getattr(args, 'channels_action', None)
+
+    # Resolve brain path
+    brain_path = None
+    try:
+        from .runtime.common import get_brain_path
+        brain_path = get_brain_path()
+    except Exception:
+        pass
+
+    router = get_channel_router(brain_path)
+
+    if action == 'list':
+        channels = router.list_channels()
+        if not channels:
+            print("No notification channels configured.")
+            print("\nAdd one with:")
+            print("  nucleus channels add telegram")
+            print("  nucleus channels add slack")
+            print("  nucleus channels add discord")
+            print("  nucleus channels add whatsapp")
+            return 0
+        print(f"Configured channels ({len(channels)}):\n")
+        for ch in channels:
+            status = "configured" if ch.get("configured") else "not configured"
+            print(f"  {ch['type']:12s}  {ch['display_name']:20s}  [{status}]")
+            for k, v in ch.items():
+                if k not in ("type", "display_name", "configured"):
+                    print(f"  {'':12s}  {k}: {v}")
+        return 0
+
+    elif action == 'add':
+        ch_type = args.channel_type
+        if ch_type == 'telegram':
+            print("Telegram Bot Setup")
+            print("=" * 40)
+            print("1. Message @BotFather on Telegram")
+            print("2. Create a bot with /newbot")
+            print("3. Set these environment variables:")
+            print("   export TELEGRAM_BOT_TOKEN=<your-bot-token>")
+            print("   export TELEGRAM_CHAT_ID=<your-chat-id>")
+            print("\nTip: Get chat ID by messaging your bot, then visiting:")
+            print("   https://api.telegram.org/bot<TOKEN>/getUpdates")
+        elif ch_type == 'slack':
+            print("Slack Webhook Setup")
+            print("=" * 40)
+            print("1. Go to https://api.slack.com/apps")
+            print("2. Create an app → Incoming Webhooks → Activate")
+            print("3. Add to a channel and copy the webhook URL")
+            print("4. Set: export SLACK_WEBHOOK_URL=<webhook-url>")
+        elif ch_type == 'discord':
+            print("Discord Webhook Setup")
+            print("=" * 40)
+            print("1. Open Discord channel settings → Integrations → Webhooks")
+            print("2. Create a webhook and copy the URL")
+            print("3. Set: export DISCORD_WEBHOOK_URL=<webhook-url>")
+        elif ch_type == 'whatsapp':
+            print("WhatsApp Cloud API Setup")
+            print("=" * 40)
+            print("1. Create a Meta Business account")
+            print("2. Set up WhatsApp Business API at developers.facebook.com")
+            print("3. Set these environment variables:")
+            print("   export WHATSAPP_TOKEN=<permanent-access-token>")
+            print("   export WHATSAPP_PHONE_ID=<phone-number-id>")
+            print("   export WHATSAPP_TO=<recipient-number-e164>")
+
+        print("\nAfter setting env vars, verify with:")
+        print(f"  nucleus channels test {ch_type}")
+        return 0
+
+    elif action == 'test':
+        target = getattr(args, 'channel_name', None)
+        if target:
+            ch = router.get_channel(target)
+            if not ch:
+                print(f"Channel '{target}' not found. Run `nucleus channels list`.")
+                return 1
+            if not ch.is_configured():
+                print(f"Channel '{target}' is not configured (missing credentials).")
+                return 1
+            print(f"Sending test to {target}...")
+            ok = ch.test()
+            print(f"  {'Success' if ok else 'Failed'}")
+            return 0 if ok else 1
+        else:
+            # Test all
+            channels = router.list_channels()
+            if not channels:
+                print("No channels configured. Run `nucleus channels add <type>`.")
+                return 1
+            for ch_info in channels:
+                ch = router.get_channel(ch_info["type"])
+                if ch and ch.is_configured():
+                    print(f"Testing {ch_info['type']}...", end=" ")
+                    ok = ch.test()
+                    print("OK" if ok else "FAILED")
+            return 0
+
+    elif action == 'remove':
+        name = args.channel_name
+        if router.unregister(name):
+            if brain_path:
+                router.save_to_brain(brain_path)
+            print(f"Removed channel: {name}")
+            return 0
+        print(f"Channel '{name}' not found.")
+        return 1
+
+    else:
+        print("Usage: nucleus channels <list|add|test|remove>")
         return 1
 
 

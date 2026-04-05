@@ -149,17 +149,36 @@ def register_prompts(mcp, helpers):
 def main():
     """Main entry point for the MCP server."""
     from . import mcp, get_brain_path, USE_STDIO_FALLBACK, __version__
-    
+
+    # Startup summary to stderr (never stdout — that's for JSON-RPC)
+    try:
+        from .tool_tiers import get_active_tier, get_tier_info, tier_manager
+        _tier = get_active_tier()
+        _info = get_tier_info()
+        _tier_names = {0: "LAUNCH", 1: "CORE", 2: "ADVANCED", 3: "SYSTEM"}
+        _registered = len(getattr(tier_manager, 'registered_tools', set()))
+        _filtered = len(getattr(tier_manager, 'filtered_tools', set()))
+        _bp = get_brain_path() if callable(get_brain_path) else get_brain_path
+        sys.stderr.write(f"[Nucleus v{__version__}] Starting MCP server\n")
+        sys.stderr.write(f"[Nucleus] Tier: {_tier_names.get(_tier, _tier)} | "
+                         f"Tools: {_registered} registered, {_filtered} filtered | "
+                         f"Brain: {_bp or 'not configured'}\n")
+        if USE_STDIO_FALLBACK:
+            sys.stderr.write("[Nucleus] WARNING: Running in degraded mode (FastMCP not available). "
+                             "Install with: pip install fastmcp\n")
+        sys.stderr.flush()
+    except Exception:
+        pass
+
     # Check for standalone/fallback mode
     if USE_STDIO_FALLBACK:
         from .runtime.stdio_server import StdioServer
         import logging
-        import sys
         import asyncio
-        
+
         # Configure logging to stderr to not corrupt stdout
         logging.basicConfig(stream=sys.stderr, level=logging.WARNING, force=True)
-        
+
         server = StdioServer()
         asyncio.run(server.run())
         return

@@ -1,60 +1,45 @@
 """
 Nucleus Notifier — unified notification channel.
 
-Routes to Telegram + macOS notifications. Replaces scattered osascript and
-Telegram calls throughout the codebase.
+Routes notifications through the ChannelRouter to all configured
+channels (Telegram, Slack, Discord, WhatsApp, macOS).
+
+Backward-compatible: Notifier.send() API is unchanged.
 """
 
 import logging
-import os
 import subprocess
-from typing import Optional
 
 logger = logging.getLogger("NucleusNotifier")
 
 
 class Notifier:
-    """Unified notification dispatcher."""
+    """Unified notification dispatcher.
+
+    Delegates to ChannelRouter for multi-channel delivery while
+    maintaining the original send(title, message, level) API.
+    """
 
     def __init__(self, brain_path=None):
         self.brain_path = brain_path
-        self._telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-        self._telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+        self._router = None
+
+    def _get_router(self):
+        if self._router is None:
+            from .channels import get_channel_router
+            self._router = get_channel_router(self.brain_path)
+        return self._router
 
     def send(self, title: str, message: str, level: str = "info"):
         """Send notification to all available channels."""
         self.log(title, message, level)
         self.macos(title, message)
         if level in ("warning", "error", "critical"):
-            self.telegram(f"[{level.upper()}] {title}\n{message}")
-
-    def telegram(self, message: str) -> bool:
-        """Send via Telegram bot. Returns True on success."""
-        if not self._telegram_token or not self._telegram_chat_id:
-            return False
-        try:
-            import urllib.request
-            import urllib.parse
-            url = (
-                f"https://api.telegram.org/bot{self._telegram_token}"
-                f"/sendMessage"
-            )
-            data = urllib.parse.urlencode({
-                "chat_id": self._telegram_chat_id,
-                "text": message[:4096],
-                "parse_mode": "Markdown",
-            }).encode()
-            req = urllib.request.Request(url, data=data, method="POST")
-            urllib.request.urlopen(req, timeout=10)
-            return True
-        except Exception as e:
-            logger.debug(f"Telegram send failed: {e}")
-            return False
+            self._get_router().notify(title, message, level)
 
     def macos(self, title: str, message: str) -> bool:
         """Send macOS notification via osascript."""
         try:
-            # Escape quotes to prevent osascript injection
             safe_title = title.replace('"', '\\"').replace("'", "\\'")
             safe_msg = message.replace('"', '\\"').replace("'", "\\'")
             subprocess.run(

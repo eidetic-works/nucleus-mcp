@@ -50,15 +50,32 @@ import time
 import os
 from typing import Any, Dict, Optional
 from mcp_server_nucleus import __version__ as _nucleus_version
-from mcp_server_nucleus.hypervisor.locker import Locker
-from mcp_server_nucleus.hypervisor.watchdog import Watchdog
-from mcp_server_nucleus.hypervisor.injector import Injector
+
+# Hypervisor imports — graceful degradation if unavailable
+try:
+    from mcp_server_nucleus.hypervisor.locker import Locker
+except ImportError:
+    Locker = None
+try:
+    from mcp_server_nucleus.hypervisor.watchdog import Watchdog
+except ImportError:
+    Watchdog = None
+try:
+    from mcp_server_nucleus.hypervisor.injector import Injector
+except ImportError:
+    Injector = None
+
 from mcp_server_nucleus.runtime.task_ops import (
     _list_tasks, _add_task, _update_task,
     _claim_task, _get_next_task
 )
 import asyncio
-from mcp_server_nucleus.runtime.mounter_ops import get_mounter
+
+try:
+    from mcp_server_nucleus.runtime.mounter_ops import get_mounter
+except ImportError:
+    get_mounter = None
+
 from mcp_server_nucleus.tools._dispatch import dispatch
 
 # Configure logging to stderr to not corrupt stdout (which is for JSON-RPC)
@@ -85,20 +102,23 @@ class StdioServer:
         self.brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
         workspace_root = self.brain_path
         
-        self.locker = Locker()
-        self.injector = Injector(str(workspace_root))
-        self.watchdog = Watchdog(str(workspace_root))
-        
-        try:
-            self.watchdog.start()
-        except Exception as e:
-            logger.error(f"Failed to start watchdog: {e}")
-            
-        self.mounter = get_mounter(self.brain_path)
+        # Hypervisor components — graceful degradation if unavailable
+        self.locker = Locker() if Locker else None
+        self.injector = Injector(str(workspace_root)) if Injector else None
+        self.watchdog = None
+        if Watchdog:
+            try:
+                self.watchdog = Watchdog(str(workspace_root))
+                self.watchdog.start()
+            except Exception as e:
+                logger.error(f"Failed to start watchdog: {e}")
+
+        self.mounter = get_mounter(self.brain_path) if get_mounter else None
 
     async def run(self):
         # Restore mounts from persistence
-        await self.mounter.restore_mounts()
+        if self.mounter:
+            await self.mounter.restore_mounts()
         
         loop = asyncio.get_running_loop()
         while True:
@@ -299,11 +319,12 @@ class StdioServer:
             ]
 
             # Aggregate Tools from Mounts
-            try:
-                mounted_tools = await self.mounter.list_tools()
-                tools.extend(mounted_tools)
-            except Exception as e:
-                logger.error(f"Failed to list mounted tools: {e}")
+            if self.mounter:
+                try:
+                    mounted_tools = await self.mounter.list_tools()
+                    tools.extend(mounted_tools)
+                except Exception as e:
+                    logger.error(f"Failed to list mounted tools: {e}")
 
             return {
                 "jsonrpc": "2.0",
@@ -320,7 +341,7 @@ class StdioServer:
 
             try:
                 # --- MOUNTER DISPATCH (namespaced tools from mounted servers) ---
-                if "__" in name:
+                if "__" in name and self.mounter:
                     result = await self.mounter.call_tool(name, args)
                     content = []
                     if hasattr(result, "content"):
@@ -626,9 +647,19 @@ class StdioServer:
         from mcp_server_nucleus.runtime.morning_brief_ops import _morning_brief_impl
         from mcp_server_nucleus.runtime.context_graph import build_context_graph, get_engram_neighbors, render_ascii_graph
         from mcp_server_nucleus.runtime.billing import compute_usage_summary
-        from mcp_server_nucleus.runtime.god_combos.pulse_and_polish import run_pulse_and_polish
-        from mcp_server_nucleus.runtime.god_combos.self_healing_sre import run_self_healing_sre
-        from mcp_server_nucleus.runtime.god_combos.fusion_reactor import run_fusion_reactor
+
+        # God Combos: lazy imports to prevent startup crashes if modules are missing
+        def _lazy_pulse_and_polish(write_engram=True):
+            from mcp_server_nucleus.runtime.god_combos.pulse_and_polish import run_pulse_and_polish
+            return _make_response(True, data=run_pulse_and_polish(write_engram=write_engram))
+
+        def _lazy_self_healing_sre(symptom, write_engram=True):
+            from mcp_server_nucleus.runtime.god_combos.self_healing_sre import run_self_healing_sre
+            return _make_response(True, data=run_self_healing_sre(symptom=symptom, write_engram=write_engram))
+
+        def _lazy_fusion_reactor(observation, context="Decision", intensity=6, write_engrams=True):
+            from mcp_server_nucleus.runtime.god_combos.fusion_reactor import run_fusion_reactor
+            return _make_response(True, data=run_fusion_reactor(observation=observation, context=context, intensity=intensity, write_engrams=write_engrams))
 
         engrams_router = {
             "health": lambda: _brain_health_impl(),
@@ -639,10 +670,10 @@ class StdioServer:
             "search_engrams": lambda query, case_sensitive=False, limit=50: _brain_search_engrams_impl(query, case_sensitive, limit),
             "governance_status": lambda: _brain_governance_status_impl(),
             "morning_brief": lambda: _make_response(True, data=_morning_brief_impl()),
-            # Phase 3: God Combos
-            "pulse_and_polish": lambda write_engram=True: _make_response(True, data=run_pulse_and_polish(write_engram=write_engram)),
-            "self_healing_sre": lambda symptom, write_engram=True: _make_response(True, data=run_self_healing_sre(symptom=symptom, write_engram=write_engram)),
-            "fusion_reactor": lambda observation, context="Decision", intensity=6, write_engrams=True: _make_response(True, data=run_fusion_reactor(observation=observation, context=context, intensity=intensity, write_engrams=write_engrams)),
+            # Phase 3: God Combos (lazy imports — never block server startup)
+            "pulse_and_polish": _lazy_pulse_and_polish,
+            "self_healing_sre": _lazy_self_healing_sre,
+            "fusion_reactor": _lazy_fusion_reactor,
             # Phase 3: Context Graph
             "context_graph": lambda include_edges=True, min_intensity=1: _make_response(True, data=build_context_graph(include_edges=include_edges, min_intensity=min_intensity)),
             "engram_neighbors": lambda key, max_depth=1: _make_response(True, data=get_engram_neighbors(key=key, max_depth=max_depth)),

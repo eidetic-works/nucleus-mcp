@@ -212,6 +212,11 @@ class SQLiteBackend(StorageBackend):
             isolation_level=None  # Manage transactions explicitly if needed
         )
         conn.row_factory = sqlite3.Row
+        # Production PRAGMAs for concurrent agent access
+        conn.execute("PRAGMA journal_mode=WAL")       # Allow concurrent readers + writer
+        conn.execute("PRAGMA busy_timeout=5000")       # Wait up to 5s instead of failing immediately
+        conn.execute("PRAGMA synchronous=NORMAL")      # Safe with WAL, faster than FULL
+        conn.execute("PRAGMA foreign_keys=ON")         # Enforce referential integrity
         return conn
         
     def _init_db(self):
