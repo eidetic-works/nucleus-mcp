@@ -3222,6 +3222,17 @@ def main():
         default=None,
         help='Install a recipe after init (e.g., founder, sre, adhd)'
     )
+    init_parser.add_argument(
+        '--wizard',
+        action='store_true',
+        default=None,
+        help='Run interactive onboarding wizard (default in interactive terminals)'
+    )
+    init_parser.add_argument(
+        '--no-wizard',
+        action='store_true',
+        help='Skip the wizard and use defaults'
+    )
     
     # nucleus recipe — Browse and install workflow packs
     recipe_parser = subparsers.add_parser('recipe', help='Browse and install workflow recipe packs')
@@ -4005,9 +4016,29 @@ def main():
             _print_curated_help()
 
         elif cli_command == 'init':
-            success = init_brain(args.path, args.template)
-            if success and getattr(args, 'recipe', None):
-                _install_recipe_into_brain(Path(args.path), args.recipe)
+            use_wizard = getattr(args, 'wizard', None)
+            no_wizard = getattr(args, 'no_wizard', False)
+            # Default: wizard on for interactive terminals, off otherwise
+            if use_wizard is None and not no_wizard:
+                use_wizard = sys.stdin.isatty()
+            if no_wizard:
+                use_wizard = False
+
+            if use_wizard:
+                from .runtime.onboarding import (
+                    run_onboarding_wizard, seed_project_context, print_post_init_summary,
+                )
+                wizard_config = run_onboarding_wizard(args.path)
+                success = init_brain(wizard_config["brain_path"], wizard_config["template"])
+                if success:
+                    seed_project_context(Path(wizard_config["brain_path"]), wizard_config)
+                    if wizard_config.get("recipe"):
+                        _install_recipe_into_brain(Path(wizard_config["brain_path"]), wizard_config["recipe"])
+                    print_post_init_summary(wizard_config)
+            else:
+                success = init_brain(args.path, args.template)
+                if success and getattr(args, 'recipe', None):
+                    _install_recipe_into_brain(Path(args.path), args.recipe)
             if success and args.sidecar:
                 from .runtime.discovery import start_discovery_sidecar
                 start_discovery_sidecar()
