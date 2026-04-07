@@ -229,7 +229,7 @@ class TestAsyncDispatch:
             return json.dumps({"hello": name})
 
         router = {"greet": async_handler}
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             async_dispatch("greet", {"name": "async"}, router, "test")
         )
         assert "async" in result
@@ -243,7 +243,7 @@ class TestAsyncDispatch:
             return json.dumps({"sync": True})
 
         router = {"act": sync_handler}
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             async_dispatch("act", {}, router, "test")
         )
         assert "sync" in result
@@ -252,7 +252,7 @@ class TestAsyncDispatch:
         import asyncio
         from mcp_server_nucleus.tools._dispatch import async_dispatch, get_dispatch_rate_limiter
         get_dispatch_rate_limiter().reset()
-        result = json.loads(asyncio.get_event_loop().run_until_complete(
+        result = json.loads(asyncio.run(
             async_dispatch("nope", {}, {"a": lambda: None}, "test")
         ))
         assert "Unknown action" in result["error"]
