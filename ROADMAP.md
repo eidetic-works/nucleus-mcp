@@ -78,9 +78,9 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| cold_start enrichment | In Progress | Session arc + compounding pulse in brain card |
-| brain://cycle resource | In Progress | Weekly cycle state in IDE sidebar |
-| brain://arc resource | In Progress | Session continuity in IDE sidebar |
+| cold_start enrichment | Done | Session arc + compounding pulse in brain card |
+| brain://cycle resource | Done | Weekly cycle state in IDE sidebar |
+| brain://arc resource | Done | Session continuity in IDE sidebar |
 | Security Posture Tool | Planned | Governance scoring with shareable report |
 | `nucleus secure` | Planned | One-command security hardening |
 | Peer-to-Peer Federation | Planned | Connect multiple Nucleus instances |
