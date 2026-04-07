@@ -23,6 +23,25 @@ from .runtime.common import get_brain_path
 
 from .setup import install_nucleus_path
 
+# All CLI handler implementations (37 commands)
+from .cli_handlers import (
+    handle_secure_command, handle_sovereign_command, handle_comply_command,
+    handle_compliance_check_command, handle_audit_report_command,
+    handle_trace_command, handle_kyc_command,
+    handle_status_command, handle_billing_command, handle_morning_brief_command,
+    handle_loop_command, handle_end_of_day_command, handle_dashboard_command,
+    handle_graph_command,
+    handle_features_command, handle_sessions_command, handle_mount_command,
+    handle_consolidate_command,
+    handle_activate_command, handle_trial_command, handle_license_command,
+    handle_config_command, handle_install_command, handle_schema_command,
+    handle_search_command, handle_deploy_command, handle_heartbeat_command,
+    handle_combo_command, handle_recover_command, handle_rescue_command,
+    handle_chief_command, handle_run_command, handle_summon_command,
+    handle_dogfood_command, handle_depot_command, handle_outbound_command,
+    _handle_recipe_command,
+)
+
 # ============================================================================
 # TEMPLATE: DEFAULT (Full structure)
 # ============================================================================
@@ -4330,6 +4349,12 @@ def main():
 
     except SystemExit:
         raise  # Let sys.exit() pass through cleanly
+    except NameError as ne:
+        # Safety net: undefined handler → friendly message instead of crash
+        handler_name = str(ne).split("'")[1] if "'" in str(ne) else str(ne)
+        print(f"Error: Command handler '{handler_name}' is not yet implemented.", file=sys.stderr)
+        print("Please report this at: https://github.com/eidetic-works/nucleus-mcp/issues", file=sys.stderr)
+        sys.exit(1)
     except Exception as exc:
         # ── Anonymous telemetry: record CLI error (fire-and-forget) ──
         try:
