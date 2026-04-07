@@ -255,7 +255,6 @@ src/mcp_server_nucleus/runtime/outbound_ops.py export-ignore
 src/mcp_server_nucleus/runtime/dogfood_tracker.py export-ignore
 src/mcp_server_nucleus/runtime/capabilities/marketing_engine.py export-ignore
 src/mcp_server_nucleus/runtime/compounding_loop.py export-ignore
-src/share_to_spotify.py export-ignore
 docs/Sovereign_Compliance_Officer_Handbook.md export-ignore
 scripts/telemetry-validate.mjs export-ignore
 
@@ -269,7 +268,6 @@ src/mcp_server_nucleus/distill.py export-ignore
 src/mcp_server_nucleus/replay.py export-ignore
 src/mcp_server_nucleus/validate.py export-ignore
 src/mcp_server_nucleus/runtime/token_budget.py export-ignore
-src/mcp_server_nucleus/runtime/recovery_ops.py export-ignore
 src/mcp_server_nucleus/runtime/firestore_bridge.py export-ignore
 src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
 
@@ -288,9 +286,7 @@ src/mcp_server_nucleus/runtime/autopilot.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/pulse_and_polish.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/self_healing_v2.py export-ignore
-src/mcp_server_nucleus/runtime/emergence_rate.py export-ignore
 src/mcp_server_nucleus/runtime/siphon_engine.py export-ignore
-src/mcp_server_nucleus/runtime/llm_pattern_learner.py export-ignore
 
 # Infrastructure/State
 engrams/ export-ignore
