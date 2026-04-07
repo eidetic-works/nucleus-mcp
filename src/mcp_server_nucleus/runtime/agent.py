@@ -15,7 +15,10 @@ from .agent_runtime_v2 import get_execution_manager, check_cancellation
 from .budget_alerts import get_budget_monitor
 # Phase 71: Tool Calling Enforcement
 from .llm_tool_enforcer import get_tool_enforcer
-from .llm_pattern_learner import get_pattern_learner
+try:
+    from .llm_pattern_learner import get_pattern_learner
+except ImportError:
+    get_pattern_learner = None
 # Phase 72: Autonomous Tool Discovery
 from .tool_recommender import get_tool_recommender
 
