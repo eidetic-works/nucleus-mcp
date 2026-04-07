@@ -43,6 +43,12 @@ Every tool response shows frontier health:
 
 ---
 
+## Why Nucleus?
+
+Agent memory platforms are proliferating, but most lack the governance and security infrastructure that production deployments require. Nucleus is built security-first: default-deny policies, cryptographic audit trails, a kill switch for emergency halt, and compliance frameworks (EU DORA, SG MAS-TRM, US SOC2) built in. Your agent memory stays local, tamper-evident, and auditable. See [COMPARISON.md](docs/COMPARISON.md) and [SECURITY_WHITEPAPER.md](docs/SECURITY_WHITEPAPER.md) for details.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -56,7 +62,7 @@ Two commands. Nucleus is running. AI outputs are now verified.
 
 ## What It Does
 
-**114 MCP tools** across 14 facades:
+**170+ MCP tools** across 14 facades:
 
 - **GROUND** — Execution verification (5 tiers: diff, syntax, imports, tests, runtime)
 - **ALIGN** — Human corrections (verdict + delta + DPO + event in one call)

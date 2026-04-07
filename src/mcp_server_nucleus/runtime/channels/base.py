@@ -165,6 +165,9 @@ class ChannelRouter:
             return
         try:
             data = json.loads(config_file.read_text(encoding="utf-8"))
+            config_version = data.get("version", 0)
+            if config_version == 0:
+                logger.warning("Channel config has no version field — migrating to v1")
             if "routing" in data and isinstance(data["routing"], dict):
                 self._routing.update(data["routing"])
             for ch_conf in data.get("channels", []):
@@ -182,6 +185,7 @@ class ChannelRouter:
         config_file = config_dir / "config.json"
 
         data = {
+            "version": 1,
             "channels": [],
             "routing": self._routing,
         }

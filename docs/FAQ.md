@@ -1,7 +1,7 @@
 # Nucleus FAQ
 
-**Last Updated:** January 26, 2026  
-**Version:** 0.5.1
+**Last Updated:** April 7, 2026  
+**Version:** 1.8.8
 
 ---
 
@@ -14,7 +14,8 @@ Nucleus is **The Agent Control Plane** - a governance layer for AI agents that u
 - **Default-Deny Security**: No tool executes without explicit policy approval
 - **Engram Ledger**: Persistent memory that survives across sessions
 - **Cryptographic Audit**: Every interaction hashed with SHA-256
-- **130 MCP Tools**: Task orchestration, multi-agent federation, depth tracking
+- **170+ MCP Tools**: Task orchestration, multi-agent federation, depth tracking
+- **Compliance Frameworks**: EU DORA, SG MAS-TRM, US SOC2 out of the box
 
 ### How is Nucleus different from CLAUDE.md?
 
@@ -24,7 +25,7 @@ Nucleus is **The Agent Control Plane** - a governance layer for AI agents that u
 | Enforcement | Honor system | Default-deny policies |
 | Memory | None | Engram Ledger |
 | Audit | None | SHA-256 hashed trail |
-| Tools | 0 | 130 MCP tools |
+| Tools | 0 | 170+ MCP tools |
 
 CLAUDE.md tells agents what to do. Nucleus **enforces** what they can do.
 
@@ -44,7 +45,7 @@ pip install nucleus-mcp
 
 ### What Python version is required?
 
-Python 3.10 or higher.
+Python 3.9 or higher.
 
 ### How do I configure my MCP client?
 
@@ -142,7 +143,7 @@ pip install --upgrade nucleus-mcp
 
 Run the test suite to verify your installation:
 ```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
+python -m pytest tests/ --ignore=tests/e2e -q
 ```
 
 ### How do I reset my brain state?
@@ -156,6 +157,33 @@ mv .brain .brain.backup
 ---
 
 ## Security
+
+### How is Nucleus different from OpenClaw?
+
+Nucleus and OpenClaw both provide agent memory, but they differ fundamentally in security posture:
+
+| | Nucleus | OpenClaw |
+|---|---------|----------|
+| Security model | Default-deny, governance-first | Permissive, no governance |
+| Audit trail | Cryptographic (SHA-256 chain) | Basic logging |
+| Kill switch | Yes (emergency halt) | No |
+| Compliance | EU DORA, SG MAS-TRM, SOC2 | None |
+| Credential scanning | Built-in | None |
+
+See [COMPARISON.md](./COMPARISON.md) for a detailed comparison.
+
+### Is Nucleus secure?
+
+Nucleus was designed security-first. Key protections include:
+
+- **Default-deny policies** enforced at the runtime level
+- **Red/blue governance modes** for production vs development
+- **Kill switch** for emergency halt of all agent operations
+- **Cryptographic audit trail** with SHA-256 hash chain
+- **Credential scanning** in engram content
+- **Circuit breakers** for fault isolation
+
+See [SECURITY_WHITEPAPER.md](./SECURITY_WHITEPAPER.md) for the full security architecture.
 
 ### How secure is the audit trail?
 

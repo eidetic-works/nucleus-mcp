@@ -4931,6 +4931,15 @@ def handle_doctor_command(args) -> int:
         except ImportError:
             _warn(label, f"not installed (optional). Install with: {install_cmd}")
 
+    # 3b. SQLite
+    print("\n3b. SQLite")
+    try:
+        import sqlite3
+        ver = sqlite3.connect(":memory:").execute("SELECT sqlite_version()").fetchone()[0]
+        _pass("SQLite", ver)
+    except Exception as e:
+        _fail("SQLite", str(e), "SQLite is required for task and session storage")
+
     # 4. Brain path
     print("\n4. Brain Configuration")
     brain_path = os.environ.get("NUCLEAR_BRAIN_PATH", "")
