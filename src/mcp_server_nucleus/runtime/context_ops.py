@@ -222,6 +222,41 @@ def _cold_start_prompt() -> str:
         except Exception:
             mount_section = "\n## 🔌 Mounts\n  _(Could not read mounts)_\n"
         
+        # ─── BRAIN CARD: Session Arc ───
+        arc_section = ""
+        try:
+            from .session_ops import _load_session_arc
+            arc = _load_session_arc(brain)
+            if arc.get("recent_sessions"):
+                arc_lines = ""
+                for s in arc["recent_sessions"]:
+                    ts = s.get("timestamp", "")[:10]
+                    val = s.get("value", "")[:60]
+                    arc_lines += f"  - [{ts}] {val}\n"
+                focus = arc.get("todays_focus")
+                focus_line = f"  - **Today's focus:** {focus}\n" if focus else ""
+                arc_section = f"\n## 📋 Session Arc\n{arc_lines}{focus_line}"
+        except Exception:
+            arc_section = ""
+
+        # ─── BRAIN CARD: Compounding Pulse ───
+        pulse_section = ""
+        try:
+            from datetime import datetime
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if cycle_path.exists():
+                cycle = json.loads(cycle_path.read_text())
+                cid = cycle.get("cycle_id", "?")
+                ws = cycle.get("weekly_score_start")
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                today_data = cycle.get("days", {}).get(today_str, {})
+                action = today_data.get("action", "?")
+                completed = sum(1 for d in cycle.get("days", {}).values() if d.get("completed"))
+                score_text = f"Score: {ws}" if ws is not None else "Score: pending"
+                pulse_section = f"\n## 📈 Compounding Pulse\n  Week {cid} | Day {completed}/7 | {score_text} | Today: {action}\n"
+        except Exception:
+            pulse_section = ""
+
         return f"""# 🧠 Nucleus Brain Card
 <v{__version__}> · Local-first AI Memory · Everything stays on your machine.
 
@@ -229,7 +264,7 @@ def _cold_start_prompt() -> str:
 - **Sprint:** {sprint.get('name', 'No active sprint')}
 - **Focus:** {sprint.get('focus', 'Not set')}
 - **Status:** {sprint.get('status', 'Unknown')}
-- **Active Agents:** {', '.join(agents) if agents else 'None'}
+- **Active Agents:** {', '.join(a.get('codename', str(a)) if isinstance(a, dict) else str(a) for a in agents) if agents else 'None'}
 
 ## Top Priorities
 {actions_text}
@@ -237,7 +272,7 @@ def _cold_start_prompt() -> str:
 {events_text}
 ## Recent Artifacts
 {artifacts_text}
-{engram_section}{task_section}{mount_section}{workflow_hint}
+{engram_section}{task_section}{mount_section}{arc_section}{pulse_section}{workflow_hint}
 
 ---
 

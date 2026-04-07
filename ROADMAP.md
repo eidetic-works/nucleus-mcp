@@ -1,7 +1,7 @@
 # Nucleus Roadmap
 
-**Last Updated:** March 2026
-**Current Version:** 1.6.2
+**Last Updated:** April 2026
+**Current Version:** 1.8.8
 
 ---
 
@@ -54,33 +54,43 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 
 ---
 
+### v1.7.0 (March 2026) ✅
+**Theme: Interactive Intelligence**
+
+- **Multi-Provider Chat**: Gemini, Anthropic, Groq with native tool calling
+- **Session Resume**: Auto-load chat history on startup
+- **Groq Auto-Rotation**: Cascade across models on rate limit
+
+### v1.8.x (April 2026) ✅
+**Theme: Compounding Substrate**
+
+- **Phases 1-7 Shipped**: 7 arteries, deltas, Three Frontiers (GROUND/ALIGN/COMPOUND), business events, convergence, runtime wiring, ALIGN tool, ambient health
+- **Zero-Sanitization Auto-Sync**: Post-commit hook triggers git archive → public repo. No sed patches, no AST surgery.
+- **12 Facade Tools**: ~170 actions consolidated into clean MCP interface
+- **287+ tests**, 0 regressions across all phases
+
+---
+
 ## In Progress
 
-### v1.7.0 (Q1 2026) 🚧
-**Theme: Interactive Intelligence**
+### v1.9.0 (Q2 2026) 🚧
+**Theme: Substrate Visibility & Federation**
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Multi-Provider Chat | Done | Gemini, Anthropic, Groq with native tool calling |
-| Session Resume | Done | Auto-load chat history on startup |
-| Groq Auto-Rotation | Done | Cascade across models on rate limit |
+| cold_start enrichment | In Progress | Session arc + compounding pulse in brain card |
+| brain://cycle resource | In Progress | Weekly cycle state in IDE sidebar |
+| brain://arc resource | In Progress | Session continuity in IDE sidebar |
 | Security Posture Tool | Planned | Governance scoring with shareable report |
 | `nucleus secure` | Planned | One-command security hardening |
+| Peer-to-Peer Federation | Planned | Connect multiple Nucleus instances |
 
 ---
 
 ## Planned
 
-### v1.8.0 (Q2 2026)
-**Theme: Federation & Channels**
-
-- **Peer-to-Peer Federation**: Connect multiple Nucleus instances
-- **Distributed Engrams**: Share memory across federated nodes
-- **Messaging Bridge**: Discord, Slack, Telegram channel integration
-- **Cross-Instance Tasks**: Route tasks to specialized nodes
-
-### v1.9.0 (Q3 2026)
-**Theme: Enterprise**
+### v2.0.0 (Q3 2026)
+**Theme: Enterprise & Scale**
 
 - **RBAC**: Role-based access control for teams
 - **SSO Integration**: SAML/OIDC authentication
@@ -119,7 +129,7 @@ These are exploratory items not committed to a release:
 
 ## Release Cadence
 
-- **Patch Releases** (1.6.x): As needed for bug fixes
+- **Patch Releases** (1.8.x): As needed for bug fixes
 - **Minor Releases** (1.x.0): Monthly feature releases
 - **Major Releases** (x.0.0): Quarterly milestone releases
 
