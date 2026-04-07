@@ -115,6 +115,31 @@ def register_resources(mcp, helpers):
         except Exception as e:
             return json.dumps({"error": str(e)})
 
+    @mcp.resource("brain://cycle")
+    def resource_cycle() -> str:
+        """Current compounding cycle — weekly progress tracking. Subscribable."""
+        try:
+            from .runtime.common import get_brain_path
+            brain = get_brain_path()
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if cycle_path.exists():
+                return cycle_path.read_text()
+            return json.dumps({"cycle_id": None, "status": "no cycle active"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    @mcp.resource("brain://arc")
+    def resource_arc() -> str:
+        """Session continuity — recent sessions and today's focus. Subscribable."""
+        try:
+            from .runtime.common import get_brain_path
+            from .runtime.session_ops import _load_session_arc
+            brain = get_brain_path()
+            arc = _load_session_arc(brain)
+            return json.dumps(arc, indent=2, default=str)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
 # ============================================================
 # MCP PROMPTS (Pre-built orchestration)
 # ============================================================
