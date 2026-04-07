@@ -1,0 +1,19 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      NUCLEAR_BRAIN_PATH:
+        type: string
+        default: ".brain"
+        description: "Path to .brain/ directory for persistent storage"
+    required: []
+  commandFunction:
+    |-
+    (config) => ({
+      command: "uvx",
+      args: ["nucleus-mcp"],
+      env: {
+        NUCLEAR_BRAIN_PATH: config.NUCLEAR_BRAIN_PATH || ".brain"
+      }
+    })

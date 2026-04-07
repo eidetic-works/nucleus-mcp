@@ -1,0 +1,21 @@
+{
+  "manifest_version": "0.1",
+  "name": "nucleus-mcp",
+  "display_name": "Nucleus MCP",
+  "version": "1.8.0",
+  "description": "AI reliability that compounds — 114 MCP tools for persistent memory, task orchestration, governance, compliance, and training pipelines. GROUND verifies, ALIGN corrects, COMPOUND learns.",
+  "author": {
+    "name": "eidetic-works"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "mcp_server_nucleus",
+    "mcp_config": {
+      "command": "uvx",
+      "args": ["nucleus-mcp"],
+      "env": {
+        "NUCLEAR_BRAIN_PATH": ".brain"
+      }
+    }
+  }
+}

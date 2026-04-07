@@ -44,8 +44,17 @@ scripts/test-metrics-immediate.py export-ignore
 scripts/test_e2e_critical_path.py export-ignore
 scripts/monitor_terminal_sync.py export-ignore
 scripts/terminal_sync.sh export-ignore
-scripts/telemetry*.sh export-ignore
-scripts/setup-*.sh export-ignore
+# ── Telemetry/setup scripts (explicit, no wildcards) ──
+scripts/setup-smart-drain-cron.sh export-ignore
+scripts/setup-telemetry-cron.sh export-ignore
+scripts/telemetry-all.sh export-ignore
+scripts/telemetry-brief.sh export-ignore
+scripts/telemetry-daily-brief.sh export-ignore
+scripts/telemetry-local-demo.sh export-ignore
+scripts/telemetry-status.sh export-ignore
+scripts/telemetry-summary.sh export-ignore
+scripts/telemetry-toggle.sh export-ignore
+scripts/telemetry.sh export-ignore
 
 # Internal Release Manifests
 RELEASE_v1.6.0_EXECUTION_GUIDE.md export-ignore
@@ -70,11 +79,111 @@ FIX_PERPLEXITY_CONFIG.md export-ignore
 INSTALL_PHASE73_NOW.md export-ignore
 FORCE_RELOAD_PHASE73.md export-ignore
 
-# Test Artifacts and Scratch Files
-tests/test_*.py export-ignore
-tests/test_core.py -export-ignore
-tests/test_integration.py -export-ignore
-tests/test_uchg.py -export-ignore
+# ── Private test files (explicit list — NO wildcards) ──
+# New test files are PUBLIC by default. Add here only if private.
+tests/test_agent_dashboard.py export-ignore
+tests/test_agent_pool_hardening.py export-ignore
+tests/test_agent_runtime_telemetry.py export-ignore
+tests/test_agent_runtime_v2.py export-ignore
+tests/test_align_ops.py export-ignore
+tests/test_ambient_health.py export-ignore
+tests/test_anon_telemetry.py export-ignore
+tests/test_artery_1_brief.py export-ignore
+tests/test_artery_2_heartbeat.py export-ignore
+tests/test_artery_3_orchestrator.py export-ignore
+tests/test_artery_4_triggers.py export-ignore
+tests/test_artery_5_hooks.py export-ignore
+tests/test_artery_6_session.py export-ignore
+tests/test_artery_7_compounding.py export-ignore
+tests/test_at_file_expansion.py export-ignore
+tests/test_auth_module.py export-ignore
+tests/test_brain_consolidation.py export-ignore
+tests/test_budget_alerts.py export-ignore
+tests/test_budget_ops.py export-ignore
+tests/test_checkpoint_ops.py export-ignore
+tests/test_cli_agent_commands.py export-ignore
+tests/test_cli_dispatch_coverage.py export-ignore
+tests/test_cli_imports.py export-ignore
+tests/test_cli_output.py export-ignore
+tests/test_cli_v141_agent_native.py export-ignore
+tests/test_combo_cli.py export-ignore
+tests/test_compliance.py export-ignore
+tests/test_dashboard_server.py export-ignore
+tests/test_delta_ops.py export-ignore
+tests/test_depth_tracker.py export-ignore
+tests/test_dispatch_telemetry.py export-ignore
+tests/test_dogfood.py export-ignore
+tests/test_dsor_v060.py export-ignore
+tests/test_engram_tools.py export-ignore
+tests/test_environment_isolation_phase17.py export-ignore
+tests/test_event_bus.py export-ignore
+tests/test_execute_tool.py export-ignore
+tests/test_federation_dsor_integration.py export-ignore
+tests/test_federation_hardening.py export-ignore
+tests/test_fusion_reactor.py export-ignore
+tests/test_god_combos.py export-ignore
+tests/test_governance_consensus.py export-ignore
+tests/test_handler_return_types.py export-ignore
+tests/test_hard_preemption_phase17.py export-ignore
+tests/test_hardening.py export-ignore
+tests/test_heartbeat.py export-ignore
+tests/test_hitl_gates.py export-ignore
+tests/test_interference_detection_phase21.py export-ignore
+tests/test_ipc_identity_phase13.py export-ignore
+tests/test_jwt_auth.py export-ignore
+tests/test_kyc_demo.py export-ignore
+tests/test_locking_metadata.py export-ignore
+tests/test_memory_pipeline.py export-ignore
+tests/test_neural_prioritization_phase20.py export-ignore
+tests/test_otel_export.py export-ignore
+tests/test_outbound_ops.py export-ignore
+tests/test_param_sanitization.py export-ignore
+tests/test_performance.py export-ignore
+tests/test_phase16_bridge.py export-ignore
+tests/test_phase16_security.py export-ignore
+tests/test_phase3_frontiers.py export-ignore
+tests/test_phase4_business.py export-ignore
+tests/test_phase5_convergence.py export-ignore
+tests/test_phase73_resilience.py export-ignore
+tests/test_pm_view.py export-ignore
+tests/test_pre_launch_validation.py export-ignore
+tests/test_proactive_hooks.py export-ignore
+tests/test_profiling.py export-ignore
+tests/test_prometheus_dispatch.py export-ignore
+tests/test_prometheus.py export-ignore
+tests/test_pulse.py export-ignore
+tests/test_rate_limiting.py export-ignore
+tests/test_recovery.py export-ignore
+tests/test_refactor_integrity.py export-ignore
+tests/test_release_verification.py export-ignore
+tests/test_resource_quarantine_phase14.py export-ignore
+tests/test_resume_fallback_phase17.py export-ignore
+tests/test_routing_fuzzer.py export-ignore
+tests/test_secret_scrubber.py export-ignore
+tests/test_secrets.py export-ignore
+tests/test_self_healing_v2.py export-ignore
+tests/test_session_resume.py export-ignore
+tests/test_session_security_phase15.py export-ignore
+tests/test_session_signing.py export-ignore
+tests/test_siphon_engine.py export-ignore
+tests/test_sovereign.py export-ignore
+tests/test_stale_lock.py export-ignore
+tests/test_stdio_server_facades.py export-ignore
+tests/test_strategic_plan_validation.py export-ignore
+tests/test_substrate_wiring.py export-ignore
+tests/test_summon_integrity_phase17.py export-ignore
+tests/test_sync_debug.py export-ignore
+tests/test_sync_ops.py export-ignore
+tests/test_tasks_debug.py export-ignore
+tests/test_text_tool_patterns.py export-ignore
+tests/test_tool_enforcement.py export-ignore
+tests/test_tool_recommender.py export-ignore
+tests/test_tool_registration.py export-ignore
+tests/test_tools.py export-ignore
+tests/test_trace_and_weighting_phase19.py export-ignore
+tests/test_trace_viewer.py export-ignore
+tests/test_undo_and_tracker.py export-ignore
+tests/test_windows_compat.py export-ignore
 # Test helpers with hardcoded paths
 tests/update_playbook.py export-ignore
 tests/update_sync_playbook.py export-ignore
@@ -166,6 +275,7 @@ src/mcp_server_nucleus/runtime/llm_tiers.json export-ignore
 
 # ── SOVEREIGN: Family Architecture (2026-03-17) ──
 # Core IP. Never public.
+src/mcp_server_nucleus/sovereign/ export-ignore
 src/mcp_server_nucleus/runtime/archive_pipeline.py export-ignore
 src/mcp_server_nucleus/tools/archive.py export-ignore
 scripts/train_third_brother.py export-ignore

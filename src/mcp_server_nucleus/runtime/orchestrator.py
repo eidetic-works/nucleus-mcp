@@ -61,36 +61,15 @@ _setup_flywheel_logger()
 logger = logging.getLogger(__name__)
 
 
-class PrivateGraphTrainer:
-    """
-    Interface for Local Fine-Tuning (Path D: Nucleus-GPT).
-    Currently a stub, but architecturally placed for Phase 60.
-    """
-    def __init__(self, brain_path: Path):
-        self.brain_path = brain_path
-        
-    async def train_on_session(self, session_id: str, content: str):
-        """
-        Future: Fine-tune local SLM on this session.
-        Current: Log intent.
-        """
-        logger.info(f"🎓 [TRAINER] Recording session {session_id} to archive")
-        try:
-            archive = ArchivePipeline(brain_path=self.brain_path)
-            archive.record_turn(
-                brother="code",
-                intent=f"Orchestrated session {session_id}",
-                actions=[content[:200] if content else ""],
-                tools_used=[],
-                decisions=[],
-                outcome=f"Session {session_id} completed",
-                signal_absorbed=[],
-                signal_produced=[f"session/{session_id}"],
-                confidence=0.8,
-                context="Orchestrator auto-archive",
-            )
-        except Exception:
-            pass  # Non-blocking
+try:
+    from ..sovereign.orchestrator_ext import PrivateGraphTrainer
+except ImportError:
+    class PrivateGraphTrainer:
+        """Stub — sovereign training not available in this build."""
+        def __init__(self, brain_path: Path):
+            self.brain_path = brain_path
+        async def train_on_session(self, session_id: str, content: str):
+            pass
 
 
 class SwarmsOrchestrator:
@@ -109,14 +88,19 @@ class SwarmsOrchestrator:
         self.trainer = PrivateGraphTrainer(brain_path)
         
         self._active_missions = {}
+        self._local_available = None  # Cached check for Third Brother
         self._local_checked_at = 0.0  # Timestamp of last check
         self._LOCAL_TTL = 300  # Re-check every 5 minutes
         self._load_state()
 
     def _get_best_model(self, job_type: str = "ORCHESTRATION"):
         """Get the best available LLM for the given job type."""
-        from .llm_client import DualEngineLLM
-        return DualEngineLLM(job_type=job_type)
+        try:
+            from ..sovereign.orchestrator_ext import sovereign_get_best_model
+            return sovereign_get_best_model(self, job_type)
+        except ImportError:
+            from .llm_client import DualEngineLLM
+            return DualEngineLLM(job_type=job_type)
 
     def _load_state(self):
         """Load swarm state with BrainLock"""
@@ -281,6 +265,7 @@ CRITICAL: When using files or tools, always search within the Project Root first
 """
                     context["system_prompt"] = awareness_injection + context["system_prompt"]
                     
+                    # 2. Get LLM — prefer Third Brother (local) for routine, Gemini for complex
                     job_type = context.get('job_type', 'ORCHESTRATION')
                     model = self._get_best_model(job_type)
 
