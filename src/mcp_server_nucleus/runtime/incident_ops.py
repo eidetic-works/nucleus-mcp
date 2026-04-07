@@ -15,7 +15,11 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Callable
 
 from .common import get_brain_path
-from .outbound_ops import outbound_record, outbound_fail
+try:
+    from .outbound_ops import outbound_record, outbound_fail
+except ImportError:
+    outbound_record = None
+    outbound_fail = None
 from .error_telemetry import StructuredError
 
 logger = logging.getLogger("nucleus.incident")
