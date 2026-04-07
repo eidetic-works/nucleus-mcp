@@ -34,7 +34,12 @@ from .capabilities.budget_ops import BudgetOps
 from .llm_intent_analyzer import LLMIntentAnalyzer, IntentAnalysisResult, get_intent_analyzer
 from .llm_tool_validator import LLMToolValidator, ValidationResult, get_tool_validator
 from .llm_tool_enforcer import LLMToolEnforcer, EnforcementResult, get_tool_enforcer
-from .llm_pattern_learner import LLMPatternLearner, LearnedPattern, get_pattern_learner
+try:
+    from .llm_pattern_learner import LLMPatternLearner, LearnedPattern, get_pattern_learner
+except ImportError:
+    LLMPatternLearner = None
+    LearnedPattern = None
+    get_pattern_learner = None
 # Phase 72: Autonomous Tool Discovery
 from .tool_recommender import ToolRecommender, ToolRecommendation, get_tool_recommender
 # Phase 73: Production-Grade Hardening

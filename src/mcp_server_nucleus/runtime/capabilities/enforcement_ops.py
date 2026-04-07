@@ -9,7 +9,10 @@ Provides MCP tools for monitoring and managing tool calling enforcement.
 from typing import Dict, Any, List
 from .base import Capability
 from ..llm_tool_enforcer import get_tool_enforcer
-from ..llm_pattern_learner import get_pattern_learner
+try:
+    from ..llm_pattern_learner import get_pattern_learner
+except ImportError:
+    get_pattern_learner = None
 from ..llm_intent_analyzer import get_intent_analyzer
 
 
