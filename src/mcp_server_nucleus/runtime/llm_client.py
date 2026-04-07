@@ -511,8 +511,7 @@ class DualEngineLLM:
     @staticmethod
     def _safe_text(obj) -> str:
         """Extract .text from a Gemini response/chunk, suppressing SDK warnings."""
-        import io
-        import contextlib
+        import io, contextlib
         with contextlib.redirect_stderr(io.StringIO()):
             return getattr(obj, 'text', None) or ""
 
@@ -1416,9 +1415,17 @@ def get_llm_client(
     if provider == "groq":
         return GroqLLM(**kwargs)
 
-        return LocalLLM(**kwargs)
+    if provider in ("local", "third-brother", "ollama"):
+        try:
+            from ..sovereign.local_llm import LocalLLM
+            return LocalLLM(**kwargs)
+        except ImportError:
+            raise ValueError(
+                "Local provider not available in this build. "
+                "Supported values: 'gemini', 'anthropic', 'groq'."
+            )
 
     raise ValueError(
         f"Unknown LLM provider '{provider}'. "
-        "Supported values: 'gemini', 'anthropic', 'groq'."
+        "Supported values: 'gemini', 'anthropic', 'groq', 'local'."
     )

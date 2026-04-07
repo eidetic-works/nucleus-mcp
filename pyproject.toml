@@ -17,19 +17,21 @@ dependencies = [
     "fastmcp",
     "cffi",
     "watchdog>=6.0.0",
+    "google-cloud-firestore>=2.26.0",
     "duckduckgo-search>=8.1.1",
     "beautifulsoup4>=4.14.3",
     "nest_asyncio",
     "cryptography>=46.0.6",
     "pyyaml>=6.0.3",
+    "xattr; sys_platform != 'win32'",
     "opentelemetry-sdk>=1.40.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.40.0",
 ]
 
 [project.optional-dependencies]
 full = [
-    "google-genai",
-    "google-cloud-firestore>=2.26.0",
+    "fastmcp",
+    "google-genai"
 ]
 postgres = [
     "psycopg2-binary"
@@ -74,11 +76,3 @@ target-version = "py310"
 
 [tool.ruff.lint]
 ignore = ["E402", "E701", "E712", "E741", "F841", "E722", "E702", "F401", "F541"]
-
-[tool.ruff.lint.per-file-ignores]
-# These files reference sovereign functions stripped during public sync
-"src/mcp_server_nucleus/cli.py" = ["F821"]
-"src/mcp_server_nucleus/runtime/daemon.py" = ["F821"]
-"src/mcp_server_nucleus/runtime/engram_hooks.py" = ["F821"]
-"src/mcp_server_nucleus/runtime/llm_client.py" = ["F821"]
-"src/mcp_server_nucleus/runtime/orchestrator.py" = ["F821"]

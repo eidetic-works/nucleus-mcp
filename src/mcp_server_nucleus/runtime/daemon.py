@@ -299,6 +299,7 @@ class DaemonManager:
             # ── Training Conductor check every ~5 min (60 ticks * 5s) ──
             if tick_count % 60 == 0:
                 try:
+                    from .archive_pipeline import ArchivePipeline
                     archive = ArchivePipeline(brain_path=self.brain_path)
                     t_status = archive.training_status()
                     na = t_status.get("next_action", {})
