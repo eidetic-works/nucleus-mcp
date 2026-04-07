@@ -400,7 +400,7 @@ async def async_dispatch(action: str, params: dict, router: Dict[str, Callable],
 
     t0 = time.perf_counter()
     try:
-        if asyncio.iscoroutinefunction(handler):
+        if inspect.iscoroutinefunction(handler):
             result = await handler(**params)
         else:
             result = handler(**params)

@@ -10,6 +10,7 @@ Strategic Role:
 """
 
 import asyncio
+import inspect
 import logging
 from pathlib import Path
 from typing import Callable, List, Dict
@@ -95,7 +96,7 @@ class AsyncFileWatcher:
                             self._last_mtimes[p] = current_mtime
                             # Trigger callback
                             logger.debug(f"File changed: {p.name}")
-                            if asyncio.iscoroutinefunction(self.callback):
+                            if inspect.iscoroutinefunction(self.callback):
                                 await self.callback(p)
                             else:
                                 self.callback(p)
