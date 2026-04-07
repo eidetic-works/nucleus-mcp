@@ -58,6 +58,7 @@ build/
 *.pem
 *.key
 secrets/
+.mcpregistry_*_token
 
 # Cloudflare local dev cache
 .wrangler/
