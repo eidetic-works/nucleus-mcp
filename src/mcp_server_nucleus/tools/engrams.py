@@ -27,10 +27,16 @@ def register(mcp, helpers):
     )
     from ..runtime.morning_brief_ops import _morning_brief_impl
     from ..runtime.engram_hooks import get_hook_metrics_summary
-    from ..runtime.compounding_loop import (
-        _compounding_loop_status_impl, _end_of_day_capture_impl,
-        _session_start_inject_impl, _weekly_consolidation_impl,
-    )
+    try:
+        from ..runtime.compounding_loop import (
+            _compounding_loop_status_impl, _end_of_day_capture_impl,
+            _session_start_inject_impl, _weekly_consolidation_impl,
+        )
+    except ImportError:
+        _compounding_loop_status_impl = None
+        _end_of_day_capture_impl = None
+        _session_start_inject_impl = None
+        _weekly_consolidation_impl = None
     from ..tool_tiers import get_tier_info, is_tool_allowed, tier_manager
     from ..runtime.schema_gen import generate_tool_schema
 
@@ -84,6 +90,8 @@ def register(mcp, helpers):
         })
 
     def _h_compounding_status():
+        if _compounding_loop_status_impl is None:
+            return make_response(False, error="Compounding loop not available in this build")
         result = _compounding_loop_status_impl()
         return make_response(True, data={
             "formatted": result.get("formatted", ""),
@@ -94,6 +102,8 @@ def register(mcp, helpers):
         })
 
     def _h_session_inject():
+        if _session_start_inject_impl is None:
+            return make_response(False, error="Compounding loop not available in this build")
         result = _session_start_inject_impl()
         return make_response(True, data={
             "context": result.get("context", ""),
@@ -338,9 +348,9 @@ def register(mcp, helpers):
         "morning_brief": _h_morning_brief,
         "hook_metrics": lambda: make_response(True, data=get_hook_metrics_summary()),
         "compounding_status": _h_compounding_status,
-        "end_of_day": lambda summary, key_decisions=None, blockers=None: make_response(True, data=_end_of_day_capture_impl(summary, key_decisions, blockers)),
+        "end_of_day": lambda summary, key_decisions=None, blockers=None: make_response(False, error="Compounding loop not available in this build") if _end_of_day_capture_impl is None else make_response(True, data=_end_of_day_capture_impl(summary, key_decisions, blockers)),
         "session_inject": _h_session_inject,
-        "weekly_consolidate": lambda dry_run=True: make_response(True, data=_weekly_consolidation_impl(dry_run)),
+        "weekly_consolidate": lambda dry_run=True: make_response(False, error="Compounding loop not available in this build") if _weekly_consolidation_impl is None else make_response(True, data=_weekly_consolidation_impl(dry_run)),
         "list_decisions": _h_list_decisions,
         "list_snapshots": _h_ledger_snapshots,
         "metering_summary": _h_metering,
