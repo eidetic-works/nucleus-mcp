@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class AlertLevel(str, Enum):
@@ -300,7 +300,7 @@ class TrendAnalyzer:
         if not self.metrics_file or not self.metrics_file.exists():
             return []
         
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=hours)
         trends = []
         
         with open(self.metrics_file, encoding="utf-8") as f:
@@ -308,7 +308,7 @@ class TrendAnalyzer:
                 try:
                     entry = json.loads(line.strip())
                     ts = datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
-                    if ts.replace(tzinfo=None) >= cutoff:
+                    if ts >= cutoff:
                         value = entry["metrics"].get(metric)
                         if value is not None:
                             trends.append({
@@ -348,7 +348,7 @@ class TrendAnalyzer:
         if not self.metrics_file or not self.metrics_file.exists():
             return
         
-        cutoff = datetime.utcnow() - timedelta(days=self.retention_days)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(days=self.retention_days)
         kept_lines = []
         
         with open(self.metrics_file, encoding="utf-8") as f:
@@ -356,7 +356,7 @@ class TrendAnalyzer:
                 try:
                     entry = json.loads(line.strip())
                     ts = datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
-                    if ts.replace(tzinfo=None) >= cutoff:
+                    if ts >= cutoff:
                         kept_lines.append(line)
                 except (json.JSONDecodeError, KeyError, ValueError):
                     continue

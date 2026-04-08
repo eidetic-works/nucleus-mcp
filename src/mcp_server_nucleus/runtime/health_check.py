@@ -19,7 +19,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger("nucleus.health_check")
 
@@ -288,7 +288,7 @@ def get_health_status(include_details: bool = True) -> Dict[str, Any]:
     
     response = {
         "status": overall,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "response_time_ms": round(elapsed_ms, 2),
         "version": "1.0.0",
     }
@@ -307,7 +307,7 @@ def get_liveness() -> Dict[str, Any]:
     """
     return {
         "status": "alive",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
     }
 
 
@@ -323,7 +323,7 @@ def get_readiness() -> Dict[str, Any]:
     return {
         "ready": ready,
         "status": health["status"],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
     }
 
 

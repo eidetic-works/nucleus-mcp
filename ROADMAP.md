@@ -66,8 +66,8 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 
 - **Phases 1-7 Shipped**: 7 arteries, deltas, Three Frontiers (GROUND/ALIGN/COMPOUND), business events, convergence, runtime wiring, ALIGN tool, ambient health
 - **Zero-Sanitization Auto-Sync**: Post-commit hook triggers git archive → public repo. No sed patches, no AST surgery.
-- **12 Facade Tools**: ~170 actions consolidated into clean MCP interface
-- **287+ tests**, 0 regressions across all phases
+- **13 Facade Tools**: 114 actions consolidated into clean MCP interface
+- **2034+ tests**, 0 regressions across all phases
 
 ---
 
@@ -97,7 +97,7 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 - **Audit Export**: Cryptographically signed compliance reports
 - **SLA Monitoring**: Uptime and latency guarantees
 
-### v2.0.0 (Q4 2026)
+### v2.1.0 (Q4 2026)
 **Theme: Production Scale**
 
 - **Rust Core**: Performance-critical paths in Rust
@@ -146,4 +146,3 @@ These are exploratory items not committed to a release:
 *Roadmap subject to change based on community feedback and strategic priorities.*
 
 *— The Nucleus Team*
-# test pre-commit
