@@ -176,10 +176,12 @@ def register_resources(mcp, helpers):
             training_dir = brain / "training"
             turns = 0
             prefs = 0
-            if (training_dir / "loop_turns.jsonl").exists():
-                turns = sum(1 for _ in open(training_dir / "loop_turns.jsonl", encoding="utf-8") if _.strip())
-            if (training_dir / "preference_pairs.jsonl").exists():
-                prefs = sum(1 for _ in open(training_dir / "preference_pairs.jsonl", encoding="utf-8") if _.strip())
+            turns_path = training_dir / "loop_turns.jsonl"
+            prefs_path = training_dir / "preference_pairs.jsonl"
+            if turns_path.exists():
+                turns = sum(1 for line in turns_path.read_text(encoding="utf-8").splitlines() if line.strip())
+            if prefs_path.exists():
+                prefs = sum(1 for line in prefs_path.read_text(encoding="utf-8").splitlines() if line.strip())
             threshold = 50
             return json.dumps({
                 "total_turns": turns,
