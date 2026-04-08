@@ -29,13 +29,6 @@ def _get_archive_path() -> Path:
 # Keeps the last N lines in the active file, archives the rest.
 # Called by weekly consolidation for all growing JSONL files.
 
-_ROTATION_DEFAULTS = {
-    "events.jsonl": 1000,
-    "interaction_log.jsonl": 1000,
-    "error_telemetry.jsonl": 2000,
-}
-
-
 def _rotate_jsonl_if_needed(
     path: Path, keep_lines: int = 1000, max_mb: float = 50.0
 ) -> Dict:
