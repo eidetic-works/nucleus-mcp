@@ -6,7 +6,6 @@
 scripts/sync_public_repo.sh export-ignore
 scripts/validate_public_surface.sh export-ignore
 scripts/llm_review_gate.py export-ignore
-llm_review_findings.json export-ignore
 scripts/publish_pypi.sh export-ignore
 scripts/release.sh export-ignore
 scripts/hygiene.sh export-ignore
@@ -56,24 +55,18 @@ scripts/telemetry-summary.sh export-ignore
 scripts/telemetry-toggle.sh export-ignore
 scripts/telemetry.sh export-ignore
 
-# Internal Release Manifests
-RELEASE_v1.6.0_EXECUTION_GUIDE.md export-ignore
+# Internal Release Manifests (wildcards cover deleted + future files)
 PRE_LAUNCH_VALIDATION.md export-ignore
 PHASE73_*.md export-ignore
 PHASE_*.md export-ignore
 HARDENING_*.md export-ignore
 WINDSURF_*.md export-ignore
+TELEMETRY*.md export-ignore
+RELEASE_v*.md export-ignore
 ANONYMOUS_TELEMETRY_IMPLEMENTATION.md export-ignore
 CLOUD_TELEMETRY_QUICKSTART.md export-ignore
-TELEMETRY_QUICKSTART.md export-ignore
 DATA_MOAT_SUMMARY.md export-ignore
 OBSERVABILITY_PORTAL.md export-ignore
-TELEMETRY_LAUNCH_VERIFICATION.md export-ignore
-TELEMETRY_PIPELINE_README.md export-ignore
-TELEMETRY_ZERO_TOUCH_SETUP.md export-ignore
-TELEMETRY_STATUS_*.md export-ignore
-TELEMETRY_TOGGLE_GUIDE.md export-ignore
-RELEASE_v*.md export-ignore
 WINDOWS_CI_SUMMARY.md export-ignore
 FIX_PERPLEXITY_CONFIG.md export-ignore
 INSTALL_PHASE73_NOW.md export-ignore
@@ -213,7 +206,6 @@ patch_orchestration.py export-ignore
 install_phase73.sh export-ignore
 demo_governance.sh export-ignore
 fuzzer_report.txt export-ignore
-test3.txt export-ignore
 tests/test3.txt export-ignore
 hr_report_sample.txt export-ignore
 *.log export-ignore
@@ -227,14 +219,8 @@ docs/TITAN_HANDOVER_PROTOCOL.md export-ignore
 docs/TELEMETRY_SCALING_PLAN.md export-ignore
 docs/TELEMETRY_UPSTASH_WORKER.md export-ignore
 AGENTS.md export-ignore
-GEMINI.md export-ignore
-NOTES.md export-ignore
-TODO.md export-ignore
 docs/internal/ export-ignore
 docs/strategy/ export-ignore
-docs/COMPARISON.md export-ignore
-docs/REDDIT_LAUNCH_POST.md export-ignore
-docs/architecture/BINARY_SHIELDING_TRACK_1_5.md export-ignore
 docs/COORDINATOR_AUTOPILOT.md export-ignore
 docs/DEMO_STORYBOARD.md export-ignore
 docs/index.html export-ignore
@@ -287,6 +273,9 @@ src/mcp_server_nucleus/runtime/god_combos/fusion_reactor.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/pulse_and_polish.py export-ignore
 src/mcp_server_nucleus/runtime/god_combos/self_healing_v2.py export-ignore
 src/mcp_server_nucleus/runtime/siphon_engine.py export-ignore
+
+# Marketplace assets (internal — used for listing submissions)
+assets/ export-ignore
 
 # Infrastructure/State
 engrams/ export-ignore
