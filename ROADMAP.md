@@ -89,7 +89,9 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 | Brain federation | Done | Portable Delta export/import with trust ladder |
 | Compounding Score v2 | Done | 5-dimension scoring (knowledge, frontier, velocity, continuity, training) |
 
-**Totals:** 13 MCP resources, 6 prompts, 1921+ tests
+| Layer 0: Conversation Capture | Done | Streaming JSONL parser for 541 Claude Code sessions (912MB). SFT pairs, DPO from corrections, 4 MCP actions, 6h ambient daemon. |
+
+**Totals:** 13 MCP resources, 6 prompts, 20 session actions, 1958+ tests
 
 ### v1.10.0 (Q2 2026) 🚧
 **Theme: Security & Scale**
