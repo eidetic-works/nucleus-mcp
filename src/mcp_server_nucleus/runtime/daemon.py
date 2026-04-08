@@ -115,6 +115,7 @@ class DaemonManager:
         from .jobs import health_job, orchestrator_job, meta_optimizer_job, analytics_job
         from .jobs import sunday_bundle_job, twin_routine_job, smart_drain_job
         from .jobs import conversation_ingest_job
+        from .jobs import tb_compound_job
 
         jobs = [
             ScheduledJob("training_refresh", ScheduleType.DAILY, "02:00",
@@ -160,6 +161,9 @@ class DaemonManager:
             ScheduledJob("conversation_ingest", ScheduleType.INTERVAL, "6h",
                          handler=conversation_ingest_job.run_conversation_ingest,
                          resource_level=ResourceLevel.MEDIUM, timeout_seconds=1800),
+            ScheduledJob("tb_compound", ScheduleType.INTERVAL, "8h",
+                         handler=tb_compound_job.run_tb_compound,
+                         resource_level=ResourceLevel.HIGH, timeout_seconds=7200),
         ]
 
         for job in jobs:
