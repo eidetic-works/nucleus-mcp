@@ -25,6 +25,78 @@ def _get_archive_path() -> Path:
     return archive_path
 
 
+# ── JSONL Rotation ──
+# Keeps the last N lines in the active file, archives the rest.
+# Called by weekly consolidation for all growing JSONL files.
+
+_ROTATION_DEFAULTS = {
+    "events.jsonl": 1000,
+    "interaction_log.jsonl": 1000,
+    "error_telemetry.jsonl": 2000,
+}
+
+
+def _rotate_jsonl_if_needed(
+    path: Path, keep_lines: int = 1000, max_mb: float = 50.0
+) -> Dict:
+    """Rotate a JSONL file if it exceeds max_mb.
+
+    Archives old lines to .brain/archive/{subdir}/{stem}_{YYYYMMDD}.jsonl,
+    keeping the last keep_lines in the active file.
+    """
+    if not path.exists():
+        return {"rotated": False, "reason": "file_missing"}
+
+    size_mb = path.stat().st_size / (1024 * 1024)
+    if size_mb < max_mb:
+        return {"rotated": False, "reason": "under_threshold", "size_mb": round(size_mb, 2)}
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if len(lines) <= keep_lines:
+        return {"rotated": False, "reason": "few_lines", "count": len(lines)}
+
+    to_archive = lines[:-keep_lines]
+    to_keep = lines[-keep_lines:]
+
+    # Archive destination: .brain/archive/{parent_name}/{stem}_{date}.jsonl
+    subdir = path.parent.name  # e.g. "ledger" or "metrics"
+    stamp = time.strftime("%Y%m%d")
+    archive_dir = _get_archive_path() / subdir
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive_file = archive_dir / f"{path.stem}_{stamp}.jsonl"
+
+    with open(archive_file, "a", encoding="utf-8") as f:
+        f.write("\n".join(to_archive) + "\n")
+
+    path.write_text("\n".join(to_keep) + "\n", encoding="utf-8")
+
+    logger.info(
+        f"[rotation] {path.name}: archived {len(to_archive)} lines, kept {len(to_keep)}"
+    )
+    return {
+        "rotated": True,
+        "archived_lines": len(to_archive),
+        "kept_lines": len(to_keep),
+        "archive_file": str(archive_file),
+    }
+
+
+def _rotate_all_jsonl() -> List[Dict]:
+    """Rotate all known JSONL files that exceed size threshold."""
+    brain = get_brain_path()
+    results = []
+    targets = {
+        brain / "ledger" / "events.jsonl": 1000,
+        brain / "ledger" / "interaction_log.jsonl": 1000,
+        brain / "metrics" / "error_telemetry.jsonl": 2000,
+    }
+    for path, keep in targets.items():
+        result = _rotate_jsonl_if_needed(path, keep_lines=keep)
+        result["file"] = path.name
+        results.append(result)
+    return results
+
+
 def _archive_resolved_files() -> Dict:
     """Archive all .resolved.* backup files to archive/resolved/.
     
