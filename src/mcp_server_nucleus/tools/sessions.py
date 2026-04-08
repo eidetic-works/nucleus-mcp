@@ -31,6 +31,10 @@ def register(mcp, helpers):
         _brain_checkpoint_task_impl, _brain_resume_from_checkpoint_impl,
         _brain_generate_handoff_summary_impl
     )
+    from ..runtime.conversation_ops import (
+        ingest_conversations, search_conversations,
+        list_conversations, conversation_stats,
+    )
 
     def _h_save(context, active_task=None, pending_decisions=None,
                 breadcrumbs=None, next_steps=None):
@@ -80,6 +84,10 @@ def register(mcp, helpers):
         "checkpoint": lambda task_id, step=None, progress_percent=None, context=None, artifacts=None, resumable=True: _wrap_str(_brain_checkpoint_task_impl(task_id, step, progress_percent, context, artifacts, resumable)),
         "resume_checkpoint": lambda task_id: _wrap_str(_brain_resume_from_checkpoint_impl(task_id)),
         "handoff_summary": lambda task_id, summary, key_decisions=None, handoff_notes="": _wrap_str(_brain_generate_handoff_summary_impl(task_id, summary, key_decisions, handoff_notes)),
+        "ingest_conversations": lambda mode="incremental", session_id="", limit=0, dry_run=False: make_response(True, data=ingest_conversations(mode=mode, session_id=session_id, limit=limit, dry_run=dry_run)),
+        "search_conversations": lambda query="", limit=20, session_id="", date_from="", date_to="": make_response(True, data=search_conversations(query=query, limit=limit, session_id=session_id, date_from=date_from, date_to=date_to)),
+        "list_conversations": lambda limit=50, offset=0, sort="recent": make_response(True, data=list_conversations(limit=limit, offset=offset, sort=sort)),
+        "conversation_stats": lambda: make_response(True, data=conversation_stats()),
     }
 
     @mcp.tool()
@@ -103,6 +111,10 @@ Actions:
   checkpoint       - Save task checkpoint. params: {task_id, step?, progress_percent?, context?, artifacts?, resumable?}
   resume_checkpoint - Resume from checkpoint. params: {task_id}
   handoff_summary  - Generate handoff summary. params: {task_id, summary, key_decisions?, handoff_notes?}
+  ingest_conversations - Ingest Claude Code JSONL transcripts. params: {mode?: "incremental"|"batch"|"single", session_id?, limit?, dry_run?}
+  search_conversations - Search ingested conversations. params: {query, limit?, session_id?, date_from?, date_to?}
+  list_conversations   - List ingested sessions. params: {limit?, offset?, sort?: "recent"|"size"|"turns"}
+  conversation_stats   - Aggregate conversation corpus statistics
 """
         return dispatch(action, params, ROUTER, "nucleus_sessions")
 
