@@ -11,6 +11,11 @@ import time
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
+try:
+    from .. import __version__
+except ImportError:
+    __version__ = "1.8.8"
+
 from .common import get_brain_path
 from .event_ops import _emit_event
 
@@ -118,7 +123,7 @@ def _save_session(context: str, active_task: Optional[str] = None,
         
         session = {
             "schema_version": "1.0",
-            "nucleus_version": "1.0.7",
+            "nucleus_version": __version__,
             "id": session_id,
             "context": context,
             "active_task": active_task or "Not specified",
@@ -220,8 +225,8 @@ def _resume_session(session_id: Optional[str] = None) -> Dict[str, Any]:
         warnings = []
         if session.get("schema_version") != "1.0":
              warnings.append(f"Schema mismatch: Session uses v{session.get('schema_version', 'unknown')}, System uses v1.0")
-        if session.get("nucleus_version") != "1.0.7":
-             warnings.append(f"Nucleus update: Session from v{session.get('nucleus_version', 'unknown')}, System is v1.0.7")
+        if session.get("nucleus_version") != __version__:
+             warnings.append(f"Nucleus update: Session from v{session.get('nucleus_version', 'unknown')}, System is v{__version__}")
 
         created_str = session.get("created_at", "")
         # Simple recent check 
