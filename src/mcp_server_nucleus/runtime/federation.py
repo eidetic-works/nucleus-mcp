@@ -29,7 +29,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
@@ -398,7 +398,7 @@ class DiscoveryManager:
                 peer = FederationPeer(peer_id=peer_id, address=f"{host}:{port}", region="unknown")
                 self.state.peers[peer_id] = peer
                 peer.status = PeerStatus.ONLINE
-                peer.last_heartbeat = datetime.utcnow()
+                peer.last_heartbeat = datetime.now(tz=timezone.utc)
                 if self.on_peer_joined:
                     self.on_peer_joined(peer)
             except Exception as e:
@@ -428,7 +428,7 @@ class DiscoveryManager:
                 break
     
     async def _probe_round(self) -> None:
-        now = datetime.utcnow()
+        now = datetime.now(tz=timezone.utc)
         for peer in list(self.state.peers.values()):
             if peer.peer_id == self.config.brain_id:
                 continue
@@ -608,7 +608,7 @@ class SyncManager:
                 return SyncResult(True, peer_id, 0, 0, (time.perf_counter() - start_time) * 1000, local_root)
             
             self.state.vector_clock = self.state.vector_clock.merge(peer.vector_clock).increment(self.config.brain_id)
-            peer.last_sync = datetime.utcnow()
+            peer.last_sync = datetime.now(tz=timezone.utc)
             
             return SyncResult(True, peer_id, 0, 0, (time.perf_counter() - start_time) * 1000, self.merkle_tree.get_root())
         finally:
@@ -915,7 +915,7 @@ class FederationEngine:
             peer = FederationPeer(peer_id=peer_id, address=f"{host}:{port}", region="unknown")
             self.state.peers[peer_id] = peer
             peer.status = PeerStatus.ONLINE
-            peer.last_heartbeat = datetime.utcnow()
+            peer.last_heartbeat = datetime.now(tz=timezone.utc)
             return {"success": True, "peers": len(self.state.peers)}
         except Exception as e:
             return {"success": False, "error": str(e)}

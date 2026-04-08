@@ -15,7 +15,7 @@ import json
 import logging
 import os
 import platform
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -25,7 +25,7 @@ logger = logging.getLogger("nucleus.sovereign")
 def generate_sovereign_status(brain_path: Path) -> Dict[str, Any]:
     """Generate comprehensive sovereignty status report."""
     report = {
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(tz=timezone.utc).isoformat(),
         "brain_path": str(brain_path),
         "sections": {},
     }

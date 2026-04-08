@@ -56,7 +56,7 @@ Two commands. Nucleus is running. AI outputs are now verified.
 
 ## What It Does
 
-**114 MCP tools** across 14 facades:
+**114 MCP tools** across 13 facades:
 
 - **GROUND** — Execution verification (5 tiers: diff, syntax, imports, tests, runtime)
 - **ALIGN** — Human corrections (verdict + delta + DPO + event in one call)
@@ -83,7 +83,7 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 | | Free | Pro |
 |---|---|---|
-| 12 tools, 8 resources, 3 prompts | Yes | Yes |
+| 13 tools, 10 resources, 3 prompts | Yes | Yes |
 | Persistent memory | Yes | Yes |
 | Governance & HITL | Yes | Yes |
 | Audit trails (DSoR) | Yes | Yes |

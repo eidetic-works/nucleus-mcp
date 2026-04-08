@@ -8,7 +8,7 @@ The report answers: "What did the AI agent decide, why, and who approved it?"
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -35,7 +35,7 @@ def generate_audit_report(
     """
     report = {
         "title": "Nucleus Agent OS — Audit Trail Report",
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(tz=timezone.utc).isoformat(),
         "brain_path": str(brain_path),
         "sections": {},
     }
@@ -137,7 +137,7 @@ def _collect_events(brain_path: Path, since_hours: Optional[float]) -> Dict[str,
     cutoff = None
     if since_hours:
         from datetime import timedelta
-        cutoff = datetime.utcnow() - timedelta(hours=since_hours)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=since_hours)
 
     for f in sorted(ledger_dir.glob("events*.jsonl")):
         try:
@@ -152,7 +152,7 @@ def _collect_events(brain_path: Path, since_hours: Optional[float]) -> Dict[str,
                             ts = event.get("timestamp", "")
                             try:
                                 event_time = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-                                if event_time.replace(tzinfo=None) < cutoff:
+                                if event_time < cutoff:
                                     continue
                             except (ValueError, AttributeError):
                                 pass

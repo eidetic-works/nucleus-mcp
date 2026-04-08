@@ -19,7 +19,7 @@ import logging
 import traceback
 from typing import Any, Dict, Optional, Callable
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger("nucleus.error_sanitizer")
 
@@ -205,7 +205,7 @@ def log_operation(
             "user_id": user_id,
             "resource": resource,
             "result": result,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             **extra
         }
     )

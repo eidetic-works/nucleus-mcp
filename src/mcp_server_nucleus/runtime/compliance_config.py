@@ -11,7 +11,7 @@ Supported Jurisdictions:
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -214,7 +214,7 @@ def apply_jurisdiction(brain_path: Path, jurisdiction_id: str) -> Dict[str, Any]
         "jurisdiction": jurisdiction_id,
         "name": config["name"],
         "region": config["region"],
-        "applied_at": datetime.utcnow().isoformat() + "Z",
+        "applied_at": datetime.now(tz=timezone.utc).isoformat(),
         "requirements": config["requirements"],
         "governance_policies": config["governance_policies"],
         "version": "1.0.0",
@@ -231,7 +231,7 @@ def apply_jurisdiction(brain_path: Path, jurisdiction_id: str) -> Dict[str, Any]
         "max_autonomous_actions": config["governance_policies"]["max_autonomous_actions"],
         "blocked_operations": config["governance_policies"]["blocked_operations"],
         "required_approvals": config["governance_policies"]["required_approvals"],
-        "updated_at": datetime.utcnow().isoformat() + "Z",
+        "updated_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     with open(hitl_file, "w") as f:
@@ -245,7 +245,7 @@ def apply_jurisdiction(brain_path: Path, jurisdiction_id: str) -> Dict[str, Any]
         "dsor_format": config["requirements"]["dsor_format"],
         "incident_reporting_hours": config["requirements"]["incident_reporting_hours"],
         "explainability_required": config["requirements"].get("explainability", False),
-        "updated_at": datetime.utcnow().isoformat() + "Z",
+        "updated_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     with open(audit_file, "w") as f:
@@ -371,7 +371,7 @@ def generate_compliance_report(brain_path: Path) -> Dict[str, Any]:
         "checks": checks,
         "issues": issues,
         "issue_count": len(issues),
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(tz=timezone.utc).isoformat(),
     }
 
 

@@ -14,7 +14,7 @@ Run this demo to see Nucleus governance in action (~15 minutes).
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -102,7 +102,7 @@ def run_kyc_review(
         Dict with review result, decision trail, and HITL request
     """
     review_id = f"KYC-{uuid.uuid4().hex[:8].upper()}"
-    started_at = datetime.utcnow().isoformat() + "Z"
+    started_at = datetime.now(tz=timezone.utc).isoformat()
 
     # Step 1: Load application
     app = DEMO_APPLICATIONS.get(application_id)
@@ -122,7 +122,7 @@ def run_kyc_review(
     decision_trail.append({
         "step": 1,
         "action": "Sanctions List Check",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input": {"nationality": app["nationality"]},
         "result": sanctions_result["status"],
         "reasoning": sanctions_result["detail"],
@@ -136,7 +136,7 @@ def run_kyc_review(
     decision_trail.append({
         "step": 2,
         "action": "PEP (Politically Exposed Persons) Check",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input": {"applicant": app["applicant"]},
         "result": pep_result["status"],
         "reasoning": pep_result["detail"],
@@ -150,7 +150,7 @@ def run_kyc_review(
     decision_trail.append({
         "step": 3,
         "action": "Document Validity Check",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input": {"document_type": app["document_type"], "document_number": app["document_number"]},
         "result": doc_result["status"],
         "reasoning": doc_result["detail"],
@@ -164,7 +164,7 @@ def run_kyc_review(
     decision_trail.append({
         "step": 4,
         "action": "Risk Factor Assessment",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input": {"risk_factors": app["risk_factors"], "income": app["annual_income_usd"]},
         "result": risk_result["status"],
         "reasoning": risk_result["detail"],
@@ -178,7 +178,7 @@ def run_kyc_review(
     decision_trail.append({
         "step": 5,
         "action": "Source of Funds Verification",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input": {"source": app["source_of_funds"], "income": app["annual_income_usd"]},
         "result": sof_result["status"],
         "reasoning": sof_result["detail"],
@@ -188,7 +188,7 @@ def run_kyc_review(
 
     # Step 3: Generate Decision
     decision = _make_decision(risk_score, checks)
-    completed_at = datetime.utcnow().isoformat() + "Z"
+    completed_at = datetime.now(tz=timezone.utc).isoformat()
 
     decision_trail.append({
         "step": 6,
