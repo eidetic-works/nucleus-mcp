@@ -140,6 +140,116 @@ def register_resources(mcp, helpers):
         except Exception as e:
             return json.dumps({"error": str(e)})
 
+    @mcp.resource("brain://deltas")
+    def resource_deltas() -> str:
+        """Delta archive summary (7-day window) — pattern extraction from COMPOUND frontier."""
+        try:
+            from .runtime.common import get_brain_path
+            from .runtime.hardening import safe_read_jsonl
+            from datetime import datetime, timezone, timedelta
+            brain = get_brain_path()
+            deltas_path = brain / "deltas" / "deltas.jsonl"
+            if not deltas_path.exists():
+                return json.dumps({"total_deltas": 0})
+            deltas = safe_read_jsonl(deltas_path)
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+            recent = [d for d in deltas if d.get("timestamp", "") >= cutoff]
+            positive = sum(1 for d in recent if d.get("polarity") == "positive")
+            negative = sum(1 for d in recent if d.get("polarity") == "negative")
+            total = len(recent)
+            return json.dumps({
+                "total_deltas": len(deltas),
+                "last_7d": total,
+                "positive": positive,
+                "negative": negative,
+                "compound_rate": round(positive / max(negative, 1), 2),
+            }, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    @mcp.resource("brain://training")
+    def resource_training() -> str:
+        """Training pipeline readiness — SFT/DPO counts and retrain signal."""
+        try:
+            from .runtime.common import get_brain_path
+            brain = get_brain_path()
+            training_dir = brain / "training"
+            turns = 0
+            prefs = 0
+            if (training_dir / "loop_turns.jsonl").exists():
+                turns = sum(1 for _ in open(training_dir / "loop_turns.jsonl", encoding="utf-8") if _.strip())
+            if (training_dir / "preference_pairs.jsonl").exists():
+                prefs = sum(1 for _ in open(training_dir / "preference_pairs.jsonl", encoding="utf-8") if _.strip())
+            threshold = 50
+            return json.dumps({
+                "total_turns": turns,
+                "total_preferences": prefs,
+                "retrain_recommended": (turns + prefs) >= threshold,
+                "threshold": threshold,
+            }, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    @mcp.resource("brain://frontiers")
+    def resource_frontiers() -> str:
+        """Three Frontiers health dashboard — GROUND/ALIGN/COMPOUND in one view."""
+        try:
+            from .runtime.common import get_brain_path
+            from .runtime.hardening import safe_read_jsonl
+            brain = get_brain_path()
+            result = {}
+            # GROUND
+            vlog = brain / "verification_log.jsonl"
+            if vlog.exists():
+                receipts = safe_read_jsonl(vlog)
+                passed = sum(1 for r in receipts if not r.get("tiers_failed"))
+                result["GROUND"] = {
+                    "verified_count": len(receipts),
+                    "pass_rate": round(passed / max(len(receipts), 1), 2),
+                }
+            else:
+                result["GROUND"] = {"verified_count": 0, "pass_rate": 0}
+            # ALIGN
+            vpath = brain / "driver" / "human_verdicts.jsonl"
+            if vpath.exists():
+                verdicts = safe_read_jsonl(vpath)
+                non_pending = [v for v in verdicts if v.get("verdict") != "pending"]
+                accepted = sum(1 for v in non_pending if v.get("verdict") == "accepted")
+                result["ALIGN"] = {
+                    "human_reviews": len(non_pending),
+                    "accept_rate": round(accepted / max(len(non_pending), 1), 2),
+                    "corrections": sum(1 for v in non_pending if v.get("verdict") == "corrected"),
+                }
+            else:
+                result["ALIGN"] = {"human_reviews": 0, "accept_rate": 0, "corrections": 0}
+            # COMPOUND
+            deltas_path = brain / "deltas" / "deltas.jsonl"
+            if deltas_path.exists():
+                deltas = safe_read_jsonl(deltas_path)
+                positive = sum(1 for d in deltas if d.get("polarity") == "positive")
+                result["COMPOUND"] = {
+                    "deltas_recorded": len(deltas),
+                    "compound_rate": round(positive / max(len(deltas) - positive, 1), 2),
+                }
+            else:
+                result["COMPOUND"] = {"deltas_recorded": 0, "compound_rate": 0}
+            return json.dumps(result, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    @mcp.resource("brain://growth")
+    def resource_growth() -> str:
+        """Business function metrics — growth gates and dogfood health."""
+        try:
+            from .runtime.common import get_brain_path
+            brain = get_brain_path()
+            growth_path = brain / "meta" / "growth_metrics.json"
+            if growth_path.exists():
+                return growth_path.read_text()
+            return json.dumps({"gates": {}, "dogfood": {}, "status": "no growth data"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
 # ============================================================
 # MCP PROMPTS (Pre-built orchestration)
 # ============================================================
@@ -170,6 +280,87 @@ def register_prompts(mcp, helpers):
         if _cold_start_prompt:
             return _cold_start_prompt()
         return "Prompt not available"
+
+    @mcp.prompt()
+    def compound_context() -> str:
+        """COMPOUND frontier context — Delta patterns, recurring negatives, learning opportunities."""
+        try:
+            from .runtime.common import get_brain_path
+            from .runtime.hardening import safe_read_jsonl
+            from datetime import datetime, timezone, timedelta
+            brain = get_brain_path()
+            deltas_path = brain / "deltas" / "deltas.jsonl"
+            if not deltas_path.exists():
+                return "No Deltas recorded yet. Start by running tasks and capturing outcomes."
+            deltas = safe_read_jsonl(deltas_path)
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+            recent = [d for d in deltas if d.get("timestamp", "") >= cutoff]
+            negatives = [d for d in recent if d.get("polarity") == "negative"]
+            positives = [d for d in recent if d.get("polarity") == "positive"]
+            lines = [f"## COMPOUND Frontier — Last 7 Days\n"]
+            lines.append(f"**{len(recent)} Deltas** ({len(positives)} positive, {len(negatives)} negative)\n")
+            if negatives:
+                lines.append("### Recurring Negatives\n")
+                for d in negatives[-5:]:
+                    lines.append(f"- {d.get('pattern', d.get('actual_outcome', '?'))[:80]}")
+            lines.append("\n**What should we learn from these patterns?**")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error loading compound context: {e}"
+
+    @mcp.prompt()
+    def align_review() -> str:
+        """ALIGN frontier context — human corrections and what the system should learn."""
+        try:
+            from .runtime.common import get_brain_path
+            from .runtime.hardening import safe_read_jsonl
+            brain = get_brain_path()
+            vpath = brain / "driver" / "human_verdicts.jsonl"
+            if not vpath.exists():
+                return "No human verdicts recorded yet."
+            verdicts = safe_read_jsonl(vpath)
+            corrections = [v for v in verdicts if v.get("verdict") == "corrected"]
+            accepted = [v for v in verdicts if v.get("verdict") == "accepted"]
+            lines = [f"## ALIGN Frontier — Human Review Summary\n"]
+            lines.append(f"**{len(accepted)} accepted, {len(corrections)} corrected** "
+                         f"({round(len(accepted) / max(len(accepted) + len(corrections), 1) * 100)}% accept rate)\n")
+            if corrections:
+                lines.append("### Recent Corrections\n")
+                for c in corrections[-5:]:
+                    lines.append(f"- {c.get('reason', c.get('summary', '?'))[:80]}")
+            lines.append("\n**What should the system learn from these corrections?**")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error loading align context: {e}"
+
+    @mcp.prompt()
+    def weekly_synthesis() -> str:
+        """Full-organism weekly synthesis — all three frontiers + business metrics."""
+        try:
+            from .runtime.common import get_brain_path
+            brain = get_brain_path()
+            sections = ["# Weekly Synthesis\n"]
+            # Cycle status
+            cycle_path = brain / "meta" / "compounding_cycle.json"
+            if cycle_path.exists():
+                cycle = json.loads(cycle_path.read_text())
+                cid = cycle.get("cycle_id", "?")
+                delta = cycle.get("weekly_delta", "?")
+                sections.append(f"**Cycle {cid}** | Delta: {delta}\n")
+            # Frontiers (reuse resource)
+            sections.append("## Frontiers\n")
+            try:
+                frontiers_data = resource_frontiers()
+                f = json.loads(frontiers_data)
+                for name in ("GROUND", "ALIGN", "COMPOUND"):
+                    info = f.get(name, {})
+                    sections.append(f"- **{name}**: {json.dumps(info)}")
+            except Exception:
+                sections.append("- (frontiers data unavailable)")
+            sections.append("\n## What should we DO differently this week?")
+            return "\n".join(sections)
+        except Exception as e:
+            return f"Error generating synthesis: {e}"
 
 def main():
     """Main entry point for the MCP server."""
