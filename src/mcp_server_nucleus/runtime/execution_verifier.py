@@ -12,6 +12,7 @@ Tiers:
   2 — Imports work (python -c "import module")
   3 — Tests pass (pytest on related test files)
   4 — Runtime (start server, hit endpoints, verify responses)
+  5 — Outcome (plan claims vs actual deltas — requires baseline capture)
 
 Each tier is independent. If a tier can't run, it's skipped (not failed).
 Total budget: configurable, default 30s.
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import time
@@ -124,6 +126,20 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         tiers_skipped.append(4)
     elif not runtime_checks:
         tiers_skipped.append(4)
+
+    # ── Tier 5: outcome verification (plan claims vs actual deltas) ──
+    if 5 in enabled_tiers and remaining() > 0:
+        t5_sigs = _tier5_outcome_check(project_root, remaining())
+        signals.extend(t5_sigs)
+        if t5_sigs:
+            if all(s["passed"] for s in t5_sigs):
+                tiers_passed.append(5)
+            else:
+                tiers_failed.append(5)
+        else:
+            tiers_skipped.append(5)
+    elif 5 not in enabled_tiers:
+        tiers_skipped.append(5)
 
     duration = round(time.monotonic() - t0, 2)
     verified = len(tiers_failed) == 0 and len(tiers_passed) > 0
@@ -746,6 +762,186 @@ def _tier4_process_exit(check: dict, project_root: Path,
     except Exception as e:
         return {"check": "process_exit", "cmd": " ".join(cmd),
                 "passed": False, "error": str(e)[:200]}
+
+
+# ---------------------------------------------------------------------------
+# Tier 5 — Outcome Verification (two-phase: baseline + delta comparison)
+# ---------------------------------------------------------------------------
+
+def extract_plan_claims(plan_text: str) -> dict:
+    """Extract measurable claims from plan markdown.
+
+    Returns dict of metric_name → {claimed_before, claimed_after}.
+    Parses Expected Outcome tables first, falls back to inline patterns.
+    """
+    claims = {}
+
+    # Strategy 1: Parse Expected Outcome tables
+    # Match: | Metric | Before | After | rows
+    table_pattern = re.compile(
+        r'\|\s*(\w[\w\s]*?)\s*\|\s*~?([\d,]+)\s*\|\s*~?([\d,]+)\s*\|',
+        re.IGNORECASE
+    )
+    for m in table_pattern.finditer(plan_text):
+        metric_raw = m.group(1).strip().lower()
+        before = int(m.group(2).replace(",", ""))
+        after = int(m.group(3).replace(",", ""))
+        if before == after or after == 0:
+            continue
+        # Normalize metric name
+        metric_name = _normalize_metric_name(metric_raw)
+        if metric_name:
+            claims[metric_name] = {"claimed_before": before, "claimed_after": after}
+
+    # Strategy 2: Inline delta patterns (fallback if no table found)
+    if not claims:
+        for m in re.finditer(r'(\+?~?[\d,]+)\s+new\s+chunks', plan_text, re.IGNORECASE):
+            delta = int(m.group(1).replace(",", "").replace("+", "").replace("~", ""))
+            if delta > 0:
+                claims["chunk_count"] = {"claimed_before": 0, "claimed_after": delta}
+                break
+
+    return claims
+
+
+def _normalize_metric_name(raw: str) -> str | None:
+    """Map table header text to canonical metric name."""
+    raw = raw.lower().strip()
+    if "chunk" in raw:
+        return "chunk_count"
+    if "file" in raw and "index" in raw:
+        return "file_count"
+    if "file" in raw:
+        return "file_count"
+    if "test" in raw:
+        return "test_count"
+    if "coverage" in raw:
+        return "coverage"
+    return None
+
+
+def _measure_metric(metric_name: str, project_root: Path) -> int:
+    """Measure a single metric's current value."""
+    if metric_name == "chunk_count":
+        return _count_chunks(project_root)
+    elif metric_name == "file_count":
+        return _count_files(project_root)
+    return 0
+
+
+def _count_chunks(project_root: Path) -> int:
+    """Count chunks in RAG DB."""
+    import sqlite3
+    db = project_root / ".brain" / "rag_index.db"
+    if not db.exists():
+        return 0
+    try:
+        conn = sqlite3.connect(str(db))
+        count = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+        conn.close()
+        return count
+    except Exception:
+        return 0
+
+
+def _count_files(project_root: Path) -> int:
+    """Count distinct indexed files in RAG DB."""
+    import sqlite3
+    db = project_root / ".brain" / "rag_index.db"
+    if not db.exists():
+        return 0
+    try:
+        conn = sqlite3.connect(str(db))
+        count = conn.execute("SELECT COUNT(DISTINCT file_path) FROM chunks").fetchone()[0]
+        conn.close()
+        return count
+    except Exception:
+        return 0
+
+
+def capture_outcome_baseline(plan_text: str, project_root: Path) -> dict:
+    """Phase 1: Extract claims from plan, snapshot current metrics.
+
+    Call this BEFORE task execution. Writes to .brain/driver/outcome_baseline.json.
+    """
+    from datetime import datetime
+    claims = extract_plan_claims(plan_text)
+    metrics = {}
+    for metric_name, claim in claims.items():
+        actual = _measure_metric(metric_name, project_root)
+        metrics[metric_name] = {
+            "actual": actual,
+            "claimed_before": claim["claimed_before"],
+            "claimed_after": claim["claimed_after"],
+        }
+
+    baseline = {
+        "captured_at": datetime.now().isoformat(),
+        "metrics": metrics,
+    }
+
+    # Write baseline file
+    baseline_dir = project_root / ".brain" / "driver"
+    if baseline_dir.exists():
+        (baseline_dir / "outcome_baseline.json").write_text(
+            json.dumps(baseline, indent=2))
+
+    return baseline
+
+
+def _tier5_outcome_check(project_root: Path,
+                         budget_s: float) -> list[dict]:
+    """Tier 5: Compare plan claims against actual deltas.
+
+    Reads baseline from .brain/driver/outcome_baseline.json (captured before
+    execution), re-measures same metrics, compares deltas.
+
+    Returns [] if no baseline exists (skip, not fail).
+    """
+    baseline_path = project_root / ".brain" / "driver" / "outcome_baseline.json"
+    if not baseline_path.exists():
+        return []
+
+    # Skip stale baselines (older than 24h)
+    age_hours = (time.time() - baseline_path.stat().st_mtime) / 3600
+    if age_hours > 24:
+        return []
+
+    try:
+        baseline = json.loads(baseline_path.read_text())
+    except Exception:
+        return []
+
+    metrics = baseline.get("metrics", {})
+    if not metrics:
+        return []
+
+    signals = []
+    for metric_name, b in metrics.items():
+        actual_now = _measure_metric(metric_name, project_root)
+        actual_delta = actual_now - b["actual"]
+        claimed_delta = b["claimed_after"] - b["claimed_before"]
+
+        if claimed_delta <= 0:
+            continue
+
+        hit_ratio = actual_delta / claimed_delta if claimed_delta else 0
+        passed = hit_ratio >= 0.25
+
+        signals.append({
+            "tier": 5,
+            "check": f"outcome_{metric_name}",
+            "passed": passed,
+            "baseline": b["actual"],
+            "actual_now": actual_now,
+            "actual_delta": actual_delta,
+            "claimed_delta": claimed_delta,
+            "hit_ratio": round(hit_ratio, 2),
+            "detail": f"delta {actual_delta}/{claimed_delta} ({hit_ratio:.0%})"
+                      + ("" if passed else " — PREMATURE VICTORY"),
+        })
+
+    return signals
 
 
 # ---------------------------------------------------------------------------
