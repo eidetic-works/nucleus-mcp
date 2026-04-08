@@ -27,7 +27,7 @@ class MountedServer:
     async def start(self):
         """Starts the external MCP server via stdio."""
         logger.info(f"🚀 Starting Mounted Server: {self.name} ({self.command} {' '.join(self.args)})")
-        self.mounted_at = asyncio.get_event_loop().time()
+        self.mounted_at = asyncio.get_running_loop().time()
         self.process = await asyncio.create_subprocess_exec(
             self.command, *self.args,
             stdin=asyncio.subprocess.PIPE,
