@@ -114,6 +114,7 @@ class DaemonManager:
         from .jobs import driver_job, training_refresh_job, briefing_job, backup_job
         from .jobs import health_job, orchestrator_job, meta_optimizer_job, analytics_job
         from .jobs import sunday_bundle_job, twin_routine_job, smart_drain_job
+        from .jobs import conversation_ingest_job
 
         jobs = [
             ScheduledJob("training_refresh", ScheduleType.DAILY, "02:00",
@@ -156,6 +157,9 @@ class DaemonManager:
                          handler=smart_drain_job.run_smart_drain,
                          resource_level=ResourceLevel.LOW, timeout_seconds=120,
                          requires=["docker"]),
+            ScheduledJob("conversation_ingest", ScheduleType.INTERVAL, "6h",
+                         handler=conversation_ingest_job.run_conversation_ingest,
+                         resource_level=ResourceLevel.MEDIUM, timeout_seconds=1800),
         ]
 
         for job in jobs:
