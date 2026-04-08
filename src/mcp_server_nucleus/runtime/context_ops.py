@@ -14,7 +14,7 @@ from .artifact_ops import _list_artifacts
 try:
     from .. import __version__
 except ImportError:
-    __version__ = "1.0.7"  # Fallback
+    __version__ = "1.8.8"  # Fallback
 
 def _resource_context_impl() -> str:
     """Full context for cold start - auto-visible in sidebar."""
