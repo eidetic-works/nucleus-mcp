@@ -422,6 +422,66 @@ def extract_patterns(
     }
 
 
+# ── Brain Federation: Portable Deltas ──────────────────────────────────
+
+
+def export_portable_deltas(
+    brain: Optional[Path] = None,
+    frontier: Optional[str] = None,
+    min_recurrence: int = 3,
+) -> List[Dict]:
+    """Export recurring Delta patterns as insight-only portable units.
+
+    Strips source_ids and task refs — only the learning transfers.
+    Trust ladder: local patterns (intensity 9) > imported (intensity 6).
+    """
+    patterns = extract_patterns(brain=brain, frontier=frontier, since="30d")
+    portables = []
+    brain_name = (brain or get_brain_path()).name
+    for neg in patterns.get("recurring_negatives", []):
+        if neg["count"] >= min_recurrence:
+            portables.append({
+                "insight": neg["pattern"],
+                "count": neg["count"],
+                "frontier": frontier or "ALL",
+                "source_brain": brain_name,
+            })
+    return portables
+
+
+def import_portable_deltas(
+    deltas: List[Dict],
+    brain: Optional[Path] = None,
+) -> Dict:
+    """Import portable Deltas as Strategy engrams at reduced intensity.
+
+    Imported insights get intensity 6 (lower than local intensity 9),
+    establishing trust: local > shared > defaults.
+    """
+    try:
+        from .engram_ops import _brain_write_engram_impl
+    except ImportError:
+        return {"imported": 0, "error": "engram_ops not available"}
+
+    imported = 0
+    for d in deltas:
+        source = d.get("source_brain", "unknown")
+        insight = d.get("insight", "")
+        count = d.get("count", 0)
+        key_hash = hashlib.md5(f"{source}_{insight}".encode()).hexdigest()[:8]
+        try:
+            _brain_write_engram_impl(
+                key=f"imported_{source}_{key_hash}",
+                value=f"[IMPORTED] {insight} ({count}x from {source})",
+                context="Strategy",
+                intensity=6,
+            )
+            imported += 1
+        except Exception as e:
+            logger.warning(f"[federation] Failed to import delta: {e}")
+    return {"imported": imported, "total": len(deltas)}
+
+
 # ── Event Hook: Auto-record Deltas from specific event patterns ──────────
 
 def delta_event_hook(event_type: str, emitter: str, data: dict):

@@ -54,6 +54,7 @@ class StructuredError:
     message: str
     source_module: str
     severity: str = "ERROR"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    frontier: str = "COMPOUND"  # GROUND, ALIGN, COMPOUND
     context: Dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     stack_trace: Optional[str] = None
@@ -62,6 +63,7 @@ class StructuredError:
         d = {
             "error_id": self.error_id,
             "domain": self.domain.value,
+            "frontier": self.frontier,
             "code": self.code,
             "message": self.message,
             "source_module": self.source_module,
@@ -127,6 +129,20 @@ ERROR_CODES = {
     "E803": ("ENVIRONMENT", "MCP host incompatibility"),
     # Unknown (E9xx)
     "E999": ("UNKNOWN", "Unclassified error"),
+}
+
+
+# ── Frontier mapping: Domain → Three Frontiers ──
+_DOMAIN_TO_FRONTIER = {
+    "LLM": "GROUND",
+    "TOOL_CALLING": "GROUND",
+    "NETWORK": "GROUND",
+    "FILESYSTEM": "ALIGN",
+    "VALIDATION": "ALIGN",
+    "AUTH": "ALIGN",
+    "ENVIRONMENT": "ALIGN",
+    "CONCURRENCY": "COMPOUND",
+    "UNKNOWN": "COMPOUND",
 }
 
 
@@ -327,6 +343,8 @@ class ErrorTelemetry:
             import traceback
             stack_trace = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
 
+        frontier = _DOMAIN_TO_FRONTIER.get(domain_str, "COMPOUND")
+
         error = StructuredError(
             error_id=error_id,
             domain=domain,
@@ -334,6 +352,7 @@ class ErrorTelemetry:
             message=message[:500],
             source_module=source_module,
             severity=severity,
+            frontier=frontier,
             context=context or {},
             stack_trace=stack_trace,
         )
@@ -353,7 +372,26 @@ class ErrorTelemetry:
         # Check alerts
         self._alert_manager.check(self._aggregator)
 
+        # Auto-Delta: significant errors produce learning signals
+        if severity in ("ERROR", "CRITICAL"):
+            self._emit_error_delta(error)
+
         return error
+
+    def _emit_error_delta(self, error: StructuredError):
+        """Produce a Delta from a significant error — errors are learning signals."""
+        try:
+            from .delta_ops import record_delta
+            record_delta(
+                frontier=error.frontier,
+                expected_source=error.source_module,
+                expected_intent="Successful operation",
+                actual_source="error_telemetry",
+                actual_outcome=f"[{error.code}] {error.message[:120]}",
+                insight=f"Error in {error.domain.value} domain",
+            )
+        except Exception:
+            pass  # Delta pipeline failure must never block error recording
 
     def _persist_error(self, error: StructuredError):
         """Persist error to JSONL log."""
