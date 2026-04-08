@@ -70,16 +70,15 @@ def _orchestrate_swarm(mission: str, agents: List[str] = None) -> Dict:
         
         # Run the async mission
         try:
-            # Try to get existing loop
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # We're in an async context, use run_until_complete
+            # Try to get running loop (async context with nest_asyncio)
+            try:
+                loop = asyncio.get_running_loop()
                 result = loop.run_until_complete(orchestrator.start_mission(
                     mission_goal=mission,
                     swarm_type="execution",
                     agents=agent_list
                 ))
-            else:
+            except RuntimeError:
                 # No loop running, use asyncio.run
                 result = asyncio.run(orchestrator.start_mission(
                     mission_goal=mission,

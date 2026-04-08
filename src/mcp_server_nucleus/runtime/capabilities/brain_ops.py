@@ -157,12 +157,11 @@ class BrainOps(Capability):
                 pass
 
             try:
-                # With nest_asyncio, we can just use asyncio.run or loop.run_until_complete
-                # even if a loop is running.
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
+                # With nest_asyncio, we can run_until_complete inside a running loop.
+                try:
+                    loop = asyncio.get_running_loop()
                     log = loop.run_until_complete(agent.run())
-                else:
+                except RuntimeError:
                     log = asyncio.run(agent.run())
                 
                 return f"✅ Delegation Complete:\n{log}"
@@ -188,14 +187,14 @@ class BrainOps(Capability):
                 pass
             
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
+                try:
+                    loop = asyncio.get_running_loop()
                     result = loop.run_until_complete(orchestrator.start_mission(
                         mission_goal=args['mission'],
                         swarm_type=args.get('swarm_type', 'genesis'),
                         agents=agents  # Pass agents to orchestrator
                     ))
-                else:
+                except RuntimeError:
                     result = asyncio.run(orchestrator.start_mission(
                         mission_goal=args['mission'],
                         swarm_type=args.get('swarm_type', 'genesis'),
