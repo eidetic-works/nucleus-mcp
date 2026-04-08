@@ -295,6 +295,56 @@ def _detect_corrections(messages: List[Dict]) -> List[Dict]:
     return corrections
 
 
+def _write_correction_to_rag(corr: Dict, session_id: str) -> None:
+    """Write a correction as RAG-searchable markdown in .brain/corrections/.
+
+    This closes the accountability loop: corrections from Layer 0 surface
+    in future RAG queries, so TB can warn Claude not to repeat mistakes.
+    """
+    try:
+        brain = get_brain_path()
+        corrections_dir = brain / "corrections"
+        corrections_dir.mkdir(parents=True, exist_ok=True)
+
+        ts = datetime.now(timezone.utc)
+        slug = f"{ts.strftime('%Y%m%d_%H%M%S')}_{session_id[:8]}"
+
+        # Extract file paths from the correction content for searchability
+        file_refs = set()
+        for field in ("prompt", "chosen", "rejected"):
+            text = corr.get(field, "")
+            for token in text.split():
+                if "/" in token and ("." in token or token.endswith("/")):
+                    cleaned = token.strip("`,\"'()[]{}:")
+                    if len(cleaned) > 3:
+                        file_refs.add(cleaned)
+
+        prompt_preview = corr["prompt"][:200].replace("\n", " ")
+        rejected_preview = corr["rejected"][:400].replace("\n", " ")
+        chosen_preview = corr["chosen"][:400].replace("\n", " ")
+
+        md = f"""# Correction: {prompt_preview[:80]}
+
+**Session:** {session_id[:12]}
+**Date:** {ts.strftime('%Y-%m-%d %H:%M UTC')}
+**Files:** {', '.join(sorted(file_refs)[:5]) if file_refs else 'unknown'}
+
+## What was asked
+{prompt_preview}
+
+## What went wrong (rejected)
+{rejected_preview}
+
+## What was corrected to (chosen)
+{chosen_preview}
+"""
+        out = corrections_dir / f"{slug}.md"
+        out.write_text(md, encoding="utf-8")
+        logger.debug("Correction written to RAG: %s", out.name)
+    except Exception as e:
+        logger.warning("Failed to write correction to RAG: %s", e)
+
+
 def _extract_reasoning_chains(messages: List[Dict]) -> List[Dict]:
     """Extract multi-step reasoning chains from tool-use sequences.
 
@@ -604,6 +654,8 @@ def _ingest_single_session(
         )
         if result:
             prefs_found += 1
+            # Write RAG-searchable correction for accountability loop
+            _write_correction_to_rag(corr, session_id)
 
     # Record reasoning chains
     for chain in chains:
