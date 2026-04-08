@@ -154,15 +154,15 @@ def register_resources(mcp, helpers):
             deltas = safe_read_jsonl(deltas_path)
             cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
             recent = [d for d in deltas if d.get("timestamp", "") >= cutoff]
-            positive = sum(1 for d in recent if d.get("polarity") == "positive")
-            negative = sum(1 for d in recent if d.get("polarity") == "negative")
+            positive = sum(1 for d in recent if d.get("delta", {}).get("direction") == "positive")
+            negative = sum(1 for d in recent if d.get("delta", {}).get("direction") == "negative")
             total = len(recent)
             return json.dumps({
                 "total_deltas": len(deltas),
                 "last_7d": total,
                 "positive": positive,
                 "negative": negative,
-                "compound_rate": round(positive / max(negative, 1), 2),
+                "compound_rate": round(positive / max(total, 1), 2),
             }, indent=2)
         except Exception as e:
             return json.dumps({"error": str(e)})
@@ -228,10 +228,10 @@ def register_resources(mcp, helpers):
             deltas_path = brain / "deltas" / "deltas.jsonl"
             if deltas_path.exists():
                 deltas = safe_read_jsonl(deltas_path)
-                positive = sum(1 for d in deltas if d.get("polarity") == "positive")
+                positive = sum(1 for d in deltas if d.get("delta", {}).get("direction") == "positive")
                 result["COMPOUND"] = {
                     "deltas_recorded": len(deltas),
-                    "compound_rate": round(positive / max(len(deltas) - positive, 1), 2),
+                    "compound_rate": round(positive / max(len(deltas), 1), 2),
                 }
             else:
                 result["COMPOUND"] = {"deltas_recorded": 0, "compound_rate": 0}
@@ -297,14 +297,15 @@ def register_prompts(mcp, helpers):
             deltas = safe_read_jsonl(deltas_path)
             cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
             recent = [d for d in deltas if d.get("timestamp", "") >= cutoff]
-            negatives = [d for d in recent if d.get("polarity") == "negative"]
-            positives = [d for d in recent if d.get("polarity") == "positive"]
+            negatives = [d for d in recent if d.get("delta", {}).get("direction") == "negative"]
+            positives = [d for d in recent if d.get("delta", {}).get("direction") == "positive"]
             lines = [f"## COMPOUND Frontier — Last 7 Days\n"]
             lines.append(f"**{len(recent)} Deltas** ({len(positives)} positive, {len(negatives)} negative)\n")
             if negatives:
                 lines.append("### Recurring Negatives\n")
                 for d in negatives[-5:]:
-                    lines.append(f"- {d.get('pattern', d.get('actual_outcome', '?'))[:80]}")
+                    insight = d.get("delta", {}).get("insight", d.get("actual", {}).get("outcome", "?"))
+                    lines.append(f"- {str(insight)[:80]}")
             lines.append("\n**What should we learn from these patterns?**")
             return "\n".join(lines)
         except Exception as e:
