@@ -230,7 +230,7 @@ class RaftLogEntry:
     term: int
     index: int
     command: Dict[str, Any]
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
 
 
 @dataclass
