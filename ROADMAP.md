@@ -93,14 +93,17 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 
 **Totals:** 13 MCP resources, 6 prompts, 20 session actions, 1958+ tests
 
-### v1.10.0 (Q2 2026) 🚧
-**Theme: Security & Scale**
+### v1.10.0 (April 2026) ✅
+**Theme: Security, Scale & Signal**
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Security Posture Tool | Planned | Governance scoring with shareable report |
-| `nucleus secure` | Planned | One-command security hardening |
-| Score v2 as default | Planned | Replace v0 scoring with 5-dimension v2 |
+| Security Posture Tool | Done | `sovereign_status` — 5-section governance scoring with shareable report |
+| `nucleus secure` | Done | One-command security hardening (jurisdiction, DSoR, kill switch, certificate) |
+| Score v2 as default | Done | 5-dimension scoring (knowledge, frontier, velocity, continuity, training). Bands: COMPOUNDING/GROWING/STALLING/DECAYING/COLD |
+| Layer 0: Conversation Capture | Done | Streaming JSONL parser for 541 Claude Code sessions (912MB). SFT pairs, DPO from corrections, 4 MCP actions, 6h ambient daemon |
+
+**Totals:** 13 MCP resources, 6 prompts, 20 session actions, 1958+ tests
 
 ---
 
