@@ -67,23 +67,38 @@ Nucleus is the **Sovereign Agent Operating System** — the governance, memory, 
 - **Phases 1-7 Shipped**: 7 arteries, deltas, Three Frontiers (GROUND/ALIGN/COMPOUND), business events, convergence, runtime wiring, ALIGN tool, ambient health
 - **Zero-Sanitization Auto-Sync**: Post-commit hook triggers git archive → public repo. No sed patches, no AST surgery.
 - **13 Facade Tools**: 114 actions consolidated into clean MCP interface
-- **2034+ tests**, 0 regressions across all phases
+- **1921+ tests**, 0 regressions across all phases
 
 ---
 
 ## In Progress
 
-### v1.9.0 (Q2 2026) 🚧
+### v1.9.0 (April 2026) ✅
 **Theme: Substrate Visibility & Federation**
 
 | Feature | Status | Description |
 |---------|--------|-------------|
 | cold_start enrichment | Done | Session arc + compounding pulse in brain card |
-| brain://cycle resource | Done | Weekly cycle state in IDE sidebar |
-| brain://arc resource | Done | Session continuity in IDE sidebar |
+| brain://cycle + brain://arc | Done | Weekly cycle + session continuity in IDE sidebar |
+| brain://deltas + brain://training | Done | Delta patterns + training readiness resources |
+| brain://frontiers + brain://growth | Done | Three Frontiers dashboard + business metrics |
+| 3 MCP prompts | Done | compound_context, align_review, weekly_synthesis |
+| Trigger Dispatch Phase 2 | Done | 3 safety layers (chain depth, dedup, opt-in) |
+| JSONL file rotation | Done | Auto-archive oversized ledger files (50MB threshold) |
+| Error taxonomy by frontier | Done | Domain→frontier mapping + auto-Delta from errors |
+| Brain federation | Done | Portable Delta export/import with trust ladder |
+| Compounding Score v2 | Done | 5-dimension scoring (knowledge, frontier, velocity, continuity, training) |
+
+**Totals:** 13 MCP resources, 6 prompts, 1921+ tests
+
+### v1.10.0 (Q2 2026) 🚧
+**Theme: Security & Scale**
+
+| Feature | Status | Description |
+|---------|--------|-------------|
 | Security Posture Tool | Planned | Governance scoring with shareable report |
 | `nucleus secure` | Planned | One-command security hardening |
-| Peer-to-Peer Federation | Planned | Connect multiple Nucleus instances |
+| Score v2 as default | Planned | Replace v0 scoring with 5-dimension v2 |
 
 ---
 
