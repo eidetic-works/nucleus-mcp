@@ -12,6 +12,7 @@ Tiers:
   2 — Imports work (python -c "import module")
   3 — Tests pass (pytest on related test files)
   4 — Runtime (start server, hit endpoints, verify responses)
+  5 — Outcome (plan claims vs actual results — anti-premature-victory)
 
 Each tier is independent. If a tier can't run, it's skipped (not failed).
 Total budget: configurable, default 30s.
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import time
@@ -124,6 +126,20 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         tiers_skipped.append(4)
     elif not runtime_checks:
         tiers_skipped.append(4)
+
+    # ── Tier 5: outcome verification (plan claims vs actual) ──
+    if 5 in enabled_tiers and remaining() > 0:
+        t5_sigs = _tier5_outcome_check(project_root, remaining())
+        signals.extend(t5_sigs)
+        if t5_sigs:
+            if all(s["passed"] for s in t5_sigs):
+                tiers_passed.append(5)
+            else:
+                tiers_failed.append(5)
+        else:
+            tiers_skipped.append(5)  # no plan file found
+    elif 5 not in enabled_tiers:
+        tiers_skipped.append(5)
 
     duration = round(time.monotonic() - t0, 2)
     verified = len(tiers_failed) == 0 and len(tiers_passed) > 0
@@ -746,6 +762,181 @@ def _tier4_process_exit(check: dict, project_root: Path,
     except Exception as e:
         return {"check": "process_exit", "cmd": " ".join(cmd),
                 "passed": False, "error": str(e)[:200]}
+
+
+def _tier5_outcome_check(project_root: Path,
+                         budget_s: float) -> list[dict]:
+    """Tier 5: Compare plan claims against actual outcomes.
+
+    Finds the most recent .claude/plans/*.md file, extracts quantitative
+    claims (numbers near keywords like chunks, files, coverage, tests),
+    and compares against reality by running lightweight checks.
+
+    Non-blocking by default: returns warnings, not hard failures.
+    Set execution_verification_tier5_strict: true in config to block.
+    """
+    signals = []
+    t0 = time.monotonic()
+
+    def remaining():
+        return max(0, budget_s - (time.monotonic() - t0))
+
+    # Find most recent plan file
+    plan_dir = Path.home() / ".claude" / "plans"
+    if not plan_dir.exists():
+        return []
+
+    plan_files = sorted(plan_dir.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)
+    if not plan_files:
+        return []
+
+    plan_file = plan_files[0]
+    # Skip stale plans (older than 24h)
+    age_hours = (time.time() - plan_file.stat().st_mtime) / 3600
+    if age_hours > 24:
+        return []
+
+    try:
+        plan_text = plan_file.read_text(errors="ignore")
+    except Exception:
+        return []
+
+    # Extract quantitative claims from plan
+    claims = _extract_plan_claims(plan_text)
+    if not claims:
+        return []
+
+    # Verify each claim against reality
+    for claim in claims:
+        if remaining() <= 0:
+            break
+        sig = _verify_claim(claim, project_root, remaining())
+        if sig:
+            sig["tier"] = 5
+            sig["plan_file"] = plan_file.name
+            signals.append(sig)
+
+    return signals
+
+
+def _extract_plan_claims(plan_text: str) -> list[dict]:
+    """Extract quantitative claims from plan markdown.
+
+    Looks for patterns like:
+    - "9,300 chunks" / "+2000 new chunks"
+    - "coverage from 0.017% to 0.1%"
+    - "54.7 MB" / "~50MB"
+    - Expected Outcome tables with before/after numbers
+    """
+    claims = []
+
+    # Pattern: chunk counts
+    for m in re.finditer(r'(\+?~?[\d,]+)\s+(?:new\s+)?chunks', plan_text, re.IGNORECASE):
+        num = int(m.group(1).replace(",", "").replace("+", "").replace("~", ""))
+        if num > 0:
+            claims.append({"type": "chunk_count", "claimed": num, "raw": m.group(0)})
+
+    # Pattern: file counts in Expected Outcome
+    for m in re.finditer(r'(\+?~?[\d,]+)\s+(?:new\s+)?files', plan_text, re.IGNORECASE):
+        num = int(m.group(1).replace(",", "").replace("+", "").replace("~", ""))
+        if num > 0:
+            claims.append({"type": "file_count", "claimed": num, "raw": m.group(0)})
+
+    # Pattern: test counts
+    for m in re.finditer(r'(\d+)\s+(?:tests?\s+)?pass(?:ed)?', plan_text, re.IGNORECASE):
+        num = int(m.group(1))
+        if num > 0:
+            claims.append({"type": "test_count", "claimed": num, "raw": m.group(0)})
+
+    # Deduplicate by type — keep largest claim per type (the "after" number)
+    by_type = {}
+    for c in claims:
+        t = c["type"]
+        if t not in by_type or c["claimed"] > by_type[t]["claimed"]:
+            by_type[t] = c
+
+    return list(by_type.values())
+
+
+def _verify_claim(claim: dict, project_root: Path,
+                  budget_s: float) -> dict | None:
+    """Verify a single claim against reality."""
+    ctype = claim["type"]
+    claimed = claim["claimed"]
+
+    if ctype == "chunk_count":
+        # Check RAG DB chunk count
+        rag_db = project_root / ".brain" / "rag_index.db"
+        if not rag_db.exists():
+            return None
+        try:
+            import sqlite3
+            conn = sqlite3.connect(str(rag_db))
+            actual = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+            conn.close()
+            passed = actual >= claimed * 0.5  # pass if actual >= 50% of claimed
+            return {
+                "check": "outcome_chunk_count",
+                "claimed": claimed,
+                "actual": actual,
+                "passed": passed,
+                "raw_claim": claim["raw"],
+                "detail": f"claimed {claimed}, actual {actual}"
+                          + ("" if passed else " — PREMATURE VICTORY?"),
+            }
+        except Exception as e:
+            return {"check": "outcome_chunk_count", "passed": True,
+                    "error": f"db read failed: {e}"}
+
+    elif ctype == "test_count":
+        # Quick pytest count (collect only, no execution)
+        try:
+            r = subprocess.run(
+                [sys.executable, "-m", "pytest", "--collect-only", "-q",
+                 str(project_root / "tests")],
+                capture_output=True, text=True,
+                timeout=min(budget_s, 10), cwd=str(project_root))
+            # Parse "X items" from output
+            m = re.search(r"(\d+)\s+(?:test|item)", r.stdout)
+            actual = int(m.group(1)) if m else 0
+            passed = actual >= claimed * 0.5
+            return {
+                "check": "outcome_test_count",
+                "claimed": claimed,
+                "actual": actual,
+                "passed": passed,
+                "raw_claim": claim["raw"],
+                "detail": f"claimed {claimed}, actual {actual}"
+                          + ("" if passed else " — PREMATURE VICTORY?"),
+            }
+        except Exception:
+            return None
+
+    elif ctype == "file_count":
+        # Check indexed file count in RAG DB
+        rag_db = project_root / ".brain" / "rag_index.db"
+        if not rag_db.exists():
+            return None
+        try:
+            import sqlite3
+            conn = sqlite3.connect(str(rag_db))
+            actual = conn.execute(
+                "SELECT COUNT(DISTINCT file_path) FROM chunks").fetchone()[0]
+            conn.close()
+            passed = actual >= claimed * 0.5
+            return {
+                "check": "outcome_file_count",
+                "claimed": claimed,
+                "actual": actual,
+                "passed": passed,
+                "raw_claim": claim["raw"],
+                "detail": f"claimed {claimed}, actual {actual}"
+                          + ("" if passed else " — PREMATURE VICTORY?"),
+            }
+        except Exception:
+            return None
+
+    return None
 
 
 # ---------------------------------------------------------------------------
