@@ -61,6 +61,24 @@ def register(mcp, helpers):
         brain = get_brain_path()
         return brain / "verification_log.jsonl"
 
+    def _capture_baseline(plan_text, project_root=None):
+        """Capture outcome baseline from plan claims for Tier 5 verification."""
+        from ..runtime.execution_verifier import capture_outcome_baseline
+        root = Path(project_root) if project_root else Path.cwd()
+        result = capture_outcome_baseline(plan_text, root)
+        return json.dumps(result, indent=2, default=str)
+
+    def _scoreboard(window_days=30):
+        """Show governance scoreboard with CSR and open goals."""
+        try:
+            from ..runtime.csr import compute_csr, format_scoreboard
+            data = compute_csr(window_days=int(window_days))
+            return format_scoreboard(data)
+        except ImportError:
+            return json.dumps({"error": "CSR module not yet available"})
+        except Exception as e:
+            return json.dumps({"error": str(e)[:200]})
+
     def _hook(files=None, project_root=None, tiers=None):
         """Post-edit verification: run Tiers 1-2 on specific files.
 
@@ -102,6 +120,9 @@ def register(mcp, helpers):
         "receipt": lambda: _receipt(),
         "hook": lambda files=None, project_root=None, tiers=None: _hook(
             files, project_root, tiers),
+        "capture_baseline": lambda plan_text="", project_root=None: _capture_baseline(
+            plan_text, project_root),
+        "scoreboard": lambda window_days=30: _scoreboard(window_days),
     }
 
     @mcp.tool()
@@ -109,9 +130,11 @@ def register(mcp, helpers):
         """GROUND — Execution verification. Goes outside the formal system.
 
 Actions:
-  verify   - Run tiered verification on current git changes. params: {project_root?, python_path?, tiers?, timeout_s?, pre_head?}
-  receipt  - Get last verification receipt.
-  hook     - Post-edit verification on specific files (for Claude Code hooks). params: {files: [paths], project_root?, tiers?}
+  verify            - Run tiered verification on current git changes. params: {project_root?, python_path?, tiers?, timeout_s?, pre_head?}
+  receipt           - Get last verification receipt.
+  hook              - Post-edit verification on specific files (for Claude Code hooks). params: {files: [paths], project_root?, tiers?}
+  capture_baseline  - Capture outcome baseline from plan text for Tier 5. params: {plan_text, project_root?}
+  scoreboard        - Show governance scoreboard (CSR, open goals). params: {window_days?}
 
 Tiers:
   0 — Diff non-empty (did anything change?)
@@ -119,6 +142,7 @@ Tiers:
   2 — Imports work (python -c "import module")
   3 — Tests pass (pytest on related test files)
   4 — Runtime (start server, hit endpoints, verify responses)
+  5 — Outcome (delta-based claim verification against baseline)
 """
         params = params or {}
         return dispatch(action, params, ROUTER, "nucleus_ground")
