@@ -12,7 +12,6 @@ Tiers:
   2 — Imports work (python -c "import module")
   3 — Tests pass (pytest on related test files)
   4 — Runtime (start server, hit endpoints, verify responses)
-  5 — Outcome (plan claims vs actual deltas — requires baseline capture)
 
 Each tier is independent. If a tier can't run, it's skipped (not failed).
 Total budget: configurable, default 30s.
@@ -28,6 +27,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -127,17 +127,30 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
     elif not runtime_checks:
         tiers_skipped.append(4)
 
-    # ── Tier 5: outcome verification (plan claims vs actual deltas) ──
+    # ── Tier 5: outcome verification (delta-based) ──
     if 5 in enabled_tiers and remaining() > 0:
-        t5_sigs = _tier5_outcome_check(project_root, remaining())
-        signals.extend(t5_sigs)
-        if t5_sigs:
-            if all(s["passed"] for s in t5_sigs):
-                tiers_passed.append(5)
+        baseline_path = project_root / ".brain" / "driver" / "outcome_baseline.json"
+        plan_path = _find_recent_plan(project_root)
+        if baseline_path.exists() and plan_path:
+            t5_sigs = _tier5_outcome_check(
+                plan_path.read_text(), project_root, remaining(), baseline_path,
+            )
+            signals.extend(t5_sigs)
+            if t5_sigs:
+                if all(s["passed"] for s in t5_sigs):
+                    tiers_passed.append(5)
+                else:
+                    tiers_failed.append(5)
+                # Record goal progress (best-effort)
+                try:
+                    from .goal_tracker import record_goal_attempt
+                    record_goal_attempt(str(plan_path), {}, t5_sigs, project_root)
+                except Exception:
+                    pass
             else:
-                tiers_failed.append(5)
+                tiers_skipped.append(5)
         else:
-            tiers_skipped.append(5)
+            tiers_skipped.append(5)  # No baseline or plan = skip, not fail
     elif 5 not in enabled_tiers:
         tiers_skipped.append(5)
 
@@ -765,186 +778,6 @@ def _tier4_process_exit(check: dict, project_root: Path,
 
 
 # ---------------------------------------------------------------------------
-# Tier 5 — Outcome Verification (two-phase: baseline + delta comparison)
-# ---------------------------------------------------------------------------
-
-def extract_plan_claims(plan_text: str) -> dict:
-    """Extract measurable claims from plan markdown.
-
-    Returns dict of metric_name → {claimed_before, claimed_after}.
-    Parses Expected Outcome tables first, falls back to inline patterns.
-    """
-    claims = {}
-
-    # Strategy 1: Parse Expected Outcome tables
-    # Match: | Metric | Before | After | rows
-    table_pattern = re.compile(
-        r'\|\s*(\w[\w\s]*?)\s*\|\s*~?([\d,]+)\s*\|\s*~?([\d,]+)\s*\|',
-        re.IGNORECASE
-    )
-    for m in table_pattern.finditer(plan_text):
-        metric_raw = m.group(1).strip().lower()
-        before = int(m.group(2).replace(",", ""))
-        after = int(m.group(3).replace(",", ""))
-        if before == after or after == 0:
-            continue
-        # Normalize metric name
-        metric_name = _normalize_metric_name(metric_raw)
-        if metric_name:
-            claims[metric_name] = {"claimed_before": before, "claimed_after": after}
-
-    # Strategy 2: Inline delta patterns (fallback if no table found)
-    if not claims:
-        for m in re.finditer(r'(\+?~?[\d,]+)\s+new\s+chunks', plan_text, re.IGNORECASE):
-            delta = int(m.group(1).replace(",", "").replace("+", "").replace("~", ""))
-            if delta > 0:
-                claims["chunk_count"] = {"claimed_before": 0, "claimed_after": delta}
-                break
-
-    return claims
-
-
-def _normalize_metric_name(raw: str) -> str | None:
-    """Map table header text to canonical metric name."""
-    raw = raw.lower().strip()
-    if "chunk" in raw:
-        return "chunk_count"
-    if "file" in raw and "index" in raw:
-        return "file_count"
-    if "file" in raw:
-        return "file_count"
-    if "test" in raw:
-        return "test_count"
-    if "coverage" in raw:
-        return "coverage"
-    return None
-
-
-def _measure_metric(metric_name: str, project_root: Path) -> int:
-    """Measure a single metric's current value."""
-    if metric_name == "chunk_count":
-        return _count_chunks(project_root)
-    elif metric_name == "file_count":
-        return _count_files(project_root)
-    return 0
-
-
-def _count_chunks(project_root: Path) -> int:
-    """Count chunks in RAG DB."""
-    import sqlite3
-    db = project_root / ".brain" / "rag_index.db"
-    if not db.exists():
-        return 0
-    try:
-        conn = sqlite3.connect(str(db))
-        count = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
-        conn.close()
-        return count
-    except Exception:
-        return 0
-
-
-def _count_files(project_root: Path) -> int:
-    """Count distinct indexed files in RAG DB."""
-    import sqlite3
-    db = project_root / ".brain" / "rag_index.db"
-    if not db.exists():
-        return 0
-    try:
-        conn = sqlite3.connect(str(db))
-        count = conn.execute("SELECT COUNT(DISTINCT file_path) FROM chunks").fetchone()[0]
-        conn.close()
-        return count
-    except Exception:
-        return 0
-
-
-def capture_outcome_baseline(plan_text: str, project_root: Path) -> dict:
-    """Phase 1: Extract claims from plan, snapshot current metrics.
-
-    Call this BEFORE task execution. Writes to .brain/driver/outcome_baseline.json.
-    """
-    from datetime import datetime
-    claims = extract_plan_claims(plan_text)
-    metrics = {}
-    for metric_name, claim in claims.items():
-        actual = _measure_metric(metric_name, project_root)
-        metrics[metric_name] = {
-            "actual": actual,
-            "claimed_before": claim["claimed_before"],
-            "claimed_after": claim["claimed_after"],
-        }
-
-    baseline = {
-        "captured_at": datetime.now().isoformat(),
-        "metrics": metrics,
-    }
-
-    # Write baseline file
-    baseline_dir = project_root / ".brain" / "driver"
-    if baseline_dir.exists():
-        (baseline_dir / "outcome_baseline.json").write_text(
-            json.dumps(baseline, indent=2))
-
-    return baseline
-
-
-def _tier5_outcome_check(project_root: Path,
-                         budget_s: float) -> list[dict]:
-    """Tier 5: Compare plan claims against actual deltas.
-
-    Reads baseline from .brain/driver/outcome_baseline.json (captured before
-    execution), re-measures same metrics, compares deltas.
-
-    Returns [] if no baseline exists (skip, not fail).
-    """
-    baseline_path = project_root / ".brain" / "driver" / "outcome_baseline.json"
-    if not baseline_path.exists():
-        return []
-
-    # Skip stale baselines (older than 24h)
-    age_hours = (time.time() - baseline_path.stat().st_mtime) / 3600
-    if age_hours > 24:
-        return []
-
-    try:
-        baseline = json.loads(baseline_path.read_text())
-    except Exception:
-        return []
-
-    metrics = baseline.get("metrics", {})
-    if not metrics:
-        return []
-
-    signals = []
-    for metric_name, b in metrics.items():
-        actual_now = _measure_metric(metric_name, project_root)
-        actual_delta = actual_now - b["actual"]
-        claimed_delta = b["claimed_after"] - b["claimed_before"]
-
-        if claimed_delta <= 0:
-            continue
-
-        hit_ratio = actual_delta / claimed_delta if claimed_delta else 0
-        passed = hit_ratio >= 0.25
-
-        signals.append({
-            "tier": 5,
-            "check": f"outcome_{metric_name}",
-            "passed": passed,
-            "baseline": b["actual"],
-            "actual_now": actual_now,
-            "actual_delta": actual_delta,
-            "claimed_delta": claimed_delta,
-            "hit_ratio": round(hit_ratio, 2),
-            "detail": f"delta {actual_delta}/{claimed_delta} ({hit_ratio:.0%})"
-                      + ("" if passed else " — PREMATURE VICTORY"),
-        })
-
-    return signals
-
-
-# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -1007,3 +840,275 @@ def _check_yaml(fpath: Path, relpath: str) -> dict:
     except Exception as e:
         return {"check": "yaml_parse", "file": relpath,
                 "passed": False, "error": str(e)[:200]}
+
+
+# ---------------------------------------------------------------------------
+# Tier 5: Outcome Verification (Delta-Based)
+# ---------------------------------------------------------------------------
+
+# Regex patterns for extracting measurable claims from plan text.
+# Each pattern captures (quantity, unit/context).
+_CLAIM_PATTERNS = [
+    # "+N tests/files/chunks/items/lines"
+    (r'\+\s*(\d+)\s+(tests?|files?|chunks?|items?|lines?|endpoints?|modules?|functions?)',
+     "count"),
+    # "add N tests/files/..."
+    (r'(?:add|create|write|implement)\s+(\d+)\s+(tests?|files?|chunks?|items?|endpoints?|modules?|functions?)',
+     "count"),
+    # "increase by N"
+    (r'increase\s+(?:by\s+)?(\d+)\s+(\w+)',
+     "count"),
+    # "N new tests/files/..."
+    (r'(\d+)\s+new\s+(tests?|files?|chunks?|items?|endpoints?|modules?|functions?)',
+     "count"),
+    # "create/add <filename>" (file existence claim)
+    (r'(?:create|add|write)\s+(?:file\s+)?[`"\']?([a-zA-Z0-9_/\-\.]+\.(?:py|js|ts|json|yaml|yml|md|sh|sql))[`"\']?',
+     "file"),
+]
+
+# Map unit words to their singular form for consistency.
+_UNIT_NORMALIZE = {
+    "tests": "test", "files": "file", "chunks": "chunk",
+    "items": "item", "lines": "line", "endpoints": "endpoint",
+    "modules": "module", "functions": "function",
+}
+
+
+def extract_claims(plan_text: str) -> list[dict]:
+    """Extract measurable claims from plan text.
+
+    Returns list of dicts with: claim_type, quantity (for count), unit,
+    target (for file), raw_match.
+    """
+    claims = []
+    seen = set()
+
+    for pattern, claim_type in _CLAIM_PATTERNS:
+        for match in re.finditer(pattern, plan_text, re.IGNORECASE):
+            raw = match.group(0)
+            if raw in seen:
+                continue
+            seen.add(raw)
+
+            if claim_type == "count":
+                qty = int(match.group(1))
+                unit = _UNIT_NORMALIZE.get(match.group(2).lower(),
+                                           match.group(2).lower())
+                if qty > 0:
+                    claims.append({
+                        "claim_type": "count",
+                        "quantity": qty,
+                        "unit": unit,
+                        "raw_match": raw,
+                    })
+            elif claim_type == "file":
+                target = match.group(1)
+                claims.append({
+                    "claim_type": "file",
+                    "target": target,
+                    "raw_match": raw,
+                })
+
+    return claims
+
+
+def _measure_count(unit: str, project_root: Path) -> int:
+    """Measure the current count of a unit type in the project."""
+    try:
+        if unit == "test":
+            # Count test functions across all test files
+            count = 0
+            for tf in project_root.rglob("test_*.py"):
+                content = tf.read_text(errors="ignore")
+                count += len(re.findall(r'^\s*def\s+test_', content, re.MULTILINE))
+            return count
+        elif unit == "file":
+            return sum(1 for _ in project_root.rglob("*.py"))
+        elif unit in ("line", "lines"):
+            total = 0
+            for pf in project_root.rglob("*.py"):
+                try:
+                    total += sum(1 for _ in open(pf, errors="ignore"))
+                except Exception:
+                    pass
+            return total
+        elif unit == "endpoint":
+            count = 0
+            for pf in project_root.rglob("*.py"):
+                try:
+                    content = pf.read_text(errors="ignore")
+                    count += len(re.findall(
+                        r'@(?:app|router|mcp)\.\s*(?:get|post|put|delete|patch|route|tool)',
+                        content, re.IGNORECASE))
+                except Exception:
+                    pass
+            return count
+        elif unit == "function":
+            count = 0
+            for pf in project_root.rglob("*.py"):
+                try:
+                    content = pf.read_text(errors="ignore")
+                    count += len(re.findall(r'^\s*def\s+\w+', content, re.MULTILINE))
+                except Exception:
+                    pass
+            return count
+        elif unit == "module":
+            return sum(1 for _ in project_root.rglob("*.py")
+                       if not _.name.startswith("test_"))
+        elif unit == "chunk":
+            # Count JSONL entries in common data files
+            count = 0
+            brain = project_root / ".brain"
+            if brain.exists():
+                for jl in brain.rglob("*.jsonl"):
+                    try:
+                        count += sum(1 for line in open(jl, errors="ignore")
+                                     if line.strip())
+                    except Exception:
+                        pass
+            return count
+    except Exception:
+        pass
+    return 0
+
+
+def capture_outcome_baseline(plan_text: str, project_root: Path) -> dict:
+    """Capture pre-implementation baseline metrics from plan claims.
+
+    Parses plan text for measurable claims (counts, file existence).
+    Records current state of each metric.
+    Writes to .brain/driver/outcome_baseline.json.
+
+    Returns: {"claims": [...], "captured_at": iso_timestamp, "plan_hash": str}
+    """
+    project_root = Path(project_root)
+    claims = extract_claims(plan_text)
+
+    baseline_claims = []
+    for claim in claims:
+        if claim["claim_type"] == "count":
+            current = _measure_count(claim["unit"], project_root)
+            baseline_claims.append({
+                "claim_type": "count",
+                "unit": claim["unit"],
+                "claimed_delta": claim["quantity"],
+                "baseline_value": current,
+                "raw_match": claim["raw_match"],
+            })
+        elif claim["claim_type"] == "file":
+            target = claim["target"]
+            exists = (project_root / target).exists()
+            baseline_claims.append({
+                "claim_type": "file",
+                "target": target,
+                "baseline_exists": exists,
+                "raw_match": claim["raw_match"],
+            })
+
+    plan_hash = hashlib.sha256(plan_text.encode()).hexdigest()[:12]
+    result = {
+        "claims": baseline_claims,
+        "captured_at": datetime.now().isoformat(),
+        "plan_hash": plan_hash,
+    }
+
+    # Persist
+    driver_dir = project_root / ".brain" / "driver"
+    driver_dir.mkdir(parents=True, exist_ok=True)
+    baseline_path = driver_dir / "outcome_baseline.json"
+    baseline_path.write_text(json.dumps(result, indent=2))
+
+    return result
+
+
+def _tier5_outcome_check(plan_text: str, project_root: Path,
+                         budget_s: float,
+                         baseline_path: Path) -> list[dict]:
+    """Tier 5: Compare post-implementation state against baseline claims.
+
+    For each claimed metric in the baseline:
+    - Re-measure the current value
+    - Compute delta (current - baseline)
+    - Compare delta to claimed improvement
+    - Signal passes if actual_delta >= claimed_delta * 0.25 (25% threshold)
+
+    Returns list of signal dicts.
+    """
+    t0 = time.monotonic()
+    signals = []
+
+    try:
+        baseline = json.loads(baseline_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+
+    for claim in baseline.get("claims", []):
+        if time.monotonic() - t0 > budget_s:
+            break
+
+        if claim["claim_type"] == "count":
+            current = _measure_count(claim["unit"], project_root)
+            baseline_val = claim["baseline_value"]
+            claimed_delta = claim["claimed_delta"]
+            actual_delta = current - baseline_val
+            hit_ratio = actual_delta / claimed_delta if claimed_delta > 0 else 0.0
+            passed = hit_ratio >= 0.25  # 25% threshold
+
+            signals.append({
+                "tier": 5,
+                "check": f"outcome_{claim['unit']}",
+                "metric": claim["unit"],
+                "claimed_delta": claimed_delta,
+                "actual_delta": actual_delta,
+                "baseline_value": baseline_val,
+                "current_value": current,
+                "hit_ratio": round(hit_ratio, 4),
+                "passed": passed,
+                "error": "" if passed else
+                    f"PREMATURE VICTORY: claimed +{claimed_delta} {claim['unit']}, "
+                    f"actual +{actual_delta} ({hit_ratio:.0%} of target)",
+            })
+
+        elif claim["claim_type"] == "file":
+            target = claim["target"]
+            exists_now = (project_root / target).exists()
+            existed_before = claim.get("baseline_exists", False)
+            # Pass if file was created (didn't exist before, exists now)
+            # or if it already existed (not a creation claim violation)
+            passed = exists_now
+            signals.append({
+                "tier": 5,
+                "check": f"outcome_file",
+                "metric": "file_exists",
+                "target": target,
+                "existed_before": existed_before,
+                "exists_now": exists_now,
+                "passed": passed,
+                "error": "" if passed else
+                    f"PREMATURE VICTORY: claimed to create {target}, file not found",
+            })
+
+    return signals
+
+
+def _find_recent_plan(project_root: Path) -> Path | None:
+    """Find the most recent plan file.
+
+    Searches:
+    1. ~/.claude/plans/*.md (Claude Code plan files)
+    2. .brain/driver/current_plan.md (manual plan)
+    """
+    # Claude Code plans
+    claude_plans = Path.home() / ".claude" / "plans"
+    if claude_plans.exists():
+        plans = sorted(claude_plans.glob("*.md"),
+                       key=lambda f: f.stat().st_mtime, reverse=True)
+        if plans:
+            return plans[0]
+
+    # Manual plan in brain
+    manual = project_root / ".brain" / "driver" / "current_plan.md"
+    if manual.exists():
+        return manual
+
+    return None

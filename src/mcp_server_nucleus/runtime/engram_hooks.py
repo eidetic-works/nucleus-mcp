@@ -68,7 +68,7 @@ logger = logging.getLogger("nucleus.engram_hooks")
 
 
 # ═══════════════════════════════════════════════════════════════
-# COMPLETE EVENT CLASSIFICATION (36 events — no unknowns)
+# COMPLETE EVENT CLASSIFICATION (21 events — no unknowns)
 # ═══════════════════════════════════════════════════════════════
 
 TRIGGER_EVENTS = {
@@ -177,71 +177,20 @@ TRIGGER_EVENTS = {
         "data_fields": ["action", "engram_count", "task_count"],
     },
 
-    # ── Three Frontiers (3 triggers — Phase 3) ──────────────
-    "ground_verified": {
-        "context": "Architecture",
-        "intensity": 5,
-        "template": "GROUND T{tier_reached}: verified={verified}",
-        "key_prefix": "ground",
-        "data_fields": ["receipt_id", "tier_reached", "verified", "tiers_passed", "tiers_failed"],
-    },
-    "align_reviewed": {
-        "context": "Strategy",
+    # ── Governance Goals (2 triggers) ────────────────────────
+    "goal_achieved": {
+        "context": "Feature",
         "intensity": 8,
-        "template": "ALIGN: {verdict} — {human_notes}",
-        "key_prefix": "align",
-        "data_fields": ["task_id", "verdict", "human_notes", "correction"],
+        "template": "Goal {goal_id} ACHIEVED on attempt {attempt} ({metric}, hit_ratio: {hit_ratio})",
+        "key_prefix": "goal_done",
+        "data_fields": ["goal_id", "metric", "attempt", "hit_ratio"],
     },
-    "delta_recorded": {
-        "context": "Strategy",
-        "intensity": 6,
-        "template": "DELTA [{frontier}] {direction}: {insight}",
-        "key_prefix": "delta",
-        "data_fields": ["delta_id", "frontier", "direction", "magnitude", "insight"],
-    },
-
-    # ── Business Functions (6 triggers — Phase 4) ──────────────
-    "growth_gate_measured": {
-        "context": "Strategy",
-        "intensity": 6,
-        "template": "GROWTH: {gate} {current}/{target} ({pace})",
-        "key_prefix": "growth",
-        "data_fields": ["gate", "current", "target", "pace", "on_track"],
-    },
-    "content_published": {
+    "goal_progress": {
         "context": "Strategy",
         "intensity": 5,
-        "template": "CONTENT: {content_type} — {title}",
-        "key_prefix": "content",
-        "data_fields": ["content_type", "title", "url", "channel"],
-    },
-    "content_performance_measured": {
-        "context": "Strategy",
-        "intensity": 5,
-        "template": "CONTENT PERF: {title} views={views} bounce={bounce_rate}",
-        "key_prefix": "content_perf",
-        "data_fields": ["title", "views", "time_on_page", "bounce_rate", "source"],
-    },
-    "distribution_signal": {
-        "context": "Strategy",
-        "intensity": 7,
-        "template": "DISTRIBUTION: {channel} — {signal}",
-        "key_prefix": "dist",
-        "data_fields": ["channel", "signal", "referrals", "conversions"],
-    },
-    "feature_usage_measured": {
-        "context": "Architecture",
-        "intensity": 4,
-        "template": "USAGE: {hub}:{action_name} count={count}",
-        "key_prefix": "usage",
-        "data_fields": ["hub", "action_name", "count", "period"],
-    },
-    "dogfood_entry": {
-        "context": "Strategy",
-        "intensity": 7,
-        "template": "DOGFOOD day {day_number}: pain={pain_if_broken}/10 pay={would_pay}",
-        "key_prefix": "dogfood",
-        "data_fields": ["day_number", "pain_if_broken", "would_pay", "decisions_faster", "notes"],
+        "template": "Goal {goal_id} progress: {metric} at {hit_ratio} after attempt {attempt}",
+        "key_prefix": "goal_wip",
+        "data_fields": ["goal_id", "metric", "attempt", "hit_ratio"],
     },
 }
 
@@ -263,7 +212,7 @@ SKIP_EVENTS = {
     "session_saved",             # Duplicate of session_ended (save != end)
 }
 
-# All events must be in exactly one set (enforced at import time)
+# All 21 events must be in exactly one set (enforced at import time)
 _ALL_EVENTS = set(TRIGGER_EVENTS.keys()) | SKIP_EVENTS
 assert len(_ALL_EVENTS) == len(TRIGGER_EVENTS) + len(SKIP_EVENTS), \
     "BUG: Event appears in both TRIGGER and SKIP sets"
@@ -401,10 +350,7 @@ _ARCHIVE_WORTHY_EVENTS = {
     "task_completed_with_fence", "slot_task_completed",
     "deploy_complete", "code_critiqued", "task_escalated",
     "handoff_requested", "sprint_started",
-    # Phase 3: Three Frontiers — every verification, review, and delta is training signal
-    "ground_verified", "align_reviewed", "delta_recorded",
-    # Phase 4: Business functions — growth gates and dogfood are high-value founder signals
-    "growth_gate_measured", "dogfood_entry",
+    "goal_achieved",
 }
 
 

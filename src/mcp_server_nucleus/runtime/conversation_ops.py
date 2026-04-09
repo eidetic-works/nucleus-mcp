@@ -181,13 +181,13 @@ def _build_conversation_stream(filepath: Path) -> List[Dict]:
 
         elif msg_type == "assistant":
             text, tools, thinking = _extract_assistant_text(event)
-            if text:
-                text = _scan_and_redact(text)
+            if text or tools:
+                text = _scan_and_redact(text) if text else ""
                 # Include tool markers in content for SFT context
                 tool_marker = f"\n[Used: {', '.join(tools)}]" if tools else ""
                 messages.append({
                     "role": "assistant",
-                    "content": text + tool_marker,
+                    "content": (text + tool_marker) if text else tool_marker.lstrip("\n"),
                     "tools": tools,
                     "thinking": _scan_and_redact(thinking) if thinking else None,
                     "timestamp": ts,
@@ -596,7 +596,11 @@ def _ingest_single_session(
     # Record conversation chunks as LoopTurns
     for idx, chunk in enumerate(chunks):
         # Build conversation pairs for ArchivePipeline
-        conv = [{"role": m["role"], "content": m["content"]} for m in chunk]
+        conv = [
+            {"role": m["role"], "content": m["content"],
+             **({"tools": m["tools"]} if m.get("tools") else {})}
+            for m in chunk
+        ]
 
         first_user = next(
             (m["content"][:100] for m in chunk if m["role"] == "user"),

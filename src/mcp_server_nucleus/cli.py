@@ -3562,6 +3562,29 @@ def main():
                                  help='Number of scenarios (default: 5)')
     
     # ============================================================
+    # SKILL FLYWHEEL COMMANDS
+    # ============================================================
+    skill_parser = subparsers.add_parser('skill', help='Skill Flywheel — extract and manage auto-generated skills')
+    skill_sub = skill_parser.add_subparsers(dest='skill_action')
+
+    skill_extract_p = skill_sub.add_parser('extract', help='Extract skills from conversation turns')
+    skill_extract_p.add_argument('--min-score', type=float, default=0.5)
+    skill_extract_p.add_argument('--min-cluster', type=int, default=3)
+    skill_extract_p.add_argument('--no-embeddings', action='store_true')
+
+    skill_list_p = skill_sub.add_parser('list', help='List extracted skills')
+    skill_list_p.add_argument('--installed', action='store_true')
+    skill_list_p.add_argument('--min-score', type=float, default=0.0)
+
+    skill_install_p = skill_sub.add_parser('install', help='Install skill(s) to Claude Code')
+    skill_install_p.add_argument('skill_id', nargs='?')
+    skill_install_p.add_argument('--all', action='store_true')
+    skill_install_p.add_argument('--min-score', type=float, default=0.7)
+
+    skill_uninstall_p = skill_sub.add_parser('uninstall', help='Uninstall a skill')
+    skill_uninstall_p.add_argument('skill_id')
+
+    # ============================================================
     # FEATURES COMMANDS (Feature Map)
     # ============================================================
     features_parser = subparsers.add_parser('features', help='Manage product feature map')
@@ -4509,6 +4532,9 @@ def main():
                 print("Archive commands not available in this build.")
                 sys.exit(1)
 
+        elif cli_command == 'skill':
+            sys.exit(handle_skill_command(args))
+
         elif cli_command == 'doctor':
             sys.exit(handle_doctor_command(args))
 
@@ -5108,6 +5134,121 @@ def handle_outbound_command(args) -> int:
     else:
         print("Usage: nucleus outbound <check|record|plan>", file=sys.stderr)
         return 1
+
+
+def handle_skill_command(args) -> int:
+    """Handle `nucleus skill extract|list|install|uninstall` subcommands."""
+    action = getattr(args, 'skill_action', None)
+    if not action:
+        print("Usage: nucleus skill {extract|list|install|uninstall}")
+        return 1
+
+    from .runtime.common import get_brain_path
+
+    try:
+        brain_path = get_brain_path()
+    except ValueError as e:
+        print(f"Error: {e}")
+        return 1
+
+    if action == 'extract':
+        from .runtime.skill_extractor import extract_skills
+        from .runtime.skill_generator import generate_skill_md
+        from .runtime.skill_registry import SkillRegistry
+
+        min_score = getattr(args, 'min_score', 0.5)
+        min_cluster = getattr(args, 'min_cluster', 3)
+        use_embeddings = not getattr(args, 'no_embeddings', False)
+
+        print(f"Analyzing conversation turns...")
+        candidates = extract_skills(
+            brain_path, min_score=min_score,
+            min_cluster_size=min_cluster, use_embeddings=use_embeddings,
+        )
+
+        if not candidates:
+            print("No conversation turns found or no skills above threshold.")
+            return 0
+
+        reg = SkillRegistry(brain_path)
+        for cluster in candidates:
+            domain = cluster["domain"]
+            skill_id = f"{domain}-v1"
+            md_content = generate_skill_md(cluster)
+            skill_dir = reg.generated_dir / domain
+            skill_dir.mkdir(parents=True, exist_ok=True)
+            md_path = skill_dir / "SKILL.md"
+            md_path.write_text(md_content, encoding="utf-8")
+            reg.register(skill_id, domain, "1.0.0", cluster.get("score", 0), md_path, cluster.get("turn_ids", []))
+
+        print(f"Found {len(candidates)} intent clusters")
+        print(f"Generated {len(candidates)} SKILL.md files -> .brain/skills/generated/")
+        return 0
+
+    elif action == 'list':
+        from .runtime.skill_registry import SkillRegistry
+
+        reg = SkillRegistry(brain_path)
+        min_score = getattr(args, 'min_score', 0.0)
+        installed_only = getattr(args, 'installed', False)
+        skills = reg.list_skills(min_score=min_score, installed_only=installed_only)
+
+        if not skills:
+            print("No skills found. Run 'nucleus skill extract' first.")
+            return 0
+
+        print(f"{'ID':<30} {'Score':>6} {'Installed':>10} {'Usage':>10}")
+        print("-" * 60)
+        for s in skills:
+            sid = s.get("skill_id", "?")
+            score = f"{s.get('score', 0):.2f}"
+            installed = "Yes" if s.get("installed") else "No"
+            usage = s.get("usage_count", 0)
+            success = s.get("success_count", 0)
+            usage_str = f"{usage} ({success}ok)" if usage > 0 else "0"
+            print(f"{sid:<30} {score:>6} {installed:>10} {usage_str:>10}")
+        print(f"\n{len(skills)} skills total")
+        return 0
+
+    elif action == 'install':
+        from .runtime.skill_registry import SkillRegistry
+        from .runtime.skill_publisher import SkillPublisher
+
+        reg = SkillRegistry(brain_path)
+        pub = SkillPublisher(brain_path)
+        skill_id = getattr(args, 'skill_id', None)
+        install_all = getattr(args, 'all', False)
+        min_score = getattr(args, 'min_score', 0.7)
+
+        if install_all or not skill_id:
+            skills = reg.list_skills(min_score=min_score)
+            ids = [s["skill_id"] for s in skills]
+            result = pub.install_batch(ids, reg)
+            print(f"Installed {len(result['installed'])} skills (min_score={min_score})")
+            if result['failed']:
+                for f in result['failed']:
+                    print(f"  Failed: {f['skill_id']} — {f['error']}")
+        else:
+            path = pub.install(skill_id, reg)
+            print(f"Installed {skill_id} -> {path}")
+        return 0
+
+    elif action == 'uninstall':
+        from .runtime.skill_registry import SkillRegistry
+        from .runtime.skill_publisher import SkillPublisher
+
+        reg = SkillRegistry(brain_path)
+        pub = SkillPublisher(brain_path)
+        skill_id = getattr(args, 'skill_id', None)
+        if not skill_id:
+            print("Usage: nucleus skill uninstall <skill_id>")
+            return 1
+        pub.uninstall(skill_id, reg)
+        print(f"Uninstalled {skill_id}")
+        return 0
+
+    print(f"Unknown skill action: {action}")
+    return 1
 
 
 def handle_doctor_command(args) -> int:
