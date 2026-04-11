@@ -30,6 +30,7 @@ from . import (
     engrams,
     align,
     skills,
+    flywheel,
 )
 
 _ALL_MODULES = {
@@ -44,6 +45,7 @@ _ALL_MODULES = {
     "engrams": engrams,
     "align": align,
     "skills": skills,
+    "flywheel": flywheel,
 }
 
 

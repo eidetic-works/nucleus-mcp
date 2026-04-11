@@ -252,6 +252,69 @@ def register_resources(mcp, helpers):
         except Exception as e:
             return json.dumps({"error": str(e)})
 
+    # ── FLYWHEEL resources ──────────────────────────────────────────────
+    # Frontier 4: the compounding loop. Tickets → curriculum → next model.
+    # CSR (Claim Survival Rate) is the scalar that proves the system is
+    # getting more trustworthy, not less. See .brain/flywheel/thesis.md.
+
+    @mcp.resource("brain://flywheel/csr")
+    def resource_flywheel_csr() -> str:
+        """Claim Survival Rate — the compounding trust scalar."""
+        try:
+            from .runtime.common import get_brain_path
+            from .flywheel import read_csr
+            return json.dumps(read_csr(get_brain_path()), indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    @mcp.resource("brain://flywheel/dashboard")
+    def resource_flywheel_dashboard() -> str:
+        """Flywheel dashboard JSON — CSR + tickets + curriculum + recent claims."""
+        try:
+            from .runtime.common import get_brain_path
+            from .flywheel import render_dashboard_json
+            return json.dumps(render_dashboard_json(get_brain_path()), indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
+    @mcp.resource("brain://flywheel/thesis")
+    def resource_flywheel_thesis() -> str:
+        """The $5T flywheel thesis — why the compound loop has to exist."""
+        try:
+            from .runtime.common import get_brain_path
+            path = Path(get_brain_path()) / "flywheel" / "thesis.md"
+            if path.exists():
+                return path.read_text()
+            return "# Flywheel thesis not yet seeded.\n\nRun nucleus_flywheel to bootstrap `.brain/flywheel/`."
+        except Exception as e:
+            return f"error: {e}"
+
+    @mcp.resource("brain://flywheel/mentor")
+    def resource_flywheel_mentor() -> str:
+        """Flywheel mentor — open challenges + things NOT to do."""
+        try:
+            from .runtime.common import get_brain_path
+            path = Path(get_brain_path()) / "flywheel" / "mentor.md"
+            if path.exists():
+                return path.read_text()
+            return "# Mentor file not yet seeded."
+        except Exception as e:
+            return f"error: {e}"
+
+    @mcp.resource("brain://flywheel/week")
+    def resource_flywheel_week() -> str:
+        """Current ISO-week report — flywheel activity over the last 7 days."""
+        try:
+            from datetime import datetime, timezone
+            from .runtime.common import get_brain_path
+            week = datetime.now(timezone.utc).isocalendar()[1]
+            path = Path(get_brain_path()) / "flywheel" / f"week-{week}.md"
+            if path.exists():
+                return path.read_text()
+            return f"# Week {week}\n\nNo activity recorded yet this week."
+        except Exception as e:
+            return f"error: {e}"
+
 # ============================================================
 # MCP PROMPTS (Pre-built orchestration)
 # ============================================================
@@ -364,6 +427,57 @@ def register_prompts(mcp, helpers):
             return "\n".join(sections)
         except Exception as e:
             return f"Error generating synthesis: {e}"
+
+    @mcp.prompt()
+    def flywheel_check() -> str:
+        """FLYWHEEL — how's the compounding loop doing right now?
+
+        Returns a one-screen summary of CSR, open tickets, and curriculum
+        depth. Use this at the top of any session that touches driver work.
+        """
+        try:
+            from .runtime.common import get_brain_path
+            from .flywheel import render_dashboard_json
+            snapshot = render_dashboard_json(get_brain_path())
+            csr = snapshot.get("csr", {})
+            tickets = snapshot.get("tickets", {})
+            curriculum = snapshot.get("curriculum", {})
+            lines = ["## FLYWHEEL Status\n"]
+            lines.append(
+                f"**CSR:** {csr.get('ratio', 1.0):.1%} "
+                f"({csr.get('claims_survived', 0)}/{csr.get('claims_total', 0)} claims)"
+            )
+            lines.append(f"**Open tickets:** {tickets.get('open', 0)}")
+            lines.append(f"**Pending curriculum pairs:** {curriculum.get('pending', 0)}")
+            lines.append(f"**Ready curriculum pairs:** {curriculum.get('ready', 0)}")
+            recent = snapshot.get("recent_claims", [])
+            if recent:
+                lines.append("\n### Last 5 claims\n")
+                for claim in recent[-5:]:
+                    mark = "OK" if claim.get("survived") else "FAIL"
+                    lines.append(f"- [{mark}] {claim.get('step', '?')} @ {claim.get('at', '?')[:19]}")
+            lines.append("\n**Is the flywheel turning in the right direction?**")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error reading flywheel state: {e}"
+
+    @mcp.prompt()
+    def flywheel_brief() -> str:
+        """FLYWHEEL — brief me on this week's activity.
+
+        Returns the current ISO-week report verbatim. Use when you want
+        the narrative, not the dashboard numbers.
+        """
+        try:
+            from datetime import datetime, timezone
+            from .runtime.common import get_brain_path
+            week = datetime.now(timezone.utc).isocalendar()[1]
+            path = Path(get_brain_path()) / "flywheel" / f"week-{week}.md"
+            if path.exists():
+                return path.read_text()
+            return f"# Flywheel — Week {week}\n\nNo activity this week yet. Run a task to start the loop."
+        except Exception as e:
+            return f"Error loading weekly brief: {e}"
 
 def main():
     """Main entry point for the MCP server."""

@@ -215,6 +215,74 @@ def test_anonymize_text_strips_paths():
     assert "<file>" in result
 
 
+# ---- PII stripping: cross-platform paths ----
+
+def test_pii_strips_macos_home_path():
+    from mcp_server_nucleus.runtime.skill_extractor import _tokenize_intent
+    tokens = _tokenize_intent("debug issue in /Users/alice/project/main.py")
+    assert "alice" not in tokens
+
+
+def test_pii_strips_linux_home_path():
+    from mcp_server_nucleus.runtime.skill_extractor import _tokenize_intent
+    tokens = _tokenize_intent("fix the crash at /home/bob/code/server.py")
+    assert "bob" not in tokens
+
+
+def test_pii_strips_windows_home_path():
+    from mcp_server_nucleus.runtime.skill_extractor import _tokenize_intent
+    for path in (r"C:\Users\carol\repo\file.py", "C:/Users/carol/repo/file.py"):
+        tokens = _tokenize_intent(f"open {path} for editing")
+        assert "carol" not in tokens
+
+
+def test_pii_strips_wsl_home_path():
+    from mcp_server_nucleus.runtime.skill_extractor import _tokenize_intent
+    tokens = _tokenize_intent("cat /mnt/c/Users/dave/notes/todo.md")
+    assert "dave" not in tokens
+
+
+# ---- Hostname pattern builder (pure function) ----
+
+def test_build_hostname_pattern_uses_first_dns_label():
+    from mcp_server_nucleus.runtime.skill_extractor import _build_hostname_pattern
+    p = _build_hostname_pattern("testbox-123.local")
+    assert p.sub("<h>", "deploy on testbox-123 now") == "deploy on <h> now"
+
+
+def test_build_hostname_pattern_fallback_on_empty():
+    from mcp_server_nucleus.runtime.skill_extractor import _build_hostname_pattern
+    p = _build_hostname_pattern("")
+    assert p.sub("<h>", "ran build on oak-mbp") == "ran build on <h>"
+    assert p.sub("<h>", "used johns-macbook here") == "used <h> here"
+
+
+def test_build_hostname_pattern_fallback_on_too_short():
+    from mcp_server_nucleus.runtime.skill_extractor import _build_hostname_pattern
+    p = _build_hostname_pattern("xy")  # len < 3 -> fallback
+    assert p.sub("<h>", "fred-laptop died") == "<h> died"
+
+
+# ---- Integration: monkeypatched hostname flows through both layers ----
+
+def test_tokenize_intent_strips_runtime_hostname(monkeypatch):
+    import re as _re
+    from mcp_server_nucleus.runtime import skill_extractor as se
+    monkeypatch.setattr(se, "_HOSTNAME", _re.compile(r"\btestbox\b", _re.IGNORECASE))
+    tokens = se._tokenize_intent("deploy bundle on testbox tomorrow")
+    assert "testbox" not in tokens
+
+
+def test_anonymize_text_strips_hostname(monkeypatch):
+    import re as _re
+    from mcp_server_nucleus.runtime import skill_extractor as se
+    from mcp_server_nucleus.runtime.skill_generator import _anonymize_text
+    monkeypatch.setattr(se, "_HOSTNAME", _re.compile(r"\bdevbox\b", _re.IGNORECASE))
+    out = _anonymize_text("Run the migration on devbox before 5pm")
+    assert "devbox" not in out
+    assert "<host>" in out
+
+
 def test_trigger_phrase_extraction():
     """Top phrases extracted from intents."""
     from mcp_server_nucleus.runtime.skill_generator import _extract_trigger_phrases
