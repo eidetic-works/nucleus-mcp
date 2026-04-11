@@ -8,6 +8,8 @@ import re
 from collections import Counter
 from typing import Dict, List, Tuple
 
+from . import skill_extractor as _skill_extractor
+
 # Patterns for anonymization
 _FILE_PATH_RE = re.compile(r"(?:[/\\][\w.-]+){2,}")
 _CAMEL_RE = re.compile(r"\b[a-z]+(?:[A-Z][a-z]+){1,}\b")
@@ -96,16 +98,18 @@ def _anonymize_text(text: str) -> str:
     """Strip project-specific details from intent/outcome text.
 
     Replaces:
-        - File paths -> <file>
-        - Function/class names (camelCase, PascalCase) -> <name>
-        - Specific error messages -> <error>
-        - URLs -> <url>
+        - URLs           -> <url>
+        - File paths     -> <file>
+        - Error messages -> <error>
+        - Hostnames      -> <host>   (runtime-detected; see skill_extractor)
+        - camelCase / PascalCase / snake_case identifiers -> <name>
 
     Preserves: action verbs, general descriptions, tool names.
     """
     text = _URL_RE.sub("<url>", text)
     text = _FILE_PATH_RE.sub("<file>", text)
     text = _ERROR_RE.sub("<error>", text)
+    text = _skill_extractor._HOSTNAME.sub("<host>", text)
     text = _CAMEL_RE.sub("<name>", text)
     text = _PASCAL_RE.sub("<name>", text)
     text = _SNAKE_RE.sub("<name>", text)

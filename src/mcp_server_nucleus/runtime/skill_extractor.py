@@ -9,6 +9,7 @@ Zero new dependencies. Ollama embeddings optional (keyword fallback).
 
 import re
 import math
+import socket
 import json
 import logging
 import urllib.request
@@ -32,8 +33,43 @@ _STOPWORDS = frozenset({
 
 _PATH_PATTERN = re.compile(r"[/\\]\w{1,4}[/\\]")  # file paths
 _CAMEL_SNAKE = re.compile(r"[a-z]+[A-Z][a-z]+|[a-z]+_[a-z]+_[a-z]+")  # code identifiers
-_PII_PATH = re.compile(r"/Users/\w+")  # macOS user home paths
-_HOSTNAME = re.compile(r"\b\w+-\w+-air\b|\b\w+s-macbook\b", re.IGNORECASE)  # hostnames
+
+# Cross-platform user-home paths. Runs before _PATH_PATTERN so the user
+# segment is stripped even when subsequent path segments are short.
+_PII_PATH = re.compile(
+    r"/Users/\w+"                        # macOS, Docker-on-mac bind mounts
+    r"|/home/\w+"                        # Linux native, Docker-on-linux
+    r"|[A-Za-z]:[\\/]Users[\\/]\w+"      # Windows  (C:\Users\NAME or C:/Users/NAME)
+    r"|/mnt/[a-z]/Users/\w+",            # WSL      (/mnt/c/Users/NAME)
+    re.IGNORECASE,
+)
+
+
+def _build_hostname_pattern(hostname: Optional[str] = None) -> "re.Pattern[str]":
+    """Compile a regex that strips a hostname from text.
+
+    If ``hostname`` is None, reads ``socket.gethostname()`` at call time.
+    Takes the first DNS label (``devbox.local`` -> ``devbox``) and builds a
+    word-boundary pattern around it. On failure or a too-short result, falls
+    back to a generic suffix regex covering common personal-machine naming
+    conventions so the module still strips *something* without ever committing
+    a personal identifier to source.
+    """
+    if hostname is None:
+        try:
+            hostname = socket.gethostname() or ""
+        except Exception:  # pragma: no cover — defensive
+            hostname = ""
+    base = hostname.split(".")[0].strip()
+    if len(base) >= 3:
+        return re.compile(rf"\b{re.escape(base)}\b", re.IGNORECASE)
+    return re.compile(
+        r"\b\w+-(?:air|mbp|macbook|laptop|desktop|pc)\b",
+        re.IGNORECASE,
+    )
+
+
+_HOSTNAME = _build_hostname_pattern()
 
 # -- Noise filtering (guards against raw first-user-message[:100] garbage) --
 

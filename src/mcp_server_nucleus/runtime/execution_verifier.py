@@ -147,6 +147,26 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
                     record_goal_attempt(str(plan_path), {}, t5_sigs, project_root)
                 except Exception:
                     pass
+                # Frontier 4: report Tier 5 outcome to the flywheel — every
+                # outcome verification becomes a CSR claim. Best-effort.
+                try:
+                    from ..flywheel import Flywheel
+                    fw = Flywheel(project_root / ".brain")
+                    step = f"tier5:{(task or {}).get('id', 'unknown')}"
+                    if 5 in tiers_passed:
+                        fw.record_survived(phase="ground_tier5", step=step)
+                    else:
+                        failed_signal = next(
+                            (s for s in t5_sigs if not s.get("passed")), {}
+                        )
+                        fw.file_ticket(
+                            step=step,
+                            error=str(failed_signal.get("name", "tier5 outcome failed")),
+                            logs=json.dumps(failed_signal, default=str)[:1500],
+                            phase="ground_tier5",
+                        )
+                except Exception:
+                    pass  # flywheel hook is best-effort
             else:
                 tiers_skipped.append(5)
         else:
