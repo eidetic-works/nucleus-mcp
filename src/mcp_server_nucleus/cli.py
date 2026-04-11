@@ -4703,162 +4703,85 @@ def handle_train_command(args):
 
 
 def handle_review_command(args):
-    """nucleus review — Frontier 2: ALIGN. Human review of blocked tasks.
+    """nucleus review — Frontier 2: ALIGN. Human review of escalated tasks."""
+    from pathlib import Path as _Path
+    verdicts_path = _Path.cwd() / ".brain" / "driver" / "human_verdicts.jsonl"
 
-    Contract (see tests/test_review_command.py):
-    - Reads tasks.json under _PROJECT_ROOT/.brain/driver/
-    - Lists blocked tasks when no task_id is given
-    - Applies verdict (accept/reject/correct/direction) for a specific task_id
-    - Writes platinum SFT to .brain/training/inbox/sparring_sft.jsonl
-    - Writes platinum DPO to .brain/training/inbox/sparring_dpo.jsonl
-    - Writes human verdicts to .brain/driver/human_verdicts.jsonl
-    - Exits 1 on missing task or when the task cannot be reviewed
-    """
-    from datetime import datetime, timezone
-
-    project_root = _PROJECT_ROOT
-    driver_dir = project_root / ".brain" / "driver"
-    tasks_path = driver_dir / "tasks.json"
-    verdicts_path = driver_dir / "human_verdicts.jsonl"
-    inbox_dir = project_root / ".brain" / "training" / "inbox"
-    dpo_path = inbox_dir / "sparring_dpo.jsonl"
-    sft_path = inbox_dir / "sparring_sft.jsonl"
-
-    if not tasks_path.exists():
-        print("No tasks.json found — nothing to review.")
-        sys.exit(1)
-
-    tasks_data = json.loads(tasks_path.read_text())
-    tasks_list = tasks_data.get("tasks", []) if isinstance(tasks_data, dict) else tasks_data
-
-    # ---------- List mode ----------
-    if not getattr(args, "task_id", None):
-        blocked = [t for t in tasks_list if t.get("status") == "blocked"]
-        if not blocked:
-            print("No blocked tasks awaiting review.")
+    if not getattr(args, 'task_id', None):
+        if not verdicts_path.exists():
+            print("No escalated tasks found.")
             return
-        print(f"{len(blocked)} task(s) awaiting human review:\n")
-        for t in blocked:
-            tid = t.get("id", "?")
-            desc = (t.get("description", "") or "")[:80]
-            print(f"  {tid}  {desc}")
+        pending = []
+        for line in verdicts_path.read_text().strip().splitlines():
+            try:
+                entry = json.loads(line)
+                if entry.get("verdict") == "pending":
+                    pending.append(entry)
+            except json.JSONDecodeError:
+                pass
+        if not pending:
+            print("No pending reviews.")
+            return
+        print(f"{len(pending)} task(s) pending review:\n")
+        for e in pending:
+            tid = e.get("task_id", "?")
+            desc = e.get("task_description", "")[:80]
+            ts = e.get("ts", "")
+            print(f"  {tid}  {ts}  {desc}")
         return
 
-    # ---------- Verdict mode ----------
     task_id = args.task_id
-    task = next((t for t in tasks_list if t.get("id") == task_id), None)
-    if task is None:
-        print(f"Task {task_id} not found.")
+    if not verdicts_path.exists():
+        print("No verdicts file found.")
         sys.exit(1)
 
-    driver_dir.mkdir(parents=True, exist_ok=True)
-    inbox_dir.mkdir(parents=True, exist_ok=True)
+    lines = verdicts_path.read_text().strip().splitlines()
+    updated = False
+    new_lines = []
+    for line in lines:
+        try:
+            entry = json.loads(line)
+            if entry.get("task_id") == task_id and entry.get("verdict") == "pending":
+                if getattr(args, 'accept', False):
+                    entry["verdict"] = "accepted"
+                    entry["human_notes"] = "Accepted via nucleus review"
+                    updated = True
+                elif getattr(args, 'reject', None):
+                    entry["verdict"] = "rejected"
+                    entry["human_notes"] = args.reject
+                    updated = True
+                elif getattr(args, 'correct', None):
+                    entry["verdict"] = "corrected"
+                    entry["correction"] = args.correct
+                    updated = True
+                elif getattr(args, 'direction', None):
+                    entry["verdict"] = "redirected"
+                    entry["human_notes"] = args.direction
+                    updated = True
+            new_lines.append(json.dumps(entry, default=str))
+        except json.JSONDecodeError:
+            new_lines.append(line)
 
-    last_output = task.get("last_output", "") or ""
-    description = task.get("description", "") or ""
-    now = datetime.now(timezone.utc).isoformat()
+    if updated:
+        verdicts_path.write_text("\n".join(new_lines) + "\n")
 
-    def _append_jsonl(path, entry):
-        with path.open("a") as fp:
-            fp.write(json.dumps(entry, default=str))
-            fp.write("\n")
+        # Emit align_reviewed event (Phase 3: Three Frontiers)
+        try:
+            from .runtime.event_ops import _emit_event
+            verdict_type = entry.get("verdict", "unknown")
+            _emit_event("align_reviewed", "human", {
+                "task_id": task_id,
+                "verdict": verdict_type,
+                "human_notes": entry.get("human_notes", ""),
+                "correction": entry.get("correction", ""),
+            })
+        except Exception:
+            pass  # Never let event emission break the review command
 
-    def _platinum_meta(verdict):
-        return {
-            "quality": "platinum",
-            "source": "human_review",
-            "verdict": verdict,
-            "task_id": task_id,
-            "ts": now,
-        }
-
-    verdict = None
-    if getattr(args, "accept", False):
-        verdict = "accept"
-        sft_entry = {
-            "messages": [
-                {"role": "user", "content": description},
-                {"role": "assistant", "content": last_output},
-            ],
-            "metadata": _platinum_meta(verdict),
-        }
-        _append_jsonl(sft_path, sft_entry)
-        task["status"] = "completed"
-    elif getattr(args, "reject", None):
-        verdict = "reject"
-        reason = args.reject
-        dpo_entry = {
-            "prompt": description,
-            "chosen": reason,
-            "rejected": last_output,
-            "metadata": _platinum_meta(verdict),
-        }
-        _append_jsonl(dpo_path, dpo_entry)
-        task["status"] = "committed"  # re-queue
-    elif getattr(args, "correct", None):
-        verdict = "correct"
-        correction = args.correct
-        dpo_entry = {
-            "prompt": description,
-            "chosen": correction,
-            "rejected": last_output,
-            "metadata": _platinum_meta(verdict),
-        }
-        sft_entry = {
-            "messages": [
-                {"role": "user", "content": description},
-                {"role": "assistant", "content": correction},
-            ],
-            "metadata": _platinum_meta(verdict),
-        }
-        _append_jsonl(dpo_path, dpo_entry)
-        _append_jsonl(sft_path, sft_entry)
-        task["status"] = "completed"
-    elif getattr(args, "direction", None):
-        verdict = "direction"
-        verdict_entry = {
-            "task_id": task_id,
-            "verdict": verdict,
-            "human_input": args.direction,
-            "ts": now,
-        }
-        _append_jsonl(verdicts_path, verdict_entry)
-        # Direction doesn't close the task — the driver decides next
+        print(f"Task {task_id} updated.")
     else:
-        print("No verdict flag given (--accept / --reject / --correct / --direction).")
+        print(f"Task {task_id} not found or not pending.")
         sys.exit(1)
-
-    # Always log the verdict (except direction, already logged above)
-    if verdict != "direction":
-        verdict_entry = {
-            "task_id": task_id,
-            "verdict": verdict,
-            "human_input": getattr(args, "reject", None)
-                or getattr(args, "correct", None)
-                or ("accepted" if verdict == "accept" else ""),
-            "ts": now,
-        }
-        _append_jsonl(verdicts_path, verdict_entry)
-
-    # Persist updated tasks.json preserving dict format
-    if isinstance(tasks_data, dict):
-        tasks_data["tasks"] = tasks_list
-        tasks_data["updated_at"] = now
-        tasks_path.write_text(json.dumps(tasks_data, indent=2, default=str))
-    else:
-        tasks_path.write_text(json.dumps(tasks_list, indent=2, default=str))
-
-    # Emit align_reviewed event (non-fatal)
-    try:
-        from .runtime.event_ops import _emit_event
-        _emit_event("align_reviewed", "human", {
-            "task_id": task_id,
-            "verdict": verdict,
-        })
-    except Exception:
-        pass
-
-    print(f"Task {task_id} reviewed: {verdict}.")
 
 
 def handle_verify_command(args):

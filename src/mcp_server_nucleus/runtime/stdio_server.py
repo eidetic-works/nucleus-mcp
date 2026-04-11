@@ -437,16 +437,6 @@ class StdioServer:
                             "description": "Get instant context when starting a new session. Call this first.",
                             "arguments": []
                         },
-                        {
-                            "name": "flywheel_check",
-                            "description": "FLYWHEEL — one-screen summary of CSR, tickets, and curriculum.",
-                            "arguments": []
-                        },
-                        {
-                            "name": "flywheel_brief",
-                            "description": "FLYWHEEL — this week's activity report.",
-                            "arguments": []
-                        },
                     ]
                 }
             }
@@ -517,21 +507,6 @@ class StdioServer:
             {"uri": "brain://health", "name": "Three Frontiers Health",
              "description": "GROUND/ALIGN/COMPOUND status — verification pass rates, alignment verdicts, delta counts",
              "mimeType": "application/json"},
-            {"uri": "brain://flywheel/csr", "name": "Flywheel CSR",
-             "description": "Claim Survival Rate — trust scalar for the compound loop",
-             "mimeType": "application/json"},
-            {"uri": "brain://flywheel/dashboard", "name": "Flywheel Dashboard",
-             "description": "One-screen flywheel summary: CSR, tickets, curriculum depth",
-             "mimeType": "application/json"},
-            {"uri": "brain://flywheel/thesis", "name": "Flywheel Thesis",
-             "description": "Why the compound loop exists and how it works",
-             "mimeType": "text/plain"},
-            {"uri": "brain://flywheel/mentor", "name": "Flywheel Mentor",
-             "description": "Operational guardrails for the flywheel",
-             "mimeType": "text/plain"},
-            {"uri": "brain://flywheel/week", "name": "Flywheel Weekly",
-             "description": "This week's flywheel activity report",
-             "mimeType": "text/plain"},
         ]
 
     def _read_resource(self, uri: str) -> str:
@@ -560,36 +535,6 @@ class StdioServer:
                 return _dsor_query_decisions_impl(limit=50)
             elif uri == "brain://health":
                 return self._read_health_resource()
-            elif uri == "brain://flywheel/csr":
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                csr_path = Path(get_brain_path()) / "flywheel" / "csr.json"
-                if csr_path.exists():
-                    return csr_path.read_text()
-                return json.dumps({"ratio": 1.0, "claims_total": 0, "claims_survived": 0})
-            elif uri == "brain://flywheel/dashboard":
-                from mcp_server_nucleus.flywheel import render_dashboard_json
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                return json.dumps(render_dashboard_json(get_brain_path()), indent=2)
-            elif uri == "brain://flywheel/thesis":
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                path = Path(get_brain_path()) / "flywheel" / "thesis.md"
-                if path.exists():
-                    return path.read_text()
-                return "Thesis not yet written. See CLAUDE.md for the flywheel vision."
-            elif uri == "brain://flywheel/mentor":
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                path = Path(get_brain_path()) / "flywheel" / "mentor.md"
-                if path.exists():
-                    return path.read_text()
-                return "Mentor guardrails not yet written."
-            elif uri == "brain://flywheel/week":
-                from datetime import datetime, timezone
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                week = datetime.now(timezone.utc).isocalendar()[1]
-                path = Path(get_brain_path()) / "flywheel" / f"week-{week}.md"
-                if path.exists():
-                    return path.read_text()
-                return f"# Flywheel — Week {week}\n\nNo activity this week yet."
             else:
                 raise ValueError(f"Unknown resource URI: {uri}")
         except ValueError:
@@ -655,33 +600,6 @@ class StdioServer:
             return _start_sprint_prompt(goal)
         elif name == "cold_start":
             return _cold_start_prompt()
-        elif name == "flywheel_check":
-            try:
-                from mcp_server_nucleus.flywheel import render_dashboard_json
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                snapshot = render_dashboard_json(get_brain_path())
-                csr = snapshot.get("csr", {})
-                tickets = snapshot.get("tickets", {})
-                curriculum = snapshot.get("curriculum", {})
-                lines = ["## FLYWHEEL Status\n"]
-                lines.append(f"**CSR:** {csr.get('ratio', 1.0):.1%} ({csr.get('claims_survived', 0)}/{csr.get('claims_total', 0)} claims)")
-                lines.append(f"**Open tickets:** {tickets.get('open', 0)}")
-                lines.append(f"**Pending curriculum pairs:** {curriculum.get('pending', 0)}")
-                lines.append(f"**Ready curriculum pairs:** {curriculum.get('ready', 0)}")
-                return "\n".join(lines)
-            except Exception as e:
-                return f"Flywheel check unavailable: {e}"
-        elif name == "flywheel_brief":
-            try:
-                from datetime import datetime, timezone
-                from mcp_server_nucleus.runtime.common import get_brain_path
-                week = datetime.now(timezone.utc).isocalendar()[1]
-                path = Path(get_brain_path()) / "flywheel" / f"week-{week}.md"
-                if path.exists():
-                    return path.read_text()
-                return f"# Flywheel — Week {week}\n\nNo activity this week yet."
-            except Exception as e:
-                return f"Flywheel brief unavailable: {e}"
         else:
             raise ValueError(f"Unknown prompt: {name}")
 
