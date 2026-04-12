@@ -192,6 +192,73 @@ TRIGGER_EVENTS = {
         "key_prefix": "goal_wip",
         "data_fields": ["goal_id", "metric", "attempt", "hit_ratio"],
     },
+
+    # ── Frontier events (GROUND / ALIGN / DELTA) ─────────────
+    "ground_verified": {
+        "context": "Architecture",
+        "intensity": 5,
+        "template": "GROUND verified task {task_id}: {verdict} ({tiers_passed} tiers passed)",
+        "key_prefix": "ground",
+        "data_fields": ["task_id", "verdict", "tiers_passed", "tiers_failed"],
+    },
+    "align_reviewed": {
+        "context": "Strategy",
+        "intensity": 8,
+        "template": "ALIGN reviewed: {verdict} — {reason}",
+        "key_prefix": "align",
+        "data_fields": ["task_id", "verdict", "reason", "score"],
+    },
+    "delta_recorded": {
+        "context": "Strategy",
+        "intensity": 6,
+        "template": "DELTA recorded for {task_id}: {delta_type} — {description}",
+        "key_prefix": "delta",
+        "data_fields": ["task_id", "delta_type", "description"],
+    },
+
+    # ── Business events (Phase 4) ────────────────────────────
+    "growth_gate_measured": {
+        "context": "Strategy",
+        "intensity": 6,
+        "template": "Growth gate {gate}: on_track={on_track}, value={value}",
+        "key_prefix": "growth",
+        "data_fields": ["gate", "on_track", "value", "threshold"],
+    },
+    "content_published": {
+        "context": "Feature",
+        "intensity": 4,
+        "template": "Content published: {title} on {channel}",
+        "key_prefix": "content",
+        "data_fields": ["title", "channel", "url"],
+    },
+    "content_performance_measured": {
+        "context": "Feature",
+        "intensity": 3,
+        "template": "Content performance: {title} — {views} views, {engagement} engagement",
+        "key_prefix": "perf",
+        "data_fields": ["title", "views", "engagement"],
+    },
+    "distribution_signal": {
+        "context": "Strategy",
+        "intensity": 5,
+        "template": "Distribution signal from {source}: {signal}",
+        "key_prefix": "distro",
+        "data_fields": ["source", "signal", "impact"],
+    },
+    "feature_usage_measured": {
+        "context": "Feature",
+        "intensity": 4,
+        "template": "Feature usage: {feature} — {count} uses in {period}",
+        "key_prefix": "usage",
+        "data_fields": ["feature", "count", "period"],
+    },
+    "dogfood_entry": {
+        "context": "Strategy",
+        "intensity": 7,
+        "template": "Dogfood: {action} — pain_if_broken={pain_if_broken}",
+        "key_prefix": "dogfood",
+        "data_fields": ["action", "pain_if_broken", "insight"],
+    },
 }
 
 # Events that should NEVER create engrams (noisy/circular/redundant)
@@ -351,6 +418,8 @@ _ARCHIVE_WORTHY_EVENTS = {
     "deploy_complete", "code_critiqued", "task_escalated",
     "handoff_requested", "sprint_started",
     "goal_achieved",
+    "ground_verified", "align_reviewed", "delta_recorded",
+    "growth_gate_measured", "dogfood_entry",
 }
 
 

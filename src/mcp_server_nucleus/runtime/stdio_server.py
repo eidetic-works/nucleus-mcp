@@ -437,6 +437,16 @@ class StdioServer:
                             "description": "Get instant context when starting a new session. Call this first.",
                             "arguments": []
                         },
+                        {
+                            "name": "flywheel_check",
+                            "description": "FLYWHEEL — CSR, open tickets, curriculum depth.",
+                            "arguments": []
+                        },
+                        {
+                            "name": "flywheel_brief",
+                            "description": "FLYWHEEL — this week's activity report.",
+                            "arguments": []
+                        },
                     ]
                 }
             }
@@ -600,8 +610,54 @@ class StdioServer:
             return _start_sprint_prompt(goal)
         elif name == "cold_start":
             return _cold_start_prompt()
+        elif name == "flywheel_check":
+            return self._flywheel_check_prompt()
+        elif name == "flywheel_brief":
+            return self._flywheel_brief_prompt()
         else:
             raise ValueError(f"Unknown prompt: {name}")
+
+    def _flywheel_check_prompt(self) -> str:
+        """Flywheel status: CSR, tickets, curriculum depth."""
+        try:
+            from mcp_server_nucleus.flywheel.dashboard import render_dashboard_json
+            from mcp_server_nucleus.runtime.common import get_brain_path
+            snapshot = render_dashboard_json(get_brain_path())
+            csr = snapshot.get("csr", {})
+            tickets = snapshot.get("tickets", {})
+            curriculum = snapshot.get("curriculum", {})
+            lines = ["## FLYWHEEL Status\n"]
+            lines.append(
+                f"**CSR:** {csr.get('ratio', 1.0):.1%} "
+                f"({csr.get('claims_survived', 0)}/{csr.get('claims_total', 0)} claims)"
+            )
+            lines.append(f"**Open tickets:** {tickets.get('open', 0)}")
+            lines.append(f"**Pending curriculum pairs:** {curriculum.get('pending', 0)}")
+            lines.append(f"**Ready curriculum pairs:** {curriculum.get('ready', 0)}")
+            recent = snapshot.get("recent_claims", [])
+            if recent:
+                lines.append("\n### Last 5 claims\n")
+                for claim in recent[-5:]:
+                    mark = "OK" if claim.get("survived") else "FAIL"
+                    lines.append(f"- [{mark}] {claim.get('step', '?')} @ {claim.get('at', '?')[:19]}")
+            lines.append("\n**Is the flywheel turning in the right direction?**")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error reading flywheel state: {e}"
+
+    def _flywheel_brief_prompt(self) -> str:
+        """Flywheel weekly activity report."""
+        try:
+            from datetime import datetime, timezone
+            from pathlib import Path
+            from mcp_server_nucleus.runtime.common import get_brain_path
+            week = datetime.now(timezone.utc).isocalendar()[1]
+            path = Path(get_brain_path()) / "flywheel" / f"week-{week}.md"
+            if path.exists():
+                return path.read_text()
+            return f"# Flywheel — Week {week}\n\nNo activity this week yet. Run a task to start the loop."
+        except Exception as e:
+            return f"Error loading weekly brief: {e}"
 
     def _get_facade_routers(self) -> Dict[str, Dict[str, Any]]:
         """Build facade routers lazily. Same _impl functions as FastMCP facades."""
