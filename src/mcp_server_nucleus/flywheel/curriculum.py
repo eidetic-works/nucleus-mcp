@@ -37,45 +37,15 @@ def curriculum_refresh(brain_path: Path) -> Dict[str, Any]:
     if not pending_path.exists():
         return {"scanned": 0, "ready": 0, "still_pending": 0, "output": str(pending_path)}
 
-    # Build a set of steps whose latest survival postdates their latest failure.
-    #
-    # Only step-level signals count for promotion:
-    #   - bare step claims (no ":" prefix) — from file_ticket / bump_unsurvived
-    #   - "task_outcome:{step}" — the driver's end-to-end success signal
-    #   - "ground_tier5:{step}" — execution verifier confirmation
-    #
-    # Sub-phase claims (phase_a_classify, phase_b_scout, phase_c_prompt_writer,
-    # phase_d_reviewer) are ignored — they indicate internal pipeline steps ran
-    # successfully, NOT that the task itself succeeded.
+    # Build a set of steps that have survived claims
     csr = read_csr(bp)
-    _STEP_LEVEL_PREFIXES = {"task_outcome", "ground_tier5"}
-    latest_survived: Dict[str, str] = {}  # bare_step → latest ISO timestamp
-    latest_failed: Dict[str, str] = {}    # bare_step → latest ISO timestamp
-
-    for claim in csr.get("recent_claims", []):
-        step_raw = claim.get("step", "")
-        at = claim.get("at", "")
-        survived = claim.get("survived", False)
-
-        if ":" in step_raw:
-            prefix, bare = step_raw.split(":", 1)
-            if prefix not in _STEP_LEVEL_PREFIXES:
-                continue  # skip sub-phase claims
-        else:
-            bare = step_raw
-
-        if survived:
-            if bare not in latest_survived or at > latest_survived[bare]:
-                latest_survived[bare] = at
-        else:
-            if bare not in latest_failed or at > latest_failed[bare]:
-                latest_failed[bare] = at
-
     survived_steps: set = set()
-    for step, surv_at in latest_survived.items():
-        fail_at = latest_failed.get(step, "")
-        if surv_at > fail_at:
-            survived_steps.add(step)
+    for claim in csr.get("recent_claims", []):
+        if claim.get("survived"):
+            step = claim.get("step", "")
+            # step may be "phase:step" — extract the step component
+            survived_steps.add(step.split(":", 1)[-1] if ":" in step else step)
+            survived_steps.add(step)  # also add the full label
 
     # Rewrite the pending file, promoting ready pairs
     ready_path = training_dir / "unified_dpo_ready.jsonl"
