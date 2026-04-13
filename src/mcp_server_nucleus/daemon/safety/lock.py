@@ -45,20 +45,6 @@ class BrainLock:
     def _ensure_dir(self):
         os.makedirs(os.path.dirname(self.lock_file), exist_ok=True)
 
-    def _is_stale(self) -> bool:
-        """Check if lock file holds a PID for a dead process."""
-        try:
-            with open(self.lock_file, 'r') as f:
-                pid = int(f.read().strip())
-            os.kill(pid, 0)  # signal 0 = check if alive
-            return False
-        except (ValueError, FileNotFoundError):
-            return True  # corrupt or missing
-        except ProcessLookupError:
-            return True  # PID dead
-        except PermissionError:
-            return False  # alive, different user
-
     def acquire(self) -> bool:
         """
         Acquire egg-lock. Blocking with timeout.
@@ -92,13 +78,7 @@ class BrainLock:
                     
                 # Locked by another process
                 if time.time() - start_time >= self.timeout:
-                    if self._is_stale():
-                        logger.info(f"BrainLock: stale lock (dead PID), removing {self.lock_file}")
-                        try:
-                            os.remove(self.lock_file)
-                        except OSError:
-                            pass
-                        continue  # retry after removing
+                    # Timeout reached
                     logger.warning(f"BrainLock Acquisition Timeout: {self.lock_file}")
                     return False
                 
