@@ -113,6 +113,7 @@ def register(mcp, helpers):
     from ..runtime.artifact_ops import _read_artifact, _write_artifact, _list_artifacts
     from ..runtime.trigger_ops import _trigger_agent_impl, _get_triggers_impl, _evaluate_triggers_impl
     from ..runtime.shared_state_ops import brain_sync_read, brain_sync_write, brain_sync_list
+    from ..runtime.relay_ops import relay_post, relay_inbox, relay_ack, relay_status, relay_clear
 
     def _channel_notify(title, message, level="info"):
         from ..runtime.channels import get_channel_router
@@ -185,6 +186,12 @@ def register(mcp, helpers):
         "list_channels": lambda: _channel_list(),
         "add_channel": lambda channel_type, **kwargs: _channel_add(channel_type, **kwargs),
         "test_channel": lambda channel_name=None: _channel_test(channel_name),
+        # ── Cross-session relay (Cowork ↔ Claude Code) ──
+        "relay_post": lambda to, subject, body, priority="normal", context=None, sender=None: json.dumps(relay_post(to, subject, body, priority, context, sender), indent=2),
+        "relay_inbox": lambda unread_only=True, limit=20, recipient=None: json.dumps(relay_inbox(unread_only, limit, recipient), indent=2),
+        "relay_ack": lambda message_id, recipient=None: json.dumps(relay_ack(message_id, recipient), indent=2),
+        "relay_status": lambda: json.dumps(relay_status(), indent=2),
+        "relay_clear": lambda recipient=None, older_than_hours=168: json.dumps(relay_clear(recipient, older_than_hours), indent=2),
     }
 
     @mcp.tool()
@@ -214,6 +221,11 @@ Actions:
   list_channels    - List configured notification channels
   add_channel      - Add a channel. params: {channel_type, webhook_url?}
   test_channel     - Test a channel. params: {channel_name?}
+  relay_post       - Post message to another session type (Cowork↔Claude Code). params: {to, subject, body, priority?, context?, sender?}
+  relay_inbox      - Read messages for current session type. params: {unread_only?, limit?, recipient?}
+  relay_ack        - Mark a relay message as read. params: {message_id, recipient?}
+  relay_status     - Get relay mailbox status across all session types
+  relay_clear      - Clean up old relay messages. params: {recipient?, older_than_hours?}
 """
         return dispatch(action, params, ROUTER, "nucleus_sync")
 
