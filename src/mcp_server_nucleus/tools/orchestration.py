@@ -2,7 +2,7 @@
 sprints, file changes, gcloud, marketing, critic, swarm, memory, consent,
 strategy, sessions, ingestion, and dashboard tools.
 
-Super-Tools Facade: 69 orchestration tools split into 5 sub-facades:
+Super-Tools Facade: 65 orchestration tools split into 5 sub-facades:
   nucleus_orchestration  — satellite, commitments, loops, patterns, metrics, challenges
   nucleus_telemetry      — LLM tiers, telemetry, protocol, handoff
   nucleus_slots          — orchestrate, slot ops, sprints, missions
