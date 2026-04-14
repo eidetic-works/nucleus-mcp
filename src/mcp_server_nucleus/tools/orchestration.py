@@ -27,8 +27,14 @@ def _register_session_impl(conversation_id, focus_area, *,
                            sessions_path=None, emit_event=None):
     """Pure impl for register_session — testable without MCP plumbing.
 
-    Validates tier and role/tier prefix match, merges optional org-observability
-    fields into the registry entry, emits an enriched session_registered event.
+    Org-layer kwargs (exposed via the facade): role, tier, charter_path,
+    parent_session. All four optional; tier must be in _VALID_TIERS; role
+    must start with tier prefix (e.g. 'sonnet_structure' / tier='sonnet').
+
+    DI kwargs (infra, test-only): sessions_path, emit_event. Injected so
+    tests can point at tmp_path and spy on events; prod callers supply the
+    real ledger path and the _emit_event helper.
+
     Raises ValueError on invalid tier or role/tier mismatch.
     """
     if tier is not None and tier not in _VALID_TIERS:
