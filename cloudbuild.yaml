@@ -1,0 +1,108 @@
+# =============================================================================
+# Nucleus Sovereign Agent OS — Cloud Build Pipeline
+# =============================================================================
+# Builds, pushes, and deploys Nucleus MCP to Cloud Run in one trigger.
+#
+# Setup (one-time):
+#   1. Set substitution variables in Cloud Build trigger UI or below
+#   2. Grant Cloud Build SA the roles:
+#        roles/run.admin
+#        roles/iam.serviceAccountUser
+#        roles/artifactregistry.writer
+#   3. Create Artifact Registry repo:
+#        gcloud artifacts repositories create nucleus \
+#          --repository-format=docker --location=$_REGION
+#
+# Manual trigger:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions _PROJECT_ID=your-project,_REGION=asia-south1,_TENANT_ID=myorg
+#
+# Substitution variables (set in trigger or --substitutions flag):
+#   _PROJECT_ID   GCP project ID
+#   _REGION       Cloud Run region (e.g. asia-south1 for Mumbai)
+#   _SERVICE      Cloud Run service name (default: nucleus-mcp)
+#   _TENANT_ID    NUCLEUS_TENANT_ID for single-tenant deploy
+#   _BRAIN_PATH   NUCLEAR_BRAIN_PATH inside container (default: /app/.brain)
+# =============================================================================
+
+substitutions:
+  _PROJECT_ID: "your-gcp-project"
+  _REGION: "asia-south1"
+  _SERVICE: "nucleus-mcp"
+  _TENANT_ID: "default"
+  _BRAIN_PATH: "/app/.brain"
+  _IMAGE: "asia-south1-docker.pkg.dev/${_PROJECT_ID}/nucleus/${_SERVICE}"
+
+steps:
+  # ── Step 1: Build the Docker image ──────────────────────────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    id: build
+    args:
+      - build
+      - "--tag=${_IMAGE}:${SHORT_SHA}"
+      - "--tag=${_IMAGE}:latest"
+      - "--cache-from=${_IMAGE}:latest"
+      - "."
+
+  # ── Step 2: Push to Artifact Registry ───────────────────────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    id: push
+    waitFor: [build]
+    args:
+      - push
+      - "--all-tags"
+      - "${_IMAGE}"
+
+  # ── Step 3: Deploy to Cloud Run ─────────────────────────────────────────
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: deploy
+    waitFor: [push]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "${_SERVICE}"
+      - "--image=${_IMAGE}:${SHORT_SHA}"
+      - "--region=${_REGION}"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--port=8080"
+      - "--command=bash"
+      - "--args=/app/entrypoint.sh,http"
+      - "--set-env-vars=NUCLEUS_TENANT_ID=${_TENANT_ID},NUCLEAR_BRAIN_PATH=${_BRAIN_PATH},NUCLEUS_TRANSPORT=streamable-http,NUCLEUS_REQUIRE_AUTH=false"
+      - "--min-instances=0"
+      - "--max-instances=10"
+      - "--memory=512Mi"
+      - "--cpu=1"
+      - "--timeout=300"
+
+  # ── Step 4: Verify deployment ────────────────────────────────────────────
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: verify
+    waitFor: [deploy]
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        URL=$(gcloud run services describe ${_SERVICE} \
+          --region=${_REGION} --format='value(status.url)')
+        echo "Deployed to: $URL"
+        # Health check
+        STATUS=$(curl -sf "$URL/health" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','?'))")
+        echo "Health: $STATUS"
+        if [ "$STATUS" = "ok" ]; then
+          echo "✓ Nucleus MCP deployed and healthy at $URL/mcp"
+        else
+          echo "✗ Health check failed"
+          exit 1
+        fi
+
+images:
+  - "${_IMAGE}:${SHORT_SHA}"
+  - "${_IMAGE}:latest"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+timeout: "1200s"
