@@ -1,7 +1,7 @@
 """Engram, health, version, audit, morning brief, compounding loop,
 DSoR, heartbeat, and tier system tools.
 
-Super-Tools Facade: All 36 engram/health/observability actions exposed via
+Super-Tools Facade: All 32 engram/health/observability actions exposed via
 a single `nucleus_engrams(action, params)` MCP tool.
 """
 
