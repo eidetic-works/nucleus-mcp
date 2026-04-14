@@ -1,35 +1,13 @@
 """
-Nucleus HTTP Cloud Entrypoint — nucleus-mcp-cloud
-===================================================
-Importable entrypoint for the Cloud Run / container ASGI app.
-This module re-exports `serve()` from src/app.py in an
-installable-package-compatible way.
-
-Usage:
-  nucleus-mcp-cloud              # starts on PORT (default 8080)
-  CMD=http in Docker             # via deploy/entrypoint.sh
+nucleus-mcp-cloud entrypoint
+==============================
+Thin shim so pyproject.toml scripts can point at a stable importable path.
+All logic lives in app.py (same package).
 """
 
-import os
-import sys
+from mcp_server_nucleus.http_transport.app import serve, app
 
-
-def serve():
-    """
-    Start the Cloud Run compatible HTTP server.
-    Delegates to src/app.py::serve() with the correct sys.path.
-    """
-    import sys
-    from pathlib import Path
-
-    # Ensure src/ is on path so app.py is importable
-    src = Path(__file__).parent.parent.parent
-    if str(src) not in sys.path:
-        sys.path.insert(0, str(src))
-
-    import app as cloud_app
-    cloud_app.serve()
-
+__all__ = ["serve", "app"]
 
 if __name__ == "__main__":
     serve()
