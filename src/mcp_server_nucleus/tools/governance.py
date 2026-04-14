@@ -1,6 +1,6 @@
 """Governance & Hypervisor tools — lock/unlock, watch, hypervisor mode, egress proxy.
 
-Super-Tools Facade: All 10 governance actions exposed via a single
+Super-Tools Facade: All 19 governance actions exposed via a single
 `nucleus_governance(action, params)` MCP tool.
 """
 

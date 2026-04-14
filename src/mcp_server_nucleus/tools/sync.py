@@ -1,7 +1,7 @@
 """Sync, artifact, trigger, and deploy tools.
 
-Super-Tools Facade: All 15 sync/artifact/trigger/deploy actions exposed via
-a single `nucleus_sync(action, params)` MCP tool.
+Super-Tools Facade: All 27 sync/artifact/trigger/deploy/relay/shared/channel
+actions exposed via a single `nucleus_sync(action, params)` MCP tool.
 """
 
 import json
