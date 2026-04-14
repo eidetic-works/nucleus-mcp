@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-04-11 — "Ship What's Built"
+
+### Added
+- **Flywheel Engine** — Compounding loop that turns every failure into curriculum
+  - `nucleus_flywheel` MCP facade with 6 actions: ticket, survived, csr, dashboard, week_report, curriculum_refresh
+  - 6-action accountability per failure: memory note, CSR bump, training pair seed, weekly report, GitHub issue, task queue
+  - CSR (Claim Survival Rate) tracking — the scalar that proves the system is trustworthy
+  - Weekly markdown reports with CSR summary and ticket breakdown
+  - `curriculum_refresh()` — closes the loop: promotes DPO pairs whose step has since survived
+- **Skill Flywheel** — Auto-extract reusable skills from conversation data
+  - `nucleus_skills` MCP facade with 4 actions: list, extract, install, status
+  - Keyword-based intent clustering with optional Ollama embeddings
+  - Actionability scoring separates task patterns from conversational habits
+  - SKILL.md generation with trigger phrases, tool sequences, and anonymized examples
+  - Skill publisher installs generated skills as Claude Code custom commands
+  - Retry dedup collapses same-session retries while preserving cross-session reuse
+  - Session diversity scoring — skills from many sessions rank higher
+  - Verb-object domain labels (e.g., `write-tests`, `debug-errors`)
+- **GROUND Tier 5** — Outcome verification (anti-premature-victory)
+  - Delta-based claim checking: compares plan claims against measured actuals
+  - 25% threshold: actual delta must reach 25% of claimed delta to pass
+  - File existence claims: verifies claimed file creation
+  - Flywheel integration: Tier 5 outcomes auto-report to CSR
+- **Governance Pipeline** — CSR scoreboard, goal tracking, failure pattern detection
+- **RAG Phase 2** — Conversation indexing, Perplexity thread ingestion, codebase docstring extraction
+- **Layer 0 Conversation Capture** — Streaming JSONL parser for Claude Code sessions
+  - SFT pairs from successful tool use, DPO pairs from corrections
+  - 4 MCP actions, 6-hour ambient daemon mode
+- **Integration tests** for flywheel, skill pipeline, and Tier 5 smoke testing (19 new tests)
+
+### Fixed
+- **Layer 2 sync block** — Tight timeout + fail-open prevents sync hangs
+- **Cross-platform PII stripping** — macOS, Linux, Windows, and WSL home paths stripped from skill data
+- **Runtime hostname detection** — Skill extractor strips machine hostnames from training data
+- **Skill extraction data quality** — Noise filter, heuristic grading, tighter threshold, duplicate removal
+
+### Changed
+- Version bump from 1.8.8 to 1.11.0 to align with roadmap (v1.9, v1.10 features shipped incrementally)
+
 ## [1.7.0] - 2026-03-31 — "First User"
 
 ### Added
