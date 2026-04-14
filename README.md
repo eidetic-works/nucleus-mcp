@@ -45,9 +45,17 @@ Every tool response shows frontier health:
 
 ## Quick Start
 
+**stdio (default — works everywhere)**
 ```bash
 pip install nucleus-mcp
 nucleus init --recipe founder
+```
+
+**HTTP (remote access, CI, multi-agent)**
+```bash
+pip install "nucleus-mcp[http]"
+nucleus-mcp-http
+# Server ready at http://127.0.0.1:8766/mcp
 ```
 
 Two commands. Nucleus is running. AI outputs are now verified.

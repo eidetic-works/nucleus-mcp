@@ -5,6 +5,18 @@
 
 ---
 
+## ✅ v1.9.0 — Sovereign Network (Shipped 2026-04-14)
+
+- HTTP Transport Layer — Nucleus MCP now speaks streamable-http and SSE in addition to stdio
+- Tenant-Aware Architecture — solo / single-tenant / multi-tenant from env vars alone; each tenant gets a fully isolated .brain
+- Token auth with expiry and revocation — NUCLEUS_TENANT_MAP supports extended format with expires field; NUCLEUS_REVOKED_TOKENS for immediate revocation without restart
+- nucleus-mcp-http — local HTTP/SSE server for dev/test/CI
+- nucleus-mcp-cloud — Cloud Run / container entrypoint with /health, /ready, / identity
+- deploy/entrypoint.sh — container entrypoint supporting sovereign (stdio) | http | cli modes
+- Version resolution via importlib.metadata — no more hardcoded fallback versions
+
+---
+
 ## Vision
 
 Nucleus is the **Sovereign Agent Operating System** — the governance, memory, and orchestration layer that makes autonomous AI agents safe, auditable, and controllable. In a world where agent frameworks ship fast and break trust, Nucleus is the governed alternative.
