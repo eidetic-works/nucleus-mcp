@@ -115,6 +115,33 @@ Or use npx (zero Python setup required):
 npx -y nucleus-mcp
 ```
 
+
+## HTTP Transport
+
+Run Nucleus over HTTP instead of stdio — for remote access, CI pipelines, team sharing, or Cloud Run deployment.
+
+```bash
+pip install "nucleus-mcp[http]"
+nucleus-mcp-http                  # starts on http://127.0.0.1:8766/mcp
+```
+
+Three modes via env vars — no code changes:
+
+| Mode | Config | Use case |
+|---|---|---|
+| Solo | none | Local dev, same as stdio but HTTP-accessible |
+| Single-tenant | `NUCLEUS_TENANT_ID=myorg` | One org on Cloud Run |
+| Multi-tenant | `NUCLEUS_TENANT_MAP={"tok":"org"}` | SaaS / team deployments |
+
+Cloud Run / container:
+
+```bash
+docker run -p 8080:8080 -e NUCLEUS_TENANT_ID=myorg -v ./brain:/app/.brain nucleus-mcp http
+```
+
+Full reference: [docs/HTTP_TRANSPORT.md](docs/HTTP_TRANSPORT.md) | Architecture: [docs/adr/001-http-transport.md](docs/adr/001-http-transport.md)
+
+---
 ## Configure Your MCP Client
 
 ### Claude Desktop / Cursor / Windsurf
