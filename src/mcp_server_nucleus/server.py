@@ -565,7 +565,14 @@ def main():
         log_debug(f"File monitor not available: {e}")
     except Exception as e:
         log_debug(f"File monitor init failed: {e}")
-    
+
+    try:
+        from .runtime.relay_ops import auto_start_relay_watcher
+        auto_start_relay_watcher(get_brain_path())
+        log_debug("📬 Relay watcher auto-started")
+    except Exception as e:
+        log_debug(f"Relay watcher auto-start failed: {e}")
+
     # Emit session_started — triggers cycle bootstrap + growth hooks
     try:
         from .runtime.event_ops import _emit_event
