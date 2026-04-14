@@ -18,6 +18,53 @@ from typing import Dict, List, Any, Optional
 
 from ._dispatch import dispatch, async_dispatch
 
+_VALID_TIERS = {"opus", "sonnet", "haiku"}
+
+
+def _register_session_impl(conversation_id, focus_area, *,
+                           role=None, tier=None,
+                           charter_path=None, parent_session=None,
+                           sessions_path=None, emit_event=None):
+    """Pure impl for register_session — testable without MCP plumbing.
+
+    Validates tier and role/tier prefix match, merges optional org-observability
+    fields into the registry entry, emits an enriched session_registered event.
+    Raises ValueError on invalid tier or role/tier mismatch.
+    """
+    if tier is not None and tier not in _VALID_TIERS:
+        raise ValueError(
+            f"Invalid tier {tier!r}; must be one of {sorted(_VALID_TIERS)}"
+        )
+    if role is not None and tier is not None and not role.startswith(tier):
+        raise ValueError(
+            f"Role {role!r} must start with tier prefix {tier!r} "
+            f"(e.g. 'sonnet_structure' for tier='sonnet')"
+        )
+    sessions = {}
+    if sessions_path.exists():
+        with open(sessions_path, "r", encoding='utf-8') as f:
+            sessions = json.load(f)
+    now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    entry = {"focus": focus_area, "started": now, "last_active": now}
+    optional_fields = (("role", role), ("tier", tier),
+                       ("charter_path", charter_path),
+                       ("parent_session", parent_session))
+    for field, value in optional_fields:
+        if value is not None:
+            entry[field] = value
+    sessions.setdefault("sessions", {})[conversation_id] = entry
+    sessions_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(sessions_path, "w", encoding='utf-8') as f:
+        json.dump(sessions, f, indent=2, ensure_ascii=False)
+    if emit_event is not None:
+        event_data = {"conversation_id": conversation_id, "focus_area": focus_area}
+        for field, value in optional_fields:
+            if value is not None:
+                event_data[field] = value
+        emit_event("session_registered", "nucleus_mcp", event_data)
+    return f"Registered session {conversation_id[:8]}... focused on: {focus_area}"
+
+
 def _fix_code_impl(file_path, issues_context):
     try:
         path = Path(file_path)
@@ -775,21 +822,21 @@ Actions:
             lines.append("✨ **All clear!** No pending tasks.")
         return "\n".join(lines)
 
-    def _h_register_session(conversation_id, focus_area):
+    def _h_register_session(conversation_id, focus_area,
+                            role=None, tier=None,
+                            charter_path=None, parent_session=None):
         try:
             from ..runtime.common import get_brain_path as _gbp
-            brain = _gbp()
-            sessions_path = brain / "ledger" / "active_sessions.json"
-            sessions = {}
-            if sessions_path.exists():
-                with open(sessions_path, "r", encoding='utf-8') as f:
-                    sessions = json.load(f)
-            sessions.setdefault("sessions", {})[conversation_id] = {"focus": focus_area, "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "last_active": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
-            sessions_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(sessions_path, "w", encoding='utf-8') as f:
-                json.dump(sessions, f, indent=2, ensure_ascii=False)
-            _emit_event("session_registered", "nucleus_mcp", {"conversation_id": conversation_id, "focus_area": focus_area})
-            return f"Registered session {conversation_id[:8]}... focused on: {focus_area}"
+            sessions_path = _gbp() / "ledger" / "active_sessions.json"
+            return _register_session_impl(
+                conversation_id, focus_area,
+                role=role, tier=tier,
+                charter_path=charter_path, parent_session=parent_session,
+                sessions_path=sessions_path,
+                emit_event=_emit_event,
+            )
+        except ValueError:
+            raise
         except Exception as e:
             return f"Error: {e}"
 
@@ -855,7 +902,7 @@ Actions:
   critique_code        - Run Critic review. params: {file_path, context?}
   fix_code             - Auto-fix code. params: {file_path, issues_context}
   session_briefing     - Get session briefing. params: {conversation_id?}
-  register_session     - Register session focus. params: {conversation_id, focus_area}
+  register_session     - Register session focus. params: {conversation_id, focus_area, role?, tier?, charter_path?, parent_session?}. Tier ∈ {opus,sonnet,haiku}; role must start with tier prefix.
   handoff_task         - Hand off task. params: {task_description, target_session_id?, priority?}
   ingest_tasks         - Ingest tasks. params: {source, source_type?, session_id?, auto_assign?, skip_dedup?, dry_run?}
   rollback_ingestion   - Rollback ingestion. params: {batch_id, reason?}
