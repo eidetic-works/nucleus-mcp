@@ -115,6 +115,13 @@ class StdioServer:
 
         self.mounter = get_mounter(self.brain_path) if get_mounter else None
 
+        # Auto-start relay watcher (always-on, no config needed)
+        try:
+            from mcp_server_nucleus.runtime.relay_ops import auto_start_relay_watcher
+            auto_start_relay_watcher(self.brain_path)
+        except Exception as e:
+            logger.debug(f"Relay watcher auto-start skipped: {e}")
+
     async def run(self):
         # Restore mounts from persistence
         if self.mounter:

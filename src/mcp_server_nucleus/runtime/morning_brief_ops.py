@@ -129,6 +129,13 @@ def _morning_brief_impl() -> Dict:
     # ── SECTION 8: FRONTIER HEALTH (Phase 4 — Three Frontiers) ─
     brief["sections"]["frontier_health"] = _retrieve_frontier_health(brain)
 
+    # ── SECTION 9: RELAY INBOX (Cross-session messages) ──────
+    try:
+        from .relay_ops import get_relay_brief_section
+        brief["sections"]["relay"] = get_relay_brief_section()
+    except Exception:
+        brief["sections"]["relay"] = {"has_messages": False, "summary": "Relay unavailable"}
+
     # ── SECTION 9: RECOMMENDATION ──────────────────────────────
     brief["recommendation"] = _generate_recommendation(brief["sections"])
 
@@ -580,6 +587,15 @@ def _format_brief(brief: Dict) -> str:
             lines.append(f"  ✅ RETRAIN RECOMMENDED — {training.get('reason', '')}")
         else:
             lines.append(f"  ⏳ {training.get('reason', 'waiting for data')}")
+
+    # Relay inbox section
+    relay = brief["sections"].get("relay", {})
+    if relay.get("has_messages"):
+        lines.append(f"\n📬 RELAY INBOX ({relay.get('total_unread', 0)} unread)")
+        lines.append("-" * 40)
+        lines.append(relay.get("summary", ""))
+        if relay.get("urgent_count", 0) > 0:
+            lines.append(f"  ⚠️  {relay['urgent_count']} urgent — check relay_inbox now")
 
     # Recommendation
     rec = brief.get("recommendation", {})
