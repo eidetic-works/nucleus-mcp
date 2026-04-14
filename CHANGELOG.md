@@ -7,47 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.9.0] - 2026-04-14 — "Sovereign Network"
-
-### Added
-
-**HTTP Transport Layer** — Nucleus MCP now supports HTTP/SSE transport in addition to stdio. This is the foundation for remote access, team collaboration, and SaaS deployment.
-
-New files:
-- `src/mcp_server_nucleus/http_transport/tenant.py` — Tenant-aware middleware. Resolves tenant identity from Bearer token / X-Nucleus-Tenant-ID header / NUCLEUS_TENANT_ID env var. Creates and isolates a per-tenant .brain directory. No tenant can access another's brain.
-- `src/mcp_server_nucleus/http_transport/server.py` — Local HTTP server entrypoint
-- `src/app.py` (rewritten) — Cloud Run / container ASGI app with /health, /ready, /identity, /mcp endpoint
-
-New CLI entrypoints:
-- `nucleus-mcp-http` — Option 1: local HTTP/SSE server on localhost:8766. Same mcp instance as stdio, now accessible over HTTP.
-- `nucleus-mcp-cloud` — Option 2: Cloud Run compatible server on PORT (default 8080)
-
-New install extra:
-- `pip install "nucleus-mcp[http]"` — installs uvicorn + starlette for HTTP mode
-
-**Tenant-Aware Architecture** — Three deployment modes via env vars only (no code changes):
-- Solo: default tenant, no config, backward-compatible
-- Single-tenant: `NUCLEUS_TENANT_ID=<slug>`
-- Multi-tenant: `NUCLEUS_TENANT_MAP={"token": "tenant_id"}` + `NUCLEUS_REQUIRE_AUTH=true`
-
-**Container Support**:
-- `deploy/entrypoint.sh` — container entrypoint. CMD: `sovereign` (stdio), `http` (Cloud Run), `cli`
-- Dockerfile updated: installs `[full,http]` extras, exposes port 8080, updated HEALTHCHECK
-
-### Unchanged
-- `nucleus-mcp` stdio entrypoint — completely unchanged. Zero regression.
-- All existing tool facades, resources, prompts — unchanged.
-
-### Migration / Upgrading
-
-No changes needed for existing stdio users. HTTP transport is purely additive.
-
-To try HTTP mode:
-```bash
-pip install "nucleus-mcp[http]"
-nucleus-mcp-http
-```
-
 ## [1.7.0] - 2026-03-31 — "First User"
 
 ### Added

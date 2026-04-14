@@ -187,7 +187,7 @@ def register(mcp, helpers):
         "add_channel": lambda channel_type, **kwargs: _channel_add(channel_type, **kwargs),
         "test_channel": lambda channel_name=None: _channel_test(channel_name),
         # ── Cross-session relay (Cowork ↔ Claude Code) ──
-        "relay_post": lambda to, subject, body, priority="normal", context=None, sender=None: json.dumps(relay_post(to, subject, body, priority, context, sender), indent=2),
+        "relay_post": lambda to, subject, body, priority="normal", context=None, sender=None, to_session_id=None, from_session_id=None: json.dumps(relay_post(to, subject, body, priority, context, sender, to_session_id, from_session_id), indent=2),
         "relay_inbox": lambda unread_only=True, limit=20, recipient=None: json.dumps(relay_inbox(unread_only, limit, recipient), indent=2),
         "relay_ack": lambda message_id, recipient=None: json.dumps(relay_ack(message_id, recipient), indent=2),
         "relay_status": lambda: json.dumps(relay_status(), indent=2),
@@ -221,7 +221,7 @@ Actions:
   list_channels    - List configured notification channels
   add_channel      - Add a channel. params: {channel_type, webhook_url?}
   test_channel     - Test a channel. params: {channel_name?}
-  relay_post       - Post message to another session type (Cowork↔Claude Code). params: {to, subject, body, priority?, context?, sender?}
+  relay_post       - Post message to another session type (Cowork↔Claude Code). params: {to, subject, body, priority?, context?, sender?, to_session_id?, from_session_id?}
   relay_inbox      - Read messages for current session type. params: {unread_only?, limit?, recipient?}
   relay_ack        - Mark a relay message as read. params: {message_id, recipient?}
   relay_status     - Get relay mailbox status across all session types
