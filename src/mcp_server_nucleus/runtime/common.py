@@ -39,12 +39,7 @@ def setup_nucleus_logging(name: str = "nucleus", level: int = logging.INFO):
     
     # Avoid duplicate handlers
     if not logger.handlers:
-        # stderr, not stdout: stdio MCP transport reads newline-delimited
-        # JSON-RPC from stdout. A log line like "2026-04-14 10:45:20 - …"
-        # parses "2026" as a 4-char JSON number, then chokes on "-" at
-        # position 4 → "Unexpected non-whitespace character after JSON
-        # at position 4 (line 1 column 5)" on the client side.
-        handler = logging.StreamHandler(sys.stderr)
+        handler = logging.StreamHandler(sys.stdout)
         
         # Use JSON if specified via env
         if os.environ.get("NUCLEUS_LOG_JSON", "false").lower() == "true":
