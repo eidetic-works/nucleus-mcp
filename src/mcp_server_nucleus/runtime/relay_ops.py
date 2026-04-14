@@ -9,13 +9,17 @@ Each message is one file, organized by recipient session type.
 """
 
 import json
+import logging
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .common import get_brain_path
+
+logger = logging.getLogger("nucleus.relay")
 
 # ── Session type detection ────────────────────────────────────────
 
@@ -349,3 +353,311 @@ def relay_clear(
         "errors": errors,
         "older_than_hours": older_than_hours,
     }
+
+
+# ── Pending consolidation (consumed by morning brief + session start) ─
+
+def relay_consolidate_pending() -> Dict[str, Any]:
+    """Write .brain/relay/pending.json with a summary of all unread messages.
+
+    This file is the "you have mail" signal. It's designed to be read by:
+    - Morning brief (section injection)
+    - Session start hooks
+    - Any polling consumer that can't receive async push
+
+    The file is atomically written so readers never see a partial state.
+    """
+    base = _get_relay_dir()
+    pending: Dict[str, Any] = {
+        "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "total_unread": 0,
+        "mailboxes": {},
+        "urgent": [],
+    }
+
+    for d in sorted(base.iterdir()):
+        if not d.is_dir():
+            continue
+        recipient = d.name
+        unread_msgs = []
+
+        for f in sorted(d.glob("*.json"), reverse=True):
+            try:
+                msg = json.loads(f.read_text(encoding="utf-8"))
+                if not msg.get("read", False):
+                    summary = {
+                        "id": msg.get("id"),
+                        "from": msg.get("from"),
+                        "subject": msg.get("subject"),
+                        "priority": msg.get("priority", "normal"),
+                        "created_at": msg.get("created_at"),
+                    }
+                    unread_msgs.append(summary)
+                    if msg.get("priority") in ("high", "urgent"):
+                        pending["urgent"].append({
+                            **summary,
+                            "to": recipient,
+                        })
+            except Exception:
+                continue
+
+        if unread_msgs:
+            pending["mailboxes"][recipient] = {
+                "unread": len(unread_msgs),
+                "messages": unread_msgs[:10],  # cap at 10 per mailbox
+            }
+            pending["total_unread"] += len(unread_msgs)
+
+    # Atomic write
+    pending_path = base / "pending.json"
+    tmp_path = base / "pending.json.tmp"
+    try:
+        tmp_path.write_text(json.dumps(pending, indent=2, default=str), encoding="utf-8")
+        os.replace(tmp_path, pending_path)
+    except Exception as e:
+        logger.error(f"Failed to write pending.json: {e}")
+
+    return pending
+
+
+def relay_read_pending() -> Dict[str, Any]:
+    """Read the consolidated pending.json.
+
+    Returns the pending summary if it exists, otherwise runs
+    consolidation on-demand and returns fresh data.
+    """
+    pending_path = _get_relay_dir() / "pending.json"
+    if pending_path.exists():
+        try:
+            data = json.loads(pending_path.read_text(encoding="utf-8"))
+            # If stale (older than 60s), refresh
+            updated = data.get("updated_at", "")
+            if updated:
+                age = (datetime.now(timezone.utc) -
+                       datetime.fromisoformat(updated.replace("Z", "+00:00"))).total_seconds()
+                if age < 60:
+                    return data
+        except Exception:
+            pass
+    # Stale or missing — refresh
+    return relay_consolidate_pending()
+
+
+# ── Morning brief integration ─────────────────────────────────────
+
+def get_relay_brief_section() -> Dict[str, Any]:
+    """Generate the relay section for the morning brief.
+
+    Called by morning_brief_ops to inject relay status into the daily brief.
+    Returns a dict suitable for inclusion in the brief sections.
+    """
+    pending = relay_read_pending()
+
+    if pending["total_unread"] == 0:
+        return {
+            "has_messages": False,
+            "summary": "No unread relay messages.",
+        }
+
+    lines = []
+    for recipient, info in pending["mailboxes"].items():
+        lines.append(f"  📬 {recipient}: {info['unread']} unread")
+        for msg in info["messages"][:3]:
+            priority_icon = "🔴" if msg["priority"] in ("high", "urgent") else "⚪"
+            lines.append(f"    {priority_icon} [{msg['from']}] {msg['subject']}")
+
+    return {
+        "has_messages": True,
+        "total_unread": pending["total_unread"],
+        "urgent_count": len(pending.get("urgent", [])),
+        "summary": "\n".join(lines),
+        "urgent": pending.get("urgent", []),
+    }
+
+
+# ── File watcher for relay push ───────────────────────────────────
+
+_relay_observer = None
+_relay_observer_lock = threading.Lock()
+
+
+class RelayWatchHandler:
+    """Watches .brain/relay/ for new message files.
+
+    When a new JSON file appears in any recipient's mailbox:
+    1. Consolidates pending.json (atomic)
+    2. Emits a relay_message_received event (feeds engram hooks)
+    3. Logs the arrival
+
+    Since Claude Code can't receive async push mid-turn, pending.json
+    is the signal — the next session start or morning brief reads it.
+    """
+
+    def __init__(self, brain_path: Path):
+        self.brain_path = brain_path
+        self.relay_dir = brain_path / "relay"
+        self._seen_files: set = set()
+        self._debounce_seconds = 2.0
+        self._last_consolidate = 0.0
+
+        # Snapshot existing files so we only trigger on genuinely new ones
+        for d in self.relay_dir.iterdir():
+            if d.is_dir():
+                for f in d.glob("*.json"):
+                    self._seen_files.add(str(f))
+
+    def on_created(self, event):
+        """Handle new file creation in relay directory."""
+        if event.is_directory:
+            return
+        src = str(event.src_path)
+        if not src.endswith(".json") or src.endswith("pending.json") or src.endswith(".tmp"):
+            return
+        if src in self._seen_files:
+            return
+        self._seen_files.add(src)
+        self._on_new_relay_message(Path(src))
+
+    def on_modified(self, event):
+        """Also catch modifications (some editors create then write)."""
+        if event.is_directory:
+            return
+        src = str(event.src_path)
+        if not src.endswith(".json") or src.endswith("pending.json") or src.endswith(".tmp"):
+            return
+        # Only process if not yet seen (new file written in two steps)
+        if src not in self._seen_files:
+            self._seen_files.add(src)
+            self._on_new_relay_message(Path(src))
+
+    def _on_new_relay_message(self, path: Path):
+        """Process a newly arrived relay message."""
+        import time
+        now = time.time()
+
+        # Debounce consolidation
+        if now - self._last_consolidate < self._debounce_seconds:
+            return
+        self._last_consolidate = now
+
+        try:
+            msg = json.loads(path.read_text(encoding="utf-8"))
+            sender = msg.get("from", "unknown")
+            recipient = path.parent.name
+            subject = msg.get("subject", "(no subject)")
+            priority = msg.get("priority", "normal")
+
+            logger.info(
+                f"📬 New relay: [{sender} → {recipient}] "
+                f"{subject} (priority={priority})"
+            )
+
+            # Consolidate pending.json
+            relay_consolidate_pending()
+
+            # Emit event for the hook system
+            try:
+                from .event_ops import _emit_event
+                _emit_event(
+                    event_type="relay_message_received",
+                    emitter="relay_watcher",
+                    data={
+                        "message_id": msg.get("id"),
+                        "from": sender,
+                        "to": recipient,
+                        "subject": subject,
+                        "priority": priority,
+                    },
+                    description=f"Relay message from {sender} to {recipient}: {subject}",
+                )
+            except Exception:
+                pass  # Never let event emission break the watcher
+
+        except Exception as e:
+            logger.error(f"Error processing relay message {path}: {e}")
+
+
+def start_relay_watcher(brain_path: Optional[Path] = None) -> Dict[str, Any]:
+    """Start watching .brain/relay/ for new messages.
+
+    Uses watchdog if available, otherwise returns gracefully.
+    Called during MCP server initialization.
+    """
+    global _relay_observer
+
+    if brain_path is None:
+        brain_path = get_brain_path()
+
+    relay_dir = brain_path / "relay"
+    relay_dir.mkdir(parents=True, exist_ok=True)
+
+    with _relay_observer_lock:
+        if _relay_observer is not None:
+            return {"status": "already_running"}
+
+        try:
+            from watchdog.observers import Observer
+            from watchdog.events import FileSystemEventHandler
+
+            handler = RelayWatchHandler(brain_path)
+
+            class WatchdogRelay(FileSystemEventHandler):
+                def on_created(self, event):
+                    handler.on_created(event)
+                def on_modified(self, event):
+                    handler.on_modified(event)
+
+            _relay_observer = Observer()
+            _relay_observer.schedule(WatchdogRelay(), str(relay_dir), recursive=True)
+            _relay_observer.daemon = True
+            _relay_observer.start()
+
+            logger.info(f"📬 Relay watcher started for {relay_dir}")
+
+            return {
+                "status": "started",
+                "watching": str(relay_dir),
+                "handler": "watchdog",
+            }
+
+        except ImportError:
+            logger.info("Relay watcher: watchdog not installed, skipping")
+            return {
+                "status": "skipped",
+                "reason": "watchdog not installed",
+                "hint": "pip install watchdog",
+            }
+        except Exception as e:
+            logger.error(f"Relay watcher failed to start: {e}")
+            return {
+                "status": "error",
+                "error": str(e),
+            }
+
+
+def stop_relay_watcher() -> Dict[str, Any]:
+    """Stop the relay file watcher."""
+    global _relay_observer
+
+    with _relay_observer_lock:
+        if _relay_observer is not None:
+            try:
+                _relay_observer.stop()
+                _relay_observer.join(timeout=5)
+            except Exception:
+                pass
+            _relay_observer = None
+            return {"status": "stopped"}
+        return {"status": "not_running"}
+
+
+def auto_start_relay_watcher(brain_path: Optional[Path] = None):
+    """Auto-start relay watcher during MCP server init.
+
+    Called from server.py or __init__.py during startup.
+    Always-on — doesn't require sync.enabled config.
+    """
+    try:
+        start_relay_watcher(brain_path)
+    except Exception as e:
+        logger.debug(f"Relay watcher auto-start failed (non-critical): {e}")
