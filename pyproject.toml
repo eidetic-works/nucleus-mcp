@@ -33,6 +33,10 @@ full = [
     "fastmcp",
     "google-genai"
 ]
+http = [
+    "uvicorn[standard]>=0.29.0",
+    "starlette>=0.40.0",
+]
 postgres = [
     "psycopg2-binary"
 ]
@@ -48,6 +52,8 @@ dev = [
 nucleus-mcp = "mcp_server_nucleus:main"
 nucleus = "mcp_server_nucleus.cli:main"
 nucleus-init = "mcp_server_nucleus.cli:main"
+nucleus-mcp-http = "mcp_server_nucleus.http_transport.server:main"
+nucleus-mcp-cloud = "app:serve"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_nucleus"]
