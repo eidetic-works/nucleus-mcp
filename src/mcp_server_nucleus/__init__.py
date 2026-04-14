@@ -11,7 +11,7 @@ try:
     _pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
     __version__ = re.search(r'version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8")).group(1)
 except Exception:
-    __version__ = "1.8.8"  # fallback
+    __version__ = "1.11.0"  # fallback
 
 import os
 import json
