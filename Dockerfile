@@ -18,7 +18,7 @@ FROM python:3.12-slim AS builder
 WORKDIR /build
 COPY . .
 
-RUN pip install --no-cache-dir --prefix=/install ".[full,http]"
+RUN pip install --no-cache-dir --prefix=/install ".[full]"
 
 # Stage 2: Runtime
 FROM python:3.12-slim AS runtime
@@ -45,13 +45,9 @@ RUN mkdir -p /app/.brain/engrams \
              /app/.brain/config && \
     chown -R nucleus:nucleus /app
 
-# Expose HTTP port (Cloud Run uses PORT env var)
-EXPOSE 8080
-
-# Health check — uses the /health endpoint when running in HTTP mode
+# Health check
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -sf http://localhost:${PORT:-8080}/health > /dev/null || \
-        nucleus sovereign --json 2>/dev/null || exit 1
+    CMD nucleus sovereign --json 2>/dev/null || exit 1
 
 # Switch to non-root
 USER nucleus
@@ -60,9 +56,6 @@ USER nucleus
 COPY --chown=nucleus:nucleus deploy/entrypoint.sh /app/entrypoint.sh
 
 ENTRYPOINT ["bash", "/app/entrypoint.sh"]
-# CMD options:
-#   sovereign  — stdio MCP (default, backward-compat)
-#   http       — Cloud Run HTTP/SSE server
 CMD ["sovereign"]
 
 # Labels

@@ -8,16 +8,10 @@ import re
 from pathlib import Path
 
 try:
-    # Prefer importlib.metadata (works after pip install, no file path needed)
-    from importlib.metadata import version as _pkg_version
-    __version__ = _pkg_version("nucleus-mcp")
+    _pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
+    __version__ = re.search(r'version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8")).group(1)
 except Exception:
-    try:
-        # Dev fallback: read pyproject.toml relative to this file
-        _pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
-        __version__ = re.search(r'version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8")).group(1)
-    except Exception:
-        __version__ = "0.0.0-unknown"  # last-resort, never hardcode a real version
+    __version__ = "1.8.8"  # fallback
 
 import os
 import json
