@@ -1,7 +1,10 @@
 """Session management, consolidation, events, state, and checkpoint tools.
 
-Super-Tools Facade: All 16 session/event/state/checkpoint actions exposed via
-a single `nucleus_sessions(action, params)` MCP tool.
+Super-Tools Facade: All 20 session/event/state/checkpoint/conversation-capture
+actions exposed via a single `nucleus_sessions(action, params)` MCP tool.
+Layer 0 (shipped 2026-04-08) added 4 conversation-capture actions
+(ingest_conversations / search_conversations / list_conversations /
+conversation_stats) on top of the original 16.
 """
 
 import json
