@@ -295,32 +295,15 @@ def _check_for_recent_session() -> Dict[str, Any]:
 # ── Session Start (workflow enforcement dashboard) ───────────
 # Extracted from __init__.py  L2751-L2958
 
-def _brain_session_start_impl(goal: str = "", tags: list = None) -> str:
+def _brain_session_start_impl() -> str:
     try:
         # Direct File I/O for robustness (avoid internal function call issues)
         brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
         if not brain_path:
             return "Error: NUCLEAR_BRAIN_PATH env var not set"
-
+        
         brain = Path(brain_path)
-
-        # 0. Store goal/tags in state.json if provided
-        if goal:
-            state_path = brain / "ledger" / "state.json"
-            state_path.parent.mkdir(parents=True, exist_ok=True)
-            state = {}
-            if state_path.exists():
-                try:
-                    with open(state_path, "r", encoding="utf-8") as f:
-                        state = json.load(f)
-                except Exception:
-                    pass
-            session_data = state.get("current_session", {})
-            session_data["goal"] = goal
-            session_data["tags"] = tags or []
-            state["current_session"] = session_data
-            _atomic_json_write(state_path, state, indent=2)
-
+        
         # 1. Get Depth
         depth_path = brain / "depth_state.json"
         depth_data = {}
@@ -330,11 +313,11 @@ def _brain_session_start_impl(goal: str = "", tags: list = None) -> str:
                     depth_data = json.load(f)
             except Exception:
                 pass
-
+            
         depth_current = depth_data.get("current_depth", 0)
         depth_max = depth_data.get("max_safe_depth", 5)
         depth_indicator = depth_data.get("indicator", "🟢 ○○○○○")
-
+        
         # 2. Get Tasks
         tasks_path = brain / "ledger" / "tasks.json"
         pending_tasks = []
@@ -345,22 +328,22 @@ def _brain_session_start_impl(goal: str = "", tags: list = None) -> str:
                     pending_tasks = [t for t in all_tasks if t.get("status") == "PENDING"]
             except Exception:
                 pass
-
+            
         # Sort by priority - safely handle string priorities
         def get_priority_int(t):
             try:
                 return int(t.get("priority", 999))
             except (ValueError, TypeError):
                 return 999
-
+                
         sorted_tasks = sorted(pending_tasks, key=get_priority_int)[:5]
-
+        
         # 3. Get Session
         state_path = brain / "ledger" / "state.json"
         has_session = False
         active_context = "None"
         active_task = "None"
-
+        
         if state_path.exists():
             try:
                 with open(state_path, "r", encoding="utf-8") as f:
@@ -489,13 +472,6 @@ def _brain_session_start_impl(goal: str = "", tags: list = None) -> str:
             except Exception:
                 pass  # Never let session arc break session start
 
-        # Session Goal (if provided)
-        if goal:
-            output.append(f"🎯 SESSION GOAL: {goal}")
-            if tags:
-                output.append(f"   🏷️  Tags: {', '.join(str(t) for t in tags)}")
-            output.append("")
-
         # Recommendations
         output.append("💡 RECOMMENDATIONS:")
         if pending_handoffs:
@@ -511,17 +487,13 @@ def _brain_session_start_impl(goal: str = "", tags: list = None) -> str:
         else:
             output.append("   Continue current sprint or work on top priority task")
         output.append("")
-
+        
         output.append("📖 Read AGENT_PROTOCOL.md and MULTI_AGENT_MOU.md for workflow")
         output.append("=" * 60)
-
+        
         # Emit event (safe)
         try:
-            event_data = {"task_count": len(sorted_tasks)}
-            if goal:
-                event_data["goal"] = goal
-                event_data["tags"] = tags or []
-            _emit_event("session_started", "brain", event_data)
+             _emit_event("session_started", "brain", {"task_count": len(sorted_tasks)})
         except Exception:
             pass
         
