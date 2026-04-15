@@ -18,6 +18,9 @@ Environment variables:
   NUCLEUS_REQUIRE_AUTH     "true" to enforce auth
   NUCLEUS_JURISDICTION     e.g. "eu-dora", "global-default"
   NUCLEUS_LOG_LEVEL        Logging verbosity (default: WARNING)
+  NUCLEUS_RUN_DAEMON       "true" to start background scheduler + all jobs (default: false)
+  NUCLEUS_RUN_RELAY        "true" to start relay watcher for inter-brain messaging (default: false)
+  NUCLEUS_RUN_SYNC         "true" to start file sync watcher if configured (default: false)
 """
 
 import os
@@ -100,7 +103,20 @@ _mcp_app.router.routes.insert(0, Route("/", root))
 _mcp_app.router.routes.insert(1, Route("/health", health))
 _mcp_app.router.routes.insert(2, Route("/ready", ready))
 
-app = _mcp_app
+# If any background services are requested, wrap with a lifespan-aware app
+from .server import _env_flag, build_lifespan
+from starlette.routing import Mount
+
+_needs_lifespan = any(
+    _env_flag(v) for v in ("NUCLEUS_RUN_DAEMON", "NUCLEUS_RUN_RELAY", "NUCLEUS_RUN_SYNC")
+)
+if _needs_lifespan:
+    app = Starlette(
+        lifespan=build_lifespan(),
+        routes=[Mount("/", app=_mcp_app)],
+    )
+else:
+    app = _mcp_app
 
 
 def serve():
