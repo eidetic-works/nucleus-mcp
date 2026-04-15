@@ -189,15 +189,23 @@ class TestDelegateCLI:
              "--role", "sonnet_behavior",
              "--brief", str(brief_path),
              "--charters-dir", str(charters_dir),
+             "--expect-haiku-count-min", "5",
+             "--commit-sha", "deadbeef0011",
              "--dry-run"],
             capture_output=True, text=True, timeout=10,
         )
         assert result.returncode == 0, result.stderr
         assert "=== METADATA ===" in result.stdout
         assert "role: sonnet_behavior" in result.stdout
+        assert "haiku_count_min: 5" in result.stdout
+        assert "commit_sha: deadbeef0011" in result.stdout
         assert "=== PROMPT ===" in result.stdout
         assert "S-BEHAVIOR" in result.stdout
         assert "verify CSR did not drop" in result.stdout
+        # Contract block injected into the brief (Gap 1 + Gap 6)
+        assert "Contract (Opus-enforced post-return)" in result.stdout
+        assert "haiku_count >= 5" in result.stdout
+        assert "git show deadbeef0011:" in result.stdout
 
     def test_missing_charter_exits_nonzero(self, tmp_path):
         charters_dir = tmp_path / "charters"
@@ -209,11 +217,34 @@ class TestDelegateCLI:
             [sys.executable, str(script),
              "--role", "sonnet_ghost",
              "--brief", str(brief_path),
-             "--charters-dir", str(charters_dir)],
+             "--charters-dir", str(charters_dir),
+             "--expect-haiku-count-min", "5",
+             "--commit-sha", "deadbeef0011"],
             capture_output=True, text=True, timeout=10,
         )
         assert result.returncode != 0
         assert "Charter not found" in (result.stderr + result.stdout)
+
+    def test_missing_required_flags_exits_nonzero(self, tmp_path):
+        # Both --expect-haiku-count-min and --commit-sha are required;
+        # omitting either must fail loud. Safer than silent default that
+        # would let Opus skip fan-out enforcement by accident.
+        charters_dir = tmp_path / "charters"
+        charters_dir.mkdir()
+        (charters_dir / "sonnet_behavior.md").write_text("x\n")
+        brief_path = tmp_path / "brief.md"
+        brief_path.write_text("y\n")
+        script = _SCRIPTS / "delegate.py"
+        result = subprocess.run(
+            [sys.executable, str(script),
+             "--role", "sonnet_behavior",
+             "--brief", str(brief_path),
+             "--charters-dir", str(charters_dir),
+             "--commit-sha", "abc"],  # missing --expect-haiku-count-min
+            capture_output=True, text=True, timeout=10,
+        )
+        assert result.returncode != 0
+        assert "expect-haiku-count-min" in (result.stderr + result.stdout)
 
 
 # ── scripts/audit_token_cost.py ─────────────────────────────────────────
@@ -333,3 +364,52 @@ class TestAuditTokenCost:
             }) + "\n")
         events, _ = audit.read_events(events_path, now - timedelta(hours=1))
         assert events == []
+
+    # ─── calibration (Gap 3) ───────────────────────────────────────────
+
+    def test_load_calibration_missing_file_returns_empty(self, tmp_path):
+        audit = self._load_audit()
+        assert audit.load_calibration(tmp_path / "nope.json") == {}
+
+    def test_load_calibration_malformed_raises(self, tmp_path):
+        audit = self._load_audit()
+        p = tmp_path / "cal.json"
+        p.write_text("{not json")
+        with pytest.raises(ValueError, match="Calibration JSON malformed"):
+            audit.load_calibration(p)
+
+    def test_format_table_no_calibration_labels_uncalibrated(self):
+        audit = self._load_audit()
+        by_role = {"sonnet_x": {"tier": "sonnet", "spawns": 1, "returns": 1,
+                                "orphans": 0, "prompt_chars": 100, "response_chars": 100,
+                                "duration_ms": 0}}
+        table = audit.format_table(by_role)
+        assert "uncalibrated proxy" in table
+
+    def test_format_table_with_calibration_multiplies_sonnet_only(self):
+        audit = self._load_audit()
+        by_role = {
+            "sonnet_x": {"tier": "sonnet", "spawns": 1, "returns": 1,
+                         "orphans": 0, "prompt_chars": 1000, "response_chars": 0,
+                         "duration_ms": 0},
+            "opus_master": {"tier": "opus", "spawns": 1, "returns": 0,
+                            "orphans": 1, "prompt_chars": 1000, "response_chars": 0,
+                            "duration_ms": 0},
+        }
+        cal = {"s_structure": {"ratio": 1.10, "status": "ok"}}
+        table = audit.format_table(by_role, calibration=cal)
+        # Sonnet proxy = 1000 * 0.25 = 250; calibrated = 250 * 1.10 = 275
+        assert "275" in table
+        # Opus stays uncalibrated even with ratio present
+        assert "uncalibrated proxy" in table
+        assert "calibration ratio" in table
+
+    def test_format_table_failed_calibration_treated_as_absent(self):
+        audit = self._load_audit()
+        by_role = {"sonnet_x": {"tier": "sonnet", "spawns": 1, "returns": 1,
+                                "orphans": 0, "prompt_chars": 100, "response_chars": 0,
+                                "duration_ms": 0}}
+        cal = {"s_structure": {"status": "failed", "reason": "usage field missing"}}
+        table = audit.format_table(by_role, calibration=cal)
+        assert "uncalibrated proxy" in table
+        assert "calibration ratio" not in table
