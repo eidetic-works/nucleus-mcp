@@ -145,32 +145,41 @@ def build_app(transport: str = "streamable-http"):
     """
     Build and return the Starlette ASGI app for Nucleus MCP over HTTP.
     Wraps the shared `mcp` instance from __init__ with tenant middleware.
-    If any NUCLEUS_RUN_* env vars are set, attaches a lifespan that starts
-    the corresponding background services.
+    If any NUCLEUS_RUN_* env vars are set, chains a lifespan that starts
+    the corresponding background services alongside fastmcp's own lifespan.
     """
-    from starlette.applications import Starlette
-    from starlette.routing import Mount
     # Import the shared mcp instance (same one used by stdio)
     from mcp_server_nucleus import mcp
     from .tenant import NucleusTenantMiddleware
 
     # Get the fastmcp Starlette app for the chosen transport
-    inner_app = mcp.http_app(transport=transport)
+    # fastmcp returns a Starlette app with its own lifespan (session manager init)
+    app = mcp.http_app(transport=transport)
 
-    # Wrap with tenant middleware — this is what makes it multi-tenant aware
-    inner_app.add_middleware(NucleusTenantMiddleware)
+    # Wrap with tenant middleware
+    app.add_middleware(NucleusTenantMiddleware)
 
-    # If any background services are requested, wrap with a lifespan-aware app
+    # If background services requested, chain our lifespan with fastmcp's existing one
     needs_lifespan = any(
         _env_flag(v) for v in ("NUCLEUS_RUN_DAEMON", "NUCLEUS_RUN_RELAY", "NUCLEUS_RUN_SYNC")
     )
     if needs_lifespan:
-        app = Starlette(
-            lifespan=build_lifespan(),
-            routes=[Mount("/", app=inner_app)],
-        )
-    else:
-        app = inner_app
+        # fastmcp's lifespan is stored on the Starlette app's router
+        original_lifespan = getattr(app, "lifespan", None) or getattr(app.router, "lifespan_context", None)
+        nucleus_lifespan = build_lifespan()
+
+        @asynccontextmanager
+        async def chained_lifespan(a):
+            # Run fastmcp's lifespan first (initialises session manager)
+            if original_lifespan is not None:
+                async with original_lifespan(a):
+                    async with nucleus_lifespan(a):
+                        yield
+            else:
+                async with nucleus_lifespan(a):
+                    yield
+
+        app.router.lifespan_context = chained_lifespan
 
     return app
 
