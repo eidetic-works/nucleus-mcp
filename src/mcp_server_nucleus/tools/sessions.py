@@ -73,7 +73,7 @@ def register(mcp, helpers):
         "list": lambda: make_response(True, data=_list_sessions()),
         "check_recent": lambda: make_response(True, data=_check_for_recent_session()),
         "end": _h_end,
-        "start": lambda goal="", tags=None: _wrap_str(_brain_session_start_impl(goal=goal, tags=tags)),
+        "start": lambda: _wrap_str(_brain_session_start_impl()),
         "archive_resolved": lambda: make_response(True, data=_archive_resolved_files()),
         "propose_merges": lambda: make_response(True, data=_generate_merge_proposals()),
         "garbage_collect": lambda max_age_hours=72, dry_run=False: make_response(True, data=_garbage_collect_tasks(max_age_hours=max_age_hours, dry_run=dry_run)),
@@ -100,7 +100,7 @@ Actions:
   list             - List all saved sessions
   check_recent     - Check for recent session to resume
   end              - End work session. params: {summary?, learnings?, mood?}
-  start            - Mandatory session start protocol. params: {goal?, tags?}
+  start            - Mandatory session start protocol
   archive_resolved - Archive .resolved.* backup files
   propose_merges   - Detect redundant artifacts, generate merge proposals
   garbage_collect  - Archive stale tasks. params: {max_age_hours?, dry_run?}
