@@ -21,12 +21,28 @@ logger = logging.getLogger("mcp_nucleus")
 # ============================================================
 
 _locker_inst = None
-_injector_inst = None
-_watchdog_inst = None
+# Keyed by resolved brain_path so each tenant gets its own instance.
+# Lazy init is required because multi-tenant HTTP middleware sets
+# NUCLEAR_BRAIN_PATH per-request; module-level resolution would freeze
+# the path to whatever was set at import time.
+_injector_instances: dict[str, "Injector"] = {}
+_watchdog_instances: dict[str, "Watchdog"] = {}
 
-# Backward-compatible module-level exports (used by tests on main)
-_brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
-_workspace_root = _brain_path.parent
+
+def _current_brain_path() -> Path:
+    """Resolve brain path from the current env (set per-request by tenant middleware)."""
+    return Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+
+
+# Backward-compatible module-level names — now computed lazily so they
+# reflect the per-request NUCLEAR_BRAIN_PATH, not the import-time value.
+def __getattr__(name: str):
+    if name == "_brain_path":
+        return _current_brain_path()
+    if name == "_workspace_root":
+        return _current_brain_path().parent
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 def get_locker():
     global _locker_inst
@@ -36,21 +52,27 @@ def get_locker():
     return _locker_inst
 
 def get_injector():
-    global _injector_inst
-    if _injector_inst is None:
+    """Return an Injector for the current tenant's brain path."""
+    brain_path = _current_brain_path()
+    key = str(brain_path)
+    if key not in _injector_instances:
         from ..hypervisor.injector import Injector
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
-        _injector_inst = Injector(str(brain_path))
-    return _injector_inst
+        _injector_instances[key] = Injector(str(brain_path))
+    return _injector_instances[key]
 
 def get_watchdog():
-    global _watchdog_inst
-    if _watchdog_inst is None:
+    """Return a Watchdog for the current tenant's workspace root.
+
+    Each distinct brain_path gets its own Watchdog instance so that
+    multi-tenant deployments watch the correct directory.
+    """
+    brain_path = _current_brain_path()
+    key = str(brain_path)
+    if key not in _watchdog_instances:
         from ..hypervisor.watchdog import Watchdog
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
         workspace_root = brain_path.parent
-        _watchdog_inst = Watchdog(str(workspace_root))
-    return _watchdog_inst
+        _watchdog_instances[key] = Watchdog(str(workspace_root))
+    return _watchdog_instances[key]
 
 # For backward compatibility with existing tool implementations
 @property
