@@ -41,23 +41,15 @@ def register(mcp, helpers):
     def _dashboard(html=False):
         from ..flywheel import render_dashboard_html, render_dashboard_json
         from ..runtime.common import get_brain_path
-        from ..runtime.event_ops import _emit_event
         bp = get_brain_path()
         if html:
-            result = render_dashboard_html(bp)
-        else:
-            result = json.dumps(render_dashboard_json(bp), indent=2)
-        _emit_event("flywheel_action_complete", "nucleus_flywheel",
-                    {"action": "dashboard", "html": html}, "Flywheel dashboard rendered")
-        return result
+            return render_dashboard_html(bp)
+        return json.dumps(render_dashboard_json(bp), indent=2)
 
     def _week_report(week=None):
         from ..flywheel import generate_week_report
         from ..runtime.common import get_brain_path
-        from ..runtime.event_ops import _emit_event
         out_path = generate_week_report(get_brain_path(), week=week)
-        _emit_event("flywheel_action_complete", "nucleus_flywheel",
-                    {"action": "week_report", "wrote": str(out_path)}, "Flywheel week report generated")
         return json.dumps({"wrote": str(out_path)}, indent=2)
 
     def _curriculum_refresh():
