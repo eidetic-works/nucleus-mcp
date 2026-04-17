@@ -142,8 +142,6 @@ def relay_post(
     priority: str = "normal",
     context: Optional[Dict[str, Any]] = None,
     sender: Optional[str] = None,
-    to_session_id: Optional[str] = None,
-    from_session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Post a message to a target session type.
 
@@ -157,11 +155,6 @@ def relay_post(
                 process can't distinguish which client is calling it.
                 If omitted, falls back to detect_session_type() (unreliable
                 when multiple clients share the same MCP server process).
-        to_session_id: Optional session-ID filter. When set, only the matching
-                client session will surface the message (others skip it).
-                None = broadcast to all sessions of the recipient type.
-        from_session_id: Optional originating session ID. Lets receivers tell
-                live continuity from a stale queue.
 
     Returns:
         Dict with message_id, status, and delivery path.
@@ -174,9 +167,7 @@ def relay_post(
     message = {
         "id": msg_id,
         "from": sender,
-        "from_session_id": from_session_id,
         "to": to,
-        "to_session_id": to_session_id,
         "subject": subject,
         "body": body,
         "priority": priority,
