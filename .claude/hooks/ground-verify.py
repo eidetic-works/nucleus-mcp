@@ -45,7 +45,7 @@ def main():
     # Set brain path
     brain_path = os.path.join(os.path.dirname(project_root), ".brain")
     os.environ["NUCLEUS_BRAIN_PATH"] = brain_path
-    os.environ["NUCLEAR_BRAIN_PATH"] = brain_path
+    os.environ["NUCLEUS_BRAIN_PATH"] = brain_path
 
     try:
         from mcp_server_nucleus.runtime.execution_verifier import (

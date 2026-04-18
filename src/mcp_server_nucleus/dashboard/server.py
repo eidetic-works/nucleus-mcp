@@ -60,7 +60,7 @@ class GovernanceDashboardHandler(SimpleHTTPRequestHandler):
     # ------------------------------------------------------------------
 
     def _handle_api_get(self, parsed):
-        brain = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+        brain = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
 
         try:
             if parsed.path == "/api/sovereign":
@@ -100,7 +100,7 @@ class GovernanceDashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(500, {"error": str(exc)})
 
     def _handle_kyc_post(self, parsed):
-        brain = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+        brain = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
         qs = parse_qs(parsed.query)
         app_id = qs.get("id", ["APP-001"])[0]
 
@@ -138,7 +138,7 @@ class ReusableTCPServer(HTTPServer):
 def run_dashboard_server(port=8080, brain_path=None):
     """Boot the dashboard on the given port."""
     if brain_path:
-        os.environ["NUCLEAR_BRAIN_PATH"] = str(brain_path)
+        os.environ["NUCLEUS_BRAIN_PATH"] = str(brain_path)
 
     static_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "static"
@@ -151,7 +151,7 @@ def run_dashboard_server(port=8080, brain_path=None):
     print("=" * 60)
     print(f"  Port     : {port}")
     print(f"  URL      : http://localhost:{port}")
-    print(f"  Brain    : {os.environ.get('NUCLEAR_BRAIN_PATH', '(auto)')}")
+    print(f"  Brain    : {os.environ.get('NUCLEUS_BRAIN_PATH', '(auto)')}")
     print("=" * 60)
     print("  Press Ctrl+C to stop.\n")
 

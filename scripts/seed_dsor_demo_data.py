@@ -104,8 +104,8 @@ def seed_data(brain_path: Path, num_records: int = 50):
     print(f"✅ Successfully seeded {num_records} records.")
 
 if __name__ == "__main__":
-    if "NUCLEAR_BRAIN_PATH" in os.environ:
-        brain = Path(os.environ["NUCLEAR_BRAIN_PATH"])
+    if "NUCLEUS_BRAIN_PATH" in os.environ:
+        brain = Path(os.environ["NUCLEUS_BRAIN_PATH"])
     else:
         # Default fallback
         brain = Path.cwd() / ".brain"

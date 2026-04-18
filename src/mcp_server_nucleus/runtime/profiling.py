@@ -183,7 +183,7 @@ def export_metrics_to_file(brain_path: Optional[Path] = None) -> str:
         Path to exported file
     """
     if brain_path is None:
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
     
     metrics_dir = brain_path / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)

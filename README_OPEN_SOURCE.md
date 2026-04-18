@@ -21,7 +21,7 @@ nucleus init
 ### 3. Connect your Agents
 Add this to your `~/.zshrc` or `~/.bashrc`:
 ```bash
-export NUCLEAR_BRAIN_PATH="/path/to/your/.brain"
+export NUCLEUS_BRAIN_PATH="/path/to/your/.brain"
 ```
 
 Now, from *any* folder, you or your agents can run:

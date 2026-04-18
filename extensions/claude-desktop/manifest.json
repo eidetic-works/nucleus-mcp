@@ -14,7 +14,7 @@
       "command": "uvx",
       "args": ["nucleus-mcp"],
       "env": {
-        "NUCLEAR_BRAIN_PATH": ".brain"
+        "NUCLEUS_BRAIN_PATH": ".brain"
       }
     }
   }

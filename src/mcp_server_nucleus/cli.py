@@ -375,7 +375,7 @@ def _build_nucleus_mcp_config(brain_path: str) -> dict:
     if len(cmd) > 1:
         config["args"] = cmd[1:]
     config["env"] = {
-        "NUCLEAR_BRAIN_PATH": brain_path,
+        "NUCLEUS_BRAIN_PATH": brain_path,
         "NUCLEUS_AMBIENT_HEALTH": "1",
     }
     return config
@@ -4187,7 +4187,7 @@ def main():
     # ADAPTIVE BRAIN DISCOVERY & SESSION RECOVERY (MDR_001)
     # ════════════════════════════════════════════════════════════════
     # 1. Resolve Brain Path
-    brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
+    brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")
     if not brain_path_str:
         try:
             cwd = Path.cwd()
@@ -4200,7 +4200,7 @@ def main():
     
     if brain_path_str:
         os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
-        os.environ["NUCLEAR_BRAIN_PATH"] = brain_path_str
+        os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
         brain_path = Path(brain_path_str)
         
         # 2. Resolve Session ID (Mother ID Inheritance)
@@ -4915,7 +4915,7 @@ def _setup_agent_env(args):
     """Set brain path from --brain-path flag before calling runtime."""
     bp = getattr(args, 'brain_path', None)
     if bp:
-        os.environ["NUCLEAR_BRAIN_PATH"] = str(Path(bp).resolve())
+        os.environ["NUCLEUS_BRAIN_PATH"] = str(Path(bp).resolve())
 
 
 def _get_fmt(args) -> str:
@@ -5398,9 +5398,9 @@ def handle_doctor_command(args) -> int:
 
     # 4. Brain path
     print("\n4. Brain Configuration")
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH", "")
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH", "")
     if brain_path:
-        _pass("NUCLEAR_BRAIN_PATH set", brain_path)
+        _pass("NUCLEUS_BRAIN_PATH set", brain_path)
         bp = Path(brain_path)
         if bp.exists():
             _pass("Brain directory exists")
@@ -5413,7 +5413,7 @@ def handle_doctor_command(args) -> int:
         else:
             _fail("Brain directory does not exist", brain_path, "Run 'nucleus init'")
     else:
-        _warn("NUCLEAR_BRAIN_PATH not set", "Run 'nucleus init' or export NUCLEAR_BRAIN_PATH=~/.brain")
+        _warn("NUCLEUS_BRAIN_PATH not set", "Run 'nucleus init' or export NUCLEUS_BRAIN_PATH=~/.brain")
 
     # 5. Tool tier
     print("\n5. Tool Tier")
@@ -5586,7 +5586,7 @@ def handle_depth_command(args):
         try:
             from mcp_server_nucleus.runtime.depth_ops import _depth_show, _depth_pop, _depth_reset, _depth_set_max, _depth_push, _generate_depth_map
         except ImportError:
-            print("Error: Could not import depth functions. Make sure NUCLEAR_BRAIN_PATH is set.")
+            print("Error: Could not import depth functions. Make sure NUCLEUS_BRAIN_PATH is set.")
             return
     
     if args.depth_action == 'show' or args.depth_action is None:
@@ -6055,7 +6055,7 @@ def handle_consolidate_command(args):
         try:
             from mcp_server_nucleus.runtime.consolidation_ops import _archive_resolved_files, _get_archive_path
         except ImportError:
-            print("Error: Could not import consolidation functions. Make sure NUCLEAR_BRAIN_PATH is set.")
+            print("Error: Could not import consolidation functions. Make sure NUCLEUS_BRAIN_PATH is set.")
             return
     
     if args.consolidate_action == 'archive':
@@ -6487,7 +6487,7 @@ def handle_status_command(args):
         else:
             print(f"❌ Error getting satellite view: {e}")
             print()
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 
@@ -6623,8 +6623,8 @@ def handle_morning_brief_command(args):
     except Exception as e:
         print(f"❌ Error generating morning brief: {e}")
         print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
-        print("  export NUCLEAR_BRAIN_PATH=/path/to/.brain")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
+        print("  export NUCLEUS_BRAIN_PATH=/path/to/.brain")
 
 
 def handle_loop_command(args):
@@ -6651,7 +6651,7 @@ def handle_loop_command(args):
     except Exception as e:
         print(f"❌ Error getting loop status: {e}")
         print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_end_of_day_command(args):
@@ -6684,7 +6684,7 @@ def handle_end_of_day_command(args):
     except Exception as e:
         print(f"❌ Error capturing end-of-day: {e}")
         print()
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_graph_command(args):
@@ -6729,7 +6729,7 @@ def handle_graph_command(args):
             print(output)
     except Exception as e:
         print(f"❌ Error generating context graph: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_billing_command(args):
@@ -6781,7 +6781,7 @@ def handle_billing_command(args):
             print("=" * 60)
     except Exception as e:
         print(f"❌ Error generating billing summary: {e}")
-        print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+        print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
 
 def handle_combo_command(args):
@@ -6827,7 +6827,7 @@ def handle_combo_command(args):
             print("=" * 60)
         except Exception as e:
             print(f"❌ Pulse & Polish failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
     elif args.combo_action == 'diagnose':
         try:
@@ -6855,7 +6855,7 @@ def handle_combo_command(args):
             print("=" * 60)
         except Exception as e:
             print(f"❌ SRE Diagnosis failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
     elif args.combo_action == 'learn':
         try:
@@ -6885,7 +6885,7 @@ def handle_combo_command(args):
             print("=" * 60)
         except Exception as e:
             print(f"❌ Fusion Reactor failed: {e}")
-            print("Make sure NUCLEAR_BRAIN_PATH is set correctly.")
+            print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
 
     else:
         print(f"Unknown combo: {args.combo_action}")
@@ -7816,7 +7816,7 @@ def handle_chief_command(args) -> int:
         init_brain(".brain")
         brain_path_str = str(Path(".brain").resolve())
         os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
-        os.environ["NUCLEAR_BRAIN_PATH"] = brain_path_str
+        os.environ["NUCLEUS_BRAIN_PATH"] = brain_path_str
     
     brain_path = Path(brain_path_str)
     daemon = DaemonManager(brain_path)

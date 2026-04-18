@@ -21,8 +21,8 @@ def brain_path(tmp_path):
     (brain / "ledger" / "decisions").mkdir(parents=True, exist_ok=True)
     (brain / "ledger" / "snapshots").mkdir(parents=True, exist_ok=True)
     # Point env to fresh brain so runtime functions pick it up
-    old = os.environ.get("NUCLEAR_BRAIN_PATH")
-    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
+    old = os.environ.get("NUCLEUS_BRAIN_PATH")
+    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
     # Invalidate the global engram cache to prevent cross-test leakage
     try:
         from mcp_server_nucleus.runtime.engram_cache import get_engram_cache
@@ -31,9 +31,9 @@ def brain_path(tmp_path):
         pass
     yield brain
     if old is not None:
-        os.environ["NUCLEAR_BRAIN_PATH"] = old
+        os.environ["NUCLEUS_BRAIN_PATH"] = old
     else:
-        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
+        os.environ.pop("NUCLEUS_BRAIN_PATH", None)
 
 
 def _write_engrams(brain_path, engrams):

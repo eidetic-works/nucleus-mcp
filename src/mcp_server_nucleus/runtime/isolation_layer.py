@@ -17,7 +17,7 @@ class EnvironmentSanitizer:
         "NUCLEUS_AGENT_TIER",
         "NUCLEUS_SESSION_ID",
         "GEMINI_API_KEY",
-        "NUCLEAR_BRAIN_PATH",
+        "NUCLEUS_BRAIN_PATH",
         "GEMINI_API_BASE_URL",
         "GEMINI_BASE_URL",
         "GEMINI_NEXT_GEN_API_BASE_URL",

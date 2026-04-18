@@ -3,7 +3,7 @@ import sys
 import os
 
 # Set dummy brain path so import doesn't fail
-os.environ["NUCLEAR_BRAIN_PATH"] = "/tmp/nucleus_probe"
+os.environ["NUCLEUS_BRAIN_PATH"] = "/tmp/nucleus_probe"
 
 try:
     from mcp_server_nucleus import mcp

@@ -13,7 +13,7 @@ from pathlib import Path
 TEST_BRAIN = Path("/tmp/nucleus_governance_demo")
 TEST_BRAIN.mkdir(parents=True, exist_ok=True)
 (TEST_BRAIN / "ledger").mkdir(exist_ok=True)
-os.environ["NUCLEAR_BRAIN_PATH"] = str(TEST_BRAIN)
+os.environ["NUCLEUS_BRAIN_PATH"] = str(TEST_BRAIN)
 
 def main():
     print("=" * 60)
