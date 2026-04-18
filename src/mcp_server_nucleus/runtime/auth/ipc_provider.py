@@ -26,7 +26,7 @@ from .base import AuthProvider, AuthToken, AuthResult
 
 def get_brain_path() -> Path:
     """Get the brain path from environment."""
-    return Path(os.getenv("NUCLEUS_BRAIN_PATH", ".brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", ".brain"))
 
 
 @dataclass

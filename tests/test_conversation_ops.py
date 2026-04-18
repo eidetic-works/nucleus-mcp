@@ -131,9 +131,9 @@ def brain_path(tmp_path):
     (brain / "training").mkdir()
     (brain / "engrams").mkdir()
     (brain / "ledger").mkdir()
-    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
     yield brain
-    os.environ.pop("NUCLEUS_BRAIN_PATH", None)
+    os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
 
 # ── Test: Streaming Parser ────────────────────────────────────────────

@@ -298,9 +298,9 @@ def _check_for_recent_session() -> Dict[str, Any]:
 def _brain_session_start_impl() -> str:
     try:
         # Direct File I/O for robustness (avoid internal function call issues)
-        brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
+        brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
         if not brain_path:
-            return "Error: NUCLEUS_BRAIN_PATH env var not set"
+            return "Error: NUCLEAR_BRAIN_PATH env var not set"
         
         brain = Path(brain_path)
         

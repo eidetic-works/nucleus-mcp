@@ -7,7 +7,7 @@ from pathlib import Path
 
 # Set up test environment BEFORE importing nucleus
 _test_dir = tempfile.mkdtemp()
-os.environ["NUCLEUS_BRAIN_PATH"] = _test_dir
+os.environ["NUCLEAR_BRAIN_PATH"] = _test_dir
 
 # Now import the module under test
 import mcp_server_nucleus as nucleus
@@ -17,7 +17,7 @@ class TestIntegration(unittest.TestCase):
     def setUp(self):
         # Use the pre-created temp brain directory
         self.test_dir = _test_dir
-        os.environ["NUCLEUS_BRAIN_PATH"] = self.test_dir
+        os.environ["NUCLEAR_BRAIN_PATH"] = self.test_dir
         self.brain_path = Path(self.test_dir)
         
         # Ensure directories exist (may have been cleaned up)

@@ -88,7 +88,7 @@ class LLMToolEnforcer:
         self._success_count = 0
         self._failure_count = 0
         self._enforcement_log_path = Path(
-            os.getenv("NUCLEUS_BRAIN_PATH", "./.brain")
+            os.getenv("NUCLEAR_BRAIN_PATH", "./.brain")
         ) / "metrics" / "tool_enforcement.jsonl"
     
     def pre_flight(self, user_request: str, 

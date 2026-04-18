@@ -92,7 +92,7 @@ class EnvironmentDetector:
     # Environment variables that Nucleus uses
     REQUIRED_ENV_VARS = ["GEMINI_API_KEY"]
     OPTIONAL_ENV_VARS = [
-        "NUCLEUS_BRAIN_PATH", "NUCLEUS_BRAIN_PATH",
+        "NUCLEUS_BRAIN_PATH", "NUCLEAR_BRAIN_PATH",
         "NUCLEUS_INTENT_MODEL", "NUCLEUS_VALIDATOR_MODEL", "NUCLEUS_LEARNER_MODEL",
         "NUCLEUS_LLM_TIMEOUT", "NUCLEUS_TOOL_TIER",
         "GCP_PROJECT_ID", "GOOGLE_CLOUD_PROJECT",
@@ -249,7 +249,7 @@ class EnvironmentDetector:
         # Explicit env var
         explicit = os.environ.get(
             "NUCLEUS_BRAIN_PATH",
-            os.environ.get("NUCLEUS_BRAIN_PATH", "")
+            os.environ.get("NUCLEAR_BRAIN_PATH", "")
         )
         if explicit:
             return str(Path(explicit).resolve())

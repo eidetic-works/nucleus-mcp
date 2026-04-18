@@ -288,6 +288,6 @@ What would you like to work on?"""
 
 ⚠️ Could not load brain state: {str(e)}
 
-Make sure NUCLEUS_BRAIN_PATH is set correctly.
+Make sure NUCLEAR_BRAIN_PATH is set correctly.
 
 You can still use brain_* tools to explore the brain manually."""

@@ -99,7 +99,7 @@ def make_response(success: bool, data: Any = None, error: str = None) -> str:
 class StdioServer:
     def __init__(self):
         # Resolve paths first
-        self.brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
+        self.brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
         workspace_root = self.brain_path
         
         # Hypervisor components — graceful degradation if unavailable
@@ -759,7 +759,7 @@ def main():
         print(f"Python: {sys.version.split()[0]}")
         
         # Resolve brain path properly for status report
-        brain_env = os.environ.get('NUCLEUS_BRAIN_PATH')
+        brain_env = os.environ.get('NUCLEAR_BRAIN_PATH')
         resolved_brain = Path(brain_env).resolve() if brain_env else Path('.').resolve()
         print(f"Brain Path: {resolved_brain}")
         

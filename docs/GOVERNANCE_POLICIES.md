@@ -190,7 +190,7 @@ These three policies combine to create a **Governance Layer**—a security layer
 export NUCLEUS_V9_SECURITY=true
 
 # Set brain path (where audit logs are stored)
-export NUCLEUS_BRAIN_PATH=/path/to/.brain
+export NUCLEAR_BRAIN_PATH=/path/to/.brain
 ```
 
 ### Audit Log Location

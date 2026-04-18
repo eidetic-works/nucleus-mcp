@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # Set up test brain path
 DEMO_BRAIN = Path(__file__).parent.parent / ".demo_brain"
-os.environ["NUCLEUS_BRAIN_PATH"] = str(DEMO_BRAIN)
+os.environ["NUCLEAR_BRAIN_PATH"] = str(DEMO_BRAIN)
 
 
 def print_header(title: str):

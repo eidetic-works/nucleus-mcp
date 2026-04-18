@@ -24,7 +24,7 @@ async def verify():
         shutil.rmtree(brain_path)
     brain_path.mkdir(parents=True, exist_ok=True)
     (brain_path / "ledger").mkdir(exist_ok=True)
-    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain_path)
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain_path)
     
     # 2. Trigger Thanos Snap
     print("\n⚡ Triggering Thanos Snap...")

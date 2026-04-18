@@ -61,7 +61,7 @@ def setup_demo_brain():
     """Create a fresh demo brain."""
     import tempfile
     demo_brain = Path(tempfile.mkdtemp(prefix="nucleus_demo_"))
-    os.environ["NUCLEUS_BRAIN_PATH"] = str(demo_brain)
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(demo_brain)
     
     # Create required directories
     (demo_brain / "ledger").mkdir(parents=True)

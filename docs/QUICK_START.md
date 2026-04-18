@@ -37,7 +37,7 @@ Nucleus stores all data in a `.brain/` folder. Set its location:
 
 ```bash
 # Add to your shell profile (~/.zshrc, ~/.bashrc)
-export NUCLEUS_BRAIN_PATH="$HOME/.brain"
+export NUCLEAR_BRAIN_PATH="$HOME/.brain"
 
 # Create the directory
 mkdir -p ~/.brain
@@ -232,10 +232,10 @@ Your `.brain/` folder structure:
 
 ## 🆘 Troubleshooting
 
-### "NUCLEUS_BRAIN_PATH not set"
+### "NUCLEAR_BRAIN_PATH not set"
 
 ```bash
-export NUCLEUS_BRAIN_PATH="$HOME/.brain"
+export NUCLEAR_BRAIN_PATH="$HOME/.brain"
 mkdir -p ~/.brain
 ```
 

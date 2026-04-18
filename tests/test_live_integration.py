@@ -25,8 +25,8 @@ def brain(tmp_path):
               "ledger/decisions", "ledger/snapshots", "governance",
               "channels", "federation"]:
         (brain / d).mkdir(parents=True, exist_ok=True)
-    old = os.environ.get("NUCLEUS_BRAIN_PATH")
-    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
+    old = os.environ.get("NUCLEAR_BRAIN_PATH")
+    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
     # Clear singletons
     try:
         from mcp_server_nucleus.runtime.engram_cache import get_engram_cache
@@ -35,9 +35,9 @@ def brain(tmp_path):
         pass
     yield brain
     if old is not None:
-        os.environ["NUCLEUS_BRAIN_PATH"] = old
+        os.environ["NUCLEAR_BRAIN_PATH"] = old
     else:
-        os.environ.pop("NUCLEUS_BRAIN_PATH", None)
+        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
 
 
 # ── 1. ENGRAM LIFECYCLE ─────────────────────────────────────────
@@ -533,8 +533,8 @@ class TestBrainAutoCreate:
         from mcp_server_nucleus.runtime.common import get_brain_path
 
         new_brain = tmp_path / "fresh_brain"
-        old = os.environ.get("NUCLEUS_BRAIN_PATH")
-        os.environ["NUCLEUS_BRAIN_PATH"] = str(new_brain)
+        old = os.environ.get("NUCLEAR_BRAIN_PATH")
+        os.environ["NUCLEAR_BRAIN_PATH"] = str(new_brain)
         try:
             path = get_brain_path()
             assert path.exists()
@@ -547,7 +547,7 @@ class TestBrainAutoCreate:
                 assert (path / d).is_dir(), f"Missing brain subdir: {d}"
         finally:
             if old is None:
-                os.environ.pop("NUCLEUS_BRAIN_PATH", None)
+                os.environ.pop("NUCLEAR_BRAIN_PATH", None)
             else:
-                os.environ["NUCLEUS_BRAIN_PATH"] = old
+                os.environ["NUCLEAR_BRAIN_PATH"] = old
 

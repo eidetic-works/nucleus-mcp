@@ -19,7 +19,7 @@ services:
     
     # Environment configuration
     environment:
-      - NUCLEUS_BRAIN_PATH=/data/.brain
+      - NUCLEAR_BRAIN_PATH=/data/.brain
       - PYTHONUNBUFFERED=1
       # Optional: Set these for enhanced features
       # - GEMINI_API_KEY=${GEMINI_API_KEY}

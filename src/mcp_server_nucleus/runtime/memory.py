@@ -11,7 +11,7 @@ logger = logging.getLogger("nucleus.memory")
 
 def get_brain_path() -> Path:
     """Get the brain path from environment variable."""
-    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
     if not brain_path:
         # Fallback for dev environment
         cwd = Path.cwd()
@@ -20,7 +20,7 @@ def get_brain_path() -> Path:
         for parent in cwd.parents:
             if (parent / ".brain").exists():
                 return parent / ".brain"
-        raise ValueError("NUCLEUS_BRAIN_PATH environment variable not set")
+        raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set")
     return Path(brain_path)
 
 def _search_memory(query: str) -> Dict:

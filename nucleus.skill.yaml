@@ -43,7 +43,7 @@ commands:
     usage: nucleus outbound plan [--channel reddit]
 global_flags:
   --format: "Output format: json (default when piped), table (default in TTY), tsv"
-  --brain-path: "Path to .brain directory (default: auto-detect from cwd or NUCLEUS_BRAIN_PATH env)"
+  --brain-path: "Path to .brain directory (default: auto-detect from cwd or NUCLEAR_BRAIN_PATH env)"
   --version: "Show version (nucleus --version)"
 conventions:
   stdout: data only (JSON, table, or TSV)

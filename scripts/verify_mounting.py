@@ -14,7 +14,7 @@ async def run_verification():
     # Set PYTHONPATH to include 'src'
     env = os.environ.copy()
     env["PYTHONPATH"] = os.path.abspath("src")
-    env["NUCLEUS_BRAIN_PATH"] = os.path.abspath("test_brain_verify")
+    env["NUCLEAR_BRAIN_PATH"] = os.path.abspath("test_brain_verify")
     
     # Clean up previous test brain
     if os.path.exists("test_brain_verify"):

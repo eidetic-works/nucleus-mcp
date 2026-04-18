@@ -174,7 +174,7 @@ class ToolRecommender:
     def __init__(self):
         self._usage_counts: Dict[str, int] = {}
         self._usage_path = Path(
-            os.getenv("NUCLEUS_BRAIN_PATH", "./.brain")
+            os.getenv("NUCLEAR_BRAIN_PATH", "./.brain")
         ) / "metrics" / "tool_usage.json"
         self._load_usage()
     
