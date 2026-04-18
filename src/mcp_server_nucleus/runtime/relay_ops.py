@@ -252,6 +252,13 @@ def relay_post(
         "read": False,
         "read_at": None,
         "read_by": None,
+        # Phase A3: per-session ack tracker. Maps session_id → iso_ts of ack.
+        # Shared buckets (multiple Cowork sessions, multiple CC-peer sessions)
+        # need per-session unread to avoid one session hiding a relay from peers.
+        # Legacy `read`/`read_at`/`read_by` remain for coarse-grained consumers
+        # (relay_status, pending.json, morning brief) — they mean "any session
+        # has acked this."
+        "read_by_sessions": {},
     }
 
     # Write to recipient's mailbox
@@ -275,6 +282,7 @@ def relay_inbox(
     unread_only: bool = True,
     limit: int = 20,
     recipient: Optional[str] = None,
+    session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Read messages addressed to the current session type.
 
@@ -282,6 +290,12 @@ def relay_inbox(
         unread_only: If True, only return unread messages.
         limit: Max messages to return (newest first).
         recipient: Override auto-detected session type.
+        session_id: Per-session unread filter (Phase A3). When provided AND
+            `unread_only=True`, a message is considered unread if THIS session
+            hasn't acked it — read_by_sessions[session_id] is absent. This
+            prevents one session from hiding a relay from its peers in a
+            shared bucket (e.g., two Cowork sessions). When omitted, legacy
+            coarse-grained `read` flag is used (back-compat).
 
     Returns:
         Dict with messages list and metadata.
@@ -301,8 +315,16 @@ def relay_inbox(
             break
         try:
             msg = json.loads(f.read_text(encoding="utf-8"))
-            if unread_only and msg.get("read", False):
-                continue
+            if unread_only:
+                if session_id:
+                    # Per-session filter: unread iff THIS session hasn't acked.
+                    read_by_sessions = msg.get("read_by_sessions") or {}
+                    if session_id in read_by_sessions:
+                        continue
+                else:
+                    # Legacy coarse-grained filter.
+                    if msg.get("read", False):
+                        continue
             msg["_file"] = f.name
             messages.append(msg)
         except Exception:
@@ -313,15 +335,26 @@ def relay_inbox(
         "messages": messages,
         "count": len(messages),
         "unread_only": unread_only,
+        "session_id": session_id,
     }
 
 
-def relay_ack(message_id: str, recipient: Optional[str] = None) -> Dict[str, Any]:
+def relay_ack(
+    message_id: str,
+    recipient: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> Dict[str, Any]:
     """Acknowledge / mark a message as read.
 
     Args:
         message_id: The relay message ID to acknowledge.
         recipient: Override auto-detected session type.
+        session_id: Per-session ack (Phase A3). When provided, records this
+            session's ack in `read_by_sessions[session_id]` so peer sessions
+            sharing the bucket still see the message as unread. The legacy
+            coarse-grained `read`/`read_at`/`read_by` fields are always
+            updated too, so `relay_status`, `pending.json`, and the morning
+            brief continue to report "any-session acked" semantics.
 
     Returns:
         Dict with acknowledgment status.
@@ -334,14 +367,20 @@ def relay_ack(message_id: str, recipient: Optional[str] = None) -> Dict[str, Any
             try:
                 msg = json.loads(f.read_text(encoding="utf-8"))
                 if msg.get("id") == message_id:
+                    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                     msg["read"] = True
-                    msg["read_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                    msg["read_at"] = now_iso
                     msg["read_by"] = me
+                    if session_id:
+                        read_by_sessions = msg.get("read_by_sessions") or {}
+                        read_by_sessions[session_id] = now_iso
+                        msg["read_by_sessions"] = read_by_sessions
                     f.write_text(json.dumps(msg, indent=2, default=str), encoding="utf-8")
                     return {
                         "acknowledged": True,
                         "message_id": message_id,
                         "read_by": me,
+                        "session_id": session_id,
                     }
             except Exception:
                 continue
