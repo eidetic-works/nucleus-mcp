@@ -26,7 +26,6 @@ dependencies = [
     "xattr; sys_platform != 'win32'",
     "opentelemetry-sdk>=1.40.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.40.0",
-    "rank-bm25>=0.2",
 ]
 
 [project.optional-dependencies]
@@ -51,7 +50,7 @@ nucleus = "mcp_server_nucleus.cli:main"
 nucleus-init = "mcp_server_nucleus.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcp_server_nucleus", "src/nucleus_wedge"]
+packages = ["src/mcp_server_nucleus"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

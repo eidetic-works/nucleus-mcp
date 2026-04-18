@@ -26,6 +26,8 @@ logger = logging.getLogger("nucleus.relay")
 KNOWN_SESSION_TYPES = {
     "cowork",
     "claude_code",
+    "claude_code_main",
+    "claude_code_peer",
     "windsurf",
     "cursor",
     "vscode",
@@ -34,11 +36,30 @@ KNOWN_SESSION_TYPES = {
 }
 
 
+def _maybe_split_cc_role(detected: str) -> str:
+    """Upgrade bare `claude_code` to `claude_code_main`/`claude_code_peer` per ADR-0010.
+
+    ADR-0010 § Decision: `CC_SESSION_ROLE ∈ {main, peer}` (unset → `main` for legacy
+    single-CC compatibility). This function implements the "unset → main" default
+    so new code always produces a role-tagged sender. Legacy `claude_code` bucket
+    then only holds messages from PRE-SPLIT CCs, drained by main's dual-read during
+    the 2-week grace period (see _iter_inbox_dirs).
+    """
+    if detected == "claude_code":
+        role = os.environ.get("CC_SESSION_ROLE", "").strip().lower()
+        if role == "peer":
+            return "claude_code_peer"
+        return "claude_code_main"
+    return detected
+
+
 def detect_session_type() -> str:
     """Detect what kind of Claude surface is running this process.
 
     Uses environment variables and heuristics to determine whether
-    we're in Cowork, Claude Code, Windsurf, Cursor, etc.
+    we're in Cowork, Claude Code, Windsurf, Cursor, etc. When CC_SESSION_ROLE
+    is set to `main` or `peer`, a bare `claude_code` detection is upgraded
+    to `claude_code_main` or `claude_code_peer` (Phase A three-surface routing).
 
     Detection priority:
     1. Explicit override via NUCLEUS_SESSION_TYPE env var
@@ -47,6 +68,10 @@ def detect_session_type() -> str:
     4. Claude Code heuristics (MCP_* env vars, CLAUDE_* vars, process tree)
     5. Fallback to "unknown"
     """
+    return _maybe_split_cc_role(_detect_session_type_raw())
+
+
+def _detect_session_type_raw() -> str:
     # Priority 1: Explicit override always wins
     explicit = os.environ.get("NUCLEUS_SESSION_TYPE", "").lower()
     if explicit in KNOWN_SESSION_TYPES:
@@ -133,6 +158,47 @@ def _sanitize_recipient(to: str) -> str:
     return to
 
 
+def _derive_from_role(sender: str) -> Optional[str]:
+    """Derive the role (`main`|`peer`) for a Claude Code sender, or None if not CC.
+
+    Priority: parse explicit sender suffix (claude_code_main/peer) → fall back to
+    CC_SESSION_ROLE env → default `main` for legacy bare `claude_code`. Returns
+    None for non-CC senders (cowork, windsurf, etc.) — those don't have a role.
+    """
+    if not sender.startswith("claude_code"):
+        return None
+    if sender == "claude_code_main":
+        return "main"
+    if sender == "claude_code_peer":
+        return "peer"
+    # Legacy bare "claude_code" — consult env var, default main per dual-read alias
+    role = os.environ.get("CC_SESSION_ROLE", "").strip().lower()
+    if role in ("main", "peer"):
+        return role
+    return "main"
+
+
+def _iter_inbox_dirs(me: str) -> List[Path]:
+    """Dirs to iterate when reading/acking for `me`.
+
+    Dual-read rule (Phase A): `claude_code_main` dual-reads legacy `claude_code/`
+    during the 2-week grace period. `claude_code_peer` does NOT dual-read legacy
+    (prevents duplicate processing of omit-routed relays). All other recipients
+    read only their own bucket.
+
+    Note: under ADR-0010 fix-(a) semantics, `me == "claude_code"` is defensively
+    unreachable — `_maybe_split_cc_role` upgrades bare → claude_code_main at
+    detect time. This branch is retained only for callers that bypass detection.
+    """
+    own = _get_relay_dir(me)
+    dirs = [own]
+    if me == "claude_code_main":
+        legacy = _get_relay_dir("claude_code")
+        if legacy.exists() and legacy.resolve() != own.resolve():
+            dirs.append(legacy)
+    return dirs
+
+
 # ── Core relay operations ─────────────────────────────────────────
 
 def relay_post(
@@ -142,6 +208,8 @@ def relay_post(
     priority: str = "normal",
     context: Optional[Dict[str, Any]] = None,
     sender: Optional[str] = None,
+    to_session_id: Optional[str] = None,
+    from_session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Post a message to a target session type.
 
@@ -155,6 +223,11 @@ def relay_post(
                 process can't distinguish which client is calling it.
                 If omitted, falls back to detect_session_type() (unreliable
                 when multiple clients share the same MCP server process).
+        to_session_id: Optional session-ID filter. When set, only the matching
+                client session will surface the message (others skip it).
+                None = broadcast to all sessions of the recipient type.
+        from_session_id: Optional originating session ID. Lets receivers tell
+                live continuity from a stale queue.
 
     Returns:
         Dict with message_id, status, and delivery path.
@@ -167,7 +240,10 @@ def relay_post(
     message = {
         "id": msg_id,
         "from": sender,
+        "from_role": _derive_from_role(sender),
+        "from_session_id": from_session_id,
         "to": to,
+        "to_session_id": to_session_id,
         "subject": subject,
         "body": body,
         "priority": priority,
@@ -211,10 +287,16 @@ def relay_inbox(
         Dict with messages list and metadata.
     """
     me = recipient or detect_session_type()
-    relay_dir = _get_relay_dir(me)
+    dirs = _iter_inbox_dirs(me)
+
+    # Collect candidate files across all dirs (main dual-reads legacy bucket)
+    candidates: List[Path] = []
+    for d in dirs:
+        candidates.extend(d.glob("*.json"))
+    candidates.sort(key=lambda p: p.name, reverse=True)
 
     messages = []
-    for f in sorted(relay_dir.glob("*.json"), reverse=True):
+    for f in candidates:
         if len(messages) >= limit:
             break
         try:
@@ -245,23 +327,24 @@ def relay_ack(message_id: str, recipient: Optional[str] = None) -> Dict[str, Any
         Dict with acknowledgment status.
     """
     me = recipient or detect_session_type()
-    relay_dir = _get_relay_dir(me)
 
-    for f in relay_dir.glob("*.json"):
-        try:
-            msg = json.loads(f.read_text(encoding="utf-8"))
-            if msg.get("id") == message_id:
-                msg["read"] = True
-                msg["read_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-                msg["read_by"] = me
-                f.write_text(json.dumps(msg, indent=2, default=str), encoding="utf-8")
-                return {
-                    "acknowledged": True,
-                    "message_id": message_id,
-                    "read_by": me,
-                }
-        except Exception:
-            continue
+    # Dual-read: main can ack messages that landed in legacy claude_code/ bucket
+    for d in _iter_inbox_dirs(me):
+        for f in d.glob("*.json"):
+            try:
+                msg = json.loads(f.read_text(encoding="utf-8"))
+                if msg.get("id") == message_id:
+                    msg["read"] = True
+                    msg["read_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                    msg["read_by"] = me
+                    f.write_text(json.dumps(msg, indent=2, default=str), encoding="utf-8")
+                    return {
+                        "acknowledged": True,
+                        "message_id": message_id,
+                        "read_by": me,
+                    }
+            except Exception:
+                continue
 
     return {
         "acknowledged": False,
