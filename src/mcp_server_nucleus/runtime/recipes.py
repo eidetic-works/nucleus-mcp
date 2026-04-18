@@ -145,7 +145,7 @@ def _get_builtin_recipes_dir() -> Path:
 
 def _get_user_recipes_dir() -> Optional[Path]:
     """Get the user's custom recipes directory (if it exists)."""
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH", ".brain")
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH", ".brain")
     user_dir = Path(brain_path) / "recipes"
     if user_dir.exists():
         return user_dir

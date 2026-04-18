@@ -19,13 +19,13 @@ def brain(tmp_path):
     brain.mkdir(exist_ok=True)
     for d in ["artifacts", "features", "sync", "ledger", "engrams", "sessions"]:
         (brain / d).mkdir(exist_ok=True)
-    old = os.environ.get("NUCLEAR_BRAIN_PATH")
-    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
+    old = os.environ.get("NUCLEUS_BRAIN_PATH")
+    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
     yield brain
     if old is not None:
-        os.environ["NUCLEAR_BRAIN_PATH"] = old
+        os.environ["NUCLEUS_BRAIN_PATH"] = old
     else:
-        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
+        os.environ.pop("NUCLEUS_BRAIN_PATH", None)
 
 
 # ── Artifact Operations ──────────────────────────────────────────

@@ -18,8 +18,8 @@ logger = logging.getLogger("nucleus.swarm")
 
 def get_brain_path() -> Path:
     """Get the brain path from environment variable."""
-    # Try NUCLEUS_BRAIN_PATH first (correct name), then NUCLEAR_BRAIN_PATH (legacy)
-    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
+    # Try NUCLEUS_BRAIN_PATH first (correct name), then NUCLEUS_BRAIN_PATH (legacy)
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")
     if brain_path and Path(brain_path).exists():
         return Path(brain_path)
     

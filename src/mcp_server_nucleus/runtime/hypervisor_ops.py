@@ -25,7 +25,7 @@ _injector_inst = None
 _watchdog_inst = None
 
 # Backward-compatible module-level exports (used by tests on main)
-_brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+_brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
 _workspace_root = _brain_path.parent
 
 def get_locker():
@@ -39,7 +39,7 @@ def get_injector():
     global _injector_inst
     if _injector_inst is None:
         from ..hypervisor.injector import Injector
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
         _injector_inst = Injector(str(brain_path))
     return _injector_inst
 
@@ -47,7 +47,7 @@ def get_watchdog():
     global _watchdog_inst
     if _watchdog_inst is None:
         from ..hypervisor.watchdog import Watchdog
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
         workspace_root = brain_path.parent
         _watchdog_inst = Watchdog(str(workspace_root))
     return _watchdog_inst
@@ -198,7 +198,7 @@ def hypervisor_status_impl() -> str:
     status = []
     status.append("🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)")
     
-    brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
+    brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
     workspace_root = brain_path.parent
     watchdog = get_watchdog()
 

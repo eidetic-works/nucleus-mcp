@@ -18,7 +18,7 @@ def brain(tmp_path, monkeypatch):
     b = tmp_path / ".brain"
     (b / "relay").mkdir(parents=True)
     monkeypatch.setenv("NUCLEUS_BRAIN_PATH", str(b))
-    monkeypatch.setenv("NUCLEAR_BRAIN_PATH", str(b))
+    monkeypatch.setenv("NUCLEUS_BRAIN_PATH", str(b))
     return b
 
 

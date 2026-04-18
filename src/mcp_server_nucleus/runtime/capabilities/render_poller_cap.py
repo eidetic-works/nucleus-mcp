@@ -17,7 +17,7 @@ ACTIVE_POLLS = {}
 
 class RenderPolling(Capability):
     def __init__(self):
-        self._brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+        self._brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
         self._api_key = os.environ.get("RENDER_API_KEY")
         
     @property
