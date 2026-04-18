@@ -14,7 +14,7 @@ Design Thinking Reference:
   — EXHAUSTIVE_DESIGN_THINKING_OUTPUT.md, Stage 4
 
 Usage:
-    NUCLEUS_BRAIN_PATH=/path/to/.brain python3 scripts/alive_moment_demo.py
+    NUCLEAR_BRAIN_PATH=/path/to/.brain python3 scripts/alive_moment_demo.py
     
     Or with the CLI:
     nucleus morning-brief
@@ -147,12 +147,12 @@ def main():
     print()
     
     # Check environment
-    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
     if not brain_path:
-        print("❌ ERROR: NUCLEUS_BRAIN_PATH not set")
+        print("❌ ERROR: NUCLEAR_BRAIN_PATH not set")
         print()
         print("Usage:")
-        print("  export NUCLEUS_BRAIN_PATH=/path/to/.brain")
+        print("  export NUCLEAR_BRAIN_PATH=/path/to/.brain")
         print("  python3 scripts/alive_moment_demo.py")
         sys.exit(1)
     

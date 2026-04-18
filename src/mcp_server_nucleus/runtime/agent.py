@@ -26,7 +26,7 @@ from .tool_recommender import get_tool_recommender
 
 def get_brain_path_internal() -> Path:
     """Helper to get brain path inside runtime"""
-    return Path(os.getenv("NUCLEUS_BRAIN_PATH", "./.brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
 
 class DecisionMade:
     """

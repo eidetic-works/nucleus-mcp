@@ -79,8 +79,8 @@ def get_nucleus_mcp_command() -> list:
 
 
 def get_brain_path() -> Path:
-    """Get the brain path from NUCLEUS_BRAIN_PATH env or auto-detect from working directory."""
-    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
+    """Get the brain path from environment variable or auto-detect from working directory."""
+    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")
     
     if brain_path:
         path = Path(brain_path)
@@ -107,7 +107,7 @@ def get_brain_path() -> Path:
             return parent / ".brain"
             
     # If we get here, no brain was found
-    raise ValueError("NUCLEUS_BRAIN_PATH environment variable not set and no .brain directory found in current or parent directories.")
+    raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set and no .brain directory found in current or parent directories.")
 
 def make_response(success: bool, data=None, error=None, error_code=None):
     """Standardized API response formatter.

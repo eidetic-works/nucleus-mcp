@@ -11,6 +11,7 @@ Each message is one file, organized by recipient session type.
 import json
 import logging
 import os
+import re
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -20,6 +21,18 @@ from typing import Any, Dict, List, Optional
 from .common import get_brain_path
 
 logger = logging.getLogger("nucleus.relay")
+
+_RELAY_ID_RE = re.compile(r"^relay_\d{8}_\d{6}_[a-f0-9]{8}")
+
+
+def _is_shipped_artifact(ref: str) -> bool:
+    """True if ref is a shipped object (commit, PR, path, etc.) — anything except a relay_id.
+
+    Relay-of-relay is the theater loop the gate blocks: a message whose only
+    artifact_refs are other relay_ids is convergence chatter, not work.
+    """
+    head = str(ref).strip().split(" ", 1)[0].split("(", 1)[0].strip()
+    return bool(head) and not _RELAY_ID_RE.match(head)
 
 # ── Session type detection ────────────────────────────────────────
 
@@ -236,6 +249,25 @@ def relay_post(
     sender = sender or detect_session_type()
     now = datetime.now(timezone.utc)
     msg_id = f"relay_{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+
+    if os.environ.get("NUCLEUS_RELAY_STRICT") == "1":
+        try:
+            parsed_body = json.loads(body) if isinstance(body, str) else body
+            refs = parsed_body.get("artifact_refs") if isinstance(parsed_body, dict) else None
+        except (json.JSONDecodeError, TypeError):
+            refs = None
+        if not refs or not any(_is_shipped_artifact(r) for r in refs):
+            return {
+                "sent": False,
+                "error": "gate_rejected",
+                "reason": (
+                    "NUCLEUS_RELAY_STRICT=1 requires body.artifact_refs to contain at least one "
+                    "non-relay-id reference (commit SHA, PR #, or file path). "
+                    "Unset the env var to restore default permissive behavior."
+                ),
+                "to": to,
+                "subject": subject,
+            }
 
     message = {
         "id": msg_id,

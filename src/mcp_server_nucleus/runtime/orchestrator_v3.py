@@ -51,7 +51,7 @@ def _get_ingestion_engine(brain_path=None):
 
 def get_brain_path() -> Path:
     """Get brain path from environment or default."""
-    return Path(os.getenv("NUCLEUS_BRAIN_PATH", "./.brain"))
+    return Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
 
 
 @dataclass

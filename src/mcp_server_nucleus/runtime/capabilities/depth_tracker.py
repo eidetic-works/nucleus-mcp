@@ -8,9 +8,9 @@ from .base import Capability
 class DepthTracker(Capability):
     def __init__(self):
         # Determine brain path (fallback for agent runtime if env not set)
-        if not os.environ.get("NUCLEUS_BRAIN_PATH"):
+        if not os.environ.get("NUCLEAR_BRAIN_PATH"):
             # Default used in verification/dev
-            os.environ["NUCLEUS_BRAIN_PATH"] = ".brain"
+            os.environ["NUCLEAR_BRAIN_PATH"] = ".brain"
 
     @property
     def name(self) -> str:

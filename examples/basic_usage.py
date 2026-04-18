@@ -17,7 +17,7 @@ from pathlib import Path
 TEST_BRAIN = Path("/tmp/nucleus_example")
 TEST_BRAIN.mkdir(parents=True, exist_ok=True)
 (TEST_BRAIN / "ledger").mkdir(exist_ok=True)
-os.environ["NUCLEUS_BRAIN_PATH"] = str(TEST_BRAIN)
+os.environ["NUCLEAR_BRAIN_PATH"] = str(TEST_BRAIN)
 
 # Now import Nucleus
 from mcp_server_nucleus import (

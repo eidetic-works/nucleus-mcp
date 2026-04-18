@@ -313,7 +313,7 @@ class ErrorTelemetry:
         self._alert_manager = AlertManager()
         self._error_counter = 0
         self._log_path = Path(
-            os.getenv("NUCLEUS_BRAIN_PATH", "./.brain")
+            os.getenv("NUCLEAR_BRAIN_PATH", "./.brain")
         ) / "metrics" / "error_telemetry.jsonl"
         self._lock = threading.Lock()
 

@@ -57,7 +57,7 @@ Add to your MCP client configuration (example for Claude Desktop):
       "command": "python",
       "args": ["-m", "mcp_server_nucleus"],
       "env": {
-        "NUCLEUS_BRAIN_PATH": "/path/to/your/.brain"
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
       }
     }
   }
@@ -116,18 +116,18 @@ Default-Deny means every tool call is blocked by default unless explicitly allow
 
 ## Troubleshooting
 
-### "NUCLEUS_BRAIN_PATH environment variable not set"
+### "NUCLEAR_BRAIN_PATH environment variable not set"
 
 Set the environment variable to point to your `.brain/` directory:
 
 ```bash
-export NUCLEUS_BRAIN_PATH=/path/to/your/.brain
+export NUCLEAR_BRAIN_PATH=/path/to/your/.brain
 ```
 
 Or in your MCP client config:
 ```json
 "env": {
-  "NUCLEUS_BRAIN_PATH": "/path/to/your/.brain"
+  "NUCLEAR_BRAIN_PATH": "/path/to/your/.brain"
 }
 ```
 

@@ -72,7 +72,7 @@ pip install nucleus-mcp
     "nucleus": {
       "command": "uvx",
       "args": ["nucleus-mcp"],
-      "env": { "NUCLEUS_BRAIN_PATH": ".brain" }
+      "env": { "NUCLEAR_BRAIN_PATH": ".brain" }
     }
   }
 }
@@ -86,7 +86,7 @@ pip install nucleus-mcp
     "nucleus": {
       "command": "npx",
       "args": ["-y", "nucleus-mcp"],
-      "env": { "NUCLEUS_BRAIN_PATH": ".brain" }
+      "env": { "NUCLEAR_BRAIN_PATH": ".brain" }
     }
   }
 }
@@ -99,7 +99,7 @@ pip install nucleus-mcp
   "mcpServers": {
     "nucleus": {
       "command": "nucleus-mcp",
-      "env": { "NUCLEUS_BRAIN_PATH": ".brain" }
+      "env": { "NUCLEAR_BRAIN_PATH": ".brain" }
     }
   }
 }

@@ -202,9 +202,9 @@ class PulseStore:
     
     def __init__(self, brain_path: Optional[Path] = None):
         if brain_path is None:
-            brain_env = os.environ.get("NUCLEUS_BRAIN_PATH")
+            brain_env = os.environ.get("NUCLEAR_BRAIN_PATH")
             if not brain_env:
-                raise ValueError("NUCLEUS_BRAIN_PATH not set")
+                raise ValueError("NUCLEAR_BRAIN_PATH not set")
             brain_path = Path(brain_env)
         
         self._brain_path = brain_path
@@ -498,7 +498,7 @@ def get_pulse_store() -> PulseStore:
         try:
             _store = PulseStore()
         except ValueError:
-            logger.warning("PulseStore: NUCLEUS_BRAIN_PATH not set. Pulse disabled.")
+            logger.warning("PulseStore: NUCLEAR_BRAIN_PATH not set. Pulse disabled.")
             return None
     return _store
 
@@ -513,4 +513,4 @@ def pulse_view() -> Dict:
     store = get_pulse_store()
     if store:
         return store.view_summary()
-    return {"error": "Pulse not initialized", "note": "Set NUCLEUS_BRAIN_PATH"}
+    return {"error": "Pulse not initialized", "note": "Set NUCLEAR_BRAIN_PATH"}

@@ -210,7 +210,7 @@ class JWTAuthProvider(AuthProvider):
         audience: str = JWT_AUDIENCE,
     ):
         self._brain_path = brain_path or Path(
-            os.getenv("NUCLEUS_BRAIN_PATH", ".brain")
+            os.getenv("NUCLEAR_BRAIN_PATH", ".brain")
         )
         self._access_ttl = access_ttl
         self._refresh_ttl = refresh_ttl

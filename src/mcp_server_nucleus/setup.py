@@ -47,7 +47,7 @@ def install_nucleus_path(dry_run=False):
         path_exports += f'export NUCLEUS_BRAIN_PATH="{brain_path}"\n'
     
     # Alias for legacy support
-    path_exports += 'export NUCLEUS_BRAIN_PATH="$NUCLEUS_BRAIN_PATH"\n'
+    path_exports += 'export NUCLEAR_BRAIN_PATH="$NUCLEUS_BRAIN_PATH"\n'
     
     # Autocompletion Integration
     runtime_dir = Path(__file__).parent / "runtime"

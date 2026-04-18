@@ -142,7 +142,7 @@ Add to your MCP config (`claude_desktop_config.json` or equivalent):
       "command": "python3",
       "args": ["-m", "mcp_server_nucleus"],
       "env": {
-        "NUCLEUS_BRAIN_PATH": "/path/to/your/project/.brain"
+        "NUCLEAR_BRAIN_PATH": "/path/to/your/project/.brain"
       }
     }
   }
@@ -168,7 +168,7 @@ Add to `.mcp.json` in your project root:
 ### Path Discovery
 
 Nucleus finds your `.brain` automatically:
-1. `NUCLEUS_BRAIN_PATH` environment variable (explicit)
+1. `NUCLEAR_BRAIN_PATH` environment variable (explicit)
 2. Walk up from CWD looking for `.brain/` directory
 3. Fall back to `$HOME/.nucleus/brain`
 

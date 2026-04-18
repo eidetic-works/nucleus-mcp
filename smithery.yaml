@@ -3,7 +3,7 @@ startCommand:
   configSchema:
     type: object
     properties:
-      NUCLEUS_BRAIN_PATH:
+      NUCLEAR_BRAIN_PATH:
         type: string
         default: ".brain"
         description: "Path to .brain/ directory for persistent storage"
@@ -14,6 +14,6 @@ startCommand:
       command: "uvx",
       args: ["nucleus-mcp"],
       env: {
-        NUCLEUS_BRAIN_PATH: config.NUCLEUS_BRAIN_PATH || ".brain"
+        NUCLEAR_BRAIN_PATH: config.NUCLEAR_BRAIN_PATH || ".brain"
       }
     })

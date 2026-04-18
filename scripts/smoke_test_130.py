@@ -7,7 +7,7 @@ import traceback
 from typing import List, Dict, Any
 
 # Ensure we use a clean test path
-os.environ["NUCLEUS_BRAIN_PATH"] = "/tmp/nucleus_smoke_test"
+os.environ["NUCLEAR_BRAIN_PATH"] = "/tmp/nucleus_smoke_test"
 from pathlib import Path
 Path("/tmp/nucleus_smoke_test/ledger").mkdir(parents=True, exist_ok=True)
 Path("/tmp/nucleus_smoke_test/sessions").mkdir(parents=True, exist_ok=True)

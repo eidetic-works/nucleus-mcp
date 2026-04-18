@@ -5,7 +5,7 @@ import sys
 from typing import List
 
 # Setup environment
-os.environ["NUCLEUS_BRAIN_PATH"] = "/tmp/nucleus_verification"
+os.environ["NUCLEAR_BRAIN_PATH"] = "/tmp/nucleus_verification"
 
 # Initialize a dummy brain for the test
 from pathlib import Path
