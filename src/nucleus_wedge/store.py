@@ -44,16 +44,30 @@ class Store:
         self._history.touch(exist_ok=True)
 
     @staticmethod
-    def brain_path() -> Path:
-        """Env var override (``NUCLEUS_BRAIN_PATH`` / ``NUCLEAR_BRAIN_PATH``) or walk-up for ``.brain/``."""
+    def brain_path(flag: Path | str | None = None) -> Path:
+        """Resolve ``.brain`` path per ``week2_init_flow_spec.md`` §3a.
+
+        Order: explicit ``flag`` → ``NUCLEUS_BRAIN_PATH``/``NUCLEAR_BRAIN_PATH`` env →
+        cwd contains ``.brain/`` → cwd contains ``.git/`` (greenfield, returned path
+        not yet created) → abort. No silent walk-up across cwd ancestors (gap 1a:
+        cwd-binding hazard from `feedback_relay_post_cross_worktree.md`).
+        """
+        if flag is not None:
+            return Path(flag)
         env = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
         if env:
             return Path(env)
         cwd = Path.cwd()
-        for candidate in (cwd, *cwd.parents):
-            if (candidate / ".brain").exists():
-                return candidate / ".brain"
-        raise ValueError(".brain/ not found in cwd or parents; set NUCLEUS_BRAIN_PATH.")
+        if (cwd / ".brain").exists():
+            return cwd / ".brain"
+        if (cwd / ".git").exists():
+            return cwd / ".brain"
+        raise ValueError(
+            "nucleus init: cannot resolve brain path.\n"
+            "  Either: pass --brain-path /absolute/path\n"
+            "      or: export NUCLEUS_BRAIN_PATH=/absolute/path\n"
+            "      or: run from a directory containing .git/ or .brain/"
+        )
 
     @property
     def history_file(self) -> Path:
