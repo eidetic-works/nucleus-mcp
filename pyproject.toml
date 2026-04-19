@@ -49,6 +49,7 @@ dev = [
 nucleus-mcp = "mcp_server_nucleus:main"
 nucleus = "mcp_server_nucleus.cli:main"
 nucleus-init = "mcp_server_nucleus.cli:main"
+nucleus-wedge = "nucleus_wedge.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_nucleus", "src/nucleus_wedge"]
