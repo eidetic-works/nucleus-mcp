@@ -2,7 +2,7 @@
 Nucleus Runtime - Recovery Operations
 ======================================
 Universal session recovery workflow for frozen/bloated conversations.
-Works across any IDE (Windsurf, Cursor, Antigravity) and CLI.
+Antigravity-specific helpers; sibling modules cover other IDEs.
 """
 
 import json
