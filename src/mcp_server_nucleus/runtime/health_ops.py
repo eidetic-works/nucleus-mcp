@@ -199,7 +199,7 @@ def _brain_health_impl_legacy() -> str:
 🔴 CRITICAL ERROR
    {str(e)}
 
-Please ensure NUCLEAR_BRAIN_PATH is set correctly."""
+Please ensure NUCLEUS_BRAIN_PATH is set correctly."""
 
 
 def _brain_version_impl() -> Dict[str, Any]:

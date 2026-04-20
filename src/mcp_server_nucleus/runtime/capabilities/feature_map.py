@@ -8,7 +8,7 @@ from .base import Capability
 class FeatureMap(Capability):
     def __init__(self):
         # Determine brain path
-        brain_path_str = os.environ.get("NUCLEAR_BRAIN_PATH")
+        brain_path_str = os.environ.get("NUCLEUS_BRAIN_PATH")
         if not brain_path_str:
             # Fallback for dev/verification if not set (though highly recommended)
             brain_path_str = ".brain"

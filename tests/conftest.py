@@ -31,12 +31,12 @@ def pytest_collection_modifyitems(items):
 
 
 # ──────────────────────────────────────────────────────────────
-# Ensure NUCLEAR_BRAIN_PATH is set for tests that need it
+# Ensure NUCLEUS_BRAIN_PATH is set for tests that need it
 # ──────────────────────────────────────────────────────────────
 @pytest.fixture(autouse=True)
 def _ensure_brain_path(tmp_path):
     """Set a temporary brain path for tests if one isn't configured."""
-    original = os.environ.get("NUCLEAR_BRAIN_PATH")
+    original = os.environ.get("NUCLEUS_BRAIN_PATH")
     if not original:
         test_brain = tmp_path / ".brain"
         test_brain.mkdir(exist_ok=True)
@@ -44,7 +44,7 @@ def _ensure_brain_path(tmp_path):
         (test_brain / "engrams").mkdir(exist_ok=True)
         (test_brain / "sessions").mkdir(exist_ok=True)
         (test_brain / "memory").mkdir(exist_ok=True)
-        os.environ["NUCLEAR_BRAIN_PATH"] = str(test_brain)
+        os.environ["NUCLEUS_BRAIN_PATH"] = str(test_brain)
     yield
     # Clean up circuit breaker registry to prevent test order dependencies
     try:
@@ -54,6 +54,6 @@ def _ensure_brain_path(tmp_path):
         pass
     # Restore original
     if original is None:
-        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
+        os.environ.pop("NUCLEUS_BRAIN_PATH", None)
     else:
-        os.environ["NUCLEAR_BRAIN_PATH"] = original
+        os.environ["NUCLEUS_BRAIN_PATH"] = original

@@ -183,7 +183,7 @@ def get_full_context(exc: Exception, brain_path: Path, command: str = "",
             "python_version": sys.version,
             "working_dir": os.getcwd(),
             "brain_path": str(brain_path),
-            "env_brain": os.environ.get("NUCLEAR_BRAIN_PATH", ""),
+            "env_brain": os.environ.get("NUCLEUS_BRAIN_PATH", ""),
         },
     }
 
@@ -249,10 +249,10 @@ def attempt_deterministic_fix(error_info: Dict[str, Any], classification: Dict[s
         found = [p for p in candidates if p.exists()]
         if found:
             result["fixed"] = True
-            result["action"] = f"Found brain at {found[0]}. Set NUCLEAR_BRAIN_PATH={found[0]}"
+            result["action"] = f"Found brain at {found[0]}. Set NUCLEUS_BRAIN_PATH={found[0]}"
         else:
             result["action"] = "No brain found in common locations"
-            result["suggestions"] = ["Run 'nucleus init' to create a brain", "Set NUCLEAR_BRAIN_PATH"]
+            result["suggestions"] = ["Run 'nucleus init' to create a brain", "Set NUCLEUS_BRAIN_PATH"]
 
     elif etype == "file_not_found":
         result["attempted"] = True

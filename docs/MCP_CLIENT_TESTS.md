@@ -225,18 +225,18 @@ Copy prompts 4-7 into Claude/Windsurf sequentially
 ### Automated CLI Stress Test
 
 > [!WARNING]
-> This script runs directly against the path defined in `NUCLEAR_BRAIN_PATH`.
+> This script runs directly against the path defined in `NUCLEUS_BRAIN_PATH`.
 > **Double-check the path** before running to avoid filling your production brain with junk data.
 
 ```bash
 cd mcp-server-nucleus
 # ⚠️  VERIFY THIS PATH IS CORRECT (e.g. /tmp/...) ⚠️
-NUCLEAR_BRAIN_PATH=/tmp/cold-start-test/.brain python3.11 -c "
+NUCLEUS_BRAIN_PATH=/tmp/cold-start-test/.brain python3.11 -c "
 from mcp_server_nucleus import _add_task, _list_tasks, _claim_task
 import time
 import os
 
-print(f'Running against: {os.environ.get(\"NUCLEAR_BRAIN_PATH\")}')
+print(f'Running against: {os.environ.get(\"NUCLEUS_BRAIN_PATH\")}')
 start = time.time()
 for i in range(50):
     _add_task(f'Stress test {i}', priority=i%5+1)

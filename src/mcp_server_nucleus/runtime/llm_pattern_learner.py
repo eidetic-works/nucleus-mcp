@@ -100,7 +100,7 @@ class LLMPatternLearner:
         self._use_resilient = True  # Phase 73
         self._learned_patterns: List[LearnedPattern] = []
         self._patterns_path = Path(
-            os.getenv("NUCLEAR_BRAIN_PATH", "./.brain")
+            os.getenv("NUCLEUS_BRAIN_PATH", "./.brain")
         ) / "metrics" / "learned_patterns.json"
         
         # Load existing patterns
@@ -272,7 +272,7 @@ class LLMPatternLearner:
     
     def _write_pattern_engrams(self, patterns: List[LearnedPattern]):
         """Write learned patterns as engrams (Phase 73: resilient append)."""
-        brain_path = Path(os.getenv("NUCLEAR_BRAIN_PATH", "./.brain"))
+        brain_path = Path(os.getenv("NUCLEUS_BRAIN_PATH", "./.brain"))
         engrams_path = brain_path / "engrams" / "tool_patterns.jsonl"
         file_ops = _get_file_ops()
         

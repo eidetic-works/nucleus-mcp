@@ -1,15 +1,17 @@
-"""Phase 2: CLI scaffolding tests for ``nucleus_wedge.__main__``.
+"""CLI surface tests for ``nucleus_wedge.__main__``.
 
 Covers:
 - top-level ``--help`` lists ``init`` + ``mcp`` subcommands
 - each subcommand surface declares ≤3 user-facing flags (per kickoff plan)
-- stub subcommands return non-zero (Phase 3/4 will land actual logic)
+
+Behavioural tests for each subcommand body live in their own file
+(``test_init_cmd.py``, ``test_register_cmd.py``).
 """
 from __future__ import annotations
 
 import argparse
 
-from nucleus_wedge.__main__ import _build_parser, main
+from nucleus_wedge.__main__ import _build_parser
 
 
 def _subparser(parser: argparse.ArgumentParser, *names: str) -> argparse.ArgumentParser:
@@ -47,11 +49,3 @@ def test_mcp_register_has_at_most_three_flags() -> None:
 def test_mcp_serve_has_at_most_three_flags() -> None:
     serve = _subparser(_build_parser(), "mcp", "serve")
     assert _flag_count(serve) <= 3
-
-
-def test_init_stub_returns_nonzero() -> None:
-    assert main(["init"]) == 1
-
-
-def test_mcp_register_stub_returns_nonzero() -> None:
-    assert main(["mcp", "register"]) == 1

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nucleusos.dev/schemas/envelope.schema.json",
+  "title": "Nucleus Facade Response Envelope",
+  "description": "Wrapper shape returned by every facade tool dispatch when NUCLEUS_ENVELOPE != 'off'. Consumers pin to schema_version and regression-test against this artifact.",
+  "type": "object",
+  "required": ["ok", "data", "brain_id", "session_id", "schema_version", "warnings", "error"],
+  "additionalProperties": false,
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "Success flag. False indicates error was encountered; error field SHOULD be populated."
+    },
+    "data": {
+      "description": "Handler payload. Any JSON-serializable value (object, array, string, number, boolean, null)."
+    },
+    "brain_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the brain that served this response. Resolves from .brain/manifest.yaml or falls back to 'unknown'."
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "MCP session identifier. Falls back to process-scoped id (proc-<hex>) if session-level id not available."
+    },
+    "schema_version": {
+      "type": "string",
+      "enum": ["2"],
+      "description": "Envelope schema version. Bumped on breaking contract changes."
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Non-fatal warnings (e.g. constitution policy advisories, deprecations). ok MAY still be true."
+    },
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/errorBlock"}
+      ],
+      "description": "Structured error block when ok=false; null otherwise."
+    }
+  },
+  "$defs": {
+    "errorBlock": {
+      "type": "object",
+      "required": ["error_type", "recovery_hint"],
+      "additionalProperties": true,
+      "properties": {
+        "error_type": {
+          "type": "string",
+          "description": "Short classification token. Recommended values: transport_closed, handler_error, timeout, validation_error, not_found, forbidden, rate_limited, internal_error."
+        },
+        "recovery_hint": {
+          "type": "string",
+          "description": "Actionable one-liner for the user or automation (e.g. 'nucleus restart --force')."
+        },
+        "last_healthy_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp of last known healthy state. Used by transport_closed."
+        },
+        "pid": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Process id of the server that encountered the error."
+        },
+        "inflight_writes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Identifiers of writes that were in-flight at failure time."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Optional human-readable detail string."
+        }
+      }
+    }
+  }
+}

@@ -34,7 +34,7 @@ COPY --from=builder /install /usr/local
 # Jurisdiction configuration (build-time)
 ARG JURISDICTION=global-default
 ENV NUCLEUS_JURISDICTION=${JURISDICTION}
-ENV NUCLEAR_BRAIN_PATH=/app/.brain
+ENV NUCLEUS_BRAIN_PATH=/app/.brain
 
 # Create brain directory structure
 RUN mkdir -p /app/.brain/engrams \

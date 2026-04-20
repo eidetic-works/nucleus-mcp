@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 def setup_test_brain():
     """Create a temporary brain for testing."""
     test_brain = Path(tempfile.mkdtemp(prefix="nucleus_verify_"))
-    os.environ["NUCLEAR_BRAIN_PATH"] = str(test_brain)
+    os.environ["NUCLEUS_BRAIN_PATH"] = str(test_brain)
     
     # Create required directories
     (test_brain / "ledger").mkdir(parents=True)

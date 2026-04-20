@@ -105,7 +105,7 @@ def register(mcp, helpers):
         """Auto-detect brain path."""
         import os
         from pathlib import Path
-        env = os.environ.get("NUCLEAR_BRAIN_PATH")
+        env = os.environ.get("NUCLEUS_BRAIN_PATH")
         if env:
             return Path(env)
         cwd = Path.cwd() / ".brain"
