@@ -408,6 +408,11 @@ def relay_ack(
                         read_by_sessions[session_id] = now_iso
                         msg["read_by_sessions"] = read_by_sessions
                     f.write_text(json.dumps(msg, indent=2, default=str), encoding="utf-8")
+                    try:
+                        from .relay_engram_projection import project_relay_to_engram
+                        project_relay_to_engram(msg)
+                    except Exception as exc:
+                        logger.debug("relay engram projection skipped: %s", exc)
                     return {
                         "acknowledged": True,
                         "message_id": message_id,

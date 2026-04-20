@@ -43,6 +43,14 @@ class EngramCache:
         self._load_count: int = 0
         self._total_on_disk: int = 0
         self._capped: bool = False
+        # Independent state for history.jsonl (Store-shape projection store).
+        # Tracked separately so a write to one file does not invalidate the other.
+        self._history_engrams: List[Dict] = []
+        self._history_last_mtime: float = 0.0
+        self._history_last_path: Optional[str] = None
+        self._history_load_count: int = 0
+        self._history_total_on_disk: int = 0
+        self._history_capped: bool = False
 
     def _needs_reload(self, ledger_path: Path) -> bool:
         """Check if cache is stale (file modified since last load)."""
@@ -117,6 +125,91 @@ class EngramCache:
         if self._needs_reload(ledger_path):
             self._load(ledger_path)
 
+    @staticmethod
+    def _normalize_history_row(row: Dict) -> Optional[Dict]:
+        """Flatten a Store-shape history row into ledger-shape.
+
+        history.jsonl wraps each record as ``{key, op_type, timestamp, snapshot:
+        {key, value, context, intensity, version, source_agent, op_type,
+        timestamp, deleted, signature}}``. Search consumers expect the flat
+        ledger shape ``{key, value, context, intensity, timestamp, signature}``.
+        Returns None for malformed rows or rows marked deleted.
+        """
+        if "snapshot" not in row:
+            return None
+        snap = row.get("snapshot")
+        if not isinstance(snap, dict):
+            return None
+        if snap.get("deleted") is True:
+            return None
+        key = snap.get("key") or row.get("key")
+        if not key:
+            return None
+        return {
+            "key": key,
+            "value": snap.get("value", "") or "",
+            "context": snap.get("context", "") or "",
+            "intensity": snap.get("intensity", 5),
+            "timestamp": snap.get("timestamp") or row.get("timestamp", ""),
+            "signature": snap.get("signature"),
+            "source_agent": snap.get("source_agent", ""),
+        }
+
+    def _needs_reload_history(self, history_path: Path) -> bool:
+        try:
+            current_mtime = history_path.stat().st_mtime
+            return (
+                str(history_path) != self._history_last_path
+                or current_mtime != self._history_last_mtime
+            )
+        except OSError:
+            return True
+
+    def _load_history(self, history_path: Path) -> None:
+        """Reload the history-side cache from history.jsonl (Store shape)."""
+        history_engrams: List[Dict] = []
+        try:
+            with open(history_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                    try:
+                        raw = json.loads(stripped)
+                    except json.JSONDecodeError:
+                        continue
+                    flat = self._normalize_history_row(raw)
+                    if flat is not None:
+                        history_engrams.append(flat)
+
+            total_on_disk = len(history_engrams)
+            capped = total_on_disk > MAX_CACHED_ENGRAMS
+            if capped:
+                history_engrams = history_engrams[-MAX_CACHED_ENGRAMS:]
+                logger.info(
+                    f"EngramCache (history) capped: {total_on_disk} on disk, "
+                    f"{MAX_CACHED_ENGRAMS} cached"
+                )
+
+            self._history_engrams = history_engrams
+            self._history_total_on_disk = total_on_disk
+            self._history_capped = capped
+            self._history_last_mtime = history_path.stat().st_mtime
+            self._history_last_path = str(history_path)
+            self._history_load_count += 1
+        except OSError as e:
+            logger.debug(f"EngramCache history load failed: {e}")
+            self._history_engrams = []
+
+    def _ensure_loaded_history(self, history_path: Path) -> None:
+        if not history_path.exists():
+            self._history_engrams = []
+            self._history_last_mtime = 0.0
+            self._history_last_path = str(history_path)
+            return
+        if self._needs_reload_history(history_path):
+            self._load_history(history_path)
+
     def query(self, ledger_path: Path, context: Optional[str] = None,
               min_intensity: int = 1, limit: int = 50) -> Tuple[List[Dict], int]:
         """Query engrams with optional context and intensity filters.
@@ -172,6 +265,64 @@ class EngramCache:
             total = len(matches)
             return matches[:limit], total
 
+    def search_dual(
+        self,
+        ledger_path: Path,
+        history_path: Path,
+        query: str,
+        case_sensitive: bool = False,
+        limit: int = 50,
+    ) -> Tuple[List[Dict], int]:
+        """Substring search across both ledger.jsonl and history.jsonl.
+
+        Per Cowork directive d70e01bf: read-side fix for store-divergence.
+        Adds a 'source' field ('ledger' or 'history') to every result row so
+        consumers can see substrate-handoff topology. Dedup policy: if the
+        same key appears in both files, the ledger version wins and the
+        history version is dropped (debug log emitted on dedup hit).
+        """
+        with self._lock:
+            self._ensure_loaded(ledger_path)
+            self._ensure_loaded_history(history_path)
+
+            search_q = query if case_sensitive else query.lower()
+            matches: List[Dict] = []
+            seen_keys: Dict[str, str] = {}
+
+            def _scan(records: List[Dict], source: str) -> None:
+                for e in records:
+                    key = e.get("key", "")
+                    value = e.get("value", "")
+                    key_s = key if case_sensitive else key.lower()
+                    value_s = value if case_sensitive else value.lower()
+                    match_in = []
+                    if search_q in key_s:
+                        match_in.append("key")
+                    if search_q in value_s:
+                        match_in.append("value")
+                    if not match_in:
+                        continue
+                    if key and key in seen_keys:
+                        logger.debug(
+                            f"EngramCache.search_dual dedup: key={key!r} "
+                            f"present in {seen_keys[key]} and {source}; "
+                            f"keeping {seen_keys[key]}"
+                        )
+                        continue
+                    result = dict(e)
+                    result["_match_in"] = match_in
+                    result["source"] = source
+                    matches.append(result)
+                    if key:
+                        seen_keys[key] = source
+
+            _scan(self._engrams, "ledger")
+            _scan(self._history_engrams, "history")
+
+            matches.sort(key=lambda x: x.get("intensity", 5), reverse=True)
+            total = len(matches)
+            return matches[:limit], total
+
     def get_by_key(self, ledger_path: Path, key: str) -> Optional[Dict]:
         """O(1) lookup by engram key."""
         with self._lock:
@@ -179,10 +330,17 @@ class EngramCache:
             return self._by_key.get(key)
 
     def invalidate(self) -> None:
-        """Force cache invalidation (e.g., after a write)."""
+        """Force cache invalidation (e.g., after a write).
+
+        Invalidates BOTH ledger and history caches — write paths may land
+        in either file (write_engram → ledger, relay projection → history),
+        so a write event must invalidate both to keep search consistent.
+        """
         with self._lock:
             self._last_mtime = 0.0
             self._last_path = None
+            self._history_last_mtime = 0.0
+            self._history_last_path = None
 
     @property
     def stats(self) -> Dict:
@@ -197,6 +355,11 @@ class EngramCache:
                 "unique_keys": len(self._by_key),
                 "load_count": self._load_count,
                 "last_path": self._last_path,
+                "history_cached_engrams": len(self._history_engrams),
+                "history_total_on_disk": self._history_total_on_disk,
+                "history_capped": self._history_capped,
+                "history_load_count": self._history_load_count,
+                "history_last_path": self._history_last_path,
             }
 
 

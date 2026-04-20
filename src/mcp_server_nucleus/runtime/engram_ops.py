@@ -143,6 +143,11 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
 def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: int = 50) -> str:
     """Implementation for engram substring search.
 
+    Reads BOTH ledger.jsonl (brain_write_engram writes) AND history.jsonl
+    (relay_engram_projection / Store-API writes). Each result row carries a
+    'source' field ('ledger' or 'history') so the substrate-handoff topology
+    is observable. Dedup-by-key prefers the ledger version when both exist.
+
     Args:
         query: Substring to search for in engram keys and values.
         case_sensitive: Whether to match case. Default False.
@@ -152,9 +157,10 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
         limit = max(1, min(int(limit), 500))
 
         brain = get_brain_path()
-        engram_path = brain / "engrams" / "ledger.jsonl"
+        ledger_path = brain / "engrams" / "ledger.jsonl"
+        history_path = brain / "engrams" / "history.jsonl"
 
-        if not engram_path.exists():
+        if not ledger_path.exists() and not history_path.exists():
             return make_response(True, data={
                 "engrams": [],
                 "count": 0,
@@ -165,10 +171,11 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
                 "message": "No engrams found. Use write_engram to create."
             })
 
-        # Use in-memory cache for O(1) repeated reads (mtime-invalidated)
+        # Use in-memory cache for O(1) repeated reads (mtime-invalidated per file)
         from .engram_cache import get_engram_cache
-        matches, total_matching = get_engram_cache().search(
-            engram_path, query=query, case_sensitive=case_sensitive, limit=limit
+        matches, total_matching = get_engram_cache().search_dual(
+            ledger_path, history_path,
+            query=query, case_sensitive=case_sensitive, limit=limit,
         )
 
         truncated = total_matching > limit
@@ -180,7 +187,8 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
             "truncated": truncated,
             "limit": limit,
             "query": query,
-            "case_sensitive": case_sensitive
+            "case_sensitive": case_sensitive,
+            "sources": ["ledger", "history"],
         })
     except Exception as e:
         from .error_sanitizer import sanitize_error
