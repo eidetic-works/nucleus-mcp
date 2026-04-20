@@ -223,6 +223,29 @@ class TestTelegramChannel:
         assert body["chat_id"] == "12345"
         assert "Alert" in body["text"]
 
+    @patch("urllib.request.urlopen")
+    def test_send_escapes_markdown_v1_special_chars(self, mock_urlopen, clean_env):
+        # Unpaired underscores/asterisks in title+message must not leak into
+        # parse_mode="Markdown" as unclosed formatting — Bot API 400s and the
+        # send fails silently from the caller.
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_resp
+
+        ch = TelegramChannel(token="t", chat_id="c")
+        assert ch.send("Relay stall — claude_code", "foo_bar *baz* [link]") is True
+
+        body = json.loads(mock_urlopen.call_args[0][0].data)
+        text = body["text"]
+        assert "claude\\_code" in text
+        assert "foo\\_bar" in text
+        assert "\\*baz\\*" in text
+        assert "\\[link]" in text
+        # The channel's own wrapping asterisks must remain unescaped.
+        assert "*Relay stall — claude\\_code*" in text
+
 
 # ── SlackChannel ─────────────────────────────────────────────────
 
