@@ -112,7 +112,7 @@ def do_register(config_path_arg: str | None, dry_run: bool) -> int:
 
     patched = json.loads(json.dumps(config))
     patched.setdefault("mcpServers", {})[WEDGE_KEY] = desired_entry
-    payload = json.dumps(patched, indent=2) + "\n"
+    payload = json.dumps(patched, indent=2, ensure_ascii=False) + "\n"
 
     if dry_run:
         print("--- dry-run: computed config (no write) ---")

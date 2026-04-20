@@ -113,6 +113,40 @@ def test_register_preserves_sibling_entries_sha256(
     assert pre_digest == post_digest
 
 
+def test_register_preserves_non_ascii_sibling_bytes(
+    tmp_path: Path,
+    fake_brain: Path,
+    fake_binary: str,
+) -> None:
+    """Non-ASCII characters in sibling entries must round-trip as raw UTF-8, not \\uXXXX escapes.
+
+    Default ``json.dumps`` uses ``ensure_ascii=True`` which would re-encode
+    a sibling like ``/Users/åsa/brain`` as ``/Users/\\u00e5sa/brain`` —
+    JSON-semantic identical but byte-divergent from input. ``register_cmd``
+    must write with ``ensure_ascii=False`` so backup-vs-rewrite stays
+    byte-recognizable for users with Unicode-path configs.
+    """
+    config = tmp_path / "claude.json"
+    non_ascii_path = "/Users/åsa/brain"
+    _seed_config(
+        config,
+        {
+            "mcpServers": {
+                "alpha": {
+                    "command": "/bin/alpha",
+                    "env": {"BRAIN": non_ascii_path},
+                }
+            }
+        },
+    )
+
+    do_register(config_path_arg=str(config), dry_run=False)
+
+    written_bytes = config.read_bytes()
+    assert non_ascii_path.encode("utf-8") in written_bytes
+    assert b"\\u00e5" not in written_bytes
+
+
 def test_register_dry_run_no_write(
     tmp_path: Path,
     fake_brain: Path,
