@@ -3,21 +3,12 @@
 import json
 import logging
 import os
+import urllib.error
 import urllib.request
 
 from .base import NotificationChannel
 
 logger = logging.getLogger("nucleus.channels.telegram")
-
-_MARKDOWN_V1_ESCAPES = str.maketrans({"_": "\\_", "*": "\\*", "`": "\\`", "[": "\\["})
-
-
-def _escape_markdown_v1(s: str) -> str:
-    # parse_mode="Markdown" treats _ * ` [ as formatting chars. Unpaired ones
-    # (e.g. "claude_code" in a title) cause Bot API to 400 and the send to
-    # fail silently from the caller's perspective. Escape user-supplied
-    # strings before wrapping them in the channel's own formatting.
-    return s.translate(_MARKDOWN_V1_ESCAPES)
 
 
 class TelegramChannel(NotificationChannel):
@@ -68,7 +59,7 @@ class TelegramChannel(NotificationChannel):
             return False
 
         emoji = {"critical": "🚨", "error": "❌", "warning": "⚠️", "info": "ℹ️"}.get(level, "📢")
-        text = f"{emoji} *{_escape_markdown_v1(title)}*\n{_escape_markdown_v1(message)}"
+        text = f"{emoji} *{title}*\n{message}"
 
         try:
             url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -81,6 +72,17 @@ class TelegramChannel(NotificationChannel):
             req.add_header("Content-Type", "application/json")
             with urllib.request.urlopen(req, timeout=10) as resp:
                 return resp.status == 200
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read(200).decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            logger.warning(
+                "Telegram send failed: HTTP %s for title=%r body=%r",
+                e.code, title[:60], body,
+            )
+            return False
         except Exception as e:
             logger.debug(f"Telegram send failed: {e}")
             return False
