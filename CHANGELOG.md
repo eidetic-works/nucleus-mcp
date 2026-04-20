@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-04-20 — "Wedge Package + Three-Surface Substrate"
+
+### Added
+- **`nucleus_wedge` package** — minimal 2-tool MCP surface (`remember` + `recall`) backed by BM25 retrieval over engrams + relay projections
+  - `nucleus-wedge init` — substrate-resolution-safe init flow with seed defaults, idempotent, auto-resolves brain via env > `.git`/`.brain` walk-up > `--brain-path` flag (PR #87 spec §3a)
+  - `nucleus-wedge mcp register` — idempotent Claude Code config patcher with backup + atomic write + post-write validation; preserves sibling MCP entries byte-identical (PR #87 spec §3b)
+  - `nucleus-wedge bench` — segmented stopwatch for per-criterion timing instrumentation (PR #89 Phase 6)
+- **Three-surface relay substrate** — Cowork ↔ CC-main ↔ CC-peer message bus
+  - Role-aware bucket routing: per-role inboxes at `.brain/relay/{cowork,claude_code_main,claude_code_peer}/` (PR #58 Phase A1, PR #71 Phase A4 routing symmetry)
+  - Per-session read-state tracking via `read_by_sessions` dict (PR #69 Phase A3)
+  - Cowork auto-surface via Hammerspoon (PR #67 Phase B, PR #81 cc_notifier Mac-notify on CC-main/peer inbound)
+  - Poll-based atomic-write watcher for relay drops (PR #63 Phase C, PR #61 plugin)
+  - Phase E judge — auto-ack on closed 2-party Q→R threads (PR #77, PR #79 6-edge proof)
+- **Decisive-default policy** — Cowork fires "X in 10 min unless you hold" pattern (PR #82)
+- **Skill v2.3 role-aware sender** — `/to-cowork` + `/to-cc` stamp `claude_code_main` vs `claude_code_peer` from `CC_SESSION_ROLE` (PR #75, PR #72)
+- **Two-bounce auto-ack rails** — Step 4.5 in skills + check-inbox v4 ambient-ack + Step 5.5 auto-ack mute (PR #76)
+
+### Changed
+- **`NUCLEUS_BRAIN_PATH` is the sole brain-path env var** — legacy `NUCLEAR_BRAIN_PATH` alias removed (PR #78)
+
+### Fixed
+- **`register_cmd` writes config with `ensure_ascii=False`** — Unicode-path siblings round-trip as raw UTF-8 instead of `\uXXXX` escapes; backup-vs-rewrite stays byte-recognizable for users with non-ASCII paths (PR #92)
+- **Sync validator unblock** — test fixture `engrams_src` resolves from `NUCLEUS_TEST_ENGRAMS_PATH` env var, skips cleanly when unset; replaces hardcoded sovereign path that blocked public-mirror sync (PR #91)
+- **Plugin `watch-relay.sh` respects `NUCLEUS_BRAIN_PATH`** — fixes cross-worktree split-brain when sender/receiver run in different CWDs (PR #66)
+- **`/check-inbox` skill** — direction bug + ack ordering + no blanket ack on peer Cowork sessions (PR #68, PR #70)
+- **Hammerspoon `/check-inbox` rate-limit across distinct bursts** (PR #80)
+
 ## [1.11.0] - 2026-04-11 — "Ship What's Built"
 
 ### Added
