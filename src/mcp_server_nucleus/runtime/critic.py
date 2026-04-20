@@ -17,7 +17,7 @@ except ImportError:
 
 def get_brain_path() -> Path:
     """Get the brain path from environment variable."""
-    brain_path = os.environ.get("NUCLEAR_BRAIN_PATH")
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
     if not brain_path:
         # Fallback for dev/test if env not set, check common locations
         cwd = Path.cwd()
@@ -27,7 +27,7 @@ def get_brain_path() -> Path:
         for parent in cwd.parents:
             if (parent / ".brain").exists():
                 return parent / ".brain"
-        raise ValueError("NUCLEAR_BRAIN_PATH environment variable not set and .brain not found")
+        raise ValueError("NUCLEUS_BRAIN_PATH environment variable not set and .brain not found")
     
     path = Path(brain_path)
     if not path.exists():

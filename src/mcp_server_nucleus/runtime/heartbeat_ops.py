@@ -157,7 +157,7 @@ YOUR MANDATE:
                 cwd=str(brain.parent),
                 env={
                     **os.environ, 
-                    "NUCLEAR_BRAIN_PATH": str(brain),
+                    "NUCLEUS_BRAIN_PATH": str(brain),
                     "GOOGLE_APPLICATION_CREDENTIALS": os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""),
                     "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", os.environ.get("GCP_PROJECT_ID", "")),
                     "GOOGLE_CLOUD_LOCATION": "global",

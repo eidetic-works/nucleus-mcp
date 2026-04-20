@@ -21,13 +21,13 @@ def brain_path(tmp_path):
     (brain / "engrams").mkdir(exist_ok=True)
     (brain / "ledger").mkdir(exist_ok=True)
     (brain / "sessions").mkdir(exist_ok=True)
-    old = os.environ.get("NUCLEAR_BRAIN_PATH")
-    os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
+    old = os.environ.get("NUCLEUS_BRAIN_PATH")
+    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
     yield brain
     if old is not None:
-        os.environ["NUCLEAR_BRAIN_PATH"] = old
+        os.environ["NUCLEUS_BRAIN_PATH"] = old
     else:
-        os.environ.pop("NUCLEAR_BRAIN_PATH", None)
+        os.environ.pop("NUCLEUS_BRAIN_PATH", None)
 
 
 def _write_engrams(brain_path, engrams):

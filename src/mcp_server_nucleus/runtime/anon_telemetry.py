@@ -68,7 +68,7 @@ def _read_yaml_config() -> dict:
         import yaml  # noqa: F811 -- delayed import to avoid hard dep
     except ImportError:
         return {}
-    brain = os.environ.get("NUCLEAR_BRAIN_PATH", "")
+    brain = os.environ.get("NUCLEUS_BRAIN_PATH", "")
     candidates = [
         Path(brain) / ".brain" / "config" / "nucleus.yaml" if brain else None,
         Path.home() / ".brain" / "config" / "nucleus.yaml",
@@ -296,7 +296,7 @@ def show_first_run_notice():
     if not is_anon_telemetry_enabled():
         return
 
-    brain = os.environ.get("NUCLEAR_BRAIN_PATH", "")
+    brain = os.environ.get("NUCLEUS_BRAIN_PATH", "")
     marker_candidates = [
         Path(brain) / _FIRST_RUN_MARKER if brain else None,
         Path.home() / _FIRST_RUN_MARKER,

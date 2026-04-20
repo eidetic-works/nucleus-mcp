@@ -17,6 +17,8 @@ import os
 from typing import Dict, Callable, Any, Optional
 from collections import defaultdict
 
+from . import _envelope
+
 logger = logging.getLogger("nucleus.dispatch")
 
 
@@ -288,6 +290,53 @@ def get_dispatch_rate_limiter() -> DispatchRateLimiter:
 # DISPATCHERS
 # ============================================================
 
+def _maybe_wrap_response(
+    result_str: str,
+    *,
+    ok: bool,
+    module_name: str,
+    action: str,
+    error_type: Optional[str] = None,
+) -> str:
+    """Wrap a handler JSON string in the envelope when enabled.
+
+    When NUCLEUS_ENVELOPE=on:
+      - Parses `result_str` as JSON; on failure, wraps as `{"text": ...}`.
+      - If parsed payload already looks like an envelope (idempotent guard),
+        passes it through untouched — avoids double-wrapping when a handler
+        pre-wraps.
+      - On error paths, uses `_envelope.error_envelope(...)` when error_type
+        is given; otherwise wraps with ok=ok.
+
+    When envelope is disabled (default): returns `result_str` unchanged.
+    This keeps the 1,327 existing tests green until the codemod flips the
+    default ON (scripts/codemod_envelope_tests.py, shipping in the same
+    v1.2.0 release).
+    """
+    if not _envelope.is_enabled():
+        return result_str
+
+    try:
+        payload = json.loads(result_str)
+    except (ValueError, TypeError):
+        payload = {"text": result_str}
+
+    if _envelope.is_envelope(payload):
+        # Handler already wrapped — respect it.
+        return result_str
+
+    if error_type is not None:
+        err = _envelope.error_envelope(
+            error_type,
+            recovery_hint=f"check {module_name}.{action} params",
+            detail=payload.get("error") if isinstance(payload, dict) else None,
+        )
+        return json.dumps(err, indent=2, default=str)
+
+    envelope = _envelope.wrap(payload, ok=ok)
+    return json.dumps(envelope, indent=2, default=str)
+
+
 def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name: str) -> str:
     """Synchronous action dispatcher for facade tools.
 
@@ -299,33 +348,39 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
 
     Returns:
         JSON string result from the handler, or an error message.
+        When NUCLEUS_ENVELOPE=on, the string is a serialized envelope dict
+        (see tools/_envelope.py + schemas/envelope.schema.json).
     """
     if not action:
-        return json.dumps({
+        raw = json.dumps({
             "error": f"No action specified for {module_name}",
             "available_actions": sorted(router.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action="_none", error_type="validation_error")
 
     # Rate limit check
     rate_error = _rate_limiter.check(module_name)
     if rate_error:
         _telemetry.record(module_name, action or "_rate_limited", 0, rate_error)
-        return json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        raw = json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="rate_limited")
 
     handler = router.get(action)
     if not handler:
         _telemetry.record(module_name, action or "_unknown", 0, f"Unknown action '{action}'")
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Unknown action '{action}' in {module_name}",
             "available_actions": sorted(router.keys()),
             "hint": f"Try: {module_name}(action='{sorted(router.keys())[0]}', params={{...}})"
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="not_found")
 
     try:
         params = sanitize_params(params, module_name, action)
     except ValueError as e:
         _telemetry.record(module_name, action, 0, str(e))
-        return json.dumps({"error": str(e), "module": module_name}, indent=2)
+        raw = json.dumps({"error": str(e), "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
 
     t0 = time.perf_counter()
     try:
@@ -334,23 +389,26 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
         _telemetry.record(module_name, action, duration_ms)
         # Ensure result is always a string — guards against structured_content errors
         result_str = result if isinstance(result, str) else json.dumps(result, indent=2, default=str)
-        return result_str + _ambient_health_line()
+        wrapped = _maybe_wrap_response(result_str, ok=True, module_name=module_name, action=action)
+        return wrapped + _ambient_health_line()
     except TypeError as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
         sig = inspect.signature(handler)
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Invalid params for action '{action}': {e}",
             "expected_params": str(sig),
             "provided_params": list(params.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
     except Exception as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Action '{action}' failed: {e}",
             "module": module_name,
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="handler_error")
 
 
 def _ensure_str(result: Any) -> str:
@@ -369,34 +427,39 @@ def _ensure_str(result: Any) -> str:
 async def async_dispatch(action: str, params: dict, router: Dict[str, Callable], module_name: str) -> str:
     """Async action dispatcher for facade tools with async handlers.
 
-    Same as dispatch() but awaits coroutine handlers.
+    Same as dispatch() but awaits coroutine handlers. Envelope wrapping
+    honors the NUCLEUS_ENVELOPE flag identically (see _maybe_wrap_response).
     """
     if not action:
-        return json.dumps({
+        raw = json.dumps({
             "error": f"No action specified for {module_name}",
             "available_actions": sorted(router.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action="_none", error_type="validation_error")
 
     # Rate limit check
     rate_error = _rate_limiter.check(module_name)
     if rate_error:
         _telemetry.record(module_name, action or "_rate_limited", 0, rate_error)
-        return json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        raw = json.dumps({"error": rate_error, "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="rate_limited")
 
     handler = router.get(action)
     if not handler:
         _telemetry.record(module_name, action or "_unknown", 0, f"Unknown action '{action}'")
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Unknown action '{action}' in {module_name}",
             "available_actions": sorted(router.keys()),
             "hint": f"Try: {module_name}(action='{sorted(router.keys())[0]}', params={{...}})"
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="not_found")
 
     try:
         params = sanitize_params(params, module_name, action)
     except ValueError as e:
         _telemetry.record(module_name, action, 0, str(e))
-        return json.dumps({"error": str(e), "module": module_name}, indent=2)
+        raw = json.dumps({"error": str(e), "module": module_name}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
 
     t0 = time.perf_counter()
     try:
@@ -406,22 +469,23 @@ async def async_dispatch(action: str, params: dict, router: Dict[str, Callable],
             result = handler(**params)
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms)
-        if isinstance(result, str):
-            return result
-        return json.dumps(result, indent=2, default=str)
+        result_str = result if isinstance(result, str) else json.dumps(result, indent=2, default=str)
+        return _maybe_wrap_response(result_str, ok=True, module_name=module_name, action=action)
     except TypeError as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
         sig = inspect.signature(handler)
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Invalid params for action '{action}': {e}",
             "expected_params": str(sig),
             "provided_params": list(params.keys()),
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
     except Exception as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
-        return json.dumps({
+        raw = json.dumps({
             "error": f"Action '{action}' failed: {e}",
             "module": module_name,
         }, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="handler_error")

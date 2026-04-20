@@ -191,7 +191,7 @@ def get_prometheus_metrics() -> str:
 
     # Add brain state metrics if available
     try:
-        brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".brain"))
+        brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
         
         # Task counts by status
         tasks_file = brain_path / "ledger" / "tasks.json"
