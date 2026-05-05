@@ -320,3 +320,5 @@ scratch-archive/peer-scratch-2026-04-28/README.md export-ignore
 scratch-archive/peer-scratch-2026-04-28/invite_cc_peer.py export-ignore
 scratch-archive/peer-scratch-2026-04-28/relay_ack_all.py export-ignore
 scripts/tests/test_validate_public_surface.sh export-ignore
+scripts/identity_guard_hook.sh export-ignore
+scripts/install_identity_guard.sh export-ignore
