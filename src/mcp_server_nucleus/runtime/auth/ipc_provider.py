@@ -363,6 +363,11 @@ def require_ipc_token(scope: str):
             is_valid, error = manager.validate_token(token_id, scope)
             
             if not is_valid:
+                try:
+                    from mcp_server_nucleus.runtime.prometheus import inc_auth_failure
+                    inc_auth_failure()
+                except Exception:
+                    pass
                 raise PermissionError(f"IPC token validation failed: {error}")
             
             result_val = func(*args, **kwargs)

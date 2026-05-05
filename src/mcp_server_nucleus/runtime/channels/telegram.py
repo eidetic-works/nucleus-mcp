@@ -10,6 +10,12 @@ from .base import NotificationChannel
 
 logger = logging.getLogger("nucleus.channels.telegram")
 
+_MARKDOWN_V1_ESCAPES = str.maketrans({"_": "\\_", "*": "\\*", "`": "\\`", "[": "\\["})
+
+
+def _escape_markdown_v1(s: str) -> str:
+    return s.translate(_MARKDOWN_V1_ESCAPES)
+
 
 class TelegramChannel(NotificationChannel):
     """Send notifications via Telegram Bot API.
@@ -59,7 +65,7 @@ class TelegramChannel(NotificationChannel):
             return False
 
         emoji = {"critical": "🚨", "error": "❌", "warning": "⚠️", "info": "ℹ️"}.get(level, "📢")
-        text = f"{emoji} *{title}*\n{message}"
+        text = f"{emoji} *{_escape_markdown_v1(title)}*\n{_escape_markdown_v1(message)}"
 
         try:
             url = f"https://api.telegram.org/bot{token}/sendMessage"

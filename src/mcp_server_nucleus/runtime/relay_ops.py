@@ -7,11 +7,17 @@ through the shared .brain/ directory.
 Storage: .brain/relay/{recipient}/{timestamp}_{id}.json
 Each message is one file, organized by recipient session type.
 """
+from __future__ import annotations
 
+from __future__ import annotations
+
+import inspect
 import json
 import logging
 import os
+import time
 import re
+import subprocess
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -19,6 +25,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .common import get_brain_path
+from .providers import coerce_to_tuple
 
 logger = logging.getLogger("nucleus.relay")
 
@@ -45,6 +52,7 @@ KNOWN_SESSION_TYPES = {
     "cursor",
     "vscode",
     "claude_desktop",
+    "gemini_cli",
     "unknown",
 }
 
@@ -84,28 +92,119 @@ def detect_session_type() -> str:
     return _maybe_split_cc_role(_detect_session_type_raw())
 
 
+# Map of substring → canonical session type, evaluated against each ancestor's
+# executable path / command name. Order matters: more-specific tokens first.
+_VSCODE_FORK_MARKERS: tuple[tuple[str, str], ...] = (
+    ("Antigravity.app", "antigravity"),
+    ("Windsurf.app", "windsurf"),
+    ("Cursor.app", "cursor"),
+    ("Visual Studio Code.app", "vscode"),
+    ("Code - Insiders.app", "vscode"),
+    # Lowercased substrings as a safety net for non-bundle invocations
+    ("antigravity", "antigravity"),
+    ("windsurf", "windsurf"),
+    ("cursor", "cursor"),
+)
+
+
+def _disambiguate_vscode_fork() -> str | None:
+    """Walk process ancestors looking for an app-bundle path that uniquely
+    identifies which VS Code fork is hosting this process.
+
+    Used as a fallback when VSCODE_PID is set but no fork-specific env var
+    (WINDSURF_SESSION / CURSOR_SESSION / ANTIGRAVITY_SESSION) is — VS Code
+    forks all inherit VSCODE_PID, so the env var alone cannot disambiguate.
+
+    Returns one of the canonical session types from _VSCODE_FORK_MARKERS, or
+    None if no ancestor matches a known fork. Best-effort, no exceptions.
+    """
+    try:
+        curr_pid = os.getpid()
+        # Bound the walk to avoid pathological infinite loops; 32 ancestors is
+        # already 4x the depth of a typical macOS launchd→user-shell→app→helper chain.
+        for _ in range(32):
+            if curr_pid <= 1:
+                break
+            try:
+                # `ps -o comm=` prints the executable path on macOS, basename on Linux
+                comm = subprocess.check_output(
+                    ["ps", "-o", "comm=", "-p", str(curr_pid)],
+                    stderr=subprocess.DEVNULL,
+                    timeout=1,
+                ).decode("utf-8", errors="replace").strip()
+            except Exception:
+                break
+            for marker, host in _VSCODE_FORK_MARKERS:
+                if marker in comm or marker.lower() in comm.lower():
+                    return host
+            try:
+                ppid_raw = subprocess.check_output(
+                    ["ps", "-o", "ppid=", "-p", str(curr_pid)],
+                    stderr=subprocess.DEVNULL,
+                    timeout=1,
+                ).decode("utf-8", errors="replace").strip()
+                curr_pid = int(ppid_raw)
+            except Exception:
+                break
+    except Exception:
+        pass
+    return None
+
+
 def _detect_session_type_raw() -> str:
     # Priority 1: Explicit override always wins
     explicit = os.environ.get("NUCLEUS_SESSION_TYPE", "").lower()
     if explicit in KNOWN_SESSION_TYPES:
         return explicit
 
-    # Priority 2: Cowork sessions run in /sessions/ sandbox paths
+    # Priority 2: Registry-aware ancestry detection (deterministic).
+    # When a parent process registered itself via
+    # ``mcp_server_nucleus.sessions.registry.register_session``, walk up
+    # the PID chain and return the registered ``agent`` field for the
+    # closest matching ancestor. This is the deterministic counterpart to
+    # the heuristic ``_disambiguate_vscode_fork`` below — needed when env
+    # vars are inherited across forks (Windsurf vs Antigravity sharing
+    # ``VSCODE_PID``, the original T3.11 wedge bug). Falls through silently
+    # on any error so existing fallback heuristics retain their roles.
+    try:
+        from ..sessions.registry import find_session_in_ancestry
+        matched = find_session_in_ancestry()
+        if matched:
+            agent = matched.get("agent")
+            if isinstance(agent, str) and agent in KNOWN_SESSION_TYPES:
+                return agent
+    except Exception:
+        pass
+
+    # Priority 3: Cowork sessions run in /sessions/ sandbox paths
     cwd = os.getcwd()
     if "/sessions/" in cwd and "mnt" in cwd:
         return "cowork"
 
-    # Priority 3: IDE-specific detection (reuses existing Nucleus patterns)
+    # Priority 4: IDE-specific detection (reuses existing Nucleus patterns)
     if os.environ.get("WINDSURF_SESSION"):
         return "windsurf"
     if os.environ.get("CURSOR_SESSION"):
         return "cursor"
+    if os.environ.get("ANTIGRAVITY_SESSION"):
+        return "antigravity"
+    if os.environ.get("GEMINI_CLI"):
+        return "gemini_cli"
     if os.environ.get("CLAUDE_DESKTOP"):
         return "claude_desktop"
     if os.environ.get("VSCODE_PID"):
+        # VSCODE_PID is shared across every VS Code fork (Antigravity, Windsurf,
+        # Cursor, vanilla VS Code) — T3.11 wedge-identity bug. Disambiguate by
+        # walking process ancestors and looking for the app-bundle path that
+        # uniquely identifies the host. If no host can be identified we return
+        # "vscode" (generic) so callers / registry can decide, rather than
+        # falsely blanket-claiming any one fork.
+        host = _disambiguate_vscode_fork()
+        if host:
+            return host
         return "vscode"
 
-    # Priority 4: Claude Code detection (multiple heuristics)
+    # Priority 5: Claude Code detection (multiple heuristics)
     # Direct env vars that Claude Code may set
     if os.environ.get("CLAUDE_CODE") or os.environ.get("CLAUDE_CODE_SESSION"):
         return "claude_code"
@@ -140,8 +239,26 @@ def _detect_session_type_raw() -> str:
             if not sys.stdin.isatty():
                 return "claude_code"
 
-    # Priority 5: Fallback
+    # Priority 6: Fallback
     return "unknown"
+
+
+def _caller_hint() -> str:
+    """Return "file:lineno:funcname" for the caller of relay_post.
+
+    Used by the R6.1-v2 coercion warning so the log points at the site that
+    omitted ``sender=``, not at the inference branch itself. Best-effort:
+    returns ``<unknown>`` if stack introspection fails.
+    """
+    try:
+        stack = inspect.stack()
+        # stack[0] = this helper, [1] = relay_post, [2] = caller of relay_post
+        if len(stack) <= 2:
+            return "<unknown>"
+        frame = stack[2]
+        return f"{Path(frame.filename).name}:{frame.lineno}:{frame.function}"
+    except (IndexError, AttributeError, OSError):
+        return "<unknown>"
 
 
 # ── Relay directory helpers ───────────────────────────────────────
@@ -171,24 +288,68 @@ def _sanitize_recipient(to: str) -> str:
     return to
 
 
-def _derive_from_role(sender: str) -> Optional[str]:
-    """Derive the role (`main`|`peer`) for a Claude Code sender, or None if not CC.
+# ── Legacy bucket intercept (ADR-0010 / feedback_relay_post_to_field_uses_role_bucket) ──
+#
+# HARD RULE: relay_post `to:` must always use role-aware buckets
+# (claude_code_main / claude_code_peer), never the bare legacy `claude_code`
+# bucket. When a misconfigured caller (e.g., cc-tb) writes to "claude_code",
+# this intercept coerces the target to "claude_code_main" and emits a low-sev
+# WARNING so the coercion is observable — mirrors the R6.1-v2 sender-coercion
+# pattern (lines ~374–383) for the same reason: substrate tolerance without
+# silent drift.
 
-    Priority: parse explicit sender suffix (claude_code_main/peer) → fall back to
-    CC_SESSION_ROLE env → default `main` for legacy bare `claude_code`. Returns
-    None for non-CC senders (cowork, windsurf, etc.) — those don't have a role.
+_LEGACY_CC_BUCKET = "claude_code"
+_CANONICAL_CC_BUCKET = "claude_code_main"
+
+
+def _coerce_legacy_bucket_target(to: str, from_session_id: Optional[str] = None) -> str:
+    """Coerce legacy `claude_code` bucket writes to `claude_code_main`.
+
+    Inputs:
+        to: sanitized (lowercased, underscored) recipient bucket name
+        from_session_id: originating session ID for log context (optional)
+
+    Logic:
+        If `to == "claude_code"` (the legacy bucket), coerce to
+        `claude_code_main`. This is the safe default per ADR-0010 § Decision:
+        unset CC_SESSION_ROLE → main. Emits a WARNING so the coercion is
+        observable in substrate logs.
+
+    Returns:
+        Coerced bucket name (or original if no coercion needed).
     """
-    if not sender.startswith("claude_code"):
-        return None
-    if sender == "claude_code_main":
-        return "main"
-    if sender == "claude_code_peer":
-        return "peer"
-    # Legacy bare "claude_code" — consult env var, default main per dual-read alias
-    role = os.environ.get("CC_SESSION_ROLE", "").strip().lower()
-    if role in ("main", "peer"):
-        return role
-    return "main"
+    if to != _LEGACY_CC_BUCKET:
+        return to
+
+    coerced = _CANONICAL_CC_BUCKET
+    logger.warning(
+        "relay_post: legacy bucket %r coerced to %r. "
+        "Callers must use role-aware bucket (claude_code_main / claude_code_peer) "
+        "per ADR-0010. from_session_id=%r. "
+        "Update sender config to pass to='claude_code_main' explicitly.",
+        _LEGACY_CC_BUCKET,
+        coerced,
+        from_session_id or "<unknown>",
+    )
+    return coerced
+
+
+def _parse_relay_message(path: Path) -> Dict[str, Any]:
+    """Parse a relay message file and lazily coerce legacy identity."""
+    msg = json.loads(path.read_text(encoding="utf-8"))
+    
+    # ADR-0005 §D5: Lazy coercion for legacy envelopes missing 'from_provider'
+    if "from_provider" not in msg:
+        sender = msg.get("from", "")
+        role = msg.get("from_role", "")
+        tup = coerce_to_tuple(sender, role)
+        
+        msg["from_role"] = tup["role"]
+        msg["from_provider"] = tup["provider"]
+        if not msg.get("from_session_id"):
+            msg["from_session_id"] = tup["session_id"]
+            
+    return msg
 
 
 def _iter_inbox_dirs(me: str) -> List[Path]:
@@ -223,6 +384,7 @@ def relay_post(
     sender: Optional[str] = None,
     to_session_id: Optional[str] = None,
     from_session_id: Optional[str] = None,
+    in_reply_to: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Post a message to a target session type.
 
@@ -234,19 +396,56 @@ def relay_post(
         context: Optional structured context (file paths, task IDs, etc.)
         sender: Explicit sender identity. Required because the MCP server
                 process can't distinguish which client is calling it.
-                If omitted, falls back to detect_session_type() (unreliable
-                when multiple clients share the same MCP server process).
+                R6.1: when sender is None, raises ValueError by default.
+                Set NUCLEUS_RELAY_INFER_SENDER=1 to restore the legacy
+                detect_session_type() fallback (unreliable when multiple
+                clients share one MCP server process — opt-in only).
         to_session_id: Optional session-ID filter. When set, only the matching
                 client session will surface the message (others skip it).
                 None = broadcast to all sessions of the recipient type.
         from_session_id: Optional originating session ID. Lets receivers tell
                 live continuity from a stale queue.
+        in_reply_to: Optional parent relay_id this message threads to.
+                First-class envelope field — receivers read it off the envelope
+                without parsing body JSON. Normalized on post; stored alongside
+                from_session_id / to_session_id.
 
     Returns:
         Dict with message_id, status, and delivery path.
     """
+    start_time = time.perf_counter()
     to = _sanitize_recipient(to)
-    sender = sender or detect_session_type()
+    # Legacy-bucket intercept: coerce "claude_code" → "claude_code_main" before
+    # any further processing. from_session_id may not be known yet (caller
+    # passes it as a kwarg); we use what's available for log context only.
+    to = _coerce_legacy_bucket_target(to, from_session_id=from_session_id)
+    # R6.1 — provider-neutrality substrate: explicit sender is the default
+    # contract. Legacy silent coercion is opt-in via env var so Gemini CLI,
+    # Windsurf, Cursor, and other future clients must declare role explicitly
+    # or consciously opt into inference.
+    if sender is None:
+        if os.environ.get("NUCLEUS_RELAY_INFER_SENDER") == "1":
+            # R6.1-v2 (2026-04-24): the legacy fallback is known-unreliable
+            # when multiple clients share one stdio pipe (antigravity
+            # relay_20260424_053832_0fd9d451 was mis-attributed via this
+            # exact path). Emit a WARNING so substrate-level mis-attribution
+            # is audible in logs even on opt-in.
+            caller = _caller_hint()
+            sender = detect_session_type()
+            logger.warning(
+                "relay_post: sender coerced via detect_session_type() -> %r. "
+                "NUCLEUS_RELAY_INFER_SENDER=1 is opt-in compat only; callers "
+                "should pass sender= explicitly. Caller: %s",
+                sender,
+                caller,
+            )
+        else:
+            raise ValueError(
+                "relay_post: sender is required. Pass sender= explicitly "
+                "(e.g. 'claude_code_main', 'claude_code_peer', 'cowork', "
+                "'gemini_cli', 'windsurf'). Set NUCLEUS_RELAY_INFER_SENDER=1 "
+                "to restore legacy detect_session_type() fallback."
+            )
     now = datetime.now(timezone.utc)
     msg_id = f"relay_{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
@@ -269,13 +468,17 @@ def relay_post(
                 "subject": subject,
             }
 
+    sender_tuple = coerce_to_tuple(sender)
+
     message = {
         "id": msg_id,
         "from": sender,
-        "from_role": _derive_from_role(sender),
-        "from_session_id": from_session_id,
+        "from_role": sender_tuple["role"],
+        "from_provider": sender_tuple["provider"],
+        "from_session_id": from_session_id or sender_tuple["session_id"],
         "to": to,
         "to_session_id": to_session_id,
+        "in_reply_to": in_reply_to,
         "subject": subject,
         "body": body,
         "priority": priority,
@@ -293,11 +496,52 @@ def relay_post(
         "read_by_sessions": {},
     }
 
+    # Metrics: count queued messages
+    try:
+        from .prometheus import inc_relay_message
+        inc_relay_message("queued")
+    except Exception:
+        pass
+
     # Write to recipient's mailbox
     relay_dir = _get_relay_dir(to)
     filename = f"{now.strftime('%Y%m%d_%H%M%S')}_{msg_id}.json"
     path = relay_dir / filename
     path.write_text(json.dumps(message, indent=2, default=str), encoding="utf-8")
+
+    # Implicit ACK on Reply: mark parent message as read by the sender
+    if in_reply_to:
+        try:
+            relay_ack(in_reply_to, recipient=sender, session_id=from_session_id)
+        except Exception: pass
+
+    # Coord-event capture (Phase B). Best-effort; never breaks relay flow.
+    try:
+        from . import coord_events as _ce
+        _ce.emit(
+            event_type="relay_fired",
+            agent=sender or "unknown",
+            session_id=from_session_id or "unknown",
+            context_summary=f"relay to {to}: {subject[:80]}",
+            chosen_option=msg_id,
+            tags=[priority] if priority else [],
+        )
+    except Exception:
+        pass
+
+    # Marketplace reputation capture (Atom 1). Best-effort — never blocks relay.
+    try:
+        if sender:
+            from .marketplace import ReputationSignals
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+            ReputationSignals.record_interaction(
+                to_address=f"{sender}@nucleus",
+                from_address="relay_bus",
+                latency_ms=elapsed_ms,
+                success=True,
+            )
+    except Exception as _rep_exc:
+        logger.warning("relay_post: reputation record skipped for %s: %s", sender, _rep_exc)
 
     return {
         "sent": True,
@@ -346,7 +590,7 @@ def relay_inbox(
         if len(messages) >= limit:
             break
         try:
-            msg = json.loads(f.read_text(encoding="utf-8"))
+            msg = _parse_relay_message(f)
             if unread_only:
                 if session_id:
                     # Per-session filter: unread iff THIS session hasn't acked.
@@ -369,6 +613,158 @@ def relay_inbox(
         "unread_only": unread_only,
         "session_id": session_id,
     }
+
+
+def relay_context_sync(
+    recipient: Optional[str] = None,
+    max_cycles: int = 3,
+) -> Dict[str, Any]:
+    """Checkpoint-optimized relay loader for session-start sync.
+    
+    Mitigates context window fragmentation as the org scales to 7+ agents by
+    slicing full relay history down to a bounded context window.
+    
+    A 'cycle' is approximated by a calendar day of activity (YYYYMMDD) parsed
+    from the relay message filename (e.g., 20260427_170505...).
+    
+    Args:
+        recipient: Override auto-detected session type.
+        max_cycles: Number of distinct activity cycles (days) to load history for.
+        
+    Returns:
+        Dict with 'active_decisions' and 'recent_history' messages.
+    """
+    me = recipient or detect_session_type()
+    dirs = _iter_inbox_dirs(me)
+
+    # Collect candidate files across all dirs
+    candidates: List[Path] = []
+    for d in dirs:
+        candidates.extend(d.glob("*.json"))
+    candidates.sort(key=lambda p: p.name, reverse=True)
+
+    active_decisions = []
+    recent_history = []
+    
+    seen_cycles = set()
+
+    for f in candidates:
+        try:
+            msg = _parse_relay_message(f)
+            msg["_file"] = f.name
+            
+            # Identify active decisions (high signal, always load)
+            subject = str(msg.get("subject", "")).lower()
+            tags = msg.get("tags", [])
+            body = msg.get("body", {})
+            if isinstance(body, dict):
+                tags.extend(body.get("tags", []))
+            tags_lower = [str(t).lower() for t in tags]
+            
+            # Active decisions are typically unread directives or explicit decisions
+            is_active_decision = (
+                "decision" in subject or 
+                "directive" in subject or 
+                "decision" in tags_lower or 
+                "directive" in tags_lower
+            ) and not msg.get("read", False)
+            
+            # Determine cycle (date-based: YYYYMMDD from filename)
+            # Standard relay filename: relay_YYYYMMDD_HHMMSS_id.json or YYYYMMDD_HHMMSS_...json
+            parts = f.name.split("_")
+            cycle_id = "unknown"
+            for part in parts:
+                if part.isdigit() and len(part) == 8:
+                    cycle_id = part
+                    break
+            
+            # Add to active decisions if flagged
+            if is_active_decision:
+                active_decisions.append(msg)
+            
+            # Add to recent history if within cycle limit
+            if cycle_id not in seen_cycles:
+                if len(seen_cycles) >= max_cycles and cycle_id != "unknown":
+                    continue  # We hit the limit for known cycles
+                if cycle_id != "unknown":
+                    seen_cycles.add(cycle_id)
+            
+            if len(seen_cycles) <= max_cycles or cycle_id == "unknown":
+                recent_history.append(msg)
+            
+        except Exception:
+            continue
+
+    return {
+        "status": "success",
+        "active_decisions": active_decisions,
+        "recent_history": recent_history,
+        "cycles_loaded": len(seen_cycles),
+        "total_messages": len(active_decisions) + len(recent_history),
+        "recipient": me,
+    }
+
+
+def relay_read(
+    message_id: str,
+    recipient: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Read a specific message and mark it as read.
+
+    Args:
+        message_id: The ID of the relay message to read.
+        recipient: Override auto-detected session type.
+        session_id: Per-session ack (Phase A3).
+    """
+    me = recipient or detect_session_type()
+
+    for d in _iter_inbox_dirs(me):
+        for f in d.glob("*.json"):
+            try:
+                msg = json.loads(f.read_text(encoding="utf-8"))
+                if msg.get("id") == message_id:
+                    # Mark as read
+                    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                    msg["read"] = True
+                    msg["read_at"] = now_iso
+                    msg["read_by"] = me
+                    if session_id:
+                        read_by_sessions = msg.get("read_by_sessions") or {}
+                        read_by_sessions[session_id] = now_iso
+                        msg["read_by_sessions"] = read_by_sessions
+                    
+                    f.write_text(json.dumps(msg, indent=2, default=str), encoding="utf-8")
+
+                    # Project to engram
+                    try:
+                        from .relay_engram_projection import project_relay_to_engram
+                        project_relay_to_engram(msg)
+                    except Exception: pass
+
+                    # Coord-event capture (Phase B receive-side). Closes ack-latency loop
+                    # for cross-trio observability dashboard. Best-effort.
+                    try:
+                        from . import coord_events as _ce
+                        _ce.emit(
+                            event_type="relay_processed",
+                            agent=me or "unknown",
+                            session_id=session_id or "unknown",
+                            context_summary=f"relay processed: {str(msg.get('subject',''))[:80]}",
+                            chosen_option=message_id,
+                            tags=["read_message"],
+                        )
+                    except Exception: pass
+
+                    return {
+                        "success": True,
+                        "message": msg,
+                        "acknowledged": True
+                    }
+            except Exception:
+                continue
+
+    return {"success": False, "error": f"Message {message_id} not found in {me} inbox"}
 
 
 def relay_ack(
@@ -397,7 +793,7 @@ def relay_ack(
     for d in _iter_inbox_dirs(me):
         for f in d.glob("*.json"):
             try:
-                msg = json.loads(f.read_text(encoding="utf-8"))
+                msg = _parse_relay_message(f)
                 if msg.get("id") == message_id:
                     now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                     msg["read"] = True
@@ -408,11 +804,31 @@ def relay_ack(
                         read_by_sessions[session_id] = now_iso
                         msg["read_by_sessions"] = read_by_sessions
                     f.write_text(json.dumps(msg, indent=2, default=str), encoding="utf-8")
+                    # Metrics: count acked messages
+                    try:
+                        from .prometheus import inc_relay_message
+                        inc_relay_message("acked")
+                    except Exception:
+                        pass
                     try:
                         from .relay_engram_projection import project_relay_to_engram
                         project_relay_to_engram(msg)
                     except Exception as exc:
                         logger.debug("relay engram projection skipped: %s", exc)
+
+                    # Coord-event capture (Phase B receive-side). Best-effort.
+                    try:
+                        from . import coord_events as _ce
+                        _ce.emit(
+                            event_type="relay_processed",
+                            agent=me or "unknown",
+                            session_id=session_id or "unknown",
+                            context_summary=f"relay processed: {str(msg.get('subject',''))[:80]}",
+                            chosen_option=message_id,
+                            tags=["relay_ack"],
+                        )
+                    except Exception: pass
+
                     return {
                         "acknowledged": True,
                         "message_id": message_id,
@@ -453,7 +869,7 @@ def relay_status() -> Dict[str, Any]:
 
         for f in d.glob("*.json"):
             try:
-                msg = json.loads(f.read_text(encoding="utf-8"))
+                msg = _parse_relay_message(f)
                 total += 1
                 if not msg.get("read", False):
                     unread += 1
@@ -497,7 +913,7 @@ def relay_clear(
     for d in dirs:
         for f in d.glob("*.json"):
             try:
-                msg = json.loads(f.read_text(encoding="utf-8"))
+                msg = _parse_relay_message(f)
                 created = msg.get("created_at", "")
                 if created:
                     msg_time = datetime.fromisoformat(created.replace("Z", "+00:00")).timestamp()
@@ -511,6 +927,187 @@ def relay_clear(
         "deleted": deleted,
         "errors": errors,
         "older_than_hours": older_than_hours,
+    }
+
+
+# ── Two-axis instrumentation (override rate + skip rate) ──────────
+#
+# Every /to-cowork or /to-cc invocation logs one line to event_log.jsonl
+# regardless of whether the relay fired. Skip events are the input to the
+# v2.2 auto-fire judge decision: "should the cold-start gate have let this
+# through?" Override rate is read-time analytics:
+#   count(fire WHERE match=cold-start AND priority=high
+#                 AND not question-to-peer) / count(fire)
+# Classifications are written to a sidecar so event_log.jsonl stays
+# append-only and tail-friendly.
+
+EVENT_LOG_NAME = "event_log.jsonl"
+SKIP_CLASSIFICATIONS_NAME = "skip_classifications.jsonl"
+
+VALID_LOG_EVENTS = {"fire", "skip"}
+VALID_CLASSIFICATIONS = {"should_have_fired", "rightly_skipped"}
+
+
+def _event_log_path() -> Path:
+    return _get_relay_dir() / EVENT_LOG_NAME
+
+
+def _skip_classifications_path() -> Path:
+    return _get_relay_dir() / SKIP_CLASSIFICATIONS_NAME
+
+
+def relay_log_event(
+    event: str,
+    side: str,
+    subject: str,
+    tags: Optional[List[str]] = None,
+    match_reason: str = "",
+    priority: str = "normal",
+    message_id: Optional[str] = None,
+    in_reply_to: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Append one fire/skip event to .brain/relay/event_log.jsonl.
+
+    Called by /to-cowork and /to-cc skills on both code paths:
+    - Fire path (after relay_post succeeds): event=fire, message_id=<id>
+    - Skip path (cold-start gate trips): event=skip, message_id=None
+
+    Best-effort: caller should not surface failures to the user. If the
+    log can't be written, the relay fire/skip itself still happened.
+    """
+    if event not in VALID_LOG_EVENTS:
+        return {"logged": False, "error": f"event must be one of {VALID_LOG_EVENTS}"}
+
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "event": event,
+        "side": side,
+        "subject": subject,
+        "tags": tags or [],
+        "match_reason": match_reason,
+        "priority": priority,
+        "message_id": message_id,
+        "in_reply_to": in_reply_to,
+    }
+
+    try:
+        path = _event_log_path()
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, default=str) + "\n")
+        return {"logged": True, "event": event, "path": str(path.relative_to(get_brain_path()))}
+    except Exception as e:
+        return {"logged": False, "error": str(e)}
+
+
+def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
+    """Read a JSONL file into a list of dicts, skipping malformed lines."""
+    if not path.exists():
+        return []
+    out: List[Dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except Exception:
+                continue
+    return out
+
+
+def relay_skip_review(limit: int = 20) -> Dict[str, Any]:
+    """Surface the most recent unclassified skip events for human review.
+
+    Joins event_log.jsonl (event=skip) against skip_classifications.jsonl
+    (by ts+subject as composite key — skips have no message_id). Returns
+    the most recent N skips lacking a classification.
+    """
+    skips = [e for e in _read_jsonl(_event_log_path()) if e.get("event") == "skip"]
+    classifications = _read_jsonl(_skip_classifications_path())
+    classified_keys = {(c.get("ts"), c.get("subject")) for c in classifications}
+
+    unclassified = [
+        s for s in skips if (s.get("ts"), s.get("subject")) not in classified_keys
+    ]
+    # Most recent first
+    unclassified.sort(key=lambda s: s.get("ts", ""), reverse=True)
+    return {
+        "total_skips": len(skips),
+        "total_classified": len(classified_keys),
+        "unclassified_count": len(unclassified),
+        "unclassified": unclassified[:limit],
+    }
+
+
+def relay_classify_skip(
+    ts: str,
+    subject: str,
+    classification: str,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Record a human classification of a skip event.
+
+    Writes to .brain/relay/skip_classifications.jsonl. Sidecar (not inline
+    rewrite) keeps event_log.jsonl strictly append-only.
+    """
+    if classification not in VALID_CLASSIFICATIONS:
+        return {
+            "classified": False,
+            "error": f"classification must be one of {VALID_CLASSIFICATIONS}",
+        }
+
+    entry = {
+        "ts": ts,
+        "subject": subject,
+        "classification": classification,
+        "note": note or "",
+        "classified_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    try:
+        path = _skip_classifications_path()
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, default=str) + "\n")
+        return {"classified": True, "classification": classification}
+    except Exception as e:
+        return {"classified": False, "error": str(e)}
+
+
+def relay_event_stats() -> Dict[str, Any]:
+    """Compute fire/skip/override counts and rates from event_log.jsonl.
+
+    Used by the v2.2 gate decision and weekly review dashboards.
+    Override rate = fires that bypassed cold-start via priority=high
+    without question-to-peer in tags.
+    """
+    events = _read_jsonl(_event_log_path())
+    fires = [e for e in events if e.get("event") == "fire"]
+    skips = [e for e in events if e.get("event") == "skip"]
+
+    cold_start_fires = [
+        e for e in fires
+        if "cold-start default" in (e.get("match_reason") or "")
+    ]
+    overrides = [
+        e for e in cold_start_fires
+        if e.get("priority") == "high"
+        and "question-to-peer" not in (e.get("tags") or [])
+    ]
+
+    total_fires = len(fires)
+    total_skips = len(skips)
+    total_attempts = total_fires + total_skips
+
+    override_rate = (len(overrides) / total_fires) if total_fires else 0.0
+    skip_rate = (total_skips / total_attempts) if total_attempts else 0.0
+
+    return {
+        "total_fires": total_fires,
+        "total_skips": total_skips,
+        "total_attempts": total_attempts,
+        "override_count": len(overrides),
+        "override_rate": round(override_rate, 4),
+        "skip_rate": round(skip_rate, 4),
     }
 
 
@@ -542,11 +1139,14 @@ def relay_consolidate_pending() -> Dict[str, Any]:
 
         for f in sorted(d.glob("*.json"), reverse=True):
             try:
-                msg = json.loads(f.read_text(encoding="utf-8"))
+                msg = _parse_relay_message(f)
                 if not msg.get("read", False):
                     summary = {
                         "id": msg.get("id"),
                         "from": msg.get("from"),
+                        "from_role": msg.get("from_role"),
+                        "from_provider": msg.get("from_provider"),
+                        "from_session_id": msg.get("from_session_id"),
                         "subject": msg.get("subject"),
                         "priority": msg.get("priority", "normal"),
                         "created_at": msg.get("created_at"),
@@ -723,6 +1323,22 @@ def _auto_dispatch_relay_inner(msg: Dict[str, Any], recipient: str):
                 f"(P{task_priority}, from {sender})"
             )
 
+            # IDE-side nudge routing is the receiving session's responsibility,
+            # not the dispatcher's. The nucleus-bridge VS Code extension's
+            # handleRelayMessage + dispatchRelay (PR #195 W1-W5 dispatch arc)
+            # handle thread-aware injection on the receiving side, including
+            # to_session_id targeting + panel-open/closed detection.
+            #
+            # The legacy keystroke + URGENT_NUDGE.md fallback path that used to
+            # live here was removed 2026-04-30 per windsurf
+            # relay_20260430_012851_ab1b002f. Two reasons:
+            #   1. It bypassed the bridge extension entirely, so to_session_id
+            #      relays landed as stray editor tabs instead of the active
+            #      chat thread.
+            #   2. Hardcoded subprocess calls to ["antigravity", ...] and
+            #      ["windsurf", ...] failed the 5-axis primitive-gate
+            #      (any-OS / any-agent) per feedback_nucleus_primitive_gate.md.
+
             # Emit dispatch event for observability
             try:
                 from .event_ops import _emit_event
@@ -750,6 +1366,116 @@ def _auto_dispatch_relay_inner(msg: Dict[str, Any], recipient: str):
 
 _relay_observer = None
 _relay_observer_lock = threading.Lock()
+
+# ── Poll daemon registry (relay_poll_start / stop / status) ──────────────────
+# Keyed by recipient bucket name.  Each value is a _PollDaemon instance.
+_poll_daemons: Dict[str, "_PollDaemon"] = {}
+_poll_daemons_lock = threading.Lock()
+
+_POLL_SIGNAL_FILENAME = "POLL_SIGNAL.json"
+
+
+class _PollDaemon:
+    """Background thread that polls a relay bucket and writes a signal file.
+
+    Spawned by relay_poll_start(); stopped by relay_poll_stop().
+    Writes .brain/relay/<recipient>/POLL_SIGNAL.json on every scan cycle
+    so Cascade threads can call relay_poll_status() without any blocking.
+
+    Does NOT ack or move files — relay_inbox / relay_ack own that.
+    """
+
+    def __init__(
+        self,
+        recipient: str,
+        interval_s: int = 10,
+        session_id: Optional[str] = None,
+    ):
+        self.recipient = recipient
+        self.interval_s = interval_s
+        self.session_id = session_id
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(
+            target=self._run,
+            name=f"relay-poll-{recipient}",
+            daemon=True,
+        )
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop_event.set()
+        self._thread.join(timeout=max(self.interval_s + 2, 5))
+
+    def _signal_path(self) -> Path:
+        return _get_relay_dir(self.recipient) / _POLL_SIGNAL_FILENAME
+
+    def _scan(self) -> List[Dict[str, Any]]:
+        """Return list of pending (unread) relay summaries for recipient."""
+        relay_dir = _get_relay_dir(self.recipient)
+        pending = []
+        try:
+            for fpath in sorted(relay_dir.glob("*.json")):
+                if fpath.name == _POLL_SIGNAL_FILENAME:
+                    continue
+                if fpath.parent.name in ("processed", "acks"):
+                    continue
+                try:
+                    data = json.loads(fpath.read_text(encoding="utf-8"))
+                except Exception:
+                    continue
+                if data.get("read") is True:
+                    continue
+                # Optional session_id filter
+                if self.session_id:
+                    ts = data.get("to_session_id")
+                    if ts and ts != self.session_id:
+                        continue
+                pending.append({
+                    "relay_id": data.get("id", fpath.stem),
+                    "subject": data.get("subject", ""),
+                    "from": data.get("from", ""),
+                    "priority": data.get("priority", "normal"),
+                    "in_reply_to": data.get("in_reply_to"),
+                })
+        except Exception as exc:
+            logger.debug(f"relay_poll scan error for {self.recipient}: {exc}")
+        return pending
+
+    def _write_signal(self, pending: List[Dict[str, Any]]) -> None:
+        signal = {
+            "running": True,
+            "recipient": self.recipient,
+            "interval_s": self.interval_s,
+            "checked_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "pending": pending,
+            "pending_count": len(pending),
+        }
+        try:
+            path = self._signal_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(signal, indent=2), encoding="utf-8")
+        except Exception as exc:
+            logger.debug(f"relay_poll signal write failed: {exc}")
+
+    def _run(self) -> None:
+        logger.info(f"relay_poll daemon started for bucket '{self.recipient}' (interval={self.interval_s}s)")
+        while not self._stop_event.is_set():
+            pending = self._scan()
+            self._write_signal(pending)
+            self._stop_event.wait(timeout=self.interval_s)
+        # Mark signal file as stopped on clean exit
+        try:
+            path = self._signal_path()
+            if path.exists():
+                data = json.loads(path.read_text(encoding="utf-8"))
+                data["running"] = False
+                data["stopped_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+        logger.info(f"relay_poll daemon stopped for bucket '{self.recipient}'")
 
 
 class RelayWatchHandler:
@@ -812,7 +1538,7 @@ class RelayWatchHandler:
         self._last_consolidate = now
 
         try:
-            msg = json.loads(path.read_text(encoding="utf-8"))
+            msg = _parse_relay_message(path)
             sender = msg.get("from", "unknown")
             recipient = path.parent.name
             subject = msg.get("subject", "(no subject)")
@@ -929,6 +1655,162 @@ def stop_relay_watcher() -> Dict[str, Any]:
         return {"status": "not_running"}
 
 
+def relay_archive(
+    recipient: Optional[str] = None,
+    max_age_days: int = 7,
+    max_count: int = 100,
+    brain_path: Optional[Path] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Archive relay messages beyond a retention window.
+
+    Implements the relay-inbox retention policy from the agent org expansion
+    plan: "keep last ``max_count`` or last ``max_age_days``, whichever is
+    smaller; old relays archived to ``.brain/relay/<agent>/archive/<date>.jsonl``."
+
+    The archive format is newline-delimited JSON (one relay per line), grouped
+    by the relay's ``created_at`` date.  Original ``.json`` files are deleted
+    after successful archival (unless ``dry_run=True``).
+
+    Args:
+        recipient: Relay bucket to archive (e.g. ``claude_code_main``).
+            Auto-detected if omitted.
+        max_age_days: Messages older than this many days are eligible for
+            archival.  Default 7.
+        max_count: Maximum number of messages to retain regardless of age.
+            Default 100.
+        brain_path: Override brain directory.
+        dry_run: If True, compute what would be archived but don't move
+            anything.
+
+    Returns:
+        Dict with ``archived``, ``kept``, ``archive_paths``, ``dry_run``.
+    """
+    brain = brain_path or get_brain_path()
+    me = recipient or detect_session_type()
+    bucket = brain / "relay" / me
+
+    if not bucket.is_dir():
+        return {
+            "recipient": me,
+            "archived": 0,
+            "kept": 0,
+            "archive_paths": [],
+            "dry_run": dry_run,
+            "error": f"Bucket directory not found: {bucket}",
+        }
+
+    # Collect all relay JSON files in the bucket (exclude archive subdir).
+    relay_files: List[Path] = sorted(
+        (f for f in bucket.glob("*.json") if f.is_file()),
+        key=lambda p: p.name,
+    )
+
+    if not relay_files:
+        return {
+            "recipient": me,
+            "archived": 0,
+            "kept": len(relay_files),
+            "archive_paths": [],
+            "dry_run": dry_run,
+        }
+
+    # Parse created_at from each file to determine age.
+    now = datetime.now(timezone.utc)
+    cutoff = now.timestamp() - (max_age_days * 86400)
+
+    # Build list of (file, created_at_ts, relay_data) — newest last.
+    entries: List[tuple] = []
+    for f in relay_files:
+        try:
+            data = json.loads(f.read_text())
+            created_str = data.get("created_at", "")
+            if created_str:
+                # Parse ISO timestamp — handle both Z and +00:00 suffixes.
+                ts_str = created_str.replace("Z", "+00:00")
+                try:
+                    ts = datetime.fromisoformat(ts_str).timestamp()
+                except (ValueError, TypeError):
+                    ts = f.stat().st_mtime
+            else:
+                ts = f.stat().st_mtime
+            entries.append((f, ts, data))
+        except Exception:
+            # Unparseable files are kept (not archived).
+            continue
+
+    # Sort newest-first for the keep/archive split.
+    entries.sort(key=lambda e: e[1], reverse=True)
+
+    # Determine which entries to archive:
+    # Keep the newest ``max_count`` entries AND anything within ``max_age_days``.
+    # Archive = entries that are BOTH beyond max_count AND older than cutoff.
+    to_archive: List[tuple] = []
+    to_keep: List[tuple] = []
+
+    for idx, entry in enumerate(entries):
+        _f, ts, _data = entry
+        within_count = idx < max_count
+        within_age = ts >= cutoff
+        if within_count or within_age:
+            to_keep.append(entry)
+        else:
+            to_archive.append(entry)
+
+    if not to_archive:
+        return {
+            "recipient": me,
+            "archived": 0,
+            "kept": len(to_keep),
+            "archive_paths": [],
+            "dry_run": dry_run,
+        }
+
+    if dry_run:
+        return {
+            "recipient": me,
+            "archived": len(to_archive),
+            "kept": len(to_keep),
+            "archive_paths": [],
+            "dry_run": True,
+        }
+
+    # Group archived entries by date for JSONL output.
+    archive_dir = bucket / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    by_date: Dict[str, List[dict]] = {}
+    for _f, ts, data in to_archive:
+        date_str = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+        by_date.setdefault(date_str, []).append(data)
+
+    archive_paths: List[str] = []
+    for date_str, relays in sorted(by_date.items()):
+        archive_file = archive_dir / f"{date_str}.jsonl"
+        # Append to existing archive for the same date (idempotent across runs).
+        with archive_file.open("a") as fh:
+            for relay in relays:
+                fh.write(json.dumps(relay, default=str) + "\n")
+        archive_paths.append(str(archive_file))
+
+    # Delete originals after successful archival.
+    deleted = 0
+    for f, _ts, _data in to_archive:
+        try:
+            f.unlink()
+            deleted += 1
+        except OSError as exc:
+            logger.warning(f"Failed to delete archived relay {f.name}: {exc}")
+
+    return {
+        "recipient": me,
+        "archived": deleted,
+        "kept": len(to_keep),
+        "archive_paths": sorted(set(archive_paths)),
+        "dry_run": False,
+    }
+
+
 def auto_start_relay_watcher(brain_path: Optional[Path] = None):
     """Auto-start relay watcher during MCP server init.
 
@@ -939,3 +1821,284 @@ def auto_start_relay_watcher(brain_path: Optional[Path] = None):
         start_relay_watcher(brain_path)
     except Exception as e:
         logger.debug(f"Relay watcher auto-start failed (non-critical): {e}")
+
+
+def relay_poll_start(
+    recipient: str,
+    interval_s: int = 10,
+    session_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Start an autonomous background poll daemon for a relay bucket.
+
+    The daemon scans `recipient`'s inbox every `interval_s` seconds and
+    writes `.brain/relay/<recipient>/POLL_SIGNAL.json` with pending relay
+    summaries.  Cascade threads call relay_poll_status() at turn start
+    (instant, non-blocking) to check for new tasks — no paste, no VSIX
+    injection needed.
+
+    Idempotent: calling again while running returns already_running status.
+
+    Args:
+        recipient:   Relay bucket to watch (e.g. 'windsurf', 'claude_code_main').
+        interval_s:  Scan frequency in seconds. Default 10.
+        session_id:  If set, only surface relays addressed to this session.
+
+    Returns:
+        {status: 'started'|'already_running', recipient, interval_s}
+    """
+    with _poll_daemons_lock:
+        existing = _poll_daemons.get(recipient)
+        if existing is not None and existing._thread.is_alive():
+            return {
+                "status": "already_running",
+                "recipient": recipient,
+                "interval_s": existing.interval_s,
+            }
+        daemon = _PollDaemon(recipient=recipient, interval_s=interval_s, session_id=session_id)
+        daemon.start()
+        _poll_daemons[recipient] = daemon
+        logger.info(f"relay_poll_start: daemon started for '{recipient}' interval={interval_s}s")
+        return {
+            "status": "started",
+            "recipient": recipient,
+            "interval_s": interval_s,
+            "session_id": session_id,
+            "signal_file": str(daemon._signal_path()),
+        }
+
+
+def relay_poll_stop(recipient: str) -> Dict[str, Any]:
+    """Stop the poll daemon for a relay bucket.
+
+    Args:
+        recipient: Relay bucket name whose daemon to stop.
+
+    Returns:
+        {status: 'stopped'|'not_running', recipient}
+    """
+    with _poll_daemons_lock:
+        daemon = _poll_daemons.pop(recipient, None)
+    if daemon is None:
+        return {"status": "not_running", "recipient": recipient}
+    daemon.stop()
+    return {"status": "stopped", "recipient": recipient}
+
+
+def relay_poll_status(recipient: str) -> Dict[str, Any]:
+    """Read the latest poll signal for a relay bucket (instant, non-blocking).
+
+    Call this at the start of every turn to check for pending relays.
+    If pending is non-empty, call relay_inbox to read the full messages.
+
+    Args:
+        recipient: Relay bucket to check (e.g. 'windsurf').
+
+    Returns:
+        {running: bool, pending: [{relay_id, subject, from, priority}], checked_at, pending_count}
+        If daemon not started: {running: false, pending: [], hint: '...'}
+    """
+    with _poll_daemons_lock:
+        daemon = _poll_daemons.get(recipient)
+    running = daemon is not None and daemon._thread.is_alive()
+
+    signal_path = _get_relay_dir(recipient) / _POLL_SIGNAL_FILENAME
+    if signal_path.exists():
+        try:
+            data = json.loads(signal_path.read_text(encoding="utf-8"))
+            data["running"] = running
+            return data
+        except Exception:
+            pass
+
+    return {
+        "running": running,
+        "recipient": recipient,
+        "pending": [],
+        "pending_count": 0,
+        "checked_at": None,
+        "hint": "Call relay_poll_start(recipient) once per session to begin autonomous polling.",
+    }
+
+
+def relay_wait(
+    in_reply_to: str,
+    recipient: str,
+    timeout_s: int = 60,
+    poll_interval_s: int = 5,
+) -> Dict[str, Any]:
+    """Poll recipient's inbox until a reply to `in_reply_to` arrives.
+
+    Blocks synchronously for up to `timeout_s` seconds, polling every
+    `poll_interval_s` seconds. Intended for cross-thread / cross-agent
+    tandem coordination where one agent posts a relay and needs to wait
+    for the other agent's reply before proceeding.
+
+    Keep `timeout_s` short (30-60s) when called via MCP to avoid blocking
+    the connection. Callers can retry on timed_out=True.
+
+    Args:
+        in_reply_to: The relay_id this function waits for a reply to.
+        recipient:   The bucket to scan (e.g. 'windsurf', 'claude_code_main').
+        timeout_s:   Max seconds to wait before returning timed_out=True.
+        poll_interval_s: Seconds between inbox scans.
+
+    Returns:
+        {found: True,  relay_id: str, subject: str, waited_s: int}
+        {found: False, timed_out: True, waited_s: int}
+    """
+    import time
+
+    relay_dir = _get_relay_dir(recipient)
+    deadline = time.monotonic() + timeout_s
+    waited = 0
+
+    while True:
+        try:
+            for fpath in sorted(relay_dir.glob("*.json")):
+                if fpath.parent.name in ("processed", "acks"):
+                    continue
+                try:
+                    data = json.loads(fpath.read_text(encoding="utf-8"))
+                except Exception:
+                    continue
+                if data.get("in_reply_to") == in_reply_to:
+                    return {
+                        "found": True,
+                        "relay_id": data.get("id", fpath.stem),
+                        "subject": data.get("subject", ""),
+                        "from": data.get("from", ""),
+                        "waited_s": waited,
+                    }
+        except Exception as exc:
+            logger.debug(f"relay_wait: scan error: {exc}")
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return {"found": False, "timed_out": True, "waited_s": waited}
+
+        sleep_for = min(poll_interval_s, remaining)
+        time.sleep(sleep_for)
+        waited += int(sleep_for)
+
+
+def relay_listen(
+    recipient: str,
+    window_s: int = 60,
+    poll_s: int = 5,
+    in_reply_to: Optional[str] = None,
+    known_ids: Optional[List[str]] = None,
+    attempt: int = 1,
+) -> Dict[str, Any]:
+    """Block at the end of a turn waiting for the next inbound relay.
+
+    Unlike relay_wait (which waits for a reply to a *specific* relay_id),
+    relay_listen waits for *any* new relay that wasn't there when called.
+    This is the "end-of-turn wait" primitive for the autonomous ping-pong loop:
+
+        Agent A does work → relay_post to B → relay_listen(window_s=60)
+        → when B's reply lands, A's next turn starts with the relay in hand.
+
+    The function NEVER raises on timeout — it returns
+    {found: False, call_again: True, known_ids: [...]} so the caller can
+    retry in the next turn, incrementing attempt each time.
+    Adaptive interval: actual poll frequency = min(poll_s * attempt, 30s)
+    so long-running tasks get progressively gentler polling.
+
+    Args:
+        recipient:    Bucket to watch (e.g. 'windsurf').
+        window_s:     Seconds to hold the connection open this call. Default 60.
+                      Keep <=90s to avoid MCP connection timeouts.
+                      Retry with call_again=True — relay_listen is stateless across calls.
+        poll_s:       Base poll interval in seconds. Default 5.
+        in_reply_to:  Optional relay_id to filter — only surface replies to this.
+                      Omit to catch any new relay in the bucket.
+        known_ids:    List of relay IDs already seen (from a prior call's response).
+                      Pass this back on retry so arrivals during the gap aren't missed.
+        attempt:      Retry count (1-based). Increases poll interval adaptively.
+                      Pass attempt=next_attempt from the previous response on retry.
+
+    Returns:
+        Found:   {found: True,  relay: {relay_id, subject, from, priority, in_reply_to},
+                  waited_s: int, recipient: str}
+        Timeout: {found: False, call_again: True, waited_s: int, recipient: str,
+                  known_ids: [str, ...], next_attempt: int, next_poll_s: int,
+                  hint: "call relay_listen again with known_ids=... attempt=..."}
+    """
+    effective_poll = min(poll_s * max(attempt, 1), 30)
+    relay_dir = _get_relay_dir(recipient)
+
+    # Snapshot existing IDs so we only surface truly new arrivals
+    seen: set = set(known_ids or [])
+    if not seen:
+        try:
+            for fpath in relay_dir.glob("*.json"):
+                if fpath.name == _POLL_SIGNAL_FILENAME:
+                    continue
+                if fpath.parent.name in ("processed", "acks"):
+                    continue
+                seen.add(fpath.stem)
+        except Exception:
+            pass
+
+    deadline = time.monotonic() + window_s
+    waited = 0
+
+    while True:
+        try:
+            for fpath in sorted(relay_dir.glob("*.json")):
+                if fpath.name == _POLL_SIGNAL_FILENAME:
+                    continue
+                if fpath.parent.name in ("processed", "acks"):
+                    continue
+                stem = fpath.stem
+                if stem in seen:
+                    continue
+                try:
+                    data = json.loads(fpath.read_text(encoding="utf-8"))
+                except Exception:
+                    seen.add(stem)
+                    continue
+                if data.get("read") is True:
+                    seen.add(stem)
+                    continue
+                # Filter by in_reply_to if specified
+                if in_reply_to and data.get("in_reply_to") != in_reply_to:
+                    seen.add(stem)
+                    continue
+                return {
+                    "found": True,
+                    "relay": {
+                        "relay_id": data.get("id", stem),
+                        "subject": data.get("subject", ""),
+                        "from": data.get("from", ""),
+                        "priority": data.get("priority", "normal"),
+                        "in_reply_to": data.get("in_reply_to"),
+                        "context": data.get("context", {}),
+                        "is_convergence": bool(data.get("context", {}).get("convergence")),
+                    },
+                    "waited_s": waited,
+                    "recipient": recipient,
+                }
+        except Exception as exc:
+            logger.debug(f"relay_listen: scan error: {exc}")
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return {
+                "found": False,
+                "call_again": True,
+                "waited_s": waited,
+                "recipient": recipient,
+                "known_ids": list(seen),
+                "next_attempt": attempt + 1,
+                "next_poll_s": min(effective_poll * 2, 30),
+                "hint": (
+                    f"No new relay in {window_s}s. Call relay_listen again with "
+                    f"known_ids=<this response's known_ids> attempt={attempt + 1} "
+                    f"to continue waiting without missing arrivals."
+                ),
+            }
+
+        sleep_for = min(effective_poll, remaining)
+        time.sleep(sleep_for)
+        waited += int(sleep_for)

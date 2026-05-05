@@ -306,3 +306,17 @@ node_modules/ export-ignore
 uv.lock export-ignore
 package-lock.json export-ignore
 nucleus.db export-ignore
+
+# Publication-protocol scrub additions (HN release prep, 2026-05-05)
+# These files contain identity literals or hierarchy framing that fail the public-surface gate.
+# Excluded from `git archive` so they never enter the public nucleus-mcp sync.
+tests/test_synthesized_batch_6.py export-ignore
+tests/test_nucleus_wedge_memories.py export-ignore
+src/mcp_server_nucleus/synthesized_batch_6.py export-ignore
+extensions/nucleus-bridge/out/extension.js export-ignore
+extensions/nucleus-bridge/src/extension.ts export-ignore
+scratch-archive/peer-scratch-2026-04-28/trigger_gold_relay.py export-ignore
+scratch-archive/peer-scratch-2026-04-28/README.md export-ignore
+scratch-archive/peer-scratch-2026-04-28/invite_cc_peer.py export-ignore
+scratch-archive/peer-scratch-2026-04-28/relay_ack_all.py export-ignore
+scripts/tests/test_validate_public_surface.sh export-ignore

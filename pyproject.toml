@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.12.0"
+version = "1.12.1"
 description = "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents"
 readme = "README.md"
 authors = [
@@ -37,6 +37,10 @@ full = [
 postgres = [
     "psycopg2-binary"
 ]
+http = [
+    "uvicorn[standard]>=0.29.0",
+    "starlette>=0.40.0",
+]
 dev = [
     "pytest>=9.0.2",
     "pytest-cov",
@@ -50,6 +54,8 @@ nucleus-mcp = "mcp_server_nucleus:main"
 nucleus = "mcp_server_nucleus.cli:main"
 nucleus-init = "mcp_server_nucleus.cli:main"
 nucleus-wedge = "nucleus_wedge.__main__:main"
+nucleus-mcp-http = "mcp_server_nucleus.http_transport.server:main"
+nucleus-mcp-cloud = "mcp_server_nucleus.http_transport.app:serve"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_nucleus", "src/nucleus_wedge"]

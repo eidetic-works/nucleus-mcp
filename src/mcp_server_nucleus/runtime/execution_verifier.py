@@ -498,7 +498,10 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
         p = Path(relpath)
         name = p.name
         if name.startswith("test_"):
-            continue  # don't test test files against themselves
+            # Changed file IS a test — run it directly
+            if (project_root / relpath).exists():
+                test_files.add(relpath)
+            continue
 
         # Check same directory
         candidate = p.parent / f"test_{name}"

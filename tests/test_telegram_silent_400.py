@@ -112,3 +112,39 @@ def test_edge_title_400_response_logs_truncated_title(caplog):
     assert any("claude_code_" in r.message for r in caplog.records)
     msg = next(r.message for r in caplog.records if "HTTP 400" in r.message)
     assert "x" * 200 not in msg
+
+
+def _capture_payload(captured):
+    def fake_urlopen(req, timeout):
+        import json as _json
+        captured["payload"] = _json.loads(req.data.decode())
+        return _FakeResp(200)
+    return fake_urlopen
+
+
+@pytest.mark.parametrize("raw, escaped", [
+    ("claude_code", "claude\\_code"),
+    ("a*b", "a\\*b"),
+    ("[bracket]", "\\[bracket]"),
+    ("back`tick", "back\\`tick"),
+    ("mix _*`[", "mix \\_\\*\\`\\["),
+])
+def test_user_chars_escaped_before_send(raw, escaped):
+    """User-supplied title/message must have MarkdownV1 meta-chars escaped
+    before reaching urlopen, otherwise Bot API 400's on unpaired markers."""
+    captured = {}
+    with patch("urllib.request.urlopen", side_effect=_capture_payload(captured)):
+        assert _channel().send(raw, raw) is True
+    text = captured["payload"]["text"]
+    assert escaped in text, f"escaped form {escaped!r} not found in payload text {text!r}"
+
+
+def test_channel_bold_asterisks_survive_escape():
+    """The channel wraps title in *bold*; those channel-owned asterisks must
+    NOT be escaped, otherwise the title stops rendering bold."""
+    captured = {}
+    with patch("urllib.request.urlopen", side_effect=_capture_payload(captured)):
+        _channel().send("plain title", "body")
+    text = captured["payload"]["text"]
+    assert "*plain title*" in text
+    assert "\\*plain title\\*" not in text

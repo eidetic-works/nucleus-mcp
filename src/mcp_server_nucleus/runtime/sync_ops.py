@@ -225,33 +225,87 @@ def get_current_agent(brain_path: Optional[Path] = None) -> str:
     return "unknown_agent"
 
 
-def set_current_agent(agent_id: str, environment: str, role: str = "", 
-                      brain_path: Optional[Path] = None) -> Dict[str, Any]:
+# Legacy → tuple coercion per ADR-0005 §D5. The prefix→provider→role table
+# lives in `runtime/providers.yaml` (loaded via `runtime/providers.py`) so
+# adding a new provider is a YAML-only edit. Slice #3 (2026-04-22) extracted
+# this from an inline `_PROVIDER_PATTERNS` tuple into a config registry per
+# primitive-gate axis "any-agent" (provider list is data, not code).
+#
+# Grace-period read-coercion expires end of Cycle C+2 (~2026-09-18); after that,
+# legacy string-sender reads hard-fail. New writes emit tuple form from day one.
+
+
+def _coerce_legacy_to_tuple(agent_id: str, role: str = "") -> Dict[str, str]:
+    """Per ADR-0005 §D5 grace-period read-coercion (expires end of Cycle C+2).
+
+    Delegates to the provider registry loaded from `runtime/providers.yaml`
+    (override via `$NUCLEUS_PROVIDERS_YAML`). Signature preserved from the
+    pre-Slice-#3 inline implementation for backward-compat with all callers.
+    """
+    from . import providers as _providers
+
+    return _providers.coerce_to_tuple(agent_id, role)
+
+
+def set_current_agent(agent_id: Optional[str] = None, environment: str = "unknown",
+                      role: str = "", brain_path: Optional[Path] = None,
+                      *, provider: Optional[str] = None,
+                      session_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Register current agent identity.
+
+    Per ADR-0005 §D1, identity is the tuple {role, provider, session_id}.
+    Two call shapes are accepted during the §D5 grace period (until end of
+    Cycle C+2): the legacy {agent_id, environment, role} form, and the tuple
+    form {role, provider, session_id}. Legacy callers are coerced via
+    _coerce_legacy_to_tuple and the tuple fields are persisted alongside the
+    legacy fields so both reader paths stay green.
+
     Updates process-local memory FIRST, then persists to file.
     """
     global _current_identity
-    
+
+    if provider or session_id:
+        if not agent_id:
+            agent_id = f"{provider or 'unknown'}:{session_id or ''}"
+        if not provider:
+            provider = _coerce_legacy_to_tuple(agent_id, role)["provider"]
+        if not session_id:
+            session_id = agent_id
+        if not role:
+            role = _coerce_legacy_to_tuple(agent_id, role)["role"]
+    else:
+        if not agent_id:
+            raise ValueError(
+                "set_current_agent requires either {agent_id, environment} "
+                "or {role, provider, session_id} per ADR-0005 §D1."
+            )
+        coerced = _coerce_legacy_to_tuple(agent_id, role)
+        provider = coerced["provider"]
+        session_id = coerced["session_id"]
+        role = coerced["role"]
+
     # Update memory immediately (Atomic for this process)
     _current_identity = agent_id
 
     if brain_path is None:
         from .common import get_brain_path
         brain_path = get_brain_path()
-    
+
     agent_file = brain_path / ".nucleus_agent"
-    
+
     agent_info = {
         "agent_id": agent_id,
         "environment": environment,
         "role": role,
+        "provider": provider,
+        "session_id": session_id,
         "registered_at": datetime.now().isoformat(),
         "pid": os.getpid()
     }
-    
+
     agent_file.write_text(json.dumps(agent_info, indent=2, ensure_ascii=False))
-    
+
     return {
         **agent_info,
         "stored_in": str(agent_file)
@@ -259,23 +313,37 @@ def set_current_agent(agent_id: str, environment: str, role: str = "",
 
 
 def get_agent_info(brain_path: Optional[Path] = None) -> Dict[str, Any]:
-    """Get full agent info if registered."""
+    """Get full agent info if registered. Surfaces tuple fields per ADR-0005 §D1."""
     if brain_path is None:
         from .common import get_brain_path
         brain_path = get_brain_path()
-    
+
     agent_file = brain_path / ".nucleus_agent"
-    
+
     if agent_file.exists():
         try:
-            return json.loads(agent_file.read_text())
+            info = json.loads(agent_file.read_text())
+            # Backfill tuple fields for files written before the §D1 migration.
+            if "provider" not in info or "session_id" not in info:
+                coerced = _coerce_legacy_to_tuple(
+                    info.get("agent_id", ""), info.get("role", "")
+                )
+                info.setdefault("provider", coerced["provider"])
+                info.setdefault("session_id", coerced["session_id"])
+                if not info.get("role"):
+                    info["role"] = coerced["role"]
+            return info
         except Exception:
             pass
-    
+
+    fallback_id = get_current_agent(brain_path)
+    coerced = _coerce_legacy_to_tuple(fallback_id, "")
     return {
-        "agent_id": get_current_agent(brain_path),
+        "agent_id": fallback_id,
         "environment": "unknown",
-        "role": "",
+        "role": coerced["role"],
+        "provider": coerced["provider"],
+        "session_id": coerced["session_id"],
         "registered_at": None,
         "auto_detected": True
     }

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# backup-brain — snapshot an MCP-host brain dir into a git-committed archive
+# (and optionally a cloud mirror). Intended for cron / launchd use.
+#
+# Env contract (primitive-gate — no developer-machine paths):
+#
+#   NUCLEUS_BACKUP_SOURCE   REQUIRED. Absolute path to the brain dir to back
+#                           up (e.g. ~/.gemini/antigravity/brain/<uuid>).
+#   NUCLEUS_BACKUP_ARCHIVE  REQUIRED. Absolute path to the git-committed
+#                           archive dir (e.g. <NUCLEUS_ROOT>/.brain-archive).
+#   NUCLEUS_BACKUP_CLOUD    Optional. Cloud mirror dir (e.g. a Google Drive
+#                           folder). Only used when --monthly is passed AND
+#                           this env var is set.
+#   NUCLEUS_BACKUP_GIT_PUSH Optional. Set to "1" to auto-push the archive
+#                           commit. Unset/"" = commit only, no push. This
+#                           defaults OFF for portability: auto-push assumes
+#                           creds + branch + network that aren't universal.
+#
+# Exit codes:
+#   0  success
+#   1  required env var missing or source dir absent
+#   2  copy failed (source inaccessible, disk full, etc.)
+
+set -euo pipefail
+
+_fail() {
+  echo "[backup-brain] $*" >&2
+  exit 1
+}
+
+[[ -n "${NUCLEUS_BACKUP_SOURCE:-}" ]]  || _fail "NUCLEUS_BACKUP_SOURCE not set"
+[[ -n "${NUCLEUS_BACKUP_ARCHIVE:-}" ]] || _fail "NUCLEUS_BACKUP_ARCHIVE not set"
+[[ -d "$NUCLEUS_BACKUP_SOURCE" ]]      || _fail "source dir not found: $NUCLEUS_BACKUP_SOURCE"
+
+echo "[backup-brain] source:  $NUCLEUS_BACKUP_SOURCE"
+echo "[backup-brain] archive: $NUCLEUS_BACKUP_ARCHIVE"
+
+mkdir -p "$NUCLEUS_BACKUP_ARCHIVE"
+if ! cp -r "$NUCLEUS_BACKUP_SOURCE"/ "$NUCLEUS_BACKUP_ARCHIVE"/; then
+  _fail "cp to archive failed"
+fi
+
+if [[ "${1:-}" == "--monthly" ]]; then
+  if [[ -n "${NUCLEUS_BACKUP_CLOUD:-}" ]]; then
+    echo "[backup-brain] monthly: copying to $NUCLEUS_BACKUP_CLOUD"
+    mkdir -p "$NUCLEUS_BACKUP_CLOUD"
+    if ! cp -r "$NUCLEUS_BACKUP_SOURCE"/ "$NUCLEUS_BACKUP_CLOUD"/; then
+      echo "[backup-brain] WARN: cloud copy failed (non-fatal)"
+    fi
+  else
+    echo "[backup-brain] monthly: NUCLEUS_BACKUP_CLOUD not set — skipping cloud step"
+  fi
+fi
+
+# Commit the archive. Skip cleanly if archive is not under a git repo.
+_archive_parent="$(dirname "$NUCLEUS_BACKUP_ARCHIVE")"
+if git -C "$_archive_parent" rev-parse --git-dir >/dev/null 2>&1; then
+  git -C "$_archive_parent" add "$NUCLEUS_BACKUP_ARCHIVE"
+  _stamp="$(date +%Y-%m-%d)"
+  git -C "$_archive_parent" commit -m "backup: brain snapshot ${_stamp}" \
+    || echo "[backup-brain] no changes to commit"
+  if [[ "${NUCLEUS_BACKUP_GIT_PUSH:-}" == "1" ]]; then
+    git -C "$_archive_parent" push || echo "[backup-brain] WARN: git push failed"
+  fi
+else
+  echo "[backup-brain] archive parent not a git repo — skipping commit"
+fi
+
+echo "[backup-brain] done."

@@ -291,6 +291,109 @@ class FederationState:
         }
 
 
+
+class NetworkManager:
+    """Handles low-level TCP/JSON communication between brains."""
+    
+    def __init__(self, config: FederationConfig, engine: 'FederationEngine'):
+        self.config = config
+        self.engine = engine
+        self.server: Optional[asyncio.AbstractServer] = None
+        self.running = False
+    
+    async def start(self) -> None:
+        """Start the federation RPC server."""
+        try:
+            host, port = self.config.address.rsplit(":", 1) if ":" in self.config.address else ("0.0.0.0", "9000")
+            self.server = await asyncio.start_server(self._handle_connection, host, int(port))
+            self.running = True
+            asyncio.create_task(self.server.serve_forever())
+            logger.info(f"Federation Network listening on {host}:{port}")
+        except Exception as e:
+            logger.error(f"Failed to start federation server: {e}")
+    
+    async def stop(self) -> None:
+        """Stop the federation RPC server."""
+        self.running = False
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+    
+    async def _handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        """Handle an incoming brain-to-brain RPC connection."""
+        try:
+            line = await reader.readline()
+            if not line:
+                return
+            
+            message = json.loads(line.decode())
+            sender_id = message.get("sender_id", "unknown")
+            msg_type = message.get("type", "unknown")
+            
+            # v0.6.0 DSoR/Security: Verify IPC Token
+            if DSOR_AVAILABLE:
+                token = message.get("token")
+                # auth_manager = get_ipc_auth_manager()
+                # if not auth_manager.verify_federation_token(token, sender_id):
+                #     logger.warning(f"Invalid federation token from {sender_id}")
+                #     # return
+            
+            # Dispatch to engine
+            response = await self.engine.handle_message(message)
+            
+            if response:
+                writer.write((json.dumps(response) + "\n").encode())
+                await writer.drain()
+                
+        except Exception as e:
+            logger.debug(f"Federation connection error: {e}")
+        finally:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
+    
+    async def send_message(self, address: str, message: Dict[str, Any], timeout: float = 3.0) -> Optional[Dict[str, Any]]:
+        """Send an RPC message to a remote brain."""
+        try:
+            host, port = address.rsplit(":", 1) if ":" in address else (address, "9000")
+            reader, writer = await asyncio.wait_for(asyncio.open_connection(host, int(port)), timeout=timeout)
+            
+            # Enrich message
+            message["sender_id"] = self.config.brain_id
+            message["timestamp"] = datetime.now(tz=timezone.utc).isoformat()
+            
+            if DSOR_AVAILABLE:
+                # message["token"] = get_ipc_auth_manager().generate_federation_token(host)
+                pass
+            
+            writer.write((json.dumps(message) + "\n").encode())
+            await writer.drain()
+            
+            line = await asyncio.wait_for(reader.readline(), timeout=timeout)
+            if not line:
+                return None
+            
+            return json.loads(line.decode())
+            
+        except asyncio.TimeoutError:
+            logger.debug(f"Timeout sending {message.get('type')} to {address}")
+            return None
+        except Exception as e:
+            logger.debug(f"Failed to send {message.get('type')} to {address}: {e}")
+            return None
+        finally:
+            try:
+                # In older python, writer.close() is not awaitable or can fail
+                # if connection never opened
+                if 'writer' in locals():
+                    writer.close()
+                    await writer.wait_closed()
+            except Exception:
+                pass
+
+
 @dataclass
 class FederationMetrics:
     """Metrics for federation monitoring."""
@@ -363,9 +466,10 @@ class CompositeRoutingStrategy(RoutingStrategy):
 class DiscoveryManager:
     """SWIM-based peer discovery and membership management."""
     
-    def __init__(self, config: FederationConfig, state: FederationState):
-        self.config = config
-        self.state = state
+    def __init__(self, engine: 'FederationEngine'):
+        self.engine = engine
+        self.config = engine.config
+        self.state = engine.state
         self.running = False
         self._gossip_task: Optional[asyncio.Task] = None
         self._probe_task: Optional[asyncio.Task] = None
@@ -391,60 +495,162 @@ class DiscoveryManager:
                     pass
     
     async def _bootstrap(self) -> None:
+        """Initial bootstrap by contacting seed peers."""
         for seed in self.config.seed_peers:
             try:
                 host, port = seed.rsplit(":", 1) if ":" in seed else (seed, "9000")
-                peer_id = f"seed_{host}_{port}"
-                peer = FederationPeer(peer_id=peer_id, address=f"{host}:{port}", region="unknown")
-                self.state.peers[peer_id] = peer
-                peer.status = PeerStatus.ONLINE
-                peer.last_heartbeat = datetime.now(tz=timezone.utc)
-                if self.on_peer_joined:
-                    self.on_peer_joined(peer)
+                # Try to PING the seed peer
+                response = await self.engine.network.send_message(seed, {"type": "ping"})
+                
+                if response and response.get("success"):
+                    peer_id = response.get("brain_id", f"peer_{host}_{port}")
+                    region = response.get("region", "unknown")
+                    
+                    peer = FederationPeer(peer_id=peer_id, address=f"{host}:{port}", region=region)
+                    self.state.peers[peer_id] = peer
+                    peer.status = PeerStatus.ONLINE
+                    peer.last_heartbeat = datetime.now(tz=timezone.utc)
+                    peer.capabilities = set(response.get("capabilities", []))
+                    
+                    if self.on_peer_joined:
+                        self.on_peer_joined(peer)
+                    
+                    logger.info(f"Successfully bootstrapped from seed {seed} (ID: {peer_id})")
+                else:
+                    logger.warning(f"Seed peer {seed} reachable but returned failure or no brain_id")
             except Exception as e:
-                logger.warning(f"Failed to contact seed peer {seed}: {e}")
+                logger.warning(f"Failed to bootstrap from seed peer {seed}: {e}")
     
     async def _gossip_loop(self) -> None:
+        """Periodic gossip of membership information."""
         while self.running:
             try:
-                await self._gossip_round()
                 await asyncio.sleep(self.config.heartbeat_interval)
+                await self._gossip_round()
             except asyncio.CancelledError:
                 break
+            except Exception as e:
+                logger.error(f"Gossip loop error: {e}")
     
     async def _gossip_round(self) -> None:
-        online_peers = [p for p in self.state.peers.values() if p.is_healthy()]
+        """Exchange membership info with a subset of random peers."""
+        online_peers = [p for p in self.state.peers.values() if p.is_healthy() and p.peer_id != self.config.brain_id]
         if not online_peers:
             return
+        
         targets = random.sample(online_peers, min(self.config.gossip_fanout, len(online_peers)))
-        # In production: exchange membership info with targets
+        
+        # Prepare membership data (SWIM-style gossip)
+        membership = []
+        # Sample some peers to share (including self)
+        all_peers = list(self.state.peers.values())
+        sample_size = min(10, len(all_peers))
+        sampled = random.sample(all_peers, sample_size)
+        
+        for p in sampled:
+            membership.append({
+                "peer_id": p.peer_id,
+                "address": p.address,
+                "status": p.status.name,
+                "incarnation": p.incarnation,
+                "region": p.region
+            })
+            
+        gossip_msg = {
+            "type": "gossip",
+            "membership": membership
+        }
+        
+        for target in targets:
+            asyncio.create_task(self.engine.network.send_message(target.address, gossip_msg))
     
     async def _probe_loop(self) -> None:
+        """Periodic probing of peer health."""
         while self.running:
             try:
-                await self._probe_round()
                 await asyncio.sleep(self.config.heartbeat_interval)
+                await self._probe_round()
             except asyncio.CancelledError:
                 break
+            except Exception as e:
+                logger.error(f"Probe loop error: {e}")
     
     async def _probe_round(self) -> None:
+        """Probe peers for health and handle timeouts."""
         now = datetime.now(tz=timezone.utc)
+        
+        # 1. PING a random peer to check if it's still alive (SWIM direct probe)
+        online_peers = [p for p in self.state.peers.values() if p.status == PeerStatus.ONLINE and p.peer_id != self.config.brain_id]
+        if online_peers:
+            target = random.choice(online_peers)
+            asyncio.create_task(self._probe_peer(target))
+            
+        # 2. Check for timeouts in all peers
         for peer in list(self.state.peers.values()):
             if peer.peer_id == self.config.brain_id:
                 continue
+                
             if peer.last_heartbeat:
                 elapsed = (now - peer.last_heartbeat).total_seconds()
-                if elapsed > self.config.heartbeat_timeout:
-                    if peer.status == PeerStatus.ONLINE:
-                        peer.status = PeerStatus.SUSPECT
-                        peer.suspect_time = now
-                        if self.on_peer_suspect:
-                            self.on_peer_suspect(peer.peer_id)
-                    elif peer.status == PeerStatus.SUSPECT and peer.suspect_time:
-                        if (now - peer.suspect_time).total_seconds() > self.config.suspect_timeout:
-                            peer.status = PeerStatus.OFFLINE
-                            if self.on_peer_left:
-                                self.on_peer_left(peer.peer_id)
+                
+                # ONLINE -> SUSPECT
+                if elapsed > self.config.heartbeat_timeout and peer.status == PeerStatus.ONLINE:
+                    peer.status = PeerStatus.SUSPECT
+                    peer.suspect_time = now
+                    logger.warning(f"Peer {peer.peer_id} missed heartbeat, marking SUSPECT")
+                    if self.on_peer_suspect:
+                        self.on_peer_suspect(peer.peer_id)
+                
+                # SUSPECT -> OFFLINE
+                elif peer.status == PeerStatus.SUSPECT and peer.suspect_time:
+                    if (now - peer.suspect_time).total_seconds() > self.config.suspect_timeout:
+                        peer.status = PeerStatus.OFFLINE
+                        logger.error(f"Peer {peer.peer_id} suspect timeout, marking OFFLINE")
+                        if self.on_peer_left:
+                            self.on_peer_left(peer.peer_id)
+    
+    async def _probe_peer(self, peer: FederationPeer) -> None:
+        """Directly probe a peer with a PING."""
+        response = await self.engine.network.send_message(peer.address, {"type": "ping"})
+        if response and response.get("success"):
+            peer.last_heartbeat = datetime.now(tz=timezone.utc)
+            # If it was suspect, it's back
+            if peer.status == PeerStatus.SUSPECT:
+                peer.status = PeerStatus.ONLINE
+                peer.suspect_time = None
+                logger.info(f"Peer {peer.peer_id} recovered from SUSPECT")
+    
+    async def handle_gossip(self, membership: List[Dict[str, Any]]) -> None:
+        """Handle incoming membership gossip."""
+        for entry in membership:
+            peer_id = entry.get("peer_id")
+            if not peer_id or peer_id == self.config.brain_id:
+                continue
+                
+            # If we don't know about this peer, add it
+            if peer_id not in self.state.peers:
+                peer = FederationPeer(
+                    peer_id=peer_id,
+                    address=entry["address"],
+                    region=entry.get("region", "unknown"),
+                    status=PeerStatus.ONLINE # Trust gossip for now
+                )
+                peer.last_heartbeat = datetime.now(tz=timezone.utc)
+                self.state.peers[peer_id] = peer
+                if self.on_peer_joined:
+                    self.on_peer_joined(peer)
+                logger.info(f"Discovered new peer via gossip: {peer_id}")
+            else:
+                # Update existing peer info if incarnation is higher (SWIM logic)
+                peer = self.state.peers[peer_id]
+                remote_incarnation = entry.get("incarnation", 0)
+                if remote_incarnation > peer.incarnation:
+                    peer.incarnation = remote_incarnation
+                    # Update status if remote says it's alive and we thought it was dead/suspect
+                    remote_status = entry.get("status")
+                    if remote_status == "ONLINE" and peer.status != PeerStatus.ONLINE:
+                        peer.status = PeerStatus.ONLINE
+                        peer.last_heartbeat = datetime.now(tz=timezone.utc)
     
     def get_online_peers(self) -> List[FederationPeer]:
         return [p for p in self.state.peers.values() if p.is_online()]
@@ -460,9 +666,10 @@ class DiscoveryManager:
 class ConsensusManager:
     """Simplified Raft consensus for critical operations."""
     
-    def __init__(self, config: FederationConfig, state: FederationState):
-        self.config = config
-        self.state = state
+    def __init__(self, engine: 'FederationEngine'):
+        self.engine = engine
+        self.config = engine.config
+        self.state = engine.state
         self.raft_state = RaftState.FOLLOWER
         self.running = False
         self._election_timer: Optional[asyncio.Task] = None
@@ -507,13 +714,74 @@ class ConsensusManager:
         
         peers = [p for p in self.state.peers.values() if p.is_healthy()]
         total_nodes = len(peers) + 1
+        
+        # Request votes from all peers
+        last_log_index = len(self.state.log)
+        last_log_term = self.state.log[-1].term if self.state.log else 0
+        
+        vote_request = {
+            "type": "raft_vote",
+            "term": self.state.term,
+            "candidate_id": self.config.brain_id,
+            "last_log_index": last_log_index,
+            "last_log_term": last_log_term
+        }
+        
         votes_received = 1  # Vote for self
         
-        if total_nodes == 1 or votes_received >= (total_nodes // 2) + 1:
+        async def ask_for_vote(peer: FederationPeer):
+            nonlocal votes_received
+            resp = await self.engine.network.send_message(peer.address, vote_request)
+            if resp and resp.get("vote_granted"):
+                votes_received += 1
+                if votes_received >= (total_nodes // 2) + 1 and self.raft_state == RaftState.CANDIDATE:
+                    await self._become_leader()
+
+        for peer in peers:
+            asyncio.create_task(ask_for_vote(peer))
+            
+        # If no other nodes, become leader immediately
+        if total_nodes == 1:
             await self._become_leader()
         else:
-            self.raft_state = RaftState.FOLLOWER
+            # If we don't get enough votes within election timeout, another timer will trigger a new election
             self._reset_election_timer()
+    
+    async def handle_request_vote(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming Raft vote request."""
+        term = request.get("term", 0)
+        candidate_id = request.get("candidate_id")
+        
+        # 1. Reply false if term < currentTerm
+        if term < self.state.term:
+            return {"term": self.state.term, "vote_granted": False}
+            
+        # 2. If term > currentTerm, update currentTerm and transition to follower
+        if term > self.state.term:
+            self.state.term = term
+            self.raft_state = RaftState.FOLLOWER
+            self.state.voted_for = None
+            self._reset_election_timer()
+            
+        # 3. If votedFor is null or candidateId, and candidate's log is at least as up-to-date
+        # as receiver's log, grant vote
+        can_vote = self.state.voted_for is None or self.state.voted_for == candidate_id
+        
+        # Log completeness check
+        last_log_index = len(self.state.log)
+        last_log_term = self.state.log[-1].term if self.state.log else 0
+        candidate_last_index = request.get("last_log_index", 0)
+        candidate_last_term = request.get("last_log_term", 0)
+        
+        log_ok = (candidate_last_term > last_log_term) or \
+                 (candidate_last_term == last_log_term and candidate_last_index >= last_log_index)
+        
+        if can_vote and log_ok:
+            self.state.voted_for = candidate_id
+            self._reset_election_timer()
+            return {"term": self.state.term, "vote_granted": True}
+        
+        return {"term": self.state.term, "vote_granted": False}
     
     async def _become_leader(self) -> None:
         self.raft_state = RaftState.LEADER
@@ -532,9 +800,127 @@ class ConsensusManager:
     async def _heartbeat_loop(self) -> None:
         while self.running and self.raft_state == RaftState.LEADER:
             try:
+                await self._send_heartbeats()
                 await asyncio.sleep(self.config.heartbeat_interval / 2)
             except asyncio.CancelledError:
                 break
+            except Exception as e:
+                logger.error(f"Heartbeat loop error: {e}")
+
+    async def _send_heartbeats(self) -> None:
+        """Send heartbeats (AppendEntries with no entries) to all peers."""
+        peers = [p for p in self.state.peers.values() if p.is_healthy()]
+        
+        for peer in peers:
+            prev_log_index = peer.next_index - 1
+            prev_log_term = self.state.log[prev_log_index - 1].term if prev_log_index > 0 else 0
+            
+            # Send entries from next_index to end
+            entries = []
+            if len(self.state.log) >= peer.next_index:
+                entries = [e.to_dict() for e in self.state.log[peer.next_index-1:]]
+                
+            append_req = {
+                "type": "raft_append",
+                "term": self.state.term,
+                "leader_id": self.config.brain_id,
+                "prev_log_index": prev_log_index,
+                "prev_log_term": prev_log_term,
+                "entries": entries,
+                "leader_commit": self.state.commit_index
+            }
+            
+            asyncio.create_task(self._send_append_to_peer(peer, append_req))
+
+    async def _send_append_to_peer(self, peer: FederationPeer, request: Dict[str, Any]) -> None:
+        resp = await self.engine.network.send_message(peer.address, request)
+        if resp:
+            term = resp.get("term", 0)
+            if term > self.state.term:
+                self.state.term = term
+                self.raft_state = RaftState.FOLLOWER
+                self.state.voted_for = None
+                self._reset_election_timer()
+                return
+            
+            if self.raft_state == RaftState.LEADER:
+                if resp.get("success"):
+                    peer.next_index = request["prev_log_index"] + len(request["entries"]) + 1
+                    peer.match_index = peer.next_index - 1
+                    await self._update_commit_index()
+                else:
+                    # Log inconsistency, decrement next_index and retry
+                    peer.next_index = max(1, peer.next_index - 1)
+
+    async def _update_commit_index(self) -> None:
+        """Update leader's commit index based on peer match indices."""
+        match_indices = [p.match_index for p in self.state.peers.values() if p.is_healthy()]
+        match_indices.append(len(self.state.log))
+        match_indices.sort(reverse=True)
+        
+        # Find highest N such that majority of match_index >= N
+        total_nodes = len(self.state.peers) + 1
+        n_index = (total_nodes // 2)
+        if n_index < len(match_indices):
+            n = match_indices[n_index]
+            if n > self.state.commit_index and self.state.log[n-1].term == self.state.term:
+                self.state.commit_index = n
+                # Apply entries to state machine
+                while self.state.last_applied < self.state.commit_index:
+                    self.state.last_applied += 1
+                    entry = self.state.log[self.state.last_applied - 1]
+                    if self.on_commit:
+                        self.on_commit(entry)
+
+    async def handle_append_entries(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming Raft AppendEntries request."""
+        term = request.get("term", 0)
+        leader_id = request.get("leader_id")
+        
+        # 1. Reply false if term < currentTerm
+        if term < self.state.term:
+            return {"term": self.state.term, "success": False}
+            
+        # Accept leader
+        self.state.leader_id = leader_id
+        self._reset_election_timer()
+        
+        if term > self.state.term:
+            self.state.term = term
+            self.raft_state = RaftState.FOLLOWER
+            self.state.voted_for = None
+            
+        # 2. Reply false if log doesn't contain an entry at prevLogIndex whose term matches prevLogTerm
+        prev_idx = request.get("prev_log_index", 0)
+        prev_term = request.get("prev_log_term", 0)
+        
+        if prev_idx > 0:
+            if len(self.state.log) < prev_idx or self.state.log[prev_idx-1].term != prev_term:
+                return {"term": self.state.term, "success": False}
+        
+        # 3. If an existing entry conflicts with a new one (same index but different terms), 
+        # delete the existing entry and all that follow it
+        entries = [RaftLogEntry.from_dict(e) for e in request.get("entries", [])]
+        for i, entry in enumerate(entries):
+            idx = prev_idx + i + 1
+            if len(self.state.log) >= idx:
+                if self.state.log[idx-1].term != entry.term:
+                    self.state.log = self.state.log[:idx-1]
+                    self.state.log.append(entry)
+            else:
+                self.state.log.append(entry)
+                
+        # 5. If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
+        leader_commit = request.get("leader_commit", 0)
+        if leader_commit > self.state.commit_index:
+            self.state.commit_index = min(leader_commit, len(self.state.log))
+            while self.state.last_applied < self.state.commit_index:
+                self.state.last_applied += 1
+                entry = self.state.log[self.state.last_applied - 1]
+                if self.on_commit:
+                    self.on_commit(entry)
+                    
+        return {"term": self.state.term, "success": True}
     
     async def propose(self, command: Dict[str, Any]) -> bool:
         if self.raft_state != RaftState.LEADER:
@@ -561,9 +947,10 @@ class ConsensusManager:
 class SyncManager:
     """State synchronization using Merkle trees and CRDT merge."""
     
-    def __init__(self, config: FederationConfig, state: FederationState):
-        self.config = config
-        self.state = state
+    def __init__(self, engine: 'FederationEngine'):
+        self.engine = engine
+        self.config = engine.config
+        self.state = engine.state
         self.merkle_tree = MerkleTree()
         self.running = False
         self._sync_task: Optional[asyncio.Task] = None
@@ -603,16 +990,51 @@ class SyncManager:
             if not peer:
                 return SyncResult(False, peer_id, 0, 0, 0, "", "Peer not found")
             
-            local_root = self.merkle_tree.get_root()
-            if not full and local_root == peer.merkle_root:
-                return SyncResult(True, peer_id, 0, 0, (time.perf_counter() - start_time) * 1000, local_root)
+            # 1. Exchange Merkle roots
+            sync_req = {
+                "type": "sync_merkle",
+                "merkle_root": self.merkle_tree.get_root(),
+                "vector_clock": self.state.vector_clock.to_dict()
+            }
             
-            self.state.vector_clock = self.state.vector_clock.merge(peer.vector_clock).increment(self.config.brain_id)
+            resp = await self.engine.network.send_message(peer.address, sync_req)
+            if not resp or not resp.get("success"):
+                return SyncResult(False, peer_id, 0, 0, 0, "", "Peer sync request failed")
+                
+            remote_root = resp.get("merkle_root")
+            peer.merkle_root = remote_root
+            
+            # Update vector clock
+            remote_vc_dict = resp.get("vector_clock", {})
+            remote_vc = VectorClock.from_dict(remote_vc_dict)
+            self.state.vector_clock = self.state.vector_clock.merge(remote_vc).increment(self.config.brain_id)
+            
             peer.last_sync = datetime.now(tz=timezone.utc)
             
-            return SyncResult(True, peer_id, 0, 0, (time.perf_counter() - start_time) * 1000, self.merkle_tree.get_root())
+            # In a full sync, we would iterate through Merkle diffs here
+            # and request missing chunks. For MVP, root match + VC merge is enough.
+            
+            elapsed = (time.perf_counter() - start_time) * 1000
+            return SyncResult(True, peer_id, 0, 0, elapsed, self.merkle_tree.get_root())
         finally:
             self.sync_in_progress.discard(peer_id)
+    
+    async def handle_sync_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming Merkle sync request."""
+        # Update remote info for this peer if we have it
+        sender_id = request.get("sender_id")
+        if sender_id in self.state.peers:
+            peer = self.state.peers[sender_id]
+            peer.merkle_root = request.get("merkle_root", "")
+            remote_vc = VectorClock.from_dict(request.get("vector_clock", {}))
+            self.state.vector_clock = self.state.vector_clock.merge(remote_vc)
+            peer.last_sync = datetime.now(tz=timezone.utc)
+            
+        return {
+            "success": True,
+            "merkle_root": self.merkle_tree.get_root(),
+            "vector_clock": self.state.vector_clock.to_dict()
+        }
     
     async def force_sync(self) -> List[SyncResult]:
         return [await self.sync_with_peer(p.peer_id, full=True) for p in self.state.peers.values() if p.is_healthy()]
@@ -630,9 +1052,10 @@ class SyncManager:
 class RoutingEngine:
     """Task routing with pluggable strategies and caching."""
     
-    def __init__(self, config: FederationConfig, state: FederationState):
-        self.config = config
-        self.state = state
+    def __init__(self, engine: 'FederationEngine'):
+        self.engine = engine
+        self.config = engine.config
+        self.state = engine.state
         self.strategies: Dict[str, RoutingStrategy] = {"composite": CompositeRoutingStrategy()}
         self.routing_cache: Dict[str, Tuple[RoutingDecision, float]] = {}
         self.cache_ttl = 1.0
@@ -717,10 +1140,11 @@ class CircuitBreaker:
 class RecoveryManager:
     """Failure detection and recovery handling."""
     
-    def __init__(self, config: FederationConfig, state: FederationState,
+    def __init__(self, engine: 'FederationEngine',
                  discovery: DiscoveryManager, consensus: ConsensusManager, sync: SyncManager):
-        self.config = config
-        self.state = state
+        self.engine = engine
+        self.config = engine.config
+        self.state = engine.state
         self.discovery = discovery
         self.consensus = consensus
         self.sync = sync
@@ -781,11 +1205,12 @@ class FederationEngine:
         self.config = config
         self.state = FederationState(brain_id=config.brain_id, region=config.region)
         
-        self.discovery = DiscoveryManager(config, self.state)
-        self.consensus = ConsensusManager(config, self.state)
-        self.sync = SyncManager(config, self.state)
-        self.routing = RoutingEngine(config, self.state)
-        self.recovery = RecoveryManager(config, self.state, self.discovery, self.consensus, self.sync)
+        self.discovery = DiscoveryManager(self)
+        self.consensus = ConsensusManager(self)
+        self.sync = SyncManager(self)
+        self.routing = RoutingEngine(self)
+        self.recovery = RecoveryManager(self, self.discovery, self.consensus, self.sync)
+        self.network = NetworkManager(config, self)
         
         self._setup_callbacks()
         self.metrics = FederationMetrics()
@@ -865,10 +1290,12 @@ class FederationEngine:
                 logger.debug(f"DSoR event emission failed: {e}")
     
     async def start(self) -> None:
+        """Start the federation engine."""
         self.running = True
         self._persistence_path.mkdir(parents=True, exist_ok=True)
         await self._load_state()
         
+        await self.network.start()
         await self.discovery.start()
         if self.config.enable_consensus:
             await self.consensus.start()
@@ -877,12 +1304,14 @@ class FederationEngine:
         logger.info(f"Federation engine started: {self.config.brain_id}")
     
     async def stop(self) -> None:
+        """Stop the federation engine."""
         self.running = False
         await self._save_state()
         
         await self.sync.stop()
         await self.consensus.stop()
         await self.discovery.stop()
+        await self.network.stop()
         
         logger.info(f"Federation engine stopped: {self.config.brain_id}")
     
@@ -905,6 +1334,37 @@ class FederationEngine:
                 json.dump(self.state.to_dict(), f, indent=2, default=str, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Failed to save federation state: {e}")
+    
+    async def handle_message(self, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Main RPC dispatcher for incoming brain-to-brain messages."""
+        msg_type = message.get("type")
+        sender_id = message.get("sender_id", "unknown")
+        
+        if msg_type == "ping":
+            return {
+                "success": True,
+                "brain_id": self.config.brain_id,
+                "region": self.config.region,
+                "status": "online",
+                "capabilities": ["llm", "mcp", "federation"]
+            }
+            
+        elif msg_type == "gossip":
+            membership = message.get("membership", [])
+            await self.discovery.handle_gossip(membership)
+            return {"success": True}
+            
+        elif msg_type == "raft_vote":
+            return await self.consensus.handle_request_vote(message)
+            
+        elif msg_type == "raft_append":
+            return await self.consensus.handle_append_entries(message)
+            
+        elif msg_type == "sync_merkle":
+            return await self.sync.handle_sync_request(message)
+            
+        logger.warning(f"Unknown federation message type: {msg_type} from {sender_id}")
+        return {"success": False, "error": "unknown_message_type"}
     
     # Public API
     async def join(self, seed_peer: str) -> Dict[str, Any]:

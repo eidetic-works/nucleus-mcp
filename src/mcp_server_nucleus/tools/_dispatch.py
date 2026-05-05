@@ -30,6 +30,70 @@ _health_cache = {"line": "", "expires": 0.0}
 _HEALTH_CACHE_TTL = 60  # seconds
 
 
+# ============================================================
+# VARIANT B (Phase-2 test vs control) — runtime-substrate-off flag
+# ============================================================
+# When NUCLEUS_VARIANT_B_RUNTIME_OFF=1 is set, substrate READ actions return
+# a tiny stub instead of executing. Tool plumbing (registration, schemas)
+# stays fully active so the experimental arm has identical prompt/tool surface
+# to the baseline; only the *runtime gain* of substrate (engram retrieval,
+# context injection, ledger reads) is removed. Token-economics measurement
+# can then attribute the delta cleanly between "Anthropic cache" and
+# "Nucleus runtime substrate."
+#
+# Writes pass through unchanged (token-cost effect is dominated by what gets
+# returned, not what gets persisted). Always-passthrough actions (version,
+# health, export_schema) execute normally regardless.
+#
+# Spec: .brain/plans/phase2_test_vs_control_spec.md (Variant B).
+
+_VARIANT_B_READ_PREFIXES = (
+    "query_", "search_", "read_", "get_", "list_", "view_", "recall",
+    "metrics", "status", "morning_brief", "dashboard", "context_graph",
+    "render_graph", "audit_log", "trace_list", "trace_view",
+    "engram_neighbors", "session_inject",
+)
+_VARIANT_B_READ_EXACT = {
+    "list_decisions", "list_snapshots", "list_agents", "list_pending_consents",
+    "ipc_tokens", "metering_summary", "list_drafts", "search_threads",
+    "satellite", "open_loops", "patterns", "commitment_health",
+    "list_commitments", "list_dashboard_snapshots", "get_alerts",
+    "weekly_consolidate", "compounding_status",
+}
+_VARIANT_B_PASSTHROUGH = {
+    "version", "export_schema", "health", "list_tools",
+    "prometheus_metrics",  # generic ops, no substrate gain
+}
+
+
+def _is_variant_b_active() -> bool:
+    return os.environ.get("NUCLEUS_VARIANT_B_RUNTIME_OFF", "").lower() in ("1", "true", "yes")
+
+
+def _variant_b_stub_if_read(module_name: str, action: str) -> Optional[str]:
+    """If Variant B is on and `action` is a substrate read, return a stub
+    JSON response. Otherwise return None (caller continues normal dispatch)."""
+    if not _is_variant_b_active():
+        return None
+    if action in _VARIANT_B_PASSTHROUGH:
+        return None
+    is_read = (
+        action in _VARIANT_B_READ_EXACT
+        or any(action.startswith(p) for p in _VARIANT_B_READ_PREFIXES)
+    )
+    if not is_read:
+        return None
+    stub = json.dumps({
+        "variant_b_runtime_off": True,
+        "module": module_name,
+        "action": action,
+        "data": None,
+        "note": "substrate runtime disabled for Phase-2 measurement; "
+                "tool plumbing remains active",
+    }, separators=(",", ":"))
+    return stub
+
+
 def _ambient_health_line() -> str:
     """One-line frontier health summary, cached 60s. Silent fail."""
     if not os.environ.get("NUCLEUS_AMBIENT_HEALTH"):
@@ -375,6 +439,14 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
         }, indent=2)
         return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="not_found")
 
+    # Variant B (Phase-2 test vs control): if runtime-substrate-off flag is
+    # set and this action is a substrate read, stub it. Tool plumbing stays
+    # active so prompt/tool surface is identical between baseline + experimental.
+    stub = _variant_b_stub_if_read(module_name, action)
+    if stub is not None:
+        _telemetry.record(module_name, action, 0)
+        return _maybe_wrap_response(stub, ok=True, module_name=module_name, action=action)
+
     try:
         params = sanitize_params(params, module_name, action)
     except ValueError as e:
@@ -453,6 +525,14 @@ async def async_dispatch(action: str, params: dict, router: Dict[str, Callable],
             "hint": f"Try: {module_name}(action='{sorted(router.keys())[0]}', params={{...}})"
         }, indent=2)
         return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="not_found")
+
+    # Variant B (Phase-2 test vs control): if runtime-substrate-off flag is
+    # set and this action is a substrate read, stub it. Tool plumbing stays
+    # active so prompt/tool surface is identical between baseline + experimental.
+    stub = _variant_b_stub_if_read(module_name, action)
+    if stub is not None:
+        _telemetry.record(module_name, action, 0)
+        return _maybe_wrap_response(stub, ok=True, module_name=module_name, action=action)
 
     try:
         params = sanitize_params(params, module_name, action)
