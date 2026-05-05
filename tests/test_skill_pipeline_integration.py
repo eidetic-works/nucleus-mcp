@@ -126,13 +126,14 @@ class TestSkillPipelineEndToEnd:
         assert len(listed) == 1
         assert listed[0]["skill_id"] == skill_id
 
-        # Step 4: Install to a temp commands directory
-        commands_dir = tmp_path / "commands"
-        pub = SkillPublisher(brain, install_dir=commands_dir)
+        # Step 4: Install to a temp Skills directory (CC's auto-discovery path)
+        skills_dir = tmp_path / "skills"
+        pub = SkillPublisher(brain, install_dir=skills_dir)
         dest = pub.install(skill_id, reg)
 
         assert dest.exists()
-        assert dest.name.startswith("nucleus-skill-")
+        assert dest.name == "SKILL.md"
+        assert dest.parent.name == domain
         installed_content = dest.read_text()
         assert "## When to use" in installed_content
         assert "## Approach" in installed_content
@@ -155,7 +156,7 @@ class TestSkillPipelineEndToEnd:
         assert candidates == []
 
     def test_uninstall_after_install(self, brain_with_turns, tmp_path):
-        """Install then uninstall should leave no trace in commands dir."""
+        """Install then uninstall should leave no trace in the Skills dir."""
         from mcp_server_nucleus.runtime.skill_extractor import extract_skills
         from mcp_server_nucleus.runtime.skill_generator import generate_skill_md
         from mcp_server_nucleus.runtime.skill_registry import SkillRegistry
@@ -179,13 +180,15 @@ class TestSkillPipelineEndToEnd:
         md_path.write_text(md_content, encoding="utf-8")
         reg.register(skill_id, domain, "1.0.0", top["score"], md_path, [])
 
-        commands_dir = tmp_path / "commands"
-        pub = SkillPublisher(brain, install_dir=commands_dir)
+        skills_dir = tmp_path / "skills"
+        pub = SkillPublisher(brain, install_dir=skills_dir)
         dest = pub.install(skill_id, reg)
         assert dest.exists()
+        assert dest.parent.name == domain
 
         pub.uninstall(skill_id, reg)
         assert not dest.exists()
+        assert not dest.parent.exists()  # per-skill dir cleaned up
         assert reg.get_skill(skill_id)["installed"] is False
 
     def test_registry_tracks_usage(self, brain_with_turns):

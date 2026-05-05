@@ -149,31 +149,6 @@ Engrams may contain sensitive information. Users should:
 - Use external secret managers
 - Encrypt sensitive engram values
 
-### npm-wrapper subprocess invocations
-
-`npm-wrapper/index.js` is the npx entrypoint that bridges npm distribution to
-the Python package. It uses `child_process` because that is the only way to
-launch a separate process from Node — equivalent to how an npm package with
-native dependencies invokes `node-gyp` at install time. Static security
-scanners (e.g. SafeSkill) flag every `child_process` call site as critical
-without flow analysis; the table below is the per-call rationale.
-
-| Line | Call | Bounded by |
-|---|---|---|
-| `index.js:14` | `execSync('python3 --version', { stdio: 'ignore' })` | Hardcoded literal command. No user-input concatenation. `stdio: 'ignore'` discards output. |
-| `index.js:23` | `execSync('python3 -m mcp_server_nucleus --help', { stdio: 'ignore' })` | Hardcoded literal command. No user-input concatenation. `stdio: 'ignore'` discards output. |
-| `index.js:33` | `execSync('python3 -m pip install nucleus-mcp', { stdio: 'inherit' })` | Hardcoded literal command + hardcoded package name. No user-input concatenation. `stdio: 'inherit'` only streams pip's own output to the user terminal. By-design behavior of an npm wrapper over a Python package. |
-| `index.js:65` | `spawn('python3', pythonArgs, { stdio: 'inherit', shell: false })` | `shell: false` — argv passed as a discrete array, no shell interpretation, no shell-injection vector. User-supplied CLI args ARE forwarded into the Python process as argv entries; they are parsed by the Python CLI's `argparse`, not by a shell. Any vulnerability in argv handling belongs to the Python package, not this wrapper. Defense-in-depth: `validateArgs()` rejects argv entries containing null bytes before spawn. |
-
-The wrapper does not:
-- Concatenate user input into any shell command string.
-- Use `child_process.exec()` (which spawns a shell). Only `execSync` (with hardcoded literals) and `spawn` (with `shell: false`) are used.
-- Read environment variables that flow into a command string.
-- Execute any binary other than `python3`.
-
-False-positive reports for SafeSkill and other static scanners on these call
-sites should reference this section.
-
 ## Acknowledgments
 
 We thank the following researchers for responsible disclosure:

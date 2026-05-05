@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# cc-jsonl-mirror — extract last-turn METADATA from Claude Code session JSONLs.
+#
+# Does NOT mirror full transcripts (CC jsonls can be 30MB+, waste of I/O + peer
+# compute). Instead extracts per-session status: last_turn_type, last_tool_name,
+# is_waiting_on_tool, size, mtime, age_seconds. Writes one compact JSON file
+# for the peer surface to tail.
+#
+# Env contract (primitive-gate — no developer-machine paths):
+#
+#   NUCLEUS_ROOT              repo root. Required if NUCLEUS_CC_STATUS_PATH
+#                             is unset (used to derive default dest dir).
+#   NUCLEUS_CC_PROJECT_DIR    source dir with the Claude Code session JSONLs.
+#                             Required unless NUCLEUS_ROOT is set AND the
+#                             ``~/.claude/projects/<repo-id>`` convention
+#                             applies — in which case the dir is derived
+#                             from NUCLEUS_ROOT by replacing ``/`` with ``-``.
+#   NUCLEUS_CC_STATUS_PATH    output status.json path. Defaults to
+#                             ``<NUCLEUS_ROOT>/.brain/cc_transcripts/_status.json``.
+#   NUCLEUS_CC_ACTIVE_HOURS   active window (float, default 2).
+#   NUCLEUS_CC_RECENT_HOURS   recent window (float, default 24).
+#
+# Exit 1 if source dir does not exist (operator misconfiguration).
+# Read-only on source; overwrite-only (atomic tmp-rename) on dest.
+
+set -euo pipefail
+
+_fail() {
+  echo "[cc-jsonl-mirror] $*" >&2
+  exit 1
+}
+
+# Derive NUCLEUS_CC_PROJECT_DIR from NUCLEUS_ROOT if not given explicitly.
+# The Claude Code CLI encodes repo paths as ``-<absolute-path-with-slashes-as-dashes>``
+# under ``~/.claude/projects/``.
+if [[ -z "${NUCLEUS_CC_PROJECT_DIR:-}" ]]; then
+  if [[ -n "${NUCLEUS_ROOT:-}" ]]; then
+    _project_id="${NUCLEUS_ROOT//\//-}"  # /a/b → -a-b
+    NUCLEUS_CC_PROJECT_DIR="$HOME/.claude/projects/${_project_id}"
+  else
+    _fail "neither NUCLEUS_CC_PROJECT_DIR nor NUCLEUS_ROOT is set"
+  fi
+fi
+
+# Resolve destination path.
+if [[ -z "${NUCLEUS_CC_STATUS_PATH:-}" ]]; then
+  if [[ -n "${NUCLEUS_ROOT:-}" ]]; then
+    NUCLEUS_CC_STATUS_PATH="${NUCLEUS_ROOT}/.brain/cc_transcripts/_status.json"
+  else
+    _fail "neither NUCLEUS_CC_STATUS_PATH nor NUCLEUS_ROOT is set"
+  fi
+fi
+
+ACTIVE_WINDOW_HOURS="${NUCLEUS_CC_ACTIVE_HOURS:-2}"
+RECENT_WINDOW_HOURS="${NUCLEUS_CC_RECENT_HOURS:-24}"
+
+DEST_DIR="$(dirname "$NUCLEUS_CC_STATUS_PATH")"
+mkdir -p "$DEST_DIR"
+
+if [[ ! -d "$NUCLEUS_CC_PROJECT_DIR" ]]; then
+  _fail "source dir not found: $NUCLEUS_CC_PROJECT_DIR"
+fi
+
+# Use python3 for JSON parsing — avoids jq dependency, handles malformed lines gracefully.
+python3 - "$NUCLEUS_CC_PROJECT_DIR" "$NUCLEUS_CC_STATUS_PATH" "$ACTIVE_WINDOW_HOURS" "$RECENT_WINDOW_HOURS" <<'PYEOF'
+import json
+import sys
+import time
+from pathlib import Path
+
+src_dir = Path(sys.argv[1])
+dest_file = Path(sys.argv[2])
+active_window_hours = float(sys.argv[3])
+recent_window_hours = float(sys.argv[4])
+
+now = time.time()
+active_window_seconds = active_window_hours * 3600
+recent_window_seconds = recent_window_hours * 3600
+
+sessions = {}        # active sessions only — full metadata + last-turn parse
+recent_sessions = {} # 2h–24h — minimal metadata (size+age), no parse
+stale_count = 0
+stale_total_bytes = 0
+oldest_stale_age = 0
+newest_stale_age = float("inf")
+
+for jsonl in sorted(src_dir.glob("*.jsonl")):
+    try:
+        stat = jsonl.stat()
+    except OSError:
+        continue
+
+    mtime = stat.st_mtime
+    age_seconds = now - mtime
+    session_id = jsonl.stem
+
+    if age_seconds >= recent_window_seconds:
+        stale_count += 1
+        stale_total_bytes += stat.st_size
+        if age_seconds > oldest_stale_age:
+            oldest_stale_age = age_seconds
+        if age_seconds < newest_stale_age:
+            newest_stale_age = age_seconds
+        continue
+
+    if age_seconds >= active_window_seconds:
+        recent_sessions[session_id] = {
+            "size_bytes": stat.st_size,
+            "mtime_epoch": mtime,
+            "age_seconds": round(age_seconds),
+        }
+        continue
+
+    entry = {
+        "size_bytes": stat.st_size,
+        "mtime_epoch": mtime,
+        "age_seconds": round(age_seconds),
+        "in_active_window": True,
+    }
+
+    try:
+        with open(jsonl, "rb") as f:
+            size = stat.st_size
+            read_from = max(0, size - 16384)
+            f.seek(read_from)
+            tail_bytes = f.read()
+        tail_text = tail_bytes.decode("utf-8", errors="replace")
+        lines = tail_text.splitlines()
+        if read_from > 0 and lines:
+            lines = lines[1:]
+
+        last_turn = None
+        for line in reversed(lines):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                last_turn = json.loads(line)
+                break
+            except json.JSONDecodeError:
+                continue
+
+        if last_turn:
+            turn_type = last_turn.get("type") or last_turn.get("role") or "unknown"
+            entry["last_turn_type"] = turn_type
+            entry["last_turn_ts"] = last_turn.get("timestamp") or last_turn.get("created_at")
+
+            msg = last_turn.get("message") or {}
+            content = msg.get("content") if isinstance(msg, dict) else None
+            tool_name = None
+            waiting_on_tool = False
+            if isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_use":
+                        tool_name = block.get("name")
+                        waiting_on_tool = True
+                        break
+            if turn_type == "tool_use":
+                tool_name = last_turn.get("name") or tool_name
+                waiting_on_tool = True
+
+            entry["last_tool_name"] = tool_name
+            entry["is_waiting_on_tool"] = waiting_on_tool
+            entry["heuristic_state"] = (
+                "waiting_on_tool" if waiting_on_tool
+                else "assistant_replied" if turn_type == "assistant"
+                else "user_prompted" if turn_type == "user"
+                else turn_type
+            )
+    except (OSError, UnicodeDecodeError) as e:
+        entry["parse_error"] = str(e)
+
+    sessions[session_id] = entry
+
+out = {
+    "generated_at_epoch": now,
+    "generated_at_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now)),
+    "active_window_hours": active_window_hours,
+    "recent_window_hours": recent_window_hours,
+    "sessions": sessions,
+    "recent_sessions": recent_sessions,
+    "active_count": len(sessions),
+    "recent_count": len(recent_sessions),
+    "stale_count": stale_count,
+    "stale_total_bytes": stale_total_bytes,
+    "stale_oldest_age_seconds": round(oldest_stale_age) if stale_count else 0,
+    "stale_newest_age_seconds": round(newest_stale_age) if stale_count else 0,
+    "total_count": len(sessions) + len(recent_sessions) + stale_count,
+}
+
+tmp = dest_file.with_suffix(".json.tmp")
+tmp.write_text(json.dumps(out, indent=2))
+tmp.replace(dest_file)
+PYEOF

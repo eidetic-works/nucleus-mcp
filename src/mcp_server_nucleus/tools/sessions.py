@@ -38,6 +38,13 @@ def register(mcp, helpers):
         ingest_conversations, search_conversations,
         list_conversations, conversation_stats,
     )
+    from ..sessions.registry import (
+        detect_splits as _registry_detect_splits,
+        heartbeat as _registry_heartbeat,
+        list_agents as _registry_list_agents,
+        register_session as _registry_register,
+        unregister as _registry_unregister,
+    )
 
     def _h_save(context, active_task=None, pending_decisions=None,
                 breadcrumbs=None, next_steps=None):
@@ -70,6 +77,41 @@ def register(mcp, helpers):
             return make_response(False, error=result)
         return make_response(True, data={"message": result})
 
+    def _h_register(session_id, agent, role, provider,
+                    worktree_path=None, pid=None, heartbeat_interval_s=30):
+        try:
+            env = _registry_register(
+                session_id=session_id, agent=agent, role=role, provider=provider,
+                worktree_path=worktree_path, pid=pid,
+                heartbeat_interval_s=heartbeat_interval_s,
+            )
+        except (ValueError, OSError) as exc:
+            return make_response(False, error=str(exc))
+        return make_response(True, data=env)
+
+    def _h_heartbeat(session_id):
+        try:
+            env = _registry_heartbeat(session_id)
+        except FileNotFoundError as exc:
+            return make_response(False, error=str(exc))
+        return make_response(True, data=env)
+
+    def _h_unregister(session_id):
+        removed = _registry_unregister(session_id)
+        return make_response(True, data={"session_id": session_id, "removed": removed})
+
+    def _h_list_agents(worktree_path=None, role=None, alive_only=True):
+        return make_response(True, data={
+            "agents": _registry_list_agents(
+                worktree_path=worktree_path, role=role, alive_only=alive_only,
+            ),
+        })
+
+    def _h_detect_splits(worktree_path=None):
+        return make_response(True, data={
+            "splits": _registry_detect_splits(worktree_path=worktree_path),
+        })
+
     ROUTER = {
         "save": _h_save,
         "resume": _h_resume,
@@ -91,6 +133,11 @@ def register(mcp, helpers):
         "search_conversations": lambda query="", limit=20, session_id="", date_from="", date_to="": make_response(True, data=search_conversations(query=query, limit=limit, session_id=session_id, date_from=date_from, date_to=date_to)),
         "list_conversations": lambda limit=50, offset=0, sort="recent": make_response(True, data=list_conversations(limit=limit, offset=offset, sort=sort)),
         "conversation_stats": lambda: make_response(True, data=conversation_stats()),
+        "register": _h_register,
+        "heartbeat": _h_heartbeat,
+        "unregister": _h_unregister,
+        "list_agents": _h_list_agents,
+        "detect_splits": _h_detect_splits,
     }
 
     @mcp.tool()
@@ -118,6 +165,11 @@ Actions:
   search_conversations - Search ingested conversations. params: {query, limit?, session_id?, date_from?, date_to?}
   list_conversations   - List ingested sessions. params: {limit?, offset?, sort?: "recent"|"size"|"turns"}
   conversation_stats   - Aggregate conversation corpus statistics
+  register         - [T3.11] Register agent session envelope. params: {session_id, agent, role, provider, worktree_path?, pid?, heartbeat_interval_s?}
+  heartbeat        - [T3.11] Touch last_heartbeat on an envelope. params: {session_id}
+  unregister       - [T3.11] Delete a session envelope. params: {session_id}
+  list_agents      - [T3.11] List registered agent envelopes. params: {worktree_path?, role?, alive_only?}
+  detect_splits    - [T3.11] Report (worktree, role) buckets with >1 alive session. params: {worktree_path?}
 """
         return dispatch(action, params, ROUTER, "nucleus_sessions")
 

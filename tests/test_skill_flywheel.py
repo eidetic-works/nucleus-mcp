@@ -283,6 +283,98 @@ def test_anonymize_text_strips_hostname(monkeypatch):
     assert "<host>" in out
 
 
+def test_clean_intent_strips_markdown_and_labels():
+    """Markdown headers, list bullets, and prose-prefix labels are stripped."""
+    from mcp_server_nucleus.runtime.skill_generator import _clean_intent
+
+    assert _clean_intent("## Investigation: debug why /chat returns 500") \
+        == "debug why /chat returns 500"
+    assert _clean_intent("- Task: write tests for the auth module") \
+        == "write tests for the auth module"
+    assert _clean_intent("> **TLDR:** ship the rotation patch") \
+        == "ship the rotation patch"
+    assert _clean_intent("`investigate-fix-debug` request") \
+        == "investigate-fix-debug request"
+    assert _clean_intent("") == ""
+    assert _clean_intent("plain text no artifacts") == "plain text no artifacts"
+
+
+def test_description_template_no_verbatim_markdown_leak():
+    """Generated description uses template form, no leading '##' artifacts.
+
+    Regression check for the description-quality bug recorded in
+    .brain/research/2026-04-28_tier_architecture/03_skill_activation_telemetry.md
+    where descriptions like
+        "When user asks to ## investigation: debug why /chat endpoint"
+    leaked raw markdown into the trigger phrase.
+    """
+    from mcp_server_nucleus.runtime.skill_generator import generate_skill_md
+
+    cluster = {
+        "domain": "investigate-fix-debug",
+        "score": 0.7,
+        "size": 4,
+        "intents": [
+            "## Investigation: Debug why /chat endpoint returns 500",
+            "## Investigation: Investigate and fix sending POST",
+            "## Task: debug why /chat endpoint",
+            "## Task: investigate timeout in handler",
+        ],
+        "turns": [
+            {"intent": i, "outcome": "fixed", "tools_used": ["Read", "Edit", "Bash"],
+             "decisions": [], "quality_grade": "gold"}
+            for i in [
+                "## Investigation: Debug why /chat endpoint returns 500",
+                "## Task: debug why /chat endpoint",
+            ]
+        ],
+    }
+    md = generate_skill_md(cluster)
+    desc_line = next(line for line in md.splitlines() if line.startswith("description:"))
+
+    # No raw markdown header marker should leak through
+    assert "##" not in desc_line, f"Markdown leaked into description: {desc_line}"
+    # No "investigation:" / "task:" label prefix should leak
+    assert "investigation:" not in desc_line.lower()
+    assert "task:" not in desc_line.lower()
+    # Description should follow the template shape
+    assert desc_line.startswith("description: When user asks to ")
+    # Should reference auto-extraction context
+    assert "Auto-extracted from" in desc_line
+
+
+def test_description_includes_trigger_keyword_list():
+    """Description lists explicit trigger keywords (gstack/qa shape)."""
+    from mcp_server_nucleus.runtime.skill_generator import generate_skill_md
+
+    cluster = {
+        "domain": "test-writing",
+        "score": 0.85,
+        "size": 12,
+        "intents": [
+            "write unit tests for the auth module",
+            "write unit tests for the payment module",
+            "write unit tests for the database module",
+            "write unit tests for the email module",
+            "add test coverage for user registration",
+        ],
+        "turns": [
+            {"intent": i, "outcome": "done", "tools_used": ["Read", "Edit"],
+             "decisions": [], "quality_grade": "gold"}
+            for i in [
+                "write unit tests for the auth module",
+                "add test coverage for user registration",
+            ]
+        ],
+    }
+    md = generate_skill_md(cluster)
+    desc_line = next(line for line in md.splitlines() if line.startswith("description:"))
+
+    assert "or says:" in desc_line
+    # Quoted keyword list with at least one trigger
+    assert "'" in desc_line
+
+
 def test_trigger_phrase_extraction():
     """Top phrases extracted from intents."""
     from mcp_server_nucleus.runtime.skill_generator import _extract_trigger_phrases
@@ -371,13 +463,13 @@ def test_registry_dedup_last_wins(tmp_path):
 # -- Publisher tests --
 
 def test_install_creates_file(tmp_path):
-    """Install copies SKILL.md to commands dir."""
+    """Install copies SKILL.md to <install_dir>/<name>/SKILL.md (Skills feature path)."""
     from mcp_server_nucleus.runtime.skill_registry import SkillRegistry
     from mcp_server_nucleus.runtime.skill_publisher import SkillPublisher
 
     brain = tmp_path / ".brain"
     brain.mkdir()
-    commands_dir = tmp_path / "commands"
+    skills_dir = tmp_path / "skills"
 
     # Create a skill file
     skill_dir = brain / "skills" / "generated" / "test-writing"
@@ -388,11 +480,12 @@ def test_install_creates_file(tmp_path):
     reg = SkillRegistry(brain)
     reg.register("tw-v1", "test-writing", "1.0.0", 0.8, skill_file, [])
 
-    pub = SkillPublisher(brain, install_dir=commands_dir)
+    pub = SkillPublisher(brain, install_dir=skills_dir)
     dest = pub.install("tw-v1", reg)
 
     assert dest.exists()
-    assert dest.name == "nucleus-skill-test-writing.md"
+    assert dest.name == "SKILL.md"
+    assert dest.parent.name == "test-writing"
     assert "Test Writing" in dest.read_text()
 
     # Registry should be updated
@@ -401,13 +494,13 @@ def test_install_creates_file(tmp_path):
 
 
 def test_uninstall_removes_file(tmp_path):
-    """Uninstall deletes the command file."""
+    """Uninstall deletes the SKILL.md and the per-skill directory."""
     from mcp_server_nucleus.runtime.skill_registry import SkillRegistry
     from mcp_server_nucleus.runtime.skill_publisher import SkillPublisher
 
     brain = tmp_path / ".brain"
     brain.mkdir()
-    commands_dir = tmp_path / "commands"
+    skills_dir = tmp_path / "skills"
 
     skill_dir = brain / "skills" / "generated" / "debug"
     skill_dir.mkdir(parents=True)
@@ -417,38 +510,62 @@ def test_uninstall_removes_file(tmp_path):
     reg = SkillRegistry(brain)
     reg.register("dbg-v1", "debug", "1.0.0", 0.7, skill_file, [])
 
-    pub = SkillPublisher(brain, install_dir=commands_dir)
+    pub = SkillPublisher(brain, install_dir=skills_dir)
     pub.install("dbg-v1", reg)
-    assert (commands_dir / "nucleus-skill-debug.md").exists()
+    assert (skills_dir / "debug" / "SKILL.md").exists()
 
     pub.uninstall("dbg-v1", reg)
-    assert not (commands_dir / "nucleus-skill-debug.md").exists()
+    assert not (skills_dir / "debug" / "SKILL.md").exists()
+    assert not (skills_dir / "debug").exists()  # empty dir cleaned up
 
     skill = reg.get_skill("dbg-v1")
     assert skill["installed"] is False
 
 
 def test_list_installed(tmp_path):
-    """Lists only nucleus-skill-* files."""
+    """Lists per-skill dirs that contain SKILL.md."""
     from mcp_server_nucleus.runtime.skill_publisher import SkillPublisher
 
     brain = tmp_path / ".brain"
     brain.mkdir()
-    commands_dir = tmp_path / "commands"
-    commands_dir.mkdir()
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
 
-    # Create some files
-    (commands_dir / "nucleus-skill-test-writing.md").write_text("test")
-    (commands_dir / "nucleus-skill-debug.md").write_text("debug")
-    (commands_dir / "user-custom-command.md").write_text("custom")
+    # Create per-skill dirs with SKILL.md
+    (skills_dir / "test-writing").mkdir()
+    (skills_dir / "test-writing" / "SKILL.md").write_text("test")
+    (skills_dir / "debug").mkdir()
+    (skills_dir / "debug" / "SKILL.md").write_text("debug")
+    # An empty dir without SKILL.md should not be listed
+    (skills_dir / "empty-dir").mkdir()
+    # A loose file should not be listed
+    (skills_dir / "loose.md").write_text("loose")
 
-    pub = SkillPublisher(brain, install_dir=commands_dir)
+    pub = SkillPublisher(brain, install_dir=skills_dir)
     installed = pub.list_installed()
 
     assert "test-writing" in installed
     assert "debug" in installed
-    assert "user-custom-command" not in installed
+    assert "empty-dir" not in installed
+    assert "loose" not in installed
     assert len(installed) == 2
+
+
+def test_publisher_default_install_dir_is_user_skills():
+    """Default install_dir points at ~/.claude/skills/, not ~/.claude/commands/.
+
+    Regression check for the publisher-pathway bug recorded in
+    .brain/research/2026-04-28_tier_architecture/03_skill_activation_telemetry.md.
+    """
+    from pathlib import Path
+    from mcp_server_nucleus.runtime.skill_publisher import (
+        SkillPublisher,
+        CLAUDE_SKILLS_DIR,
+    )
+
+    pub = SkillPublisher(brain_path=Path("/tmp/anywhere"))
+    assert pub.install_dir == CLAUDE_SKILLS_DIR
+    assert pub.install_dir == Path.home() / ".claude" / "skills"
 
 
 # -- Session-aware helpers and tests --

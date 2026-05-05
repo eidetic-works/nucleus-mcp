@@ -99,7 +99,7 @@ def make_response(success: bool, data: Any = None, error: str = None) -> str:
 class StdioServer:
     def __init__(self):
         # Resolve paths first
-        self.brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
+        self.brain_path = Path(os.environ.get("NUCLEAR_BRAIN_PATH", ".")).resolve()
         workspace_root = self.brain_path
         
         # Hypervisor components — graceful degradation if unavailable
@@ -114,13 +114,6 @@ class StdioServer:
                 logger.error(f"Failed to start watchdog: {e}")
 
         self.mounter = get_mounter(self.brain_path) if get_mounter else None
-
-        # Auto-start relay watcher (always-on, no config needed)
-        try:
-            from mcp_server_nucleus.runtime.relay_ops import auto_start_relay_watcher
-            auto_start_relay_watcher(self.brain_path)
-        except Exception as e:
-            logger.debug(f"Relay watcher auto-start skipped: {e}")
 
     async def run(self):
         # Restore mounts from persistence
@@ -254,7 +247,7 @@ class StdioServer:
                 _tool("nucleus_sync",
                     "Coordinate state across multiple AI agents, store and retrieve named artifacts, manage trigger-based automation, and orchestrate deployments. Use this tool when multiple agents need to share data, when you need to persist artifacts for cross-session use, or when managing deployment workflows. Do NOT use for persistent memory (use nucleus_engrams), session state (use nucleus_sessions), or task assignment (use nucleus_tasks). Actions: 'identify_agent' registers the current agent's identity in the brain. 'sync_status' shows sync state. 'sync_now' forces immediate state replication between brains (may overwrite remote data). 'write_artifact' stores a named data blob in .brain/artifacts/ for cross-session sharing (side effect: creates file). 'read_artifact' retrieves a stored artifact. 'list_artifacts' shows all stored artifacts. 'trigger_agent' dispatches an event to another registered agent. 'get_triggers'/'evaluate_triggers' manage automated trigger rules. 'start_deploy_poll' begins monitoring a deployment service for readiness. 'check_deploy' queries deployment status. 'complete_deploy' marks deployment as finished. 'smoke_test' validates a deployed service endpoint by hitting its URL. 'shared_read'/'shared_write'/'shared_list' manage a shared key-value store visible to all agents. Prerequisites: .brain directory. Sync operations require at least two configured brains. Deploy actions require network access. Returns JSON with {success: boolean, data: object}. Example: {action: 'write_artifact', params: {name: 'api_schema', content: '{...}', mime_type: 'application/json'}} returns {success: true, data: {stored: true, path: '.brain/artifacts/api_schema'}}.",
                     _schema(
-                        ["identify_agent", "sync_status", "sync_now", "sync_auto", "sync_resolve", "read_artifact", "write_artifact", "list_artifacts", "trigger_agent", "get_triggers", "evaluate_triggers", "start_deploy_poll", "check_deploy", "complete_deploy", "smoke_test", "shared_read", "shared_write", "shared_list"],
+                        ["identify_agent", "sync_status", "sync_now", "sync_auto", "sync_resolve", "read_artifact", "write_artifact", "list_artifacts", "trigger_agent", "get_triggers", "evaluate_triggers", "start_deploy_poll", "check_deploy", "complete_deploy", "smoke_test", "shared_read", "shared_write", "shared_list", "relay_wait", "relay_poll_start", "relay_poll_stop", "relay_poll_status", "relay_listen"],
                         "Select the synchronization, artifact, trigger, or deployment action. 'identify_agent'/'sync_status'/'read_artifact'/'list_artifacts'/'get_triggers'/'check_deploy'/'shared_read'/'shared_list' are read-only. 'sync_now' forces state replication (may overwrite remote). 'write_artifact'/'shared_write' persist data. 'trigger_agent' dispatches events to other agents. 'evaluate_triggers' runs all trigger rules. 'start_deploy_poll'/'smoke_test' interact with external services.",
                         "Action-specific parameters as key-value pairs. write_artifact: {name: string (required, unique identifier), content: string (required, artifact data), mime_type: string (optional, default 'text/plain')}. read_artifact: {name: string (required)}. trigger_agent: {agent_id: string (required), event: string (required, event name), payload: object (optional)}. start_deploy_poll: {service: string (required, service name), environment: string (required, e.g. 'production'|'staging')}. smoke_test: {url: string (required, endpoint URL), expected_status: integer (optional, default 200)}. shared_write: {key: string (required), value: any (required)}. shared_read: {key: string (required)}. sync_now: {target: string (optional, target brain path)}. identify_agent/sync_status/list_artifacts/get_triggers/evaluate_triggers/check_deploy/complete_deploy/shared_list/sync_auto/sync_resolve: no parameters needed."
                     ),
@@ -444,6 +437,16 @@ class StdioServer:
                             "description": "Get instant context when starting a new session. Call this first.",
                             "arguments": []
                         },
+                        {
+                            "name": "flywheel_check",
+                            "description": "FLYWHEEL — CSR, open tickets, curriculum depth.",
+                            "arguments": []
+                        },
+                        {
+                            "name": "flywheel_brief",
+                            "description": "FLYWHEEL — this week's activity report.",
+                            "arguments": []
+                        },
                     ]
                 }
             }
@@ -607,8 +610,54 @@ class StdioServer:
             return _start_sprint_prompt(goal)
         elif name == "cold_start":
             return _cold_start_prompt()
+        elif name == "flywheel_check":
+            return self._flywheel_check_prompt()
+        elif name == "flywheel_brief":
+            return self._flywheel_brief_prompt()
         else:
             raise ValueError(f"Unknown prompt: {name}")
+
+    def _flywheel_check_prompt(self) -> str:
+        """Flywheel status: CSR, tickets, curriculum depth."""
+        try:
+            from mcp_server_nucleus.flywheel.dashboard import render_dashboard_json
+            from mcp_server_nucleus.runtime.common import get_brain_path
+            snapshot = render_dashboard_json(get_brain_path())
+            csr = snapshot.get("csr", {})
+            tickets = snapshot.get("tickets", {})
+            curriculum = snapshot.get("curriculum", {})
+            lines = ["## FLYWHEEL Status\n"]
+            lines.append(
+                f"**CSR:** {csr.get('ratio', 1.0):.1%} "
+                f"({csr.get('claims_survived', 0)}/{csr.get('claims_total', 0)} claims)"
+            )
+            lines.append(f"**Open tickets:** {tickets.get('open', 0)}")
+            lines.append(f"**Pending curriculum pairs:** {curriculum.get('pending', 0)}")
+            lines.append(f"**Ready curriculum pairs:** {curriculum.get('ready', 0)}")
+            recent = snapshot.get("recent_claims", [])
+            if recent:
+                lines.append("\n### Last 5 claims\n")
+                for claim in recent[-5:]:
+                    mark = "OK" if claim.get("survived") else "FAIL"
+                    lines.append(f"- [{mark}] {claim.get('step', '?')} @ {claim.get('at', '?')[:19]}")
+            lines.append("\n**Is the flywheel turning in the right direction?**")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error reading flywheel state: {e}"
+
+    def _flywheel_brief_prompt(self) -> str:
+        """Flywheel weekly activity report."""
+        try:
+            from datetime import datetime, timezone
+            from pathlib import Path
+            from mcp_server_nucleus.runtime.common import get_brain_path
+            week = datetime.now(timezone.utc).isocalendar()[1]
+            path = Path(get_brain_path()) / "flywheel" / f"week-{week}.md"
+            if path.exists():
+                return path.read_text()
+            return f"# Flywheel — Week {week}\n\nNo activity this week yet. Run a task to start the loop."
+        except Exception as e:
+            return f"Error loading weekly brief: {e}"
 
     def _get_facade_routers(self) -> Dict[str, Dict[str, Any]]:
         """Build facade routers lazily. Same _impl functions as FastMCP facades."""
@@ -759,7 +808,7 @@ def main():
         print(f"Python: {sys.version.split()[0]}")
         
         # Resolve brain path properly for status report
-        brain_env = os.environ.get('NUCLEUS_BRAIN_PATH')
+        brain_env = os.environ.get('NUCLEAR_BRAIN_PATH')
         resolved_brain = Path(brain_env).resolve() if brain_env else Path('.').resolve()
         print(f"Brain Path: {resolved_brain}")
         

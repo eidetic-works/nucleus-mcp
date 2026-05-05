@@ -198,6 +198,11 @@ class RateLimiter:
             logger.warning(
                 f"Rate limit exceeded: client={client_id}, tool={tool_name}"
             )
+            try:
+                from .prometheus import inc_rate_limit_hit
+                inc_rate_limit_hit()
+            except Exception:
+                pass
             raise RateLimitError(retry_after)
     
     def get_stats(self) -> Dict[str, int]:

@@ -1,4 +1,4 @@
-"""nucleus-wedge CLI: ``init``, ``mcp register``, ``mcp serve``, ``bench``.
+"""nucleus-wedge CLI: ``init``, ``mcp register``, ``mcp serve``, ``bench``, ``recall``.
 
 Default with no args runs ``mcp serve`` for back-compat with existing
 ``python -m nucleus_wedge`` invocations and ``~/.claude.json`` MCP wiring.
@@ -6,6 +6,7 @@ Default with no args runs ``mcp serve`` for back-compat with existing
 ``init`` body in ``init_cmd.py`` (Phase 3, spec §3a).
 ``mcp register`` body in ``register_cmd.py`` (Phase 4, spec §3b).
 ``bench`` body in ``bench_cmd.py`` (Phase 6, criterion #1).
+``recall`` body in ``recall_cmd.py`` — SQLite-backed recall over memories.db.
 """
 from __future__ import annotations
 
@@ -39,6 +40,12 @@ def _build_parser() -> argparse.ArgumentParser:
     bench_p.add_argument("segment", help="Segment name: clone | init | register | cc_restart | first_recall.")
     bench_p.add_argument("--manual-duration", type=float, help="Operator-supplied wall-clock seconds (no subprocess).")
     bench_p.add_argument("--brain-path", help="Explicit .brain path (overrides env + cwd resolution).")
+
+    recall_p = sub.add_parser("recall", help="SQLite-backed recall over memories.db (pairs with bench first_recall).")
+    recall_p.add_argument("--query", required=True, help="Case-insensitive substring match against text + tags.")
+    recall_p.add_argument("--limit", type=int, default=5, help="Max rows returned (default 5).")
+    recall_p.add_argument("--source", help="Optional source filter (SQL LIKE pattern, e.g. 'auto_memory' or 'history.jsonl:%%').")
+    recall_p.add_argument("--brain-path", help="Explicit .brain path (overrides env + cwd resolution).")
 
     return parser
 
@@ -85,6 +92,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "bench":
         from nucleus_wedge.bench_cmd import do_bench
         return do_bench(args.segment, bench_command, args.manual_duration, args.brain_path)
+
+    if args.cmd == "recall":
+        from nucleus_wedge.recall_cmd import do_recall
+        return do_recall(args.query, args.limit, args.source, args.brain_path)
 
     parser.print_help()
     return 2

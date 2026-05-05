@@ -1,0 +1,79 @@
+# Nucleus Provider Registry (Slice #3 — config-registry role_map)
+#
+# Source-of-truth for the prefix→provider→role mapping used by
+# `sync_ops._coerce_legacy_to_tuple()` during ADR-0005 §D5 grace-period
+# coercion of legacy {agent_id, environment, role} callers to the
+# {role, provider, session_id} tuple.
+#
+# Adding a 9th provider: append a new entry under `providers:`. Zero code
+# changes required. Schema validated on load (see runtime/providers.py).
+#
+# Per the NUCLEUS-PRIMITIVE GATE:
+#   - axis any-computer: path overridable via $NUCLEUS_PROVIDERS_YAML
+#   - axis any-user:     no absolute paths
+#   - axis any-agent:    provider list is data, not code
+#   - axis any-LLM:      entries are LLM-invariant identifiers
+#   - axis any-OS:       pure text, stdlib-only loader
+#
+# Order matters: first matching prefix wins (preserves the legacy
+# tuple-order semantics of `_PROVIDER_PATTERNS`).
+
+schema_version: 1
+
+providers:
+  - prefix: claude_code_peer
+    provider: anthropic_claude_code
+    default_role: secondary
+
+  - prefix: claude_code_main
+    provider: anthropic_claude_code
+    default_role: primary
+
+  # Paired-Sonnet substrate — see .brain/plans/sonnet_pair_authority_contract.md
+  # PARKED entries: registered now so sender_coercion_alarm.py doesn't false-positive
+  # when paired persistent Sonnets activate (gated on Phase-0 Reshape W3 audit
+  # ~2026-05-09). Until activation, these prefixes are unused; the entries are
+  # contract-compliant placeholders.
+  - prefix: sonnet_main
+    provider: anthropic_claude_code
+    default_role: helper
+
+  - prefix: sonnet_peer
+    provider: anthropic_claude_code
+    default_role: helper
+
+  - prefix: sonnet_cowork
+    provider: anthropic_cowork
+    default_role: helper
+
+  - prefix: sonnet_cc_tb
+    provider: anthropic_claude_code
+    default_role: helper
+
+  - prefix: claude_code
+    provider: anthropic_claude_code
+    default_role: primary
+
+  - prefix: cowork
+    provider: anthropic_cowork
+    default_role: coordinator
+
+  - prefix: codex
+    provider: openai_codex
+    default_role: worker
+
+  - prefix: gemini
+    provider: google_gemini
+    default_role: reviewer
+
+  - prefix: cursor
+    provider: cursor
+    default_role: primary
+
+  - prefix: windsurf
+    provider: windsurf
+    default_role: primary
+
+  - prefix: perplexity
+    provider: perplexity
+    default_role: primary

@@ -1,7 +1,7 @@
 <!-- mcp-name: io.github.eidetic-works/nucleus -->
-# Nucleus
+# `.brain` — the portable decision log
 
-> The MCP server that makes AI outputs more reliable every week.
+> The portable decision log your AI tools all read. One MCP server. Any AI tool. Plain files.
 
 [![PyPI version](https://badge.fury.io/py/nucleus-mcp.svg)](https://badge.fury.io/py/nucleus-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -9,7 +9,9 @@
 [![NPM](https://img.shields.io/badge/npm-nucleus--mcp-red)](https://www.npmjs.com/package/nucleus-mcp)
 [![nucleus-mcp MCP server](https://glama.ai/mcp/servers/eidetic-works/nucleus-mcp/badges/score.svg)](https://glama.ai/mcp/servers/eidetic-works/nucleus-mcp)
 
-AI agents hallucinate, break code, and repeat mistakes. Nucleus catches this. Every AI output is verified, every correction is recorded, and every mistake trains the system to not repeat it. Locally, on your machine.
+Every AI coding session starts by re-explaining context the last session already knew. `.brain` is a folder in your repo that Claude Code, Cursor, and Codex all read via one MCP server. Decisions, policies, plans — written once, remembered across every session and every tool.
+
+MIT licensed. File-based (plain JSON + markdown). No embeddings. No vendor lock-in.
 
 ---
 
@@ -66,6 +68,8 @@ Two commands. Nucleus is running. AI outputs are now verified.
 - **Governance** — Kill switch, compliance configs (EU DORA, MAS TRM, SOC2), audit trails.
 - **Orchestration** — Agent slots, multi-brain sync, task dispatch.
 - **Archive** — Training pipeline (SFT + DPO), delta tracking, frontier health dashboard.
+
+**Benchmark:** [decision-retention-evals](https://github.com/eidetic-works/decision-retention-evals) — does your AI agent remember why the code is the way it is?
 
 ---
 

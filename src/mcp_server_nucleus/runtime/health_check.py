@@ -251,6 +251,31 @@ def check_engram_cache() -> Dict[str, Any]:
             "message": "Cache not initialized yet",
         }
 
+def check_founder_readiness() -> Dict[str, Any]:
+    """Check if platform is ready for founder absence."""
+    try:
+        from .founder_absence import readiness_score
+        score = readiness_score()
+        status = HealthStatus.HEALTHY if score >= 0.8 else (HealthStatus.DEGRADED if score >= 0.5 else HealthStatus.UNHEALTHY)
+        return {
+            "component": "founder_readiness",
+            "status": status,
+            "score": score
+        }
+    except ImportError:
+        return {
+            "component": "founder_readiness",
+            "status": HealthStatus.DEGRADED,
+            "message": "Founder absence module not available"
+        }
+    except Exception as e:
+        return {
+            "component": "founder_readiness",
+            "status": HealthStatus.UNHEALTHY,
+            "error": str(e)
+        }
+
+
 
 def get_health_status(include_details: bool = True) -> Dict[str, Any]:
     """
@@ -273,6 +298,7 @@ def get_health_status(include_details: bool = True) -> Dict[str, Any]:
         check_rate_limiter(),
         check_circuit_breakers(),
         check_engram_cache(),
+        check_founder_readiness(),
     ]
     
     # Determine overall status

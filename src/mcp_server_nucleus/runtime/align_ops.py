@@ -20,7 +20,9 @@ from .common import get_brain_path, logger
 
 
 def record_correction(context: str, correction: str,
-                      expected: str = "", severity: str = "medium") -> Dict[str, Any]:
+                      expected: str = "", severity: str = "medium",
+                      extra_metadata: Optional[Dict[str, Any]] = None
+                      ) -> Dict[str, Any]:
     """Record a human correction of AI output.
 
     Args:
@@ -28,10 +30,17 @@ def record_correction(context: str, correction: str,
         correction: What it should have been (the right output)
         expected: Optional — what was originally asked for
         severity: low/medium/high — how bad the mistake was
+        extra_metadata: Optional dict merged into the DPO pair's metadata
+            and the verdict record. Used by callers that want to tag a
+            correction with mode/sovereignty/surface/source — enables
+            retroactive corpus filtering at training time without
+            changing schema. Caller-provided keys win over defaults
+            (verdict_id, severity).
     """
     brain = get_brain_path()
     verdict_id = f"v-{int(datetime.now().timestamp())}-{str(uuid.uuid4())[:8]}"
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    extra_metadata = dict(extra_metadata or {})
 
     # 1. Write verdict
     verdict = {
@@ -43,6 +52,8 @@ def record_correction(context: str, correction: str,
         "expected": expected[:500] if expected else "",
         "severity": severity,
     }
+    if extra_metadata:
+        verdict["metadata"] = extra_metadata
 
     verdicts_path = brain / "driver" / "human_verdicts.jsonl"
     verdicts_path.parent.mkdir(parents=True, exist_ok=True)
@@ -71,12 +82,16 @@ def record_correction(context: str, correction: str,
         from .archive_pipeline import ArchivePipeline
         archive = ArchivePipeline()
         prompt = expected if expected else f"Task context: {context[:200]}"
+        pref_metadata = {"verdict_id": verdict_id, "severity": severity}
+        # extra_metadata wins on collision (caller knows their context better
+        # than this default — e.g., they may want to override severity).
+        pref_metadata.update(extra_metadata)
         pref = archive.record_preference(
             prompt=prompt,
             chosen=correction,
             rejected=context,
             source="align_correction",
-            metadata={"verdict_id": verdict_id, "severity": severity},
+            metadata=pref_metadata,
         )
         if pref:
             pref_id = pref.get("pref_id")
@@ -96,12 +111,88 @@ def record_correction(context: str, correction: str,
     except Exception:
         pass
 
+    # Coord-event capture (§5.3 completion): emit correction event for router corpus.
+    # Best-effort; never breaks the alignment flow. correction events are the
+    # high-signal training data — wait-and-see means corpus stays half-blind
+    # for §5.5 validation gates.
+    try:
+        from . import coord_events as _ce
+        _ce.emit(
+            event_type="correction",
+            agent="nucleus_align",
+            session_id=verdict_id,
+            context_summary=f"correction: {context[:120]}",
+            chosen_option=correction[:120],
+            reasoning_summary=f"severity={severity} pref_id={pref_id}",
+            tags=[severity] if severity else [],
+        )
+    except Exception:
+        pass
+
     return {
         "verdict_id": verdict_id,
         "verdict": "corrected",
         "delta_id": delta_id,
         "pref_id": pref_id,
         "message": f"Correction recorded. Delta: {delta_id}, DPO: {pref_id}",
+    }
+
+
+def record_rejection(context: str, reason: str = "",
+                     severity: str = "medium",
+                     extra_metadata: Optional[Dict[str, Any]] = None
+                     ) -> Dict[str, Any]:
+    """Record a thumbs-down WITHOUT a correction text.
+
+    Verdict-only negative signal — no DPO pair gets written. Use when
+    the user wants to flag "this was bad" but doesn't have time or a
+    better answer. Distinguishes intent ("model was wrong") from data
+    ("here's what it should have said") so we don't pollute the DPO
+    archive with low-quality chosen text just to capture a thumbs-down.
+
+    Args:
+        context: What the AI produced (the rejected output)
+        reason: Optional one-line reason for rejection
+        severity: low/medium/high
+        extra_metadata: Optional dict merged into the verdict record
+            (mode/sovereignty/surface tagging — same shape as
+            record_correction's extra_metadata).
+    """
+    brain = get_brain_path()
+    verdict_id = f"v-{int(datetime.now().timestamp())}-{str(uuid.uuid4())[:8]}"
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    extra_metadata = dict(extra_metadata or {})
+
+    verdict = {
+        "verdict_id": verdict_id,
+        "verdict": "rejected",
+        "timestamp": timestamp,
+        "context": context[:500],
+        "reason": reason[:200] if reason else "",
+        "severity": severity,
+    }
+    if extra_metadata:
+        verdict["metadata"] = extra_metadata
+
+    verdicts_path = brain / "driver" / "human_verdicts.jsonl"
+    verdicts_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(verdicts_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(verdict, ensure_ascii=False) + "\n")
+
+    try:
+        from .event_ops import _emit_event
+        _emit_event("align_reviewed", "nucleus_align", {
+            "verdict_id": verdict_id,
+            "verdict": "rejected",
+            "severity": severity,
+        })
+    except Exception:
+        pass
+
+    return {
+        "verdict_id": verdict_id,
+        "verdict": "rejected",
+        "message": "Rejection recorded (verdict-only, no DPO pair).",
     }
 
 
@@ -131,6 +222,23 @@ def record_approval(context: str, notes: str = "") -> Dict[str, Any]:
             "verdict_id": verdict_id,
             "verdict": "accepted",
         })
+    except Exception:
+        pass
+
+    # Coord-event capture (§5.3 completion): emit founder_verdict event.
+    # Approval is the founder's positive verdict on AI output. Pairs with
+    # correction events to form the chosen/rejected signal for router training.
+    try:
+        from . import coord_events as _ce
+        _ce.emit(
+            event_type="founder_verdict",
+            agent="nucleus_align",
+            session_id=verdict_id,
+            context_summary=f"approval: {context[:120]}",
+            chosen_option="accepted",
+            reasoning_summary=notes[:120] if notes else "",
+            tags=["approval"],
+        )
     except Exception:
         pass
 

@@ -274,3 +274,97 @@ class TestEnsureStr:
         from mcp_server_nucleus.tools._dispatch import _ensure_str
         result = _ensure_str([1, 2, 3])
         assert json.loads(result) == [1, 2, 3]
+
+
+# ── Variant B (Phase-2 test vs control) runtime-substrate-off ──────────
+# Spec: .brain/plans/phase2_test_vs_control_spec.md
+# Behavior: NUCLEUS_VARIANT_B_RUNTIME_OFF=1 makes substrate READ actions
+# return a tiny stub instead of executing. Writes pass through. Plumbing
+# (registration, schemas) stays active so the experimental arm has identical
+# prompt + tool surface to baseline; only the runtime gain is removed.
+
+class TestVariantBRuntimeOff:
+    def test_default_off_reads_pass_through(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import dispatch
+        monkeypatch.delenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", raising=False)
+        called = {"n": 0}
+        def reader(query=""):
+            called["n"] += 1
+            return {"result": "real-data"}
+        result = dispatch("query_engrams", {"query": "x"}, {"query_engrams": reader}, "test")
+        assert called["n"] == 1
+        assert "real-data" in result
+
+    def test_flag_on_reads_return_stub(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import dispatch
+        monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", "1")
+        called = {"n": 0}
+        def reader(query=""):
+            called["n"] += 1
+            return {"result": "should not be returned"}
+        result = dispatch("query_engrams", {"query": "x"}, {"query_engrams": reader}, "test")
+        assert called["n"] == 0, "reader handler must not execute under Variant B"
+        assert "variant_b_runtime_off" in result
+        assert "real-data" not in result
+
+    def test_flag_on_writes_pass_through(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import dispatch
+        monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", "1")
+        called = {"n": 0}
+        def writer(key="", value=""):
+            called["n"] += 1
+            return {"wrote": key}
+        # write_engram is a write — must execute under Variant B
+        result = dispatch("write_engram", {"key": "k", "value": "v"}, {"write_engram": writer}, "test")
+        assert called["n"] == 1
+        assert "wrote" in result
+
+    def test_flag_on_passthrough_actions_run(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import dispatch
+        monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", "1")
+        called = {"n": 0}
+        def vr():
+            called["n"] += 1
+            return {"version": "x"}
+        # version is in _VARIANT_B_PASSTHROUGH — must execute even with flag on
+        result = dispatch("version", {}, {"version": vr}, "test")
+        assert called["n"] == 1
+        assert "version" in result
+
+    def test_flag_on_unknown_action_still_errors(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import dispatch
+        monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", "1")
+        # Action "query_nonexistent" is read-shape (prefix match), but no handler
+        # registered. Must hit the unknown-action branch ABOVE the Variant B
+        # short-circuit, returning not_found error. Use non-empty router to
+        # avoid a pre-existing IndexError bug on the hint-line.
+        router = {"some_other_action": lambda: {"x": 1}}
+        result = dispatch("query_nonexistent", {}, router, "test")
+        assert "Unknown action" in result
+        assert "variant_b_runtime_off" not in result
+
+    def test_flag_off_when_unset_or_empty(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import _is_variant_b_active
+        for v in ("", "0", "false", "no", "off"):
+            monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", v)
+            assert not _is_variant_b_active(), f"value {v!r} must NOT activate Variant B"
+        for v in ("1", "true", "True", "YES"):
+            monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", v)
+            assert _is_variant_b_active(), f"value {v!r} must activate Variant B"
+
+    def test_read_classification_via_prefix(self, monkeypatch):
+        from mcp_server_nucleus.tools._dispatch import _variant_b_stub_if_read
+        monkeypatch.setenv("NUCLEUS_VARIANT_B_RUNTIME_OFF", "1")
+        # Prefix-matched reads
+        for action in ("query_engrams", "search_threads", "read_events", "get_state",
+                       "list_tasks", "view_pending", "recall", "metrics"):
+            assert _variant_b_stub_if_read("test", action) is not None, action
+        # Exact-matched reads
+        for action in ("satellite", "open_loops", "patterns", "commitment_health"):
+            assert _variant_b_stub_if_read("test", action) is not None, action
+        # Writes / neutral — should pass through
+        for action in ("write_engram", "emit_event", "add_task", "relay_post"):
+            assert _variant_b_stub_if_read("test", action) is None, action
+        # Always-passthrough
+        for action in ("version", "health", "list_tools"):
+            assert _variant_b_stub_if_read("test", action) is None, action

@@ -18,6 +18,83 @@ _SNAKE_RE = re.compile(r"\b[a-z]+(?:_[a-z]+){2,}\b")
 _URL_RE = re.compile(r"https?://\S+")
 _ERROR_RE = re.compile(r"(?:Error|Exception|Traceback|FAILED|error:)\s*[^\n]{10,}")
 
+# Markdown / prose-prefix artifacts that leak from raw conversation prompts
+# into trigger phrases and descriptions. Strip these BEFORE tokenizing intent.
+_MARKDOWN_LEAD_RE = re.compile(r"^[\s>#*+\-]+")  # leading #, *, -, >, +, whitespace
+_LABEL_PREFIX_RE = re.compile(
+    r"^(task|investigation|tldr|summary|note|context|goal|objective|instruction|prompt|user|assistant|q|question|a|answer)\s*[:\-]\s*",
+    re.IGNORECASE,
+)
+_BACKTICK_RE = re.compile(r"`+")
+_BOLD_ITALIC_RE = re.compile(r"\*+|_+")
+
+
+def _clean_intent(text: str) -> str:
+    """Strip markdown / label artifacts from the start of an intent.
+
+    Removes leading `#`, `*`, `-`, `>` (markdown headers/lists/quotes),
+    leading labels like "Task:", "Investigation:", "TLDR:" (case-insensitive),
+    inline backticks and bold/italic markers, and collapses whitespace.
+
+    Idempotent. Empty-safe (returns "" for blank input).
+    """
+    if not text:
+        return ""
+    s = text.strip()
+    # Iterate up to 3 times: first strip leading markdown, then label prefix,
+    # then markdown again in case the label was preceded by `##`.
+    for _ in range(3):
+        prev = s
+        s = _MARKDOWN_LEAD_RE.sub("", s).strip()
+        s = _LABEL_PREFIX_RE.sub("", s).strip()
+        if s == prev:
+            break
+    s = _BACKTICK_RE.sub("", s)
+    s = _BOLD_ITALIC_RE.sub("", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _build_description(domain: str, triggers: List[str], size: int) -> str:
+    """Build a generalizable description matching well-formed skill shapes.
+
+    Targets the gstack/qa shape: a verb-phrase summary + an explicit list of
+    trigger keywords CC's auto-activation can match against.
+
+    Avoids the verbatim-prompt-slice bug observed in
+    .brain/research/2026-04-28_tier_architecture/03_skill_activation_telemetry.md
+    (e.g. "When user asks to ## investigation: debug why /chat endpoint").
+    """
+    if not triggers:
+        return f"Skill for {domain} (auto-extracted from {size} conversation turns)."
+
+    verb_phrase = triggers[0].strip()
+    # Cap verb-phrase to first 5 words to keep the lead generalized.
+    verb_phrase = " ".join(verb_phrase.split()[:5])
+
+    # Show up to 3 trigger phrases as the keyword list (post-clean, deduped).
+    seen = set()
+    keyword_list: List[str] = []
+    for t in triggers:
+        t = t.strip().strip("'\"")
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        keyword_list.append(t)
+        if len(keyword_list) >= 3:
+            break
+
+    if keyword_list:
+        keys_str = ", ".join(f"'{k}'" for k in keyword_list)
+        return (
+            f"When user asks to {verb_phrase}, or says: {keys_str}. "
+            f"Auto-extracted from {size} {domain} conversation turns."
+        )
+    return (
+        f"When user asks to {verb_phrase}. "
+        f"Auto-extracted from {size} {domain} conversation turns."
+    )
+
 
 def _extract_trigger_phrases(intents: List[str], top_n: int = 5) -> List[str]:
     """Extract distinctive trigger phrases from cluster intents.
@@ -33,11 +110,14 @@ def _extract_trigger_phrases(intents: List[str], top_n: int = 5) -> List[str]:
     prefix_to_full: Dict[str, str] = {}
 
     for intent in intents:
-        words = intent.lower().split()[:6]
+        cleaned = _clean_intent(intent).lower()
+        if not cleaned:
+            continue
+        words = cleaned.split()[:6]
         if not words:
             continue
         phrase = " ".join(words)
-        # Normalize: strip leading articles
+        # Normalize: strip leading articles / politeness wrappers
         phrase = re.sub(r"^(please |can you |could you |i need to |i want to )", "", phrase)
         key = " ".join(phrase.split()[:3])  # 3-gram grouping key
         prefixes[key] += 1
@@ -106,6 +186,7 @@ def _anonymize_text(text: str) -> str:
 
     Preserves: action verbs, general descriptions, tool names.
     """
+    text = _clean_intent(text)
     text = _URL_RE.sub("<url>", text)
     text = _FILE_PATH_RE.sub("<file>", text)
     text = _ERROR_RE.sub("<error>", text)
@@ -195,13 +276,17 @@ def generate_skill_md(cluster: dict) -> str:
     # Title: capitalize each word
     title = " ".join(word.capitalize() for word in domain.split("-"))
 
-    # Trigger phrases
+    # Trigger phrases (cleaned of markdown / label artifacts)
     triggers = _extract_trigger_phrases(intents)
     if not triggers:
-        triggers = [_anonymize_text(intents[0])] if intents else ["(no triggers)"]
+        cleaned_first = _clean_intent(intents[0]) if intents else ""
+        triggers = [_anonymize_text(cleaned_first)] if cleaned_first else ["(no triggers)"]
 
-    # Description from first trigger
-    description = f"When user asks to {triggers[0]}" if triggers else f"Skill for {domain}"
+    # Description: template-shaped, not verbatim-prompt-shaped.
+    # Format mirrors well-formed skills like gstack/qa:
+    #   "When user asks to <verb-phrase>, or says: '<t1>', '<t2>', '<t3>'.
+    #    Generated from <N> conversation turns in domain <domain>."
+    description = _build_description(domain, triggers, size)
 
     # Tool sequence
     tool_seq = _extract_tool_sequence(turns)

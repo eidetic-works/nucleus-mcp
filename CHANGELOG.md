@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`NUCLEAR_BRAIN_PATH` deprecation shim restored** — PR #78's removal was incomplete; `cli.py` was left with dead self-OR (`os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")`) and duplicate set lines, while external consumers (`nucleus-mcp-cloud`'s `/ready` endpoint) silently 503'd because they still read the legacy name. Dual-write restored at three call sites in `cli.py`; legacy reads emit a `DeprecationWarning` naming the canonical name + sunset date `2026-05-27`. Tests cover the four matrix cases (new/old/both/neither). Surfaced by Perplexity track verifying Oracle Cloud deploy.
+
 ## [1.12.0] - 2026-04-20 — "Wedge Package + Three-Surface Substrate"
 
 ### Added

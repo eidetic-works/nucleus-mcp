@@ -27,6 +27,39 @@ import os
 import json
 from pathlib import Path
 
+# ── Relay domain metric name constants ──────────────────────────────────────
+RELAY_MESSAGES_TOTAL = "nucleus_relay_messages_total"
+RELAY_QUEUE_DEPTH = "nucleus_relay_queue_depth"
+AUTH_FAILURES_TOTAL = "nucleus_auth_failures_total"
+RATE_LIMIT_HITS_TOTAL = "nucleus_rate_limit_hits_total"
+REGISTRY_TOOLS_ACTIVE = "nucleus_registry_tools_active"
+REGISTRY_TOOLS_STALE = "nucleus_registry_tools_stale"
+SELF_HEALING_ACTIONS_TOTAL = "nucleus_self_healing_actions_total"
+MARKETPLACE_TIER_CHANGED_TOTAL = "nucleus_marketplace_tier_changed_total"
+
+
+# ── Named helpers for relay domain metrics ──────────────────────────────────
+
+def inc_relay_message(status: str) -> None:
+    """Increment relay message counter. status: 'queued' | 'acked' | 'rejected'."""
+    inc_counter(RELAY_MESSAGES_TOTAL, {"status": status})
+
+
+def inc_auth_failure() -> None:
+    """Increment auth failure counter."""
+    inc_counter(AUTH_FAILURES_TOTAL)
+
+
+def inc_rate_limit_hit() -> None:
+    """Increment rate-limit hit counter."""
+    inc_counter(RATE_LIMIT_HITS_TOTAL)
+
+
+def set_relay_queue_depth(count: int, recipient: str) -> None:
+    """Set relay queue depth gauge for a recipient bucket."""
+    set_gauge(RELAY_QUEUE_DEPTH, float(count), {"recipient": recipient})
+
+
 # Thread-safe metrics storage
 _metrics_lock = threading.Lock()
 
