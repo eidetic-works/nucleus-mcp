@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # perplexity_reconfig_smoke.sh — Stage-4 smoke: simulate perplexity firing a relay through
-# the cloud webhook and confirm sync-back lands it on Lokesh's laptop.
+# the cloud webhook and confirm sync-back lands it on operator's laptop.
 #
 # Usage:
 #   PERPLEXITY_TOKEN=<32-byte-hex> ./perplexity_reconfig_smoke.sh
