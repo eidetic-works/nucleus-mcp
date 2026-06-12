@@ -61,6 +61,17 @@ def do_bench(
     else:
         duration = float(manual_duration)  # type: ignore[arg-type]
         exit_code = None
+    # ADR-0033 v3 §A: document scale baseline for future >50MB comparison.
+    history = brain / "engrams" / "history.jsonl"
+    scale_bytes: int | None = None
+    scale_lines: int | None = None
+    try:
+        if history.exists():
+            scale_bytes = history.stat().st_size
+            with history.open("r", encoding="utf-8") as fh:
+                scale_lines = sum(1 for _ in fh)
+    except OSError:
+        pass
     row = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "run_id": run_id,
@@ -69,6 +80,9 @@ def do_bench(
         "command": command,
         "exit_code": exit_code,
         "manual": command is None,
+        "scale_history_bytes": scale_bytes,
+        "scale_history_lines": scale_lines,
+        "recall_impl_note": "case-insensitive substring LIKE scan (NOT BM25)",
     }
     metrics_dir = brain / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)

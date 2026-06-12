@@ -21,21 +21,43 @@ _MAX_CHAIN_DEPTH = 3
 
 
 def _get_chain_depth() -> int:
+    """Get current chain depth for this thread.
+
+    Returns:
+        int: Current chain depth (0 if not set).
+    """
     return getattr(_chain_depth, "depth", 0)
 
 
 def _increment_chain_depth() -> int:
+    """Increment chain depth for this thread.
+
+    Returns:
+        int: New chain depth after increment.
+    """
     depth = _get_chain_depth() + 1
     _chain_depth.depth = depth
     return depth
 
 
 def _decrement_chain_depth():
+    """Decrement chain depth for this thread (minimum 0)."""
     _chain_depth.depth = max(0, _get_chain_depth() - 1)
 
 
 def _trigger_agent_impl(agent: str, task_description: str, context_files: List[str] = None) -> str:
-    """Core logic for triggering an agent."""
+    """Core logic for triggering an agent.
+
+    Creates a task_assigned event to trigger the specified agent.
+
+    Args:
+        agent (str): Target agent identifier.
+        task_description (str): Description of the task to assign.
+        context_files (List[str], optional): List of context file paths.
+
+    Returns:
+        str: Message confirming trigger with event ID.
+    """
     from .event_ops import _emit_event
 
     data = {
@@ -57,7 +79,13 @@ def _trigger_agent_impl(agent: str, task_description: str, context_files: List[s
 
 
 def _get_triggers_impl() -> List[Dict]:
-    """Core logic for getting all triggers."""
+    """Core logic for getting all triggers.
+
+    Reads triggers from the brain's triggers.json file.
+
+    Returns:
+        List[Dict]: List of trigger configurations, or empty list on error.
+    """
     try:
         brain = get_brain_path()
         triggers_path = brain / "ledger" / "triggers.json"
@@ -75,11 +103,17 @@ def _get_triggers_impl() -> List[Dict]:
 
 
 def _evaluate_triggers_impl(event_type: str, emitter: str) -> List[str]:
-    """
-    Evaluate which agents should activate for an event.
+    """Evaluate which agents should activate for an event.
 
     Phase 2: Also dispatches tasks for triggers with "dispatch": true,
     respecting chain depth limits and dedup.
+
+    Args:
+        event_type (str): Type of event to match against triggers.
+        emitter (str): Emitter of the event for filtering.
+
+    Returns:
+        List[str]: List of matching agent identifiers.
     """
     try:
         triggers = _get_triggers_impl()
@@ -108,12 +142,16 @@ def _evaluate_triggers_impl(event_type: str, emitter: str) -> List[str]:
 
 
 def _dispatch_trigger(trigger: Dict, event_type: str, emitter: str):
-    """
-    Layer 2: Create a task for a matched trigger.
+    """Layer 2: Create a task for a matched trigger.
 
     Safety:
     - Chain depth check (Layer 1): skip if cascade too deep
     - Dedup: skip if pending task already exists for same trigger+event
+
+    Args:
+        trigger (Dict): Trigger configuration dictionary.
+        event_type (str): Event type that matched the trigger.
+        emitter (str): Emitter of the event.
     """
     trigger_id = trigger.get("id", "unknown")
     agent = trigger.get("target_agent", "unknown")
@@ -164,7 +202,15 @@ def _dispatch_trigger(trigger: Dict, event_type: str, emitter: str):
 
 
 def _has_pending_task(task_key: str) -> bool:
-    """Check if a pending task already exists for this trigger+event combo."""
+    """Check if a pending task already exists for this trigger+event combo.
+
+    Args:
+        task_key (str): Task key to check (format: "trigger:{trigger_id}:{event_type}").
+
+    Returns:
+        bool: True if pending task exists, False otherwise.
+            Returns False on error (fail open for liveness).
+    """
     try:
         from .db import get_storage_backend
         storage = get_storage_backend(get_brain_path())

@@ -29,9 +29,31 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
+from nucleus_wedge.role_normalize import _normalize_role
+
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_tags(tags: list[str] | None) -> list[str] | None:
+    """Apply `role:<x>` canonicalization at write-time.
+
+    Per ADR-0033 v3 §B: normalize the value half of any `role:<x>` tag through
+    `_normalize_role` so doublet drift (`cc_gq` vs `gq`, `antigravity` vs `agy`)
+    cannot split a single agent's activity engrams across two tag spellings.
+    Non-role tags pass through unchanged.
+    """
+    if not tags:
+        return tags
+    out: list[str] = []
+    for tag in tags:
+        if isinstance(tag, str) and tag.startswith("role:"):
+            value = tag[len("role:") :]
+            out.append(f"role:{_normalize_role(value)}")
+        else:
+            out.append(tag)
+    return out
 
 
 class Store:
@@ -103,6 +125,7 @@ class Store:
         ts = _iso_now()
         if not key:
             key = f"remember_{ts.replace(':', '').replace('-', '').replace('.', '')[:19]}_{uuid.uuid4().hex[:8]}"
+        tags = _normalize_tags(tags)
         context = kind if not tags else f"{kind} [#{','.join(tags)}]"
         record = {
             "key": key,

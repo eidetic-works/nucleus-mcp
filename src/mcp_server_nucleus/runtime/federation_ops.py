@@ -15,10 +15,18 @@ Contains:
 import asyncio
 import json
 import logging
+import os
 
 from .common import get_brain_path
+from .event_ops import _emit_event
 
 logger = logging.getLogger("mcp_server_nucleus")
+
+
+def _surface() -> str:
+    """Resolve current surface from CC_SESSION_ROLE env var (per E3 spec)."""
+    role = os.environ.get("CC_SESSION_ROLE", "").strip().lower()
+    return role if role in ("main", "peer") else "unknown"
 
 
 # ── Singleton ────────────────────────────────────────────────────
@@ -53,8 +61,13 @@ def _brain_federation_status_impl() -> str:
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_status_failed", "nucleus_federation", {
+                "action": "status",
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         status = engine.get_status()
         health = engine.get_health()
         
@@ -70,7 +83,7 @@ def _brain_federation_status_impl() -> str:
         warnings = health.get("warnings", [])
         warning_display = "\n".join(f"   ⚠️ {w}" for w in warnings) if warnings else "   None"
         
-        return f"""🌐 FEDERATION STATUS
+        _result = f"""🌐 FEDERATION STATUS
 ═══════════════════════════════════════
 
 🧠 LOCAL BRAIN
@@ -100,8 +113,24 @@ def _brain_federation_status_impl() -> str:
 🔄 SYNC
    Merkle Root: {status['sync']['merkle_root'][:16]}...
    Vector Clock: {len(status['sync']['vector_clock'])} entries"""
-        
+        _emit_event("federation_status_succeeded", "nucleus_federation", {
+            "action": "status",
+            "brain_id": status.get("brain_id"),
+            "running": status.get("running"),
+            "is_leader": status.get("is_leader"),
+            "peers_online": status.get("peers", {}).get("online", 0),
+            "peers_total": status.get("peers", {}).get("total", 0),
+            "health_score": health.get("score"),
+            "surface": _surface(),
+        })
+        return _result
+
     except Exception as e:
+        _emit_event("federation_status_failed", "nucleus_federation", {
+            "action": "status",
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Federation status error: {str(e)}"
 
 
@@ -110,24 +139,49 @@ async def _brain_federation_join_impl(seed_peer: str) -> str:
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_join_failed", "nucleus_federation", {
+                "action": "join",
+                "seed_peer": seed_peer,
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         # Start engine if not running
         if not engine.running:
             await engine.start()
-        
+
         result = await engine.join(seed_peer)
-        
+
         if result.get("success"):
+            _emit_event("federation_join_succeeded", "nucleus_federation", {
+                "action": "join",
+                "seed_peer": seed_peer,
+                "peers": result.get("peers", 0),
+                "surface": _surface(),
+            })
             return f"""✅ JOINED FEDERATION
    Seed Peer: {seed_peer}
    Total Peers: {result.get('peers', 0)}
-   
+
 💡 Federation engine is now active and syncing"""
         else:
+            _emit_event("federation_join_failed", "nucleus_federation", {
+                "action": "join",
+                "seed_peer": seed_peer,
+                "reason": "join_returned_failure",
+                "error": result.get("error", "Unknown error"),
+                "surface": _surface(),
+            })
             return f"❌ Failed to join: {result.get('error', 'Unknown error')}"
-        
+
     except Exception as e:
+        _emit_event("federation_join_failed", "nucleus_federation", {
+            "action": "join",
+            "seed_peer": seed_peer,
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Join error: {str(e)}"
 
 
@@ -136,19 +190,39 @@ async def _brain_federation_leave_impl() -> str:
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_leave_failed", "nucleus_federation", {
+                "action": "leave",
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         result = await engine.leave()
-        
+
         if result.get("success"):
+            _emit_event("federation_leave_succeeded", "nucleus_federation", {
+                "action": "leave",
+                "surface": _surface(),
+            })
             return """✅ LEFT FEDERATION
-   
+
 Federation engine stopped gracefully.
 Local brain now operating in standalone mode."""
         else:
+            _emit_event("federation_leave_failed", "nucleus_federation", {
+                "action": "leave",
+                "reason": "leave_returned_failure",
+                "error": result.get("error", "Unknown error"),
+                "surface": _surface(),
+            })
             return f"❌ Failed to leave: {result.get('error', 'Unknown error')}"
-        
+
     except Exception as e:
+        _emit_event("federation_leave_failed", "nucleus_federation", {
+            "action": "leave",
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Leave error: {str(e)}"
 
 
@@ -157,11 +231,21 @@ def _brain_federation_peers_impl() -> str:
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_peers_failed", "nucleus_federation", {
+                "action": "peers",
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         peers = engine.get_peers()
-        
+
         if not peers:
+            _emit_event("federation_peers_succeeded", "nucleus_federation", {
+                "action": "peers",
+                "peer_count": 0,
+                "surface": _surface(),
+            })
             return """🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
@@ -195,10 +279,20 @@ No peers discovered.
             lines.append(f"   Load: {peer.load:.0%}")
             lines.append(f"   Capabilities: {', '.join(peer.capabilities) or 'None'}")
             lines.append("")
-        
+
+        _emit_event("federation_peers_succeeded", "nucleus_federation", {
+            "action": "peers",
+            "peer_count": len(peers),
+            "surface": _surface(),
+        })
         return "\n".join(lines)
-        
+
     except Exception as e:
+        _emit_event("federation_peers_failed", "nucleus_federation", {
+            "action": "peers",
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Peers error: {str(e)}"
 
 
@@ -207,16 +301,33 @@ async def _brain_federation_sync_impl() -> str:
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_sync_failed", "nucleus_federation", {
+                "action": "sync",
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         if not engine.running:
+            _emit_event("federation_sync_failed", "nucleus_federation", {
+                "action": "sync",
+                "reason": "engine_not_running",
+                "surface": _surface(),
+            })
             return "❌ Federation engine not running. Use brain_federation_join first."
-        
+
         results = await engine.sync_now()
-        
+
         if not results:
+            _emit_event("federation_sync_completed", "nucleus_federation", {
+                "action": "sync",
+                "peers_synced": 0,
+                "items_synced": 0,
+                "conflicts_resolved": 0,
+                "surface": _surface(),
+            })
             return """🔄 SYNC COMPLETE
-   
+
 No peers to sync with."""
         
         lines = ["🔄 SYNC RESULTS", "═══════════════════════════════════════", ""]
@@ -241,10 +352,24 @@ No peers to sync with."""
         lines.append(f"   Peers synced: {len(results)}")
         lines.append(f"   Items synced: {total_synced}")
         lines.append(f"   Conflicts resolved: {total_conflicts}")
-        
+
+        _emit_event("federation_sync_completed", "nucleus_federation", {
+            "action": "sync",
+            "peers_synced": len(results),
+            "items_synced": total_synced,
+            "conflicts_resolved": total_conflicts,
+            "successes": sum(1 for r in results if r.success),
+            "failures": sum(1 for r in results if not r.success),
+            "surface": _surface(),
+        })
         return "\n".join(lines)
-        
+
     except Exception as e:
+        _emit_event("federation_sync_failed", "nucleus_federation", {
+            "action": "sync",
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Sync error: {str(e)}"
 
 
@@ -253,8 +378,15 @@ async def _brain_federation_route_impl(task_id: str, profile: str = "default") -
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_route_failed", "nucleus_federation", {
+                "action": "route",
+                "task_id": task_id,
+                "profile": profile,
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         # Get task from task store
         task = {"id": task_id}
         
@@ -272,7 +404,17 @@ async def _brain_federation_route_impl(task_id: str, profile: str = "default") -
             pass
         
         decision = await engine.route_task(task, profile)
-        
+
+        _emit_event("federation_route_succeeded", "nucleus_federation", {
+            "action": "route",
+            "task_id": task_id,
+            "profile": profile,
+            "target_brain": decision.target_brain,
+            "score": decision.score,
+            "routing_time_ms": decision.routing_time_ms,
+            "alternatives_count": len(decision.alternatives),
+            "surface": _surface(),
+        })
         return f"""🎯 ROUTING DECISION
 ═══════════════════════════════════════
 
@@ -282,7 +424,7 @@ async def _brain_federation_route_impl(task_id: str, profile: str = "default") -
 🏆 TARGET
    Brain: {decision.target_brain}
    Score: {decision.score:.3f}
-   
+
 ⏱️ ROUTING TIME
    {decision.routing_time_ms:.3f}ms
 
@@ -290,8 +432,15 @@ async def _brain_federation_route_impl(task_id: str, profile: str = "default") -
 {chr(10).join(f'   {i+1}. {alt[0]} (score: {alt[1]:.3f})' for i, alt in enumerate(decision.alternatives[:3])) or '   None'}
 
 💡 Task should be executed on {decision.target_brain}"""
-        
+
     except Exception as e:
+        _emit_event("federation_route_failed", "nucleus_federation", {
+            "action": "route",
+            "task_id": task_id,
+            "profile": profile,
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Routing error: {str(e)}"
 
 
@@ -300,8 +449,13 @@ def _brain_federation_health_impl() -> str:
     try:
         engine = _get_federation_engine()
         if engine is None:
+            _emit_event("federation_health_failed", "nucleus_federation", {
+                "action": "health",
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
             return "❌ FederationEngine not available."
-        
+
         health = engine.get_health()
         metrics = engine.metrics
         
@@ -319,6 +473,18 @@ def _brain_federation_health_impl() -> str:
         else:
             status = "🔴 CRITICAL"
         
+        _emit_event("federation_health_succeeded", "nucleus_federation", {
+            "action": "health",
+            "score": score,
+            "healthy": health.get("healthy"),
+            "partition_status": health.get("partition_status"),
+            "peers_online": health.get("peers_online"),
+            "peers_total": health.get("peers_total"),
+            "warnings_count": len(health.get("warnings", [])),
+            "tasks_routed": metrics.tasks_routed,
+            "sync_operations": metrics.sync_operations,
+            "surface": _surface(),
+        })
         return f"""💚 FEDERATION HEALTH
 ═══════════════════════════════════════
 
@@ -339,6 +505,11 @@ def _brain_federation_health_impl() -> str:
 
 ⚠️ WARNINGS ({len(health['warnings'])})
 {chr(10).join(f'   • {w}' for w in health['warnings']) or '   None'}"""
-        
+
     except Exception as e:
+        _emit_event("federation_health_failed", "nucleus_federation", {
+            "action": "health",
+            "error": str(e),
+            "surface": _surface(),
+        })
         return f"❌ Health error: {str(e)}"

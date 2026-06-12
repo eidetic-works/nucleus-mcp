@@ -42,10 +42,13 @@ def _build_parser() -> argparse.ArgumentParser:
     bench_p.add_argument("--brain-path", help="Explicit .brain path (overrides env + cwd resolution).")
 
     recall_p = sub.add_parser("recall", help="SQLite-backed recall over memories.db (pairs with bench first_recall).")
-    recall_p.add_argument("--query", required=True, help="Case-insensitive substring match against text + tags.")
+    recall_p.add_argument("--query", default="", help="Case-insensitive substring match against text + tags (optional when --kind/--tags/--since given).")
     recall_p.add_argument("--limit", type=int, default=5, help="Max rows returned (default 5).")
     recall_p.add_argument("--source", help="Optional source filter (SQL LIKE pattern, e.g. 'auto_memory' or 'history.jsonl:%%').")
     recall_p.add_argument("--brain-path", help="Explicit .brain path (overrides env + cwd resolution).")
+    recall_p.add_argument("--kind", help="Structured filter on engram kind (e.g. 'activity').")
+    recall_p.add_argument("--tags", action="append", default=None, help="Repeatable structured filter on tag substring (e.g. --tags role:main --tags domain:tb-endpoint).")
+    recall_p.add_argument("--since", help="ISO-8601 lower bound on created_at, or relative window (Nd/Nh/Nm).")
 
     return parser
 
@@ -95,7 +98,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "recall":
         from nucleus_wedge.recall_cmd import do_recall
-        return do_recall(args.query, args.limit, args.source, args.brain_path)
+        from nucleus_wedge.memories import _parse_since
+        since_norm = _parse_since(args.since) if args.since else None
+        return do_recall(
+            query=args.query,
+            limit=args.limit,
+            source_filter=args.source,
+            brain_path_arg=args.brain_path,
+            kind=args.kind,
+            tags=args.tags,
+            since=since_norm,
+        )
 
     parser.print_help()
     return 2

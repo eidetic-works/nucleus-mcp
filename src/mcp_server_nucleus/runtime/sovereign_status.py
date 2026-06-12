@@ -97,6 +97,7 @@ def _brain_identity(brain_path: Path) -> Dict[str, Any]:
 def _memory_health(brain_path: Path) -> Dict[str, Any]:
     """Analyze engram memory health."""
     engrams_dir = brain_path / "engrams"
+    memory_file = brain_path / "memory" / "engrams.json"
     result = {
         "status": "not_initialized",
         "engram_count": 0,
@@ -106,18 +107,36 @@ def _memory_health(brain_path: Path) -> Dict[str, Any]:
         "newest": None,
     }
 
-    if not engrams_dir.exists():
-        return result
-
     engrams = []
-    for f in engrams_dir.glob("*.json"):
+
+    # Check engrams/ directory (individual .json files)
+    if engrams_dir.exists():
+        for f in engrams_dir.glob("*.json"):
+            try:
+                with open(f) as fh:
+                    data = json.load(fh)
+                    if isinstance(data, dict):
+                        engrams.append(data)
+            except (json.JSONDecodeError, Exception):
+                continue
+
+    # Also check memory/engrams.json (array of engrams written by CLI)
+    if memory_file.exists():
         try:
-            with open(f) as fh:
+            with open(memory_file) as fh:
                 data = json.load(fh)
-                if isinstance(data, dict):
-                    engrams.append(data)
+                if isinstance(data, list):
+                    for item in data:
+                        if isinstance(item, dict) and item.get("key"):
+                            engrams.append(item)
         except (json.JSONDecodeError, Exception):
-            continue
+            pass
+
+    if not engrams:
+        if not engrams_dir.exists() and not memory_file.exists():
+            return result
+        result["status"] = "empty"
+        return result
 
     result["engram_count"] = len(engrams)
     result["status"] = "operational" if engrams else "empty"

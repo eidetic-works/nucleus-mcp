@@ -13,6 +13,7 @@ exists. Filed via [DEVIATION] relay before merge.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -26,6 +27,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from mcp_server_nucleus.runtime import relay_ops
+from mcp_server_nucleus.runtime.relay_inbox_canonical import resolve_canonical_inbox_name
 
 # ── Config ────────────────────────────────────────────────────────────
 
@@ -79,6 +81,100 @@ _buckets: Dict[Tuple[str, str], deque] = defaultdict(deque)
 _idem_cache: Dict[Tuple[str, str], Tuple[Dict[str, Any], float]] = {}
 
 
+# ── Rate-bucket restart persistence (v0.2 Seq-3) ──────────────────────────
+#
+# _buckets is per-process, so a server restart used to zero every sliding
+# window — a caller could double its 60s budget by riding a deploy. Windows
+# are snapshotted (debounced) to <relay_dir>/.rate_buckets.json and lazily
+# hydrated on the first rate check after start. Tokens are persisted as
+# sha256 hex digests so bearer secrets never land on disk; hydration matches
+# digests against the live NUCLEUS_RELAY_TOKEN_MAP. Best-effort both ways:
+# IO failure logs a warning and the limiter continues in-memory.
+
+_BUCKET_SNAPSHOT_DEBOUNCE_S = 5.0
+_RATE_WINDOW_S = 60
+
+_buckets_hydrated = False
+_last_bucket_snapshot = 0.0
+
+
+def _bucket_snapshot_path():
+    from mcp_server_nucleus.runtime.relay.paths import _get_relay_dir
+    return _get_relay_dir(force_fs=True) / ".rate_buckets.json"
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _hydrate_buckets_once(now: float) -> None:
+    """Restore persisted sliding windows on the first rate check after start."""
+    global _buckets_hydrated
+    if _buckets_hydrated:
+        return
+    _buckets_hydrated = True
+    try:
+        path = _bucket_snapshot_path()
+        if not path.exists():
+            return
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return
+        digest_to_token = {_hash_token(t): t for t in _load_token_map()}
+        cutoff = now - _RATE_WINDOW_S
+        for key, stamps in (data.get("buckets") or {}).items():
+            digest, _, scope = str(key).partition("|")
+            token = digest_to_token.get(digest)
+            if token is None or not isinstance(stamps, list):
+                continue
+            live = sorted(
+                s for s in stamps if isinstance(s, (int, float)) and s > cutoff
+            )
+            if live:
+                _buckets[(token, scope)] = deque(live)
+    except Exception as e:
+        logger.warning("rate-bucket hydrate failed (continuing cold): %s", e)
+
+
+def _maybe_snapshot_buckets(now: float) -> None:
+    """Debounced atomic snapshot of live windows. Never raises.
+
+    Crash-loss is accepted-bounded: stamps appended within the debounce
+    window (and after the last _check_rate of an idle tail) are lost on
+    crash-before-snapshot. Error direction is permissive under-count,
+    bounded by the 5s debounce and only material if a restart lands
+    inside the 60s window.
+    """
+    global _last_bucket_snapshot
+    if now - _last_bucket_snapshot < _BUCKET_SNAPSHOT_DEBOUNCE_S:
+        return
+    _last_bucket_snapshot = now
+    try:
+        cutoff = now - _RATE_WINDOW_S
+        out: Dict[str, List[float]] = {}
+        for (token, scope), dq in _buckets.items():
+            live = [s for s in dq if s > cutoff]
+            if live:
+                out[f"{_hash_token(token)}|{scope}"] = live
+        path = _bucket_snapshot_path()
+        tmp = path.parent / (path.name + ".tmp")
+        tmp.write_text(
+            json.dumps({"saved_at": now, "buckets": out}), encoding="utf-8"
+        )
+        os.replace(tmp, path)
+    except Exception as e:
+        logger.warning("rate-bucket snapshot failed: %s", e)
+
+
+def _reset_rate_bucket_persistence() -> None:
+    """Test-only: clear buckets + hydrate/debounce state. Production code
+    does not call this (mirrors _reset_session_wake_map_cache)."""
+    global _buckets_hydrated, _last_bucket_snapshot
+    _buckets.clear()
+    _buckets_hydrated = False
+    _last_bucket_snapshot = 0.0
+
+
 def _load_token_map() -> Dict[str, str]:
     """Parse NUCLEUS_RELAY_TOKEN_MAP env var. Returns {token: owner_sender}."""
     raw = os.environ.get("NUCLEUS_RELAY_TOKEN_MAP", "")
@@ -91,8 +187,231 @@ def _load_token_map() -> Dict[str, str]:
         return {}
 
 
+# ── Session-wake (ADR-0037 / Phase 4) ────────────────────────────────────
+#
+# Per .brain/specs/oci_cowork_wake_extension.md (amended 2026-06-08T11:00Z
+# for kind-branching): after a relay successfully lands, IF the recipient
+# role has a registered session-wake config, fire an HTTP POST to the
+# Mac-side wake proxy to inject a wake event into the operator's session.
+# Body shape branches on cfg['kind'] (dispatch | cloud_cc | chat).
+#
+# Best-effort: never raises into the POST handler. Relay write succeeded;
+# wake is a side-effect. 10s timeout caps blast radius.
+
+WAKE_MSG = (
+    "Substrate wake: a new relay has landed in your inbox. "
+    "Use the nucleus_relay MCP tool: nucleus_relay(action='inbox', "
+    "params={'unread_only': true}) — process unread and reply."
+)
+
+
+def _load_session_wake_map() -> Dict[str, Any]:
+    """Parse NUCLEUS_SESSION_WAKE_MAP env, fall back to NUCLEUS_COWORK_WAKE_MAP.
+
+    Per spec § 'Env var' (amended 2026-06-08T10:35Z): new name preferred,
+    legacy NUCLEUS_COWORK_WAKE_MAP still accepted for backward compat with
+    v0.2.0 deploys (the OCI env at Phase 3 GREEN time still uses old name).
+
+    Returns dict mapping role → wake-config; empty {} on missing/malformed.
+    """
+    raw = os.environ.get("NUCLEUS_SESSION_WAKE_MAP", "").strip()
+    if not raw:
+        raw = os.environ.get("NUCLEUS_COWORK_WAKE_MAP", "").strip()
+    if not raw:
+        return {}
+    try:
+        m = json.loads(raw)
+        return m if isinstance(m, dict) else {}
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("session-wake-map: malformed JSON; wake disabled")
+        return {}
+
+
+_session_wake_map_cache: Optional[Dict[str, Any]] = None
+_session_wake_map_loaded_at: float = 0.0
+# v0.2 Seq-3 amendment to spec § 'Env var' "parse once at process start":
+# parse-once meant a wake-map env edit needed a full server restart to take
+# effect. A short TTL keeps the hot path cheap (one monotonic compare per
+# relay) while live env changes land within a minute.
+_SESSION_WAKE_MAP_TTL_S = float(os.environ.get("NUCLEUS_SESSION_WAKE_MAP_TTL_S", "60"))
+
+
+def _get_session_wake_map() -> Dict[str, Any]:
+    """TTL-cached parsed wake-map (re-parsed at most once per TTL window)."""
+    global _session_wake_map_cache, _session_wake_map_loaded_at
+    now = time.monotonic()
+    if (
+        _session_wake_map_cache is None
+        or now - _session_wake_map_loaded_at > _SESSION_WAKE_MAP_TTL_S
+    ):
+        _session_wake_map_cache = _load_session_wake_map()
+        _session_wake_map_loaded_at = now
+    return _session_wake_map_cache
+
+
+def _reset_session_wake_map_cache() -> None:
+    """Test-only cache clear. Production code does not call this."""
+    global _session_wake_map_cache, _session_wake_map_loaded_at
+    _session_wake_map_cache = None
+    _session_wake_map_loaded_at = 0.0
+
+
+_LOG_ID_MAX = 12  # RULE 7 pseudonymity: ID prefixes in logs capped
+
+
+def _truncate_id(value: str) -> str:
+    """Truncate an ID for log emission per Phase C RULE 7."""
+    if not value:
+        return ""
+    return value[:_LOG_ID_MAX]
+
+
+def _emit_wake_metric(role: str, kind: str, status: str) -> None:
+    """Emit nucleus_session_wake_total{role,kind,status} per Phase C RULE 8.
+
+    Try-import prometheus_client; if unavailable, fall back to structured
+    log line at INFO level so operator can grep journalctl. Additive
+    zero-impact when neither prometheus nor log scraping configured.
+    """
+    try:
+        import prometheus_client  # type: ignore[import-not-found]
+
+        global _wake_counter
+        if "_wake_counter" not in globals() or _wake_counter is None:
+            _wake_counter = prometheus_client.Counter(
+                "nucleus_session_wake_total",
+                "Session-wake POST attempts by role/kind/status",
+                ["role", "kind", "status"],
+            )
+        _wake_counter.labels(role=role, kind=kind, status=status).inc()
+    except ImportError:
+        logger.info(
+            "metric nucleus_session_wake_total role=%s kind=%s status=%s",
+            role, kind, status,
+        )
+
+
+_wake_counter = None  # type: ignore[assignment]
+
+
+async def _post_via_proxy(
+    proxy_url: str,
+    proxy_token: str,
+    kind: str,
+    cfg: Dict[str, Any],
+    log_id: str,
+) -> None:
+    """POST wake event to Mac-side proxy at wake_proxy_url (Phase C).
+
+    Body schema is the proxy's contract (not claude.ai's): the proxy
+    handles cookies + endpoint-branching Mac-side. We pass {kind,
+    message, org_id, session_id|chat_conversation_uuid}; proxy reads
+    cookies from Mac Keychain at call time.
+
+    Raises httpx.HTTPStatusError on non-2xx so caller (_post_wake_event)
+    can catch, WARN, and emit metric status=fail (RULE 1: never propagates).
+
+    Pseudonymity (RULE 7): proxy_token never logged; log_id truncated
+    by caller to _LOG_ID_MAX chars.
+    """
+    import httpx
+
+    payload: Dict[str, Any] = {
+        "kind": kind,
+        "message": WAKE_MSG,
+        "org_id": cfg.get("org_id", ""),
+    }
+    if kind in ("dispatch", "cloud_cc"):
+        payload["session_id"] = cfg.get("session_id", "")
+    elif kind == "chat":
+        payload["chat_conversation_uuid"] = cfg.get("chat_conversation_uuid", "")
+
+    headers = {
+        "Authorization": f"Bearer {proxy_token}",
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(proxy_url, headers=headers, json=payload)
+        resp.raise_for_status()
+        logger.info(
+            "session-wake via proxy fired kind=%s id=%s status=%d",
+            kind, log_id, resp.status_code,
+        )
+
+
+async def _post_wake_event(cfg: Dict[str, Any], *, role: str = "unknown") -> None:
+    """Phase C orchestrator: route through Mac proxy.
+    Direct claude.ai fallback (_post_direct) removed per dead-code audit.
+
+    Per .brain/specs/v022_mac_local_wake_proxy_via_cf_tunnel.md:
+      - cfg['wake_proxy_url'] + cfg['wake_proxy_token'] present → try proxy
+      - proxy succeeds → metric status=ok
+      - proxy fails → metric status=fail (relay still GREEN per RULE 1)
+      - unknown kind → metric status=skip (RULE 2)
+
+    RULE 1 best-effort: never raises (caller _maybe_wake_session also has
+    try/except as defense in depth).
+    """
+    kind = cfg.get("kind", "dispatch")
+    if kind not in ("dispatch", "cloud_cc", "chat"):
+        logger.warning("session-wake: unknown kind=%r; skipping", kind)
+        _emit_wake_metric(role, kind, "skip")
+        return
+
+    # Compute log_id per kind (truncated per RULE 7)
+    if kind in ("dispatch", "cloud_cc"):
+        log_id = _truncate_id(cfg.get("session_id", ""))
+    else:  # chat
+        log_id = _truncate_id(cfg.get("chat_conversation_uuid", ""))
+
+    proxy_url = cfg.get("wake_proxy_url")
+    proxy_token = cfg.get("wake_proxy_token")
+
+    if not proxy_url:
+        return
+
+    if not proxy_token:
+        logger.warning(
+            "session-wake: wake_proxy_url set but wake_proxy_token missing for role=%s; aborting",
+            role,
+        )
+        _emit_wake_metric(role, kind, "fail")
+        return
+
+    try:
+        await _post_via_proxy(proxy_url, proxy_token, kind, cfg, log_id)
+        _emit_wake_metric(role, kind, "ok")
+    except Exception as exc:
+        logger.warning(
+            "session-wake proxy failed role=%s kind=%s err=%s",
+            role, kind, exc,
+        )
+        _emit_wake_metric(role, kind, "fail")
+        # Do NOT re-raise — RULE 1: relay still GREEN. Caller catches anyway.
+
+
+async def _maybe_wake_session(recipient: str) -> None:
+    """Fire proxy wake POST if recipient has a wake config. Never raises.
+
+    Per spec § 'Trigger point' line 53-67: called AFTER relay envelope is
+    successfully persisted in the POST handler. Best-effort: relay landed,
+    wake is a side-effect. Any exception logged at WARN; POST handler still
+    returns 202 to the caller.
+    """
+    wake_map = _get_session_wake_map()
+    cfg = wake_map.get(recipient)
+    if not cfg:
+        return
+    try:
+        await _post_wake_event(cfg, role=recipient)
+    except Exception as e:
+        # Do not raise — relay write succeeded; wake is best-effort
+        logger.warning("session-wake fired for %s but POST failed: %s", recipient, e)
+
+
 def _check_rate(token: str, recipient: str, now: float) -> Tuple[bool, int, int]:
     """Sliding-window rate check. Returns (allowed, remaining_global, retry_after_s)."""
+    _hydrate_buckets_once(now)
     capacity = RATE_PER_MIN + RATE_BURST
     window_s = 60
     bucket_global = _buckets[(token, "")]
@@ -113,6 +432,7 @@ def _check_rate(token: str, recipient: str, now: float) -> Tuple[bool, int, int]
 
     bucket_global.append(now)
     bucket_recipient.append(now)
+    _maybe_snapshot_buckets(now)
     return True, capacity - len(bucket_global), 0
 
 
@@ -142,6 +462,7 @@ def _idem_set(token: str, key: str, response: Dict[str, Any], now: float) -> Non
 
 def get_rate_limit_headers(token: str, recipient: str, now: float) -> Dict[str, str]:
     """Build X-RateLimit-* headers for the current token/recipient state without consuming quota."""
+    _hydrate_buckets_once(now)
     capacity = RATE_PER_MIN + RATE_BURST
     window_s = 60
     bucket_global = _buckets[(token, "")]
@@ -236,8 +557,15 @@ async def post_relay(request: Request) -> JSONResponse:
             headers=_injection_rate_headers,
         )
 
-    # Sender-token binding
-    if sender != token_owner:
+    # Sender-token binding — compared in canonical inbox space, because the
+    # deployed token map carries MIXED vocabulary (some owners are canonical
+    # inbox names, some raw role shorthands — 2026-06-10 empirics). Raw
+    # equality minted guaranteed 403s for any role whose client vocab
+    # differed from its deployed owner string. Unknown vocab passes through
+    # resolve unchanged, so genuinely foreign senders still mismatch. The
+    # 403 echo keeps RAW values: it is the documented discovery mechanism
+    # for deployed owner strings (deliberate-mismatch probe).
+    if resolve_canonical_inbox_name(sender) != resolve_canonical_inbox_name(token_owner):
         return _err(403, "sender_mismatch",
                     f"body.sender={sender!r} does not match token owner={token_owner!r}")
 
@@ -258,7 +586,9 @@ async def post_relay(request: Request) -> JSONResponse:
     # X-Sender-Session-Id header overrides body
     from_session_id = request.headers.get("x-sender-session-id") or payload.get("from_session_id")
 
-    # Dispatch to existing relay_post — no new write paths
+    # Dispatch to existing relay_post — no new write paths.
+    # force_fs=True: the server is the FS authority; without it a server
+    # process running with NUCLEUS_RELAY_URL set self-recurses over HTTP.
     try:
         result = relay_ops.relay_post(
             to=recipient,
@@ -270,6 +600,11 @@ async def post_relay(request: Request) -> JSONResponse:
             to_session_id=payload.get("to_session_id"),
             from_session_id=from_session_id,
             in_reply_to=payload.get("in_reply_to"),
+            force_fs=True,
+            # Bridge push path: preserve a caller-supplied id so re-pushes
+            # stay idempotent even after the in-memory Idempotency-Key cache
+            # is lost on restart. relay_post validates and dedups by id.
+            message_id=payload.get("id") or payload.get("message_id"),
         )
     except ValueError as e:
         msg = str(e)
@@ -282,14 +617,21 @@ async def post_relay(request: Request) -> JSONResponse:
     # Successful response — 202 Accepted per contract
     response = {
         "sent": True,
+        "duplicate": bool(result.get("duplicate")),
         "message_id": result.get("message_id") or result.get("id"),
-        "from": sender,
+        # Echo the stored identity (canonicalized at the FS write boundary),
+        # not the raw body.sender — truth-in-signaling for clients verifying
+        # vocab normalization end-to-end.
+        "from": result.get("from") or sender,
         "to": recipient,
         "subject": subject,
         "priority": priority,
         "path": result.get("path"),
     }
     _idem_set(token, idem_key, response, now)
+    # ADR-0037 Phase 4: fire session-wake if recipient has a wake config.
+    # Best-effort; never raises. 10s timeout caps blast radius.
+    await _maybe_wake_session(recipient)
     return JSONResponse(response, status_code=202, headers=rate_headers)
 
 
@@ -315,13 +657,22 @@ async def get_relay(request: Request) -> JSONResponse:
 
     try:
         limit = int(request.query_params.get("limit", "50"))
-        limit = max(1, min(limit, 100))
+        # Clamp ceiling 200: matches the largest client ask
+        # (relay_context_sync limit=200). Was 100, which silently truncated
+        # that ask — truth-in-signaling bundle item (b).
+        limit = max(1, min(limit, 200))
     except (ValueError, TypeError):
         limit = 50
     unread_only = request.query_params.get("unread_only", "false").lower() in ("1", "true", "yes")
 
     try:
-        result = relay_ops.relay_inbox(recipient=recipient, limit=limit, unread_only=unread_only)
+        # force_fs=True: server-side self-recursion guard (see post handler).
+        result = relay_ops.relay_inbox(
+            recipient=recipient,
+            limit=limit,
+            unread_only=unread_only,
+            force_fs=True,
+        )
     except Exception as e:
         return _err(503, "inbox_unavailable", f"Failed to read inbox: {e}", rate_headers=rate_headers)
 
@@ -366,11 +717,21 @@ async def ack_relay(request: Request) -> JSONResponse:
     if not isinstance(message_ids, list):
         return _err(400, "schema_violation", "message_ids must be a list", rate_headers=rate_headers)
 
+    # Bridge ack-state sync: optional session_id threads through so per-session
+    # read markers (read_by_sessions) round-trip losslessly, not just the
+    # coarse read flag. None preserves legacy coarse-ack behavior.
+    session_id = payload.get("session_id")
+    if session_id is not None and not isinstance(session_id, str):
+        return _err(400, "schema_violation", "session_id must be a string", rate_headers=rate_headers)
+
     acked = 0
     failed = 0
     for mid in message_ids:
         try:
-            result = relay_ops.relay_ack(str(mid), recipient=recipient)
+            # force_fs=True: server-side self-recursion guard (see post handler).
+            result = relay_ops.relay_ack(
+                str(mid), recipient=recipient, session_id=session_id, force_fs=True
+            )
             if result.get("acknowledged"):
                 acked += 1
             else:
@@ -402,7 +763,10 @@ async def get_relay_status(request: Request) -> JSONResponse:
     rate_headers = get_rate_limit_headers(token, recipient, now)
 
     try:
-        status = relay_ops.relay_status()
+        # force_fs=True: server-side self-recursion guard (see post handler).
+        # Without it relay_status() returns the v0.1 HTTP-mode stub
+        # (mailboxes={}) instead of the authoritative FS stats.
+        status = relay_ops.relay_status(force_fs=True)
         mailbox = status.get("mailboxes", {}).get(recipient, {})
         
         marketplace_data = None

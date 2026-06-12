@@ -4562,6 +4562,9 @@ def main():
         elif cli_command == 'loop':
             handle_loop_command(args)
 
+        elif cli_command == 'depth':
+            handle_depth_command(args)
+
         elif cli_command == 'end-of-day':
             handle_end_of_day_command(args)
 
@@ -4763,6 +4766,7 @@ def handle_start_command(args):
 
 def handle_stop_command(args):
     """nucleus stop — graceful shutdown via PID file."""
+    import signal
     from .runtime.common import get_brain_path
     brain_path = get_brain_path()
     pid_path = brain_path / "daemon" / "daemon.pid"
@@ -5536,7 +5540,7 @@ def handle_doctor_command(args) -> int:
         bp = Path(brain_path)
         if bp.exists():
             _pass("Brain directory exists")
-            expected_dirs = ["ledger", "engrams", "sessions", "memory"]
+            expected_dirs = ["ledger", "memory", "sessions", "config"]
             for d in expected_dirs:
                 if (bp / d).exists():
                     _pass(f"  {d}/")

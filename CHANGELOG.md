@@ -7,8 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-06-12 — "Treatment Program + Relay v0.2 Bridge"
+
+### Added
+- **Relay v0.2 — bidirectional FS↔HTTP bridge daemon** (#570). `nucleus-relay-bridge` console script + launchd plist template at `deploy/mac/`. Mirrors local `.brain/relay/*` inboxes ↔ remote nucleus-mcp-cloud relay service, with monotonic read-state merges, dedup-by-id, and per-cycle convergence. Enables multi-host AI fleets to share one canonical message bus.
+- **Tool-call instrumentation channel** (#563). `mcp_server_nucleus.runtime.tool_instrumentation` — async-aware decorator with idempotence sentinel; emits one JSONL line per tool call to `.brain/instrumentation/YYYYMMDD.jsonl`. Zero-cost when off; aggregator collapses into daily summary engrams.
+- **Daily aggregator + runtime-manifest bijection gate** (#564). `scripts/instrumentation_aggregator.py` collapses JSONL → summary engrams with per-run truncation guard. `scripts/primitives_bijection_gate.py` verifies `docs/PRIMITIVES.md` ↔ runtime tool list per-server (uses `get_tools()` standalone-fastmcp / `list_tools()` mcp-SDK fallback).
+- **Empty-fixture smoke detector** (#568). `scripts/empty_fixture_smoke_detector.py` — AST-based detection of three test-tautology patterns (empty-fixture, stub-string, hasattr-only body).
+- **`ClaudeOAuthLLM` provider** (#539). `runtime/claude_oauth_llm.py` routes Anthropic-shaped consumers through Claude Max OAuth bearer with lazy 401-refresh retry. Flat-fee against Max subscription window (zero metered marginal cost). curl_cffi chrome120 impersonation handles Cloudflare on the OAuth path.
+- **Cross-context relay (CCR) loop-close** (#513, #514, #516, #519, #522, #523, #524, #528, #530, #534). Autonomous-wake hook support modules, disk-persistent coalesce queue, bespoq context reconstruction from local Claude.app session file, hardcoded sender-prefix removal.
+- **HTTP relay stress harness** (#521). `tests/stress/` — load + failure injection for the v0.2 transport.
+- **Relay v0.2 Seq-2+3 — `relay_status` HTTP parity + substrate hardening** (#541). HTTP transport returns the same status shape as the FS transport; load-bearing for cross-host relay introspection.
+- **`NUCLEUS_WEDGE_RANKER` flag wired into production `bm25.search`** (#465). Default OFF; opt-in alternate ranker pathway for wedge retrieval experiments.
+
+### Changed
+- **Server A facade pruned 20 → 15 tools** (#565). Dead tools removed: `align`, `skills`, `flywheel`, `delegate`, `board`, `archive`, `ground`, `synthetic_qa`. Tier registry updated. `docs/PRIMITIVES.md` resyncs.
+- **`relay_ops` refactored into `runtime/relay/` package** (#520). Single-source registry, paths/core/bridge split.
+- **Sender canonicalization** at server binding + FS write boundary (#542, #548). `ops` alias supported. Resolves sender-vocab drift in multi-surface relay tests.
+- **`read_inbox` truth-in-signaling** (#540). Self-recursion guard, clamp-200, rate-limit vs empty disambiguation.
+
 ### Fixed
-- **`NUCLEAR_BRAIN_PATH` deprecation shim restored** — PR #78's removal was incomplete; `cli.py` was left with dead self-OR (`os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEUS_BRAIN_PATH")`) and duplicate set lines, while external consumers (`nucleus-mcp-cloud`'s `/ready` endpoint) silently 503'd because they still read the legacy name. Dual-write restored at three call sites in `cli.py`; legacy reads emit a `DeprecationWarning` naming the canonical name + sunset date `2026-05-27`. Tests cover the four matrix cases (new/old/both/neither). Surfaced by Perplexity track verifying Oracle Cloud deploy.
+- **Test-tautology gut** (#567). 53 stub-tests removed; strategic-plan local-closure shadow replaced with real coverage.
+- **`flywheel` curriculum integration** (#559). Tests now record promotion-allowlisted `task_outcome` phase.
+- **Session-wake tests realigned** to Phase-C proxy-only architecture (#558).
+- **Priority-2 registry import** repaired post-#520 move (#556).
+- **Pseudonymity scrubber** — operator email folded into generic scrubber patterns (#526).
+- **Sender-prefix drop** in CCR Plan B helper (#530).
+- **`curl_cffi>=0.5.0` declared** in pyproject (#537).
+- **`is_http_mode()` guards in `relay_wait` + `relay_listen`** (#536) — GAP-4 closure; prevents FS-only operations from running under HTTP transport.
+- **`NUCLEAR_BRAIN_PATH` deprecation shim restored** — PR #78's removal was incomplete; `cli.py` was left with dead self-OR and duplicate set lines, while `nucleus-mcp-cloud`'s `/ready` endpoint silently 503'd because it still read the legacy name. Dual-write restored at three call sites in `cli.py`; legacy reads emit `DeprecationWarning` naming canonical name + sunset date `2026-05-27`. Tests cover the four matrix cases.
+
+### Security
+- **Pseudonymity path sweep + credential redaction** (#517). Multi-pass scan + scrub across runtime + docs.
+
+### Docs
+- **OCI deploy runbook** updated to native-systemd (#551) — replaces stale docker-compose path.
 
 ## [1.12.0] - 2026-04-20 — "Wedge Package + Three-Surface Substrate"
 

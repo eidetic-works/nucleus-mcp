@@ -12,7 +12,7 @@ import re
 from datetime import datetime, timezone
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .common import get_brain_path
 
@@ -463,6 +463,19 @@ class ListingEligibility:
             return False, "Missing display_name"
         if not card.get("accepts") or not card.get("emits"):
             return False, "Missing accepts or emits signature"
+            
+        # Check ReputationSignals tier (Atom B-2: reputation-gated marketplace listing)
+        try:
+            metrics = ReputationSignals.compute_signals(address, brain_path=brain_path)
+            # Evaluate tier based on current metrics
+            tier = TrustTier.evaluate(card, metrics)
+            # Only allow ACTIVE or higher tiers for marketplace listing
+            if tier < TrustTier.ACTIVE:
+                return False, f"Insufficient tier: {TrustTier.get_display_badge(tier)} (minimum: Active)"
+        except Exception as e:
+            logger.warning(f"Failed to check tier for {address}: {e}")
+            # If tier check fails, allow listing for backward compatibility
+            pass
             
         telemetry_dir = (brain_path or get_brain_path()) / "telemetry"
         q_file = telemetry_dir / "quarantine.jsonl"

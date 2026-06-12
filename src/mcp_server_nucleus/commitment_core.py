@@ -7,9 +7,19 @@ logger = logging.getLogger(__name__)
 
 
 def _scan_commitments() -> Dict:
-    """
-    Scan artifacts for commitments (checklists, TODOs, drafts, decisions).
-    Returns scan results with commitment count.
+    """Scan artifacts for commitments (checklists, TODOs, drafts, decisions).
+
+    Uses ripgrep to find unchecked checklist items in markdown files within
+    the brain artifacts directory. Adds new items to the commitment ledger
+    if they don't already exist. Updates ages for all existing commitments
+    and emits a scan complete event.
+
+    Returns:
+        Dict: Scan results containing:
+            - success (bool): Whether scan completed successfully
+            - stats (Dict): Commitment statistics (total_open, red_tier, etc.)
+            - last_scan (str): ISO timestamp of last scan
+            - error (str, optional): Error message if scan failed
     """
     import subprocess
     
@@ -76,7 +86,19 @@ def _scan_commitments() -> Dict:
         return {" error": str(e)}
 
 def _list_commitments(tier: str = None) -> Dict:
-    """List all open commitments, optionally filtered by tier."""
+    """List all open commitments, optionally filtered by tier.
+
+    Args:
+        tier (str, optional): Filter by tier ("green", "yellow", "red").
+            If None, returns all open commitments.
+
+    Returns:
+        Dict: List results containing:
+            - success (bool): Whether query completed successfully
+            - commitments (List[Dict]): List of commitment objects
+            - count (int): Number of commitments returned
+            - error (str, optional): Error message if query failed
+    """
     try:
         brain = get_brain_path()
         commitments = commitment_ledger.get_open_commitments(brain, tier)
@@ -90,7 +112,22 @@ def _list_commitments(tier: str = None) -> Dict:
         return {"error": str(e)}
 
 def _close_commitment(comm_id: str, method: str) -> Dict:
-    """Close a commitment with specified method."""
+    """Close a commitment with specified method.
+
+    Args:
+        comm_id (str): Unique identifier of the commitment to close.
+        method (str): Method used to close (e.g., "completed", "cancelled",
+            "deferred", "obsoleted").
+
+    Returns:
+        Dict: Close results containing:
+            - success (bool): Whether close completed successfully
+            - commitment (Dict): The closed commitment object
+            - error (str, optional): Error message if close failed
+
+    Emits:
+        Event: "commitment_closed" with commitment details.
+    """
     try:
         brain = get_brain_path()
         commitment = commitment_ledger.close_commitment(brain, comm_id, method)
@@ -115,7 +152,25 @@ def _close_commitment(comm_id: str, method: str) -> Dict:
         return {"error": str(e)}
 
 def _get_commitment_health() -> Dict:
-    """Get commitment health summary for Satellite View."""
+    """Get commitment health summary for Satellite View.
+
+    Analyzes the commitment ledger to determine overall health status
+    based on the distribution of commitments across tiers. Health is
+    determined by:
+    - 🔴 NEEDS ATTENTION: Any red-tier commitments
+    - 🟡 WATCH: More than 2 yellow-tier commitments
+    - 🟢 HEALTHY: Otherwise
+
+    Returns:
+        Dict: Health summary containing:
+            - total_open (int): Total number of open commitments
+            - green (int): Number of green-tier commitments
+            - yellow (int): Number of yellow-tier commitments
+            - red (int): Number of red-tier commitments
+            - health_status (str): Emoji-coded health status
+            - last_scan (str, optional): ISO timestamp of last scan
+            - error (str, optional): Error message if query failed
+    """
     try:
         brain = get_brain_path()
         ledger = commitment_ledger.load_ledger(brain)

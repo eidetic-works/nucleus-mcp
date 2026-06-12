@@ -86,7 +86,8 @@ _INFLIGHT_SPAWNS: Dict[str, Dict[str, Any]] = {}
 
 
 def spawn_prep(role: str, brief: str, model: str, parent: str,
-               charters_dir: Optional[Path] = None
+               charters_dir: Optional[Path] = None,
+               session_id: Optional[str] = None,
                ) -> Tuple[str, str]:
     """Phase 1 of spawn_and_emit. Returns `(prompt, spawn_id)`.
 
@@ -94,7 +95,13 @@ def spawn_prep(role: str, brief: str, model: str, parent: str,
     then calls `spawn_close(spawn_id, response_text)` to close the loop.
 
     Emits `agent_spawn` event with payload:
-      {spawn_id, role, model, parent, prompt_chars, brief_chars, charter_path}
+      {spawn_id, role, model, parent, prompt_chars, brief_chars, charter_path,
+       session_id (optional)}
+
+    `session_id` lets long-lived persistent sub-agents (L3 Sonnet pairs) stamp
+    their per-process UUID on every spawn event, so audit tooling can roll up
+    busy% per pair without inferring identity from the parent. Ephemeral L1
+    callers can omit it.
     """
     prompt, metadata = assemble_prompt(role, brief, charters_dir=charters_dir)
     spawn_id = _new_spawn_id()
@@ -108,6 +115,8 @@ def spawn_prep(role: str, brief: str, model: str, parent: str,
         "charter_path": metadata["charter_path"],
         "started_at_ms": int(time.time() * 1000),
     }
+    if session_id is not None:
+        spawn_data["session_id"] = session_id
     _INFLIGHT_SPAWNS[spawn_id] = spawn_data
     try:
         from .event_ops import _emit_event

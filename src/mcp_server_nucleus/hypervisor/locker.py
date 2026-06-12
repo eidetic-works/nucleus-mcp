@@ -177,6 +177,47 @@ class Locker:
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to set xattr {key}: {e}")
 
+    def unlock_then_rm(self, path: str) -> dict:
+        """Unlock and remove a file or directory tree, freeing bytes.
+
+        Designed for the backup-dir rotation scenario: a locked backup dir
+        needs to be unlocked before shutil.rmtree can remove it on macOS.
+
+        Returns a dict with keys:
+          success (bool), bytes_freed (int), error (str | None)
+        """
+        if not os.path.exists(path):
+            return {"success": False, "bytes_freed": 0, "error": "path not found"}
+
+        # Compute size before removal
+        import shutil
+        bytes_freed = 0
+        try:
+            if os.path.isfile(path):
+                bytes_freed = os.path.getsize(path)
+            else:
+                for dirpath, _dirs, files in os.walk(path):
+                    for f in files:
+                        try:
+                            bytes_freed += os.path.getsize(os.path.join(dirpath, f))
+                        except OSError:
+                            pass
+        except OSError:
+            pass
+
+        # Unlock first (idempotent — noop if not locked)
+        self.unlock(path)
+
+        # Remove
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+            else:
+                shutil.rmtree(path)
+            return {"success": True, "bytes_freed": bytes_freed, "error": None}
+        except Exception as e:
+            return {"success": False, "bytes_freed": 0, "error": str(e)}
+
     def get_metadata(self, path: str) -> dict:
         """Retrieves lock metadata from xattrs (macOS/Linux)."""
         if not os.path.exists(path):

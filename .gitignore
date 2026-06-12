@@ -63,8 +63,9 @@ secrets/
 # Cloudflare local dev cache
 .wrangler/
 
-# Override parent gitignore rule that ignores test_*.py
-!tests/test_*.py
+# Scratch test files at THIS directory's root only (anchored — cannot
+# reach tests/ subdirs). Parent repo .gitignore anchors its own /test_*.py.
+/test_*.py
 
 # Test brain instances
 .brain_test*/

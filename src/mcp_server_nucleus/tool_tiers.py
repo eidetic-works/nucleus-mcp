@@ -35,7 +35,7 @@ TIER_0_LAUNCH: Set[str] = {
     # ═══════════════════════════════════════════════════════════════════════
     "nucleus_engrams",           # Memory: write, query, search, health, version, morning brief
     "nucleus_governance",        # Governance: lock, unlock, watch, audit, hypervisor, mode
-    "nucleus_align",             # Human corrections: correct, approve, stats (Three Frontiers)
+    # nucleus_align removed 2026-06-11 sweep #006 (hard-DEAD-IN-CODE, no callers).
 }
 
 TIER_1_CORE: Set[str] = {
@@ -46,7 +46,7 @@ TIER_1_CORE: Set[str] = {
     "nucleus_sessions",          # Session management (save, resume, start, checkpoint, etc.)
     "nucleus_sync",              # Multi-agent sync (identify, sync_now, read/write artifacts)
     "nucleus_orchestration",     # Core orchestration (satellite, commitments, loops, metrics)
-    "nucleus_archive",           # Training pipeline: SFT/DPO, deltas, frontier health
+    # nucleus_archive removed 2026-06-11 sweep #006 (DEAD-IN-REGISTRY, never imported).
     "nucleus_observability",     # Telemetry, Prometheus, performance metrics
 }
 
@@ -58,6 +58,7 @@ TIER_2_ADVANCED: Set[str] = {
     "nucleus_features",          # Feature map + proofs + mounter (add, list, mount, proof)
     "nucleus_infra",             # Infrastructure (gcloud, strategy, file changes, export)
     "nucleus_agents",            # Agent management (spawn, critique, dashboard, ingest)
+    "nucleus_relay_subscribe",   # Native MCP notifications — long-poll inbox-arrival push (FOUNDER-OVERRIDE 2026-05-31)
 }
 
 # =============================================================================

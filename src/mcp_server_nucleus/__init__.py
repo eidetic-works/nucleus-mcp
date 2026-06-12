@@ -43,26 +43,29 @@ os.environ["FASTMCP_SHOW_CLI_BANNER"] = "False"
 os.environ["FASTMCP_LOG_LEVEL"] = "WARNING"
 
 # Epic 5B: Strict Privilege Separation Assertion (Layer 5)
+# Suppressed for solo/default users to reduce noise on every CLI invocation.
+# Set NUCLEUS_PRIVILEGE_WARNING=1 to re-enable, or run with --verbose.
+_show_priv_warning = os.environ.get("NUCLEUS_PRIVILEGE_WARNING", "0") == "1"
 try:
-    if os.geteuid() != 0:
+    if os.geteuid() != 0 and _show_priv_warning:
         _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
         if not _is_quiet:
             logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged.")
             logger_init.warning("    The Watchdog can be terminated by local agents (UID collision).")
             logger_init.warning("    For active defense, install via `sudo scripts/install_nucleus_daemon.sh`")
-            
-            # Suppress stderr printing if JSON or quiet output is requested to keep stdout clean for agents
+
             sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged. Watchdog can be killed.\n")
             sys.stderr.flush()
 except AttributeError:
     # Windows fallback (os.geteuid doesn't exist)
-    import ctypes
-    if not ctypes.windll.shell32.IsUserAnAdmin():
-        _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
-        if not _is_quiet:
-            logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged (Non-Admin).")
-            sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged (Non-Admin).\n")
-            sys.stderr.flush()
+    if _show_priv_warning:
+        import ctypes
+        if not ctypes.windll.shell32.IsUserAnAdmin():
+            _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv)
+            if not _is_quiet:
+                logger_init.warning("🚨 INSECURE MODE: Nucleus is running unprivileged (Non-Admin).")
+                sys.stderr.write("[Nucleus] 🚨 INSECURE MODE: Running unprivileged (Non-Admin).\n")
+                sys.stderr.flush()
 
 # from fastmcp import FastMCP (Moved to try/except block below)
 

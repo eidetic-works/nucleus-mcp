@@ -285,7 +285,7 @@ def register_resources(mcp, helpers):
             path = Path(get_brain_path()) / "flywheel" / "thesis.md"
             if path.exists():
                 return path.read_text()
-            return "# Flywheel thesis not yet seeded.\n\nRun nucleus_flywheel to bootstrap `.brain/flywheel/`."
+            return "# Flywheel thesis not yet seeded.\n\nSeed it at `.brain/flywheel/thesis.md` to populate this resource."
         except Exception as e:
             return f"error: {e}"
 

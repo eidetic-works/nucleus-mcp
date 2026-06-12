@@ -58,6 +58,15 @@ class LocalSQLiteStore:
     def search(self, query: str, limit: int) -> List[Dict]:
         # Simplest possible keyword search for local fallback
         # In a real scenario, this would use FTS5 or local embeddings
+        # NOTE for future-FTS5 migrator: if migrating from LIKE ? to FTS5
+        # MATCH ?, apply the Bug #3 try-then-retry pattern. Literal-input
+        # callers passing tokens FTS5 parses as syntax (e.g. `tb.py`,
+        # `feat/foo`, anything containing `.` / `/` / `-`) raise
+        # `fts5: syntax error`. Reference fix: eidetic-daemon
+        # internal/store/store.go Search() (PR #77 / 3c3fa72) — try as-is,
+        # retry once with phrase-quoting (`"..."` with `""`-escape doubling)
+        # on FTS5 syntax error. FTS5's own error string is the discriminator;
+        # context cancellation + other DB errors propagate unchanged.
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(

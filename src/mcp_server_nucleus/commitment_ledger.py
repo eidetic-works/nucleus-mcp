@@ -13,11 +13,26 @@ from .runtime.storage import read_brain_file, write_brain_file, brain_file_exist
 from .runtime.locking import get_lock
 
 def get_ledger_path(brain_path: Path) -> Path:
-    """Get path to commitment ledger"""
+    """Get path to commitment ledger file.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Path: Path to commitments/ledger.json.
+    """
     return brain_path / "commitments" / "ledger.json"
 
 def load_ledger(brain_path: Path) -> Dict:
-    """Load commitment ledger from disk"""
+    """Load commitment ledger from disk.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Ledger dictionary with commitments, stats, and metadata.
+            Returns default empty ledger if file doesn't exist.
+    """
     ledger_path = get_ledger_path(brain_path)
     
     if brain_file_exists(ledger_path):
@@ -42,14 +57,31 @@ def load_ledger(brain_path: Path) -> Dict:
     }
 
 def save_ledger(brain_path: Path, ledger: Dict) -> None:
-    """Save commitment ledger to disk"""
+    """Save commitment ledger to disk.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        ledger (Dict): Ledger dictionary to save.
+    """
     ledger_path = get_ledger_path(brain_path)
     write_brain_file(ledger_path, json.dumps(ledger, indent=2))
 
 def analyze_context(description: str, source_file: str) -> Dict:
-    """
-    Analyze commitment context for routing decisions.
-    Returns novelty, dopamine, urgency, emotional_load.
+    """Analyze commitment context for routing decisions.
+
+    Analyzes description to determine novelty, dopamine level, urgency,
+    and emotional load for intelligent task routing.
+
+    Args:
+        description (str): Commitment description text.
+        source_file (str): Source file path for context.
+
+    Returns:
+        Dict: Context analysis containing:
+            - novelty (str): "high", "medium", or "low"
+            - dopamine (str): "high", "medium", or "low"
+            - urgency (str or None): "high", "medium", or None
+            - emotional_load (int): 0-10 score based on guilt triggers
     """
     desc_lower = description.lower()
     
@@ -93,9 +125,16 @@ def analyze_context(description: str, source_file: str) -> Dict:
     }
 
 def suggest_action(commitment: Dict) -> tuple[str, str]:
-    """
-    Suggest closure action based on context and age.
-    Returns (action, reason) tuple.
+    """Suggest closure action based on context and age.
+
+    Args:
+        commitment (Dict): Commitment dictionary with age and context.
+
+    Returns:
+        tuple[str, str]: (action, reason) where action is one of:
+            - "archive": For stale items (>30 days)
+            - "schedule": For items needing focused time
+            - "do_now": For urgent or quick-win items
     """
     age = commitment["age_days"]
     context = commitment["context"]
@@ -139,19 +178,20 @@ def add_commitment(
     priority: int = 3,
     required_skills: List[str] = None
 ) -> Dict:
-    """
-    Add a new commitment to the ledger.
-    Returns the created commitment.
-    
+    """Add a new commitment to the ledger.
+
     Args:
-        brain_path: Path to brain directory
-        source_file: File where commitment was found
-        source_line: Line number in source file
-        description: What the commitment is
-        comm_type: Type of commitment (task, todo, draft, decision)
-        source: Where it came from (auto_detected, manual, migrated)
-        priority: 1-5, lower is higher priority
-        required_skills: Skills needed to complete
+        brain_path (Path): Path to brain directory.
+        source_file (str): File where commitment was found.
+        source_line (int): Line number in source file.
+        description (str): What the commitment is.
+        comm_type (str): Type of commitment (task, todo, draft, decision).
+        source (str): Where it came from (auto_detected, manual, migrated).
+        priority (int): 1-5, lower is higher priority. Default 3.
+        required_skills (List[str], optional): Skills needed to complete.
+
+    Returns:
+        Dict: The created commitment dictionary with all fields populated.
     """
     # Transaction: Read -> Modify -> Write protected by Lock
     with get_lock("ledger", brain_path).section():
@@ -208,9 +248,17 @@ def add_commitment(
     return commitment
 
 def update_commitment_ages(brain_path: Path) -> Dict:
-    """
-    Update age and tier for all open commitments.
-    Returns updated ledger with stats.
+    """Update age and tier for all open commitments.
+
+    Recalculates age_days for all open commitments and updates their tier
+    based on age (green <3 days, yellow <7 days, red >=7 days).
+    Also updates statistics.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Updated ledger with stats.
     """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
@@ -261,9 +309,18 @@ def close_commitment(
     comm_id: str,
     method: str
 ) -> Dict:
-    """
-    Close a commitment with specified method.
-    Returns updated commitment.
+    """Close a commitment with specified method.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        comm_id (str): Unique commitment identifier.
+        method (str): Closure method (completed, cancelled, deferred, etc.).
+
+    Returns:
+        Dict: The updated commitment with status="closed".
+
+    Raises:
+        ValueError: If commitment with comm_id is not found.
     """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
@@ -283,23 +340,51 @@ def close_commitment(
 # ============================================================
 
 def get_challenge_path(brain_path: Path) -> Path:
-    """Get path to weekly challenge file"""
+    """Get path to weekly challenge file.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Path: Path to challenges/current_challenge.json.
+    """
     return brain_path / "challenges" / "current_challenge.json"
 
 def load_challenge(brain_path: Path) -> Dict:
-    """Load current weekly challenge"""
+    """Load current weekly challenge.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Challenge dictionary or None if no challenge is set.
+    """
     path = get_challenge_path(brain_path)
     if brain_file_exists(path):
         return json.loads(read_brain_file(path))
     return None
 
 def set_challenge(brain_path: Path, challenge: Dict) -> None:
-    """Set current weekly challenge"""
+    """Set current weekly challenge.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        challenge (Dict): Challenge dictionary to save.
+    """
     path = get_challenge_path(brain_path)
     write_brain_file(path, json.dumps(challenge, indent=2))
 
 def get_starter_challenges() -> List[Dict]:
-    """Get list of starter challenges"""
+    """Get list of starter challenges.
+
+    Returns:
+        List[Dict]: Pre-defined challenge templates including:
+            - Red Slayer: Close 3 red-tier items
+            - Draft Finisher: Turn 2 drafts into published docs
+            - Frog Eater: Close 1 item older than 20 days
+            - Inbox Zero: Get total open loops under 5
+            - Quick Wins: Close 5 green-tier items in one day
+    """
     return [
         {
             "id": "red_slayer",
@@ -347,7 +432,14 @@ def get_starter_challenges() -> List[Dict]:
     ]
 
 def check_challenge_progress(brain_path: Path) -> Dict:
-    """Check progress on current challenge"""
+    """Check progress on current challenge.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Progress status or None if no challenge is active.
+    """
     challenge = load_challenge(brain_path)
     if not challenge:
         return None
@@ -366,20 +458,50 @@ def check_challenge_progress(brain_path: Path) -> Dict:
 # ============================================================
 
 def get_patterns_path(brain_path: Path) -> Path:
+    """Get path to learned patterns file.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Path: Path to patterns/learned_patterns.json.
+    """
     return brain_path / "patterns" / "learned_patterns.json"
 
 def load_patterns(brain_path: Path) -> List[Dict]:
+    """Load learned patterns from disk.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        List[Dict]: List of learned patterns or empty list if none exist.
+    """
     path = get_patterns_path(brain_path)
     if brain_file_exists(path):
         return json.loads(read_brain_file(path))
     return []
 
 def save_patterns(brain_path: Path, patterns: List[Dict]) -> None:
+    """Save learned patterns to disk.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        patterns (List[Dict]): List of patterns to save.
+    """
     path = get_patterns_path(brain_path)
     write_brain_file(path, json.dumps(patterns, indent=2))
 
 def suggest_pattern_action(commitment: Dict, patterns: List[Dict]) -> Optional[tuple]:
-    """Suggest action based on learned patterns"""
+    """Suggest action based on learned patterns.
+
+    Args:
+        commitment (Dict): Commitment dictionary to analyze.
+        patterns (List[Dict]): List of learned patterns.
+
+    Returns:
+        Optional[tuple]: (action, reason) if pattern matches, else None.
+    """
     # Simple keyword matching for MVP
     desc = commitment["description"].lower()
     
@@ -390,7 +512,18 @@ def suggest_pattern_action(commitment: Dict, patterns: List[Dict]) -> Optional[t
     return None
 
 def learn_patterns(brain_path: Path) -> List[Dict]:
-    """Analyze closed commitments to learn patterns"""
+    """Analyze closed commitments to learn patterns.
+
+    Analyzes closed commitments to detect successful patterns:
+    If 3+ items with same keyword were closed using same method,
+    creates a new learned pattern.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        List[Dict]: Updated list of learned patterns.
+    """
     ledger = load_ledger(brain_path)
     closed = [c for c in ledger["commitments"] if c["status"] == "closed"]
     patterns = load_patterns(brain_path)
@@ -431,7 +564,22 @@ def learn_patterns(brain_path: Path) -> List[Dict]:
 # ============================================================
 
 def calculate_metrics(brain_path: Path) -> Dict:
-    """Calculate coordination metrics (velocity, load, trends)"""
+    """Calculate coordination metrics (velocity, load, trends).
+
+    Computes closure velocity, average days to close, closure rates by type,
+    current mental load, and value ratio.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Metrics containing:
+            - velocity_7d (int): Items closed in last 7 days
+            - avg_days_to_close (float): Average days to close
+            - closure_rates (Dict): Percentage breakdown by type
+            - current_load (Dict): Total open and red-tier counts
+            - value_ratio (Dict): Value Ratio metric from MDR_010
+    """
     ledger = load_ledger(brain_path)
     commitments = ledger["commitments"]
     
@@ -488,28 +636,55 @@ def calculate_metrics(brain_path: Path) -> Dict:
 # ============================================================
 
 def record_interaction(brain_path: Path) -> None:
-    """Record a user interaction timestamp (MDR_010)"""
+    """Record a user interaction timestamp (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["last_interaction"] = datetime.now().isoformat()
         save_ledger(brain_path, ledger)
 
 def increment_notifications(brain_path: Path, count: int = 1) -> None:
-    """Increment notifications sent counter (MDR_010)"""
+    """Increment notifications sent counter (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        count (int): Number to increment by. Default 1.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["notifications_sent"] = ledger.get("notifications_sent", 0) + count
         save_ledger(brain_path, ledger)
 
 def mark_high_impact_closure(brain_path: Path) -> None:
-    """Increment high-impact closures counter (MDR_010)"""
+    """Increment high-impact closures counter (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["high_impact_closed"] = ledger.get("high_impact_closed", 0) + 1
         save_ledger(brain_path, ledger)
 
 def calculate_value_ratio(brain_path: Path) -> Dict:
-    """Calculate Value Ratio metric (MDR_010)"""
+    """Calculate Value Ratio metric (MDR_010).
+
+    Value Ratio = high_impact_closures / notifications_sent.
+    Measures notification effectiveness.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Value ratio data containing:
+            - notifications_sent (int): Total notifications sent
+            - high_impact_closed (int): High-impact closures
+            - ratio (float or None): Calculated ratio
+            - verdict (str): Quality assessment with emoji
+    """
     ledger = load_ledger(brain_path)
     notifications = ledger.get("notifications_sent", 0)
     high_impact = ledger.get("high_impact_closed", 0)
@@ -536,23 +711,43 @@ def calculate_value_ratio(brain_path: Path) -> Dict:
     }
 
 def record_manual_override(brain_path: Path, reason: str = "") -> None:
-    """Record when user fights/overrides the system (MDR_010)"""
+    """Record when user fights/overrides the system (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        reason (str): Optional reason for the override.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["manual_overrides_count"] = ledger.get("manual_overrides_count", 0) + 1
         save_ledger(brain_path, ledger)
 
 def estimate_time_saved(brain_path: Path, minutes: int) -> None:
-    """Add estimated time saved to running total (MDR_010)"""
+    """Add estimated time saved to running total (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        minutes (int): Minutes of time saved to add.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["estimated_time_saved_minutes"] = ledger.get("estimated_time_saved_minutes", 0) + minutes
         save_ledger(brain_path, ledger)
 
 def get_weekly_summary(brain_path: Path) -> Dict:
-    """
-    Generate Sunday weekly summary with time saved (MDR_010).
-    Returns metrics for the weekly briefing.
+    """Generate Sunday weekly summary with time saved (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Weekly summary metrics including:
+            - velocity_7d (int): Closure velocity
+            - avg_days_to_close (float): Average days to close
+            - value_ratio (Dict): Value ratio metric
+            - estimated_time_saved_hours (float): Total time saved
+            - manual_overrides (int): Override count
+            - friction_score (str): LOW/MEDIUM/HIGH
     """
     ledger = load_ledger(brain_path)
     metrics = calculate_metrics(brain_path)
@@ -575,7 +770,14 @@ def get_weekly_summary(brain_path: Path) -> Dict:
     }
 
 def get_days_since_interaction(brain_path: Path) -> int:
-    """Get days since last user interaction (MDR_010)"""
+    """Get days since last user interaction (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        int: Days since last interaction, or -1 if never interacted.
+    """
     ledger = load_ledger(brain_path)
     last = ledger.get("last_interaction")
     if not last:
@@ -585,7 +787,17 @@ def get_days_since_interaction(brain_path: Path) -> int:
     return (datetime.now() - last_dt).days
 
 def check_kill_switch(brain_path: Path) -> Dict:
-    """Check if Kill Switch should activate (MDR_010)"""
+    """Check if Kill Switch should activate (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Kill switch status containing:
+            - action (str): "paused", "escalate", "warn", or "continue"
+            - message (str): Human-readable status message
+            - days_inactive (int, optional): Days since last interaction
+    """
     ledger = load_ledger(brain_path)
     days = get_days_since_interaction(brain_path)
     paused = ledger.get("notifications_paused", False)
@@ -609,32 +821,59 @@ def check_kill_switch(brain_path: Path) -> Dict:
         return {"action": "continue", "days_inactive": days}
 
 def pause_notifications(brain_path: Path) -> None:
-    """Pause all notifications (Kill Switch activated)"""
+    """Pause all notifications (Kill Switch activated).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["notifications_paused"] = True
         save_ledger(brain_path, ledger)
 
 def resume_notifications(brain_path: Path) -> None:
-    """Resume notifications after pause"""
+    """Resume notifications after pause.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+    """
     with get_lock("ledger", brain_path).section():
         ledger = load_ledger(brain_path)
         ledger["notifications_paused"] = False
         save_ledger(brain_path, ledger)
 
 def get_feedback_path(brain_path: Path) -> Path:
-    """Get path to feedback log"""
+    """Get path to feedback log.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Path: Path to commitments/feedback_log.json.
+    """
     return brain_path / "commitments" / "feedback_log.json"
 
 def load_feedback(brain_path: Path) -> List[Dict]:
-    """Load feedback log"""
+    """Load feedback log.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        List[Dict]: List of feedback entries or empty list if none exist.
+    """
     path = get_feedback_path(brain_path)
     if brain_file_exists(path):
         return json.loads(read_brain_file(path))
     return []
 
 def save_feedback(brain_path: Path, feedback: List[Dict]) -> None:
-    """Save feedback log"""
+    """Save feedback log.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        feedback (List[Dict]): List of feedback entries to save.
+    """
     path = get_feedback_path(brain_path)
     write_brain_file(path, json.dumps(feedback, indent=2))
 
@@ -644,7 +883,17 @@ def record_feedback(
     score: int,
     response_time_seconds: int = None
 ) -> Dict:
-    """Record user feedback on a notification (MDR_010)"""
+    """Record user feedback on a notification (MDR_010).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+        notification_type (str): Type of notification.
+        score (int): Feedback score (1-5 or 0/1 for Y/N).
+        response_time_seconds (int, optional): Time to respond in seconds.
+
+    Returns:
+        Dict: The recorded feedback entry.
+    """
     # Feedback log also needs locking if simultaneous
     with get_lock("feedback", brain_path).section():
         feedback = load_feedback(brain_path)
@@ -674,9 +923,16 @@ def record_feedback(
 # ============================================================
 
 def scan_for_commitments(brain_path: Path) -> Dict:
-    """
-    Scan artifacts for new commitments using ripgrep.
-    Returns stats of scan.
+    """Scan artifacts for new commitments using ripgrep.
+
+    Scans the brain directory for unchecked checklist items in markdown files
+    and adds them to the commitment ledger if not already present.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        Dict: Scan results containing "new_found" count or "error" if failed.
     """
     # Scan artifacts folder (was artifacts_path, now root to catch task.md)
     artifacts_path = brain_path
@@ -740,9 +996,13 @@ def scan_for_commitments(brain_path: Path) -> Dict:
     return {"new_found": count}
 
 def auto_archive_stale(brain_path: Path) -> int:
-    """
-    Automatically archive commitments older than 30 days.
-    Returns count of archived items.
+    """Automatically archive commitments older than 30 days.
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        int: Count of archived items.
     """
     ledger = load_ledger(brain_path)
     archived_count = 0
@@ -770,7 +1030,14 @@ def auto_archive_stale(brain_path: Path) -> int:
 # ============================================================
 
 def load_brainignore(brain_path: Path) -> List[str]:
-    """Load matching patterns from .brain/.brainignore"""
+    """Load matching patterns from .brain/.brainignore (MDR_008).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        List[str]: List of ignore patterns (including defaults).
+    """
     ignore_file = brain_path / ".brainignore"
     patterns = []
     
@@ -789,9 +1056,13 @@ def load_brainignore(brain_path: Path) -> List[str]:
     return patterns
 
 def export_brain(brain_path: Path) -> str:
-    """
-    Export brain content to a zip file, respecting .brainignore.
-    Returns path to export file.
+    """Export brain content to a zip file, respecting .brainignore (MDR_008).
+
+    Args:
+        brain_path (Path): Path to brain directory.
+
+    Returns:
+        str: Message with export file name and file count.
     """
     import zipfile
     import fnmatch

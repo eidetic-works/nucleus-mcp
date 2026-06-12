@@ -5,12 +5,17 @@ from pathlib import Path
 
 def get_shell_profile():
     """Detect shell and return corresponding profile path."""
+    import platform
     shell = os.environ.get('SHELL', '')
     home = Path.home()
     
     if 'zsh' in shell:
         return home / '.zshrc'
     elif 'bash' in shell:
+        # On Linux (Ubuntu, Debian, etc.), interactive terminals source .bashrc,
+        # not .bash_profile. Prefer .bashrc on Linux for env vars to take effect.
+        if platform.system() == 'Linux':
+            return home / '.bashrc'
         bash_profile = home / '.bash_profile'
         if bash_profile.exists():
             return bash_profile
@@ -45,10 +50,7 @@ def install_nucleus_path(dry_run=False):
         path_exports += f'export NUCLEUS_BRAIN_PATH="{portable_brain}"\n'
     else:
         path_exports += f'export NUCLEUS_BRAIN_PATH="{brain_path}"\n'
-    
-    # Alias for legacy support
-    path_exports += 'export NUCLEUS_BRAIN_PATH="$NUCLEUS_BRAIN_PATH"\n'
-    
+
     # Autocompletion Integration
     runtime_dir = Path(__file__).parent / "runtime"
     completion_script = runtime_dir / "completions.sh"
