@@ -4362,12 +4362,15 @@ def main():
             except Exception:
                 pass
 
-    # ── Anonymous telemetry: first-run notice (one-time, silent on failure) ──
-    try:
-        from .runtime.anon_telemetry import show_first_run_notice
-        show_first_run_notice()
-    except Exception:
-        pass
+    # ── Anonymous telemetry: opt-in prompt fires ONLY on `nucleus init` ──
+    # (per cc-main advice 2026-06-14 + peer crack PR #572: firing on every CLI
+    # invocation would write stray .brain/config/nucleus.yaml from random cwds)
+    if cli_command == 'init':
+        try:
+            from .runtime.anon_telemetry import show_first_run_prompt
+            show_first_run_prompt()
+        except Exception:
+            pass
 
     _cli_t0 = time.perf_counter()
 
