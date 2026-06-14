@@ -1,6 +1,6 @@
 """Nucleus Runtime — Anonymous Usage Telemetry.
 
-Opt-out anonymous telemetry that sends aggregate command-level data
+Opt-IN anonymous telemetry that sends aggregate command-level data
 to telemetry.nucleusos.dev so the Nucleus team can understand real-world
 usage patterns. Uses a SEPARATE OTel pipeline from the user's enterprise
 OTel config (otel_export.py) — zero interference.
@@ -13,6 +13,10 @@ What is sent:
     - nucleus version
     - python version
     - OS platform
+    - is_ci (bool, derived from CI env var) — separates CICD noise from real users
+    - is_claude_code (bool, derived from CLAUDECODE env var)
+    - install_id (random per-machine UUID at ~/.config/nucleus/install_id)
+      — NOT tied to user identity; lets us count unique installs without naming them
 
 What is NEVER sent:
     - engram content, file paths, org docs
@@ -20,12 +24,14 @@ What is NEVER sent:
     - API keys or any user-identifiable data
 
 Config (priority order):
-    1. Env var NUCLEUS_ANON_TELEMETRY=false  (highest — overrides everything)
-    2. .brain/config/nucleus.yaml → telemetry.anonymous.enabled: false
-    3. Default: enabled (opt-out model)
+    1. Env var NUCLEUS_ANON_TELEMETRY=true  (highest — explicit opt-in or opt-out)
+    2. .brain/config/nucleus.yaml → telemetry.anonymous.enabled: true
+    3. Default: DISABLED (opt-in model)
 
-Opt out:
-    nucleus config --no-telemetry
+Opt in:
+    nucleus config --telemetry        # persistent, writes to nucleus.yaml
+    export NUCLEUS_ANON_TELEMETRY=true       # one-off session
+    # OR answer 'y' to the one-time prompt on `nucleus init`
 
 NOTE FOR FUTURE-SELF (AND AI TOOLS):
     This module is part of the "danger set" (telemetry kernel powering autonomy).
@@ -99,7 +105,7 @@ def _get_endpoint() -> str:
 def is_anon_telemetry_enabled() -> bool:
     """Check if anonymous telemetry is enabled.
 
-    Priority: env var > yaml config > default (True).
+    Priority: env var > yaml config > default (False — opt-in model).
     """
     global _config_checked, _enabled_cache
 
@@ -126,10 +132,10 @@ def is_anon_telemetry_enabled() -> bool:
         _enabled_cache = bool(yaml_val)
         return _enabled_cache
 
-    # 3. Default: enabled
+    # 3. Default: disabled (opt-in model)
     _config_checked = True
-    _enabled_cache = True
-    return True
+    _enabled_cache = False
+    return False
 
 
 def reset_anon_telemetry_state():
@@ -148,6 +154,48 @@ def _get_nucleus_version() -> str:
         return "unknown"
 
 
+def _get_install_id() -> str:
+    """Return a stable per-machine random UUID, persisting it on first call.
+
+    Stored at ~/.config/nucleus/install_id (mode 600). NOT tied to user identity —
+    just a random opaque token so we can deduplicate "this install" from
+    "that install" across spans, without learning who or where.
+    """
+    try:
+        path = Path.home() / ".config" / "nucleus" / "install_id"
+        if path.exists():
+            val = path.read_text(encoding="utf-8").strip()
+            if val:
+                return val
+        path.parent.mkdir(parents=True, exist_ok=True)
+        new_id = uuid.uuid4().hex
+        path.write_text(new_id, encoding="utf-8")
+        try:
+            path.chmod(0o600)
+        except Exception:
+            pass
+        return new_id
+    except Exception:
+        return "unknown"
+
+
+def _is_ci_env() -> bool:
+    """True if running under any common CI/CD environment."""
+    return bool(
+        os.environ.get("CI")
+        or os.environ.get("GITHUB_ACTIONS")
+        or os.environ.get("CIRCLECI")
+        or os.environ.get("GITLAB_CI")
+        or os.environ.get("BUILDKITE")
+        or os.environ.get("TRAVIS")
+    )
+
+
+def _is_claude_code_env() -> bool:
+    """True if running inside a Claude Code session (subprocess inherits CLAUDECODE)."""
+    return bool(os.environ.get("CLAUDECODE"))
+
+
 def _get_static_attributes() -> dict:
     """Static attributes included on every span."""
     return {
@@ -155,6 +203,9 @@ def _get_static_attributes() -> dict:
         "python.version": platform.python_version(),
         "os.platform": sys.platform,
         "os.arch": platform.machine(),
+        "nucleus.install_id": _get_install_id(),
+        "nucleus.is_ci": _is_ci_env(),
+        "nucleus.is_claude_code": _is_claude_code_env(),
     }
 
 
@@ -288,40 +339,94 @@ def shutdown_anon_telemetry(timeout: float = 2.0):
         t.join(timeout=timeout)
 
 
-def show_first_run_notice():
-    """Show a one-time notice about anonymous telemetry on first run.
+def _write_yaml_telemetry_setting(enabled: bool) -> bool:
+    """Write telemetry.anonymous.enabled to nucleus.yaml. Returns True on success."""
+    try:
+        import yaml
+    except ImportError:
+        return False
+    brain = os.environ.get("NUCLEUS_BRAIN_PATH", "")
+    candidates = [
+        Path(brain) / ".brain" / "config" / "nucleus.yaml" if brain else None,
+        Path.cwd() / ".brain" / "config" / "nucleus.yaml",
+        Path.home() / ".brain" / "config" / "nucleus.yaml",
+    ]
+    target = next((p for p in candidates if p), None)
+    if target is None:
+        return False
+    try:
+        existing = {}
+        if target.exists():
+            existing = yaml.safe_load(target.read_text()) or {}
+        existing.setdefault("telemetry", {}).setdefault("anonymous", {})["enabled"] = enabled
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(yaml.safe_dump(existing, sort_keys=False), encoding="utf-8")
+        return True
+    except Exception:
+        return False
 
-    Creates a marker file so the notice is only shown once.
+
+def show_first_run_prompt():
+    """Prompt the user once for opt-IN telemetry consent.
+
+    Skip if:
+      - marker file already exists (user was prompted already), OR
+      - yaml has an explicit anonymous.enabled key (user explicitly configured), OR
+      - env var NUCLEUS_ANON_TELEMETRY is set (explicit per-session choice).
+
+    Otherwise: interactive y/N prompt (defaults to N on EOF / non-tty / any error).
+    Write the user's choice to yaml + create marker so we never ask again.
     """
-    if not is_anon_telemetry_enabled():
+    # Skip if env override is set — that's an explicit per-session decision
+    if os.environ.get("NUCLEUS_ANON_TELEMETRY", "").strip():
         return
 
+    # Skip if yaml already has explicit setting
+    cfg = _read_yaml_config()
+    if cfg.get("telemetry", {}).get("anonymous", {}).get("enabled") is not None:
+        return
+
+    # Skip if marker file present
     brain = os.environ.get("NUCLEUS_BRAIN_PATH", "")
     marker_candidates = [
         Path(brain) / _FIRST_RUN_MARKER if brain else None,
         Path.home() / _FIRST_RUN_MARKER,
     ]
-
     for marker in marker_candidates:
         if marker and marker.exists():
-            return  # Already shown
+            return
 
-    # Show the notice
+    # Show the prompt — default N on EOF / non-tty / any failure
     print(
         "\n"
-        "  📡 Nucleus sends anonymous usage telemetry to improve the product.\n"
-        "     What's sent: command names, durations, version info.\n"
-        "     What's NEVER sent: content, prompts, API keys, file paths.\n"
-        "     Opt out: export NUCLEUS_ANON_TELEMETRY=false\n"
+        "  📡 Help improve Nucleus by sharing anonymous usage telemetry?\n"
+        "     What's sent: command names, durations, version, OS/Python, install_id (random UUID), is_ci flag.\n"
+        "     What's NEVER sent: content, prompts, API keys, file paths, identity.\n"
         "     Details: https://github.com/eidetic-works/nucleus-mcp#telemetry\n"
+        "     You can change this any time via `nucleus config --telemetry` / `--no-telemetry`.\n"
     )
+    enabled = False
+    try:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            resp = input("  Enable anonymous telemetry? [y/N]: ").strip().lower()
+            enabled = resp in ("y", "yes")
+    except Exception:
+        enabled = False  # EOF, KeyboardInterrupt, anything else → default N
 
-    # Create marker
+    # Persist the choice
+    _write_yaml_telemetry_setting(enabled)
+    reset_anon_telemetry_state()  # force re-resolve next call
+
+    # Marker so we never ask again, even if yaml write failed
     for marker in marker_candidates:
         if marker:
             try:
                 marker.parent.mkdir(parents=True, exist_ok=True)
                 marker.touch()
-                return
+                break
             except Exception:
                 continue
+
+
+# Back-compat alias for cli.py callers that imported the old name.
+show_first_run_notice = show_first_run_prompt

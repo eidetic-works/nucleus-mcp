@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-06-14 — "Opt-In Telemetry + Release-Protocol Audit"
+
+### Security / Privacy
+- **Anonymous telemetry is now OPT-IN** (was opt-out since v1.5.1). Default for fresh installs is **disabled**; existing installs honor explicit `telemetry.anonymous.enabled` in `nucleus.yaml` (no forced re-prompt). First `nucleus init` prompts `Enable anonymous telemetry? [y/N]`, defaults to **N** on non-tty / EOF / any error. Privacy contract now matches stated intent.
+
+### Added
+- **Bot / CI / install_id tags on telemetry spans** — `is_ci` (derived from CI / GITHUB_ACTIONS / CIRCLECI / etc.), `is_claude_code` (CLAUDECODE env), `install_id` (random per-machine UUID at `~/.config/nucleus/install_id`, mode 600). Lets server-side queries filter `{is_ci=false}` for real-user signal and dedupe spans per install without learning identity.
+
+### Fixed
+- **sdist tarball 691 MiB → 1 MiB** (99.8% reduction). `[tool.hatch.build.targets.sdist] only-include` was missing; sdist was pulling in `.claude/worktrees/` (Flutter canvaskit wasm + full repo mirror), `extensions/nucleus-bridge/node_modules/` (esbuild binary), etc. `git archive` for public-repo sync was clean (honors `.gitattributes export-ignore`); hatchling sdist had no fence. Now scoped to `src/`, `README.md`, `CHANGELOG.md`, `LICENSE`, `pyproject.toml`.
+- **`mcp_server_nucleus.__version__` returned `1.11.0` in wheel installs** — runtime parsed `pyproject.toml` at import, but wheels don't ship `pyproject.toml`, so always fell through to the hardcoded `1.11.0` fallback. Switched to `importlib.metadata.version("nucleus-mcp")`; the pyproject parse stays as a dev-editable fallback.
+- **Release protocol doc had stale CLI invocation** — `.agent/workflows/release-protocol.md` Step 5 said `nucleus-init /tmp/test-brain` (separate binary, positional); actual CLI is `nucleus init <path>` (subcommand). Updated.
+
 ## [1.13.0] - 2026-06-12 — "Treatment Program + Relay v0.2 Bridge"
 
 ### Added

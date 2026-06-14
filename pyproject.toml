@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.13.0"
+version = "1.13.1"
 description = "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents"
 readme = "README.md"
 authors = [
@@ -63,6 +63,18 @@ nucleus-relay-bridge = "mcp_server_nucleus.runtime.relay.bridge:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_nucleus", "src/nucleus_wedge"]
+
+# sdist defaults to "everything in the repo" — fence to the source-build-needed set.
+# Prior v1.13.0 release uploaded a 691 MiB sdist (Claude worktrees + node_modules + wasm).
+# only-include keeps the archive at ~1-2 MiB while remaining buildable end-to-end.
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "pyproject.toml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

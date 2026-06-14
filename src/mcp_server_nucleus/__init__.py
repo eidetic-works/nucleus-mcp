@@ -2,16 +2,21 @@
 
 # =============================================================================
 # Nucleus Sovereign Control Plane
-# Version sourced from pyproject.toml (single source of truth)
+# Version from installed package metadata (works for both editable + wheel installs).
+# Editable installs read pyproject; wheel installs read packaged metadata.
 # =============================================================================
-import re
-from pathlib import Path
-
 try:
-    _pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
-    __version__ = re.search(r'version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8")).group(1)
+    from importlib.metadata import version as _pkg_version
+    __version__ = _pkg_version("nucleus-mcp")
 except Exception:
-    __version__ = "1.11.0"  # fallback
+    # Editable dev fallback when metadata is unavailable
+    import re
+    from pathlib import Path
+    try:
+        _pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
+        __version__ = re.search(r'version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8")).group(1)
+    except Exception:
+        __version__ = "unknown"
 
 import os
 import json

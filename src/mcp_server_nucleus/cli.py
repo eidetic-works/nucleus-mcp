@@ -311,11 +311,11 @@ def _seed_default_config(brain_path: Path):
             "\n"
             "telemetry:\n"
             "  anonymous:\n"
-            "    enabled: true  # opt out: nucleus config --no-telemetry\n"
+            "    enabled: false  # opt in: nucleus config --telemetry\n"
             "    endpoint: \"https://telemetry.nucleusos.dev:4317\"\n",
             encoding="utf-8",
         )
-        print("  ⚙️  Created config/nucleus.yaml (anonymous telemetry: on)")
+        print("  ⚙️  Created config/nucleus.yaml (anonymous telemetry: off — opt in via `nucleus config --telemetry`)")
 
 
 def init_brain_solo(brain_path: Path) -> bool:
