@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "nucleus": {
+      "type": "http",
+      "url": "https://relay.nucleusos.dev/mcp",
+      "note": "Official Nucleus hosted MCP server. Uses OAuth 2.1 with email-only consent — on first connection the agent is prompted to authorize via browser; no API key to paste. A tenant brain is auto-created with seeded demo data. Tools: engrams (memory), tasks, relay (cross-agent messaging), audit, governance, federation, and more."
+    }
+  }
+}
