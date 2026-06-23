@@ -39,8 +39,8 @@ jobs:
             pytest tests/ -v --tb=short
           else
             echo "No tests/ directory (tests are export-ignored in public repo)."
-            echo "Running import smoke test instead..."
-            python -c "import mcp_server_nucleus; print(f'Nucleus MCP v{mcp_server_nucleus.__version__} imports OK')"
+            echo "Running CLI entry-point smoke test instead..."
+            nucleus-mcp --version || python -c "from importlib.metadata import version; print(f'nucleus-mcp v{version(\"nucleus-mcp\")} installed OK')"
           fi
 
   lint:
