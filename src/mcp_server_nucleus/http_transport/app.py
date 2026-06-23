@@ -50,9 +50,10 @@ from mcp_server_nucleus.http_transport.engram_sync_route import (
     engram_sync_status_route,
 )
 from mcp_server_nucleus.http_transport.oauth_server import oauth_routes as _oauth_routes
+from mcp_server_nucleus.http_transport.readonly_app import get_readonly_app
 
 from starlette.applications import Starlette
-from starlette.routing import Route
+from starlette.routing import Route, Mount
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.middleware import Middleware
@@ -66,6 +67,33 @@ _mcp_path = "/sse" if _transport == "sse" else "/mcp"
 _mcp_app = mcp.http_app(transport=_transport)
 _mcp_app.add_middleware(NucleusTenantMiddleware)
 
+# Read-only MCP endpoint for Microsoft 365 Copilot and other platforms
+# that require readOnlyHint=True on all tools. Mounted at /mcp-readonly.
+# Exposes 4 tools: nucleus_search, nucleus_audit, nucleus_route, nucleus_relay_subscribe.
+_readonly_path = "/mcp-readonly"
+_readonly_app = get_readonly_app(transport=_transport)
+_readonly_app.add_middleware(NucleusTenantMiddleware)
+
+
+# ─── Combined lifespan for main + read-only MCP apps ──────────────────────
+# FastMCP's StreamableHTTPSessionManager requires its lifespan to run to
+# initialize the task group. When mounting a FastMCP app as a sub-app inside
+# another Starlette app, the sub-app's lifespan doesn't run automatically.
+# This combined lifespan runs both lifespans so both MCP instances work.
+import contextlib
+
+@contextlib.asynccontextmanager
+async def _combined_lifespan(app):
+    """Run both the main and read-only MCP app lifespans."""
+    async with contextlib.AsyncExitStack() as stack:
+        # Enter main MCP app lifespan
+        if hasattr(_mcp_app, 'lifespan'):
+            await stack.enter_async_context(_mcp_app.lifespan(app))
+        # Enter read-only MCP app lifespan
+        if hasattr(_readonly_app, 'lifespan'):
+            await stack.enter_async_context(_readonly_app.lifespan(app))
+        yield
+
 
 async def root(request: Request):
     tenant_map_configured = bool(os.environ.get("NUCLEUS_TENANT_MAP"))
@@ -78,6 +106,7 @@ async def root(request: Request):
         "mode": mode,
         "transport": _transport,
         "mcp_endpoint": _mcp_path,
+        "mcp_readonly_endpoint": _readonly_path,
         "jurisdiction": os.environ.get("NUCLEUS_JURISDICTION", "global-default"),
         "auth_required": os.environ.get("NUCLEUS_REQUIRE_AUTH", "false").lower() == "true",
         "oauth_enabled": oauth_enabled,
@@ -173,7 +202,21 @@ _mcp_app.router.routes.insert(10, engram_sync_status_route)
 for _i, _route in enumerate(_oauth_routes):
     _mcp_app.router.routes.insert(9 + _i, _route)
 
-app = _mcp_app
+# Mount the read-only MCP endpoint at /mcp-readonly.
+# This exposes only tools with readOnlyHint=True for Microsoft 365 Copilot
+# and other platforms that restrict to search/fetch operations.
+_mcp_app.router.routes.insert(20, Mount(_readonly_path, app=_readonly_app))
+
+# ─── Build composite top-level app with combined lifespan ────────────────
+# The main _mcp_app already has all routes (health, relay, oauth, MCP, etc.)
+# inserted into its router. We need to ensure BOTH lifespans run, so we
+# create a top-level Starlette app that wraps _mcp_app and runs the combined
+# lifespan. The _mcp_app handles all routing; the lifespan just needs to
+# initialize both MCP session managers.
+app = Starlette(
+    routes=[Mount("/", app=_mcp_app)],
+    lifespan=_combined_lifespan,
+)
 
 
 def serve():
