@@ -1,6 +1,8 @@
 # Microsoft 365 Copilot Federated Connector — Submission Prep
 
-> Status: **BLOCKED** — requires (1) Microsoft BD rep engagement, (2) readOnlyHint strategy decision
+> Status: **READY TO SUBMIT** — read-only endpoint built (`/mcp-readonly`),
+> 4 tools all `readOnlyHint=True`. Remaining: (1) deploy endpoint to VM,
+> (2) apply to Microsoft for Startups for BD rep, (3) submit connector.
 
 ## Submission Path
 
@@ -11,84 +13,71 @@ surfaces content in Copilot experiences (Copilot app, Researcher agent).
 
 **Official docs:** https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/submit-federated-connector
 
-## Prerequisites (BLOCKERS)
+## Prerequisites
 
 1. **Active engagement with a Microsoft business development representative**
    - This is NOT a self-serve submission. We need a BD contact at Microsoft.
-   - Sign-up: Microsoft 365 and Copilot program via Partner Center.
+   - **Path: Apply to Microsoft for Startups Founders Hub** — self-serve
+     application at https://foundershub.startups.microsoft.com/signup
+   - Once approved, you get a dedicated Microsoft point of contact (this IS
+     the BD rep) + Marketplace readiness + co-sell support + up to $150K Azure credits.
+   - No investor referral code needed — there's a "continue without a code" path.
+   - Need: registered business name, website, business address.
 
 2. **Signed legal agreement** permitting Microsoft to use our MCP server and
-   its tools within Microsoft 365 Copilot.
+   its tools within Microsoft 365 Copilot. (Handled by BD rep after Founders Hub approval.)
 
-3. **readOnlyHint requirement** — Microsoft only enables tools with
-   `readOnlyHint: True`. Our current tool annotations:
+3. **readOnlyHint requirement** — RESOLVED. Built `/mcp-readonly` endpoint
+   with exactly 4 read-only tools:
 
-| Tool | readOnlyHint | Would be enabled? |
-|------|-------------|-------------------|
-| nucleus_audit (Audit Log) | True | ✅ Yes |
-| nucleus_route (Cost Router) | True | ✅ Yes |
-| nucleus_relay_subscribe (Relay Subscription) | True | ✅ Yes |
-| nucleus_engrams (Memory & Engrams) | False | ❌ No |
-| nucleus_tasks (Task Management) | False | ❌ No |
-| nucleus_relay (Relay Messaging) | False | ❌ No |
-| nucleus_governance (Governance) | False | ❌ No |
-| nucleus_federation (Federation) | False | ❌ No |
-| nucleus_sessions (Session Management) | False | ❌ No |
-| nucleus_features (Feature Flags) | False | ❌ No |
-| nucleus_sync (Cross-Agent Sync) | False | ❌ No |
-| nucleus_orchestration (Orchestration) | False | ❌ No |
-| nucleus_telemetry (Telemetry) | False | ❌ No |
-| nucleus_slots (Slots & Sprints) | False | ❌ No |
-| nucleus_infra (Infrastructure) | False | ❌ No |
-| nucleus_agents (Agent Spawning) | False | ❌ No |
-| nucleus_ccr_arm (CCR Arm) | False | ❌ No |
+| Tool | readOnlyHint | Description |
+|------|-------------|-------------|
+| nucleus_search (NEW) | True | Search engrams (memory) by substring |
+| nucleus_audit | True | Query/verify tamper-evident audit log |
+| nucleus_route | True | Route prompts to optimal model tier |
+| nucleus_relay_subscribe | True | Long-poll relay inbox subscription |
 
-**Result: Only 3 of 17 tools would be enabled.** This gives a crippled
-experience — just audit log viewing, cost routing, and relay subscription.
-No memory writing, no task management, no relay messaging.
+All 4 tools have `readOnlyHint: True`. Microsoft will enable all 4.
 
-## Options to Resolve the readOnlyHint Blocker
+## Read-Only Endpoint (Option B — BUILT)
 
-### Option A: Submit with 3 read-only tools (fastest, degraded experience)
-- Submit as-is. Microsoft enables only audit_log, cost_router, relay_subscribe.
-- Copilot users can view audit logs, check cost routing, and subscribe to relay
-  channels — but can't write memories, create tasks, or post relay messages.
-- **Pro:** Fast submission once BD contact is established.
-- **Con:** Crippled experience. Users won't see the core value (memory + tasks).
+**Status:** Code committed and verified locally. Not yet deployed to production.
 
-### Option B: Create a read-only MCP endpoint variant (medium effort)
-- Stand up a second MCP endpoint (e.g., `relay.nucleusos.dev/mcp-readonly`)
-  that exposes only the 3 read-only tools + a new `search_engrams` tool with
-  `readOnlyHint: True` (search is read-only even though engram writing isn't).
-- Submit the read-only endpoint to Microsoft.
-- **Pro:** Better experience — users can at least search memories + view audit.
-- **Con:** Still no writing capability. Requires new endpoint + tool split.
+**Endpoint URL (after deploy):** `https://relay.nucleusos.dev/mcp-readonly/`
 
-### Option C: Petition Microsoft for an exception (slow, uncertain)
-- Ask the BD rep to enable write tools despite the readOnlyHint policy.
-- Microsoft's policy exists for safety — they don't want Copilot agents
-  modifying external state without explicit user consent.
-- **Pro:** Full experience if approved.
-- **Con:** Unlikely to succeed. The policy is documented as a hard requirement.
+**Architecture:**
+- `src/mcp_server_nucleus/http_transport/readonly_app.py` — Separate FastMCP
+  instance with only read-only tools
+- `src/mcp_server_nucleus/http_transport/app.py` — Combined lifespan runs
+  both MCP session managers; read-only app mounted at `/mcp-readonly`
+- Root endpoint (`/`) advertises both `mcp_endpoint` and `mcp_readonly_endpoint`
 
-### Option D: Wait for Microsoft to expand support (passive)
-- Microsoft may expand federated connectors to support write tools in the
-  future as the MCP ecosystem matures.
-- Monitor the docs page for policy changes.
-- **Pro:** No effort required.
-- **Con:** Indefinite timeline. May never happen.
+**Deploy commands (operator-keyboard — SSH to VM required):**
+```bash
+REV=05c592d9
+git worktree add --detach /tmp/relay_wt_$REV $REV
+rsync -az --delete \
+  /tmp/relay_wt_$REV/mcp-server-nucleus/src/mcp_server_nucleus/ \
+  ubuntu@<vm-ip>:/opt/nucleus/mcp-server-nucleus/src/mcp_server_nucleus/
+ssh ubuntu@<vm-ip> "echo $REV > /opt/nucleus/mcp-server-nucleus/.deployed_rev \
+  && sudo systemctl restart nucleus-relay \
+  && sleep 2 && curl -fsS http://127.0.0.1:8889/health"
+git worktree remove /tmp/relay_wt_$REV
+# Verify read-only endpoint:
+curl -sS -X POST https://relay.nucleusos.dev/mcp-readonly/ \
+  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'
+```
 
-**Recommendation: Option B** — create a read-only endpoint variant with
-search_engrams (readOnlyHint=True) + audit_log + cost_router + relay_subscribe.
-This gives Copilot users a meaningful experience (search memories, view audit
-logs, subscribe to relay channels) while we wait for Microsoft to expand
-write-tool support.
+**Note:** SSH to the VM (35.226.177.119) times out from the dev machine.
+The VM is behind a firewall that only allows Cloudflare-proxied HTTP.
+Deploy must be run from a machine with SSH access to the VM.
 
-## Required Submission Artifacts (once blockers resolved)
+## Required Submission Artifacts (once BD rep engaged)
 
 | Field | Value |
 |-------|-------|
-| MCP server URL | `https://relay.nucleusos.dev/mcp` (or `/mcp-readonly` for Option B) |
+| MCP server URL | `https://relay.nucleusos.dev/mcp-readonly/` |
 | Connector display name | Nucleus Brain |
 | Short description (≤80 chars) | Persistent memory & cross-agent coordination for AI agents |
 | Synonyms | memory, engrams, tasks, relay, audit, coordination, brain |
@@ -104,16 +93,20 @@ write-tool support.
 
 ## Next Steps
 
-1. **Find a Microsoft BD contact** — via Partner Center enrollment or
-   Microsoft for Startups program. This is the primary blocker.
-2. **Decide on readOnlyHint strategy** (Option A/B/C/D above).
+1. **Deploy `/mcp-readonly` to relay.nucleusos.dev** — run deploy commands
+   from a machine with SSH access to the VM (see above).
+2. **Apply to Microsoft for Startups Founders Hub** —
+   https://foundershub.startups.microsoft.com/signup
+   This gets you a BD rep + up to $150K Azure credits. Self-serve, no
+   investor referral code needed.
 3. **Create logo assets** (192x192 color PNG + 32x32 outline PNG).
 4. **Register OAuth credentials** with Microsoft identity platform.
-5. **Submit** once BD contact + legal agreement are in place.
+5. **Submit connector** once BD rep + legal agreement are in place.
 
 ## Reference
 
 - Submission docs: https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/submit-federated-connector
 - OAuth 2.0 setup: https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/oauth
+- Microsoft for Startups: https://foundershub.startups.microsoft.com/signup
+- Microsoft for Startups overview: https://www.microsoft.com/en-us/startups
 - Partner Center: https://partner.microsoft.com/
-- Microsoft 365 and Copilot program: via Partner Center > Marketplace offers
