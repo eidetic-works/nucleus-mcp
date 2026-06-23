@@ -194,7 +194,12 @@ def get_current_agent(brain_path: Optional[Path] = None) -> str:
         brain_path = get_brain_path()
     
     # Priority 2: Environment detection
-    # Check for IDE-specific environment variables
+    # Explicit NUCLEUS_AGENT_ID beats IDE auto-detection (explicit > implicit).
+    custom_id = os.environ.get("NUCLEUS_AGENT_ID")
+    if custom_id:
+        return custom_id
+
+    # IDE-specific environment variable fallbacks
     if os.environ.get("WINDSURF_SESSION"):
         return "windsurf_auto"
     elif os.environ.get("CURSOR_SESSION"):
@@ -203,11 +208,6 @@ def get_current_agent(brain_path: Optional[Path] = None) -> str:
         return "claude_desktop_auto"
     elif os.environ.get("VSCODE_PID"):
         return "vscode_auto"
-    
-    # Check for custom agent ID
-    custom_id = os.environ.get("NUCLEUS_AGENT_ID")
-    if custom_id:
-        return custom_id
         
     # Priority 3: Explicit registration file (Last Resort / Cold Start)
     agent_file = brain_path / ".nucleus_agent"

@@ -263,7 +263,13 @@ def relay_post(
     relay_dir = _get_relay_dir(to, force_fs=force_fs)
     filename = f"{now.strftime('%Y%m%d_%H%M%S')}_{msg_id}.json"
     path = relay_dir / filename
-    path.write_text(json.dumps(message, indent=2, default=str), encoding="utf-8")
+    # Atomic write: stage to a sibling .tmp (never matches the readers' "*.json"
+    # glob), then os.replace() — atomic on POSIX and Windows. Prevents a
+    # subscriber from reading a half-written file and permanently dropping the
+    # message on a parse failure.
+    tmp_path = relay_dir / f".{filename}.tmp"
+    tmp_path.write_text(json.dumps(message, indent=2, default=str), encoding="utf-8")
+    os.replace(tmp_path, path)
 
     # Implicit ACK on Reply: mark parent message as read by the sender
     if in_reply_to:

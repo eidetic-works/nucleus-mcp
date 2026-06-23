@@ -1,9 +1,10 @@
 """Nucleus Runtime — Anonymous Usage Telemetry.
 
-Opt-IN anonymous telemetry that sends aggregate command-level data
-to telemetry.nucleusos.dev so the Nucleus team can understand real-world
-usage patterns. Uses a SEPARATE OTel pipeline from the user's enterprise
-OTel config (otel_export.py) — zero interference.
+Opt-OUT model (default: enabled): anonymous telemetry is ON by default.
+Opt out via `nucleus config --no-telemetry`.
+Aggregate command-level data is sent to telemetry.nucleusos.dev.
+Uses a SEPARATE OTel pipeline from the user's enterprise OTel config
+(otel_export.py) — zero interference.
 
 What is sent:
     - command name (e.g. "morning-brief", "engram-query")
@@ -24,14 +25,20 @@ What is NEVER sent:
     - API keys or any user-identifiable data
 
 Config (priority order):
-    1. Env var NUCLEUS_ANON_TELEMETRY=true  (highest — explicit opt-in or opt-out)
-    2. .brain/config/nucleus.yaml → telemetry.anonymous.enabled: true
-    3. Default: DISABLED (opt-in model)
+    1. Env var NUCLEUS_ANON_TELEMETRY=false  (highest — explicit per-session opt-out)
+    2. .brain/config/nucleus.yaml → telemetry.anonymous.enabled: true/false
+    3. Default: ENABLED
 
-Opt in:
-    nucleus config --telemetry        # persistent, writes to nucleus.yaml
+Opt out (any of):
+    nucleus config --no-telemetry             # persistent, writes to nucleus.yaml
+    export NUCLEUS_ANON_TELEMETRY=false       # per-session
+    Edit .brain/config/nucleus.yaml: telemetry.anonymous.enabled: false
     export NUCLEUS_ANON_TELEMETRY=true       # one-off session
-    # OR answer 'y' to the one-time prompt on `nucleus init`
+
+Opt out (remains for backward compatibility):
+    nucleus config --no-telemetry            # persistent, writes to nucleus.yaml
+    export NUCLEUS_ANON_TELEMETRY=false      # one-off session
+    # OR edit .brain/config/nucleus.yaml: telemetry.anonymous.enabled: false
 
 NOTE FOR FUTURE-SELF (AND AI TOOLS):
     This module is part of the "danger set" (telemetry kernel powering autonomy).
@@ -105,7 +112,8 @@ def _get_endpoint() -> str:
 def is_anon_telemetry_enabled() -> bool:
     """Check if anonymous telemetry is enabled.
 
-    Priority: env var > yaml config > default (False — opt-in model).
+    Priority: env var > yaml config > default (False — opt-in model per ADR-022
+    default-deny / local-first privacy stance).
     """
     global _config_checked, _enabled_cache
 
@@ -132,10 +140,10 @@ def is_anon_telemetry_enabled() -> bool:
         _enabled_cache = bool(yaml_val)
         return _enabled_cache
 
-    # 3. Default: disabled (opt-in model)
+    # 3. Default: enabled (opt-out model)
     _config_checked = True
-    _enabled_cache = False
-    return False
+    _enabled_cache = True
+    return True
 
 
 def reset_anon_telemetry_state():
@@ -366,16 +374,18 @@ def _write_yaml_telemetry_setting(enabled: bool) -> bool:
         return False
 
 
-def show_first_run_prompt():
-    """Prompt the user once for opt-IN telemetry consent.
+def show_first_run_notice():
+    """Print the one-time anonymous-telemetry disclosure notice.
+
+    Non-interactive: prints the notice + creates a marker file so we never
+    print it again on this machine. Never reads stdin, never writes yaml.
+    Telemetry is ON by default (opt-out model). The notice informs the user
+    how to opt out if they wish.
 
     Skip if:
-      - marker file already exists (user was prompted already), OR
+      - marker file already exists (user was notified already), OR
       - yaml has an explicit anonymous.enabled key (user explicitly configured), OR
       - env var NUCLEUS_ANON_TELEMETRY is set (explicit per-session choice).
-
-    Otherwise: interactive y/N prompt (defaults to N on EOF / non-tty / any error).
-    Write the user's choice to yaml + create marker so we never ask again.
     """
     # Skip if env override is set — that's an explicit per-session decision
     if os.environ.get("NUCLEUS_ANON_TELEMETRY", "").strip():
@@ -396,28 +406,20 @@ def show_first_run_prompt():
         if marker and marker.exists():
             return
 
-    # Show the prompt — default N on EOF / non-tty / any failure
-    print(
-        "\n"
-        "  📡 Help improve Nucleus by sharing anonymous usage telemetry?\n"
-        "     What's sent: command names, durations, version, OS/Python, install_id (random UUID), is_ci flag.\n"
-        "     What's NEVER sent: content, prompts, API keys, file paths, identity.\n"
-        "     Details: https://github.com/eidetic-works/nucleus-mcp#telemetry\n"
-        "     You can change this any time via `nucleus config --telemetry` / `--no-telemetry`.\n"
-    )
-    enabled = False
+    # Print the notice (never blocks, never reads stdin)
     try:
-        if sys.stdin.isatty() and sys.stdout.isatty():
-            resp = input("  Enable anonymous telemetry? [y/N]: ").strip().lower()
-            enabled = resp in ("y", "yes")
+        print(
+            "\n"
+            "  📡 Nucleus collects anonymous usage telemetry. To opt out:\n"
+            "     nucleus config --no-telemetry\n"
+            "     What's sent: command name, duration, version, OS, is_ci flag, random install_id.\n"
+            "     NEVER sent: content, prompts, paths, identity.\n"
+            "     Details: https://github.com/eidetic-works/nucleus-mcp/blob/main/TELEMETRY.md\n"
+        )
     except Exception:
-        enabled = False  # EOF, KeyboardInterrupt, anything else → default N
+        pass  # Even a broken stdout must not block the CLI
 
-    # Persist the choice
-    _write_yaml_telemetry_setting(enabled)
-    reset_anon_telemetry_state()  # force re-resolve next call
-
-    # Marker so we never ask again, even if yaml write failed
+    # Marker so we never print again, even if a subsequent invocation has no tty
     for marker in marker_candidates:
         if marker:
             try:
@@ -429,4 +431,4 @@ def show_first_run_prompt():
 
 
 # Back-compat alias for cli.py callers that imported the old name.
-show_first_run_notice = show_first_run_prompt
+show_first_run_prompt = show_first_run_notice

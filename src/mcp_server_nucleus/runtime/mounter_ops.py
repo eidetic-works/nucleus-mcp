@@ -510,20 +510,43 @@ async def _brain_thanos_snap_impl() -> str:
              
         python_cmd = sys.executable
         
-        results = []
+        mounts = {}
         targets = [
             ("stripe", "stripe"),
             ("postgres", "postgres"),
             ("search", "brave_search")
         ]
         
+        any_connected = False
         for mid, mock_type in targets:
             if mid in mounter.sessions:
-                results.append(f"{mid.capitalize()}: Already Active ✅")
+                mounts[mid] = "already_active"
+                any_connected = True
             else:
-                res = await mounter.mount(mid, python_cmd, [str(mock_script), mock_type])
-                results.append(f"{mid.capitalize()}: {res}")
+                try:
+                    await mounter.mount(mid, python_cmd, [str(mock_script), mock_type])
+                    mounts[mid] = "connected"
+                    any_connected = True
+                except Exception as conn_err:
+                    logger.warning(f"thanos_snap: {mid} unreachable — {conn_err}")
+                    mounts[mid] = "unreachable"
         
+        if not any_connected:
+            return json.dumps({
+                "action": "thanos_snap",
+                "mounts": mounts,
+                "sandbox_flagged": True,
+                "message": "Configure mount endpoints via nucleus mount add <name> <url>"
+            })
+        
+        results = []
+        for mid, status in mounts.items():
+            if status == "already_active":
+                results.append(f"{mid.capitalize()}: Already Active ✅")
+            elif status == "connected":
+                results.append(f"{mid.capitalize()}: Connected ✅")
+            else:
+                results.append(f"{mid.capitalize()}: Unreachable ❌")
         return "✨ Thanos Snap Sequence:\n" + "\n".join(results)
     except Exception as e:
         return f"Error during Thanos Snap: {e}"
@@ -611,4 +634,14 @@ async def _brain_invoke_mounted_tool_impl(server_id: str, tool_name: str, argume
         return json.dumps({"content": content_data})
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+async def _brain_traverse_and_mount_impl(root_mount_id: str) -> str:
+    """Implement brain_traverse_and_mount (recursive discovery on a mounted server)."""
+    try:
+        brain = get_brain_path()
+        mounter = get_mounter(brain)
+        result = await mounter.traverse_and_mount(root_mount_id)
+        return make_response(True, data=result)
+    except Exception as e:
+        return make_response(False, error=str(e))
 

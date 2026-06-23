@@ -1,6 +1,9 @@
 # Export-ignore: files excluded from public archive via git archive
 # Stale CI pipeline (not Nucleus)
 .github/workflows/ci_cd_pipeline.yml export-ignore
+# Private CI — contains pseudonymity-scan with banned identity terms.
+# Public repo uses ci-public.yml instead.
+.github/workflows/ci.yml export-ignore
 
 # Internal tools and private scripts
 scripts/sync_public_repo.sh export-ignore

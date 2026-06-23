@@ -122,6 +122,9 @@ def _add_task(
 ) -> Dict[str, Any]:
     """Create a new task."""
     try:
+        if not description or not str(description).strip():
+            return {"success": False, "error": "Task description cannot be empty"}
+
         storage = get_storage_backend(get_brain_path())
         
         if blocked_by and not skip_dep_check:

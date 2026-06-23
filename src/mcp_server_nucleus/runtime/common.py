@@ -9,6 +9,7 @@ import json
 import logging
 import shutil
 import sys
+from contextvars import ContextVar
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
@@ -78,10 +79,69 @@ def get_nucleus_mcp_command() -> list:
     return [sys.executable, "-m", "mcp_server_nucleus"]
 
 
+# ── Per-request tenant brain path (async-safe) ───────────────────────────
+#
+# ContextVar that holds the brain path for the current async request context.
+# Set by NucleusTenantMiddleware on each HTTP request; checked by
+# get_brain_path() BEFORE os.environ so concurrent multi-tenant requests
+# on a single process don't cross-read each other's brains.
+#
+# os.environ is process-wide and races under async interleaving (one tenant's
+# await-point yields to another tenant's request, which overwrites the env
+# var; the first tenant resumes and reads the wrong brain). ContextVar is
+# per-async-task — each request keeps its own value across await points.
+#
+# CLI/stdio mode: the contextvar is never set, so get_brain_path() falls
+# through to os.environ as before. Backward compatible.
+_tenant_brain_path: ContextVar[Optional[str]] = ContextVar(
+    "nucleus_tenant_brain_path", default=None
+)
+
+
+def set_tenant_brain_path(path: Optional[str]) -> None:
+    """Set the per-request brain path contextvar.
+
+    Called by NucleusTenantMiddleware.dispatch() after resolving the tenant.
+    Pass None to clear (middleware does this in a finally block after the
+    request completes to prevent contextvar leakage).
+    """
+    _tenant_brain_path.set(path)
+
+
 def get_brain_path() -> Path:
-    """Get the brain path from NUCLEUS_BRAIN_PATH env or auto-detect from working directory."""
+    """Get the brain path for the current request context.
+
+    Resolution order:
+      1. Per-request contextvar (set by tenant middleware; async-safe)
+      2. NUCLEUS_BRAIN_PATH env var (process-wide; races under concurrency)
+      3. NUCLEAR_BRAIN_PATH env var (legacy alias)
+      4. Auto-detect .brain in cwd or parent directories
+
+    The contextvar takes precedence because it is the only mechanism that
+    is safe under concurrent multi-tenant async requests on a single
+    process. os.environ is process-wide and can be overwritten by a
+    different tenant's request during an await-point yield.
+    """
+    # 1. Per-request contextvar (async-safe, set by tenant middleware)
+    brain_path = _tenant_brain_path.get()
+    if brain_path:
+        path = Path(brain_path)
+        if not path.exists():
+            try:
+                path.mkdir(parents=True, exist_ok=True)
+                for subdir in ["engrams", "ledger", "sessions", "memory",
+                              "tasks", "artifacts", "proofs", "strategy",
+                              "governance", "channels", "federation"]:
+                    (path / subdir).mkdir(exist_ok=True)
+                logger.info(f"Auto-created brain directory at {path}")
+            except OSError as e:
+                raise ValueError(f"Brain path does not exist and could not be created: {brain_path} ({e})")
+        return path
+
+    # 2-3. Process-wide env vars (races under concurrent multi-tenant load;
+    #      safe for CLI/stdio single-tenant mode)
     brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
-    
+
     if brain_path:
         path = Path(brain_path)
         if not path.exists():
@@ -96,16 +156,16 @@ def get_brain_path() -> Path:
             except OSError as e:
                 raise ValueError(f"Brain path does not exist and could not be created: {brain_path} ({e})")
         return path
-    
+
     # Smart fallback: Find .brain in cwd or parent directories
     cwd = Path.cwd()
     if (cwd / ".brain").exists():
         return cwd / ".brain"
-    
+
     for parent in cwd.parents:
         if (parent / ".brain").exists():
             return parent / ".brain"
-            
+
     # If we get here, no brain was found
     raise ValueError("NUCLEUS_BRAIN_PATH environment variable not set and no .brain directory found in current or parent directories.")
 

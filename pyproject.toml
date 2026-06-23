@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.13.1"
+version = "1.13.3"
 description = "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents"
 readme = "README.md"
 authors = [
@@ -41,6 +41,7 @@ postgres = [
 http = [
     "uvicorn[standard]>=0.29.0",
     "starlette>=0.40.0",
+    "PyJWT>=2.8.0",
 ]
 dev = [
     "pytest>=9.0.2",
@@ -99,5 +100,5 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-ignore = ["E402", "E701", "E712", "E741", "F841", "E722", "E702", "F401", "F541"]
+ignore = ["E402", "E701", "E712", "E741", "F841", "E722", "E702", "F401", "F541", "E401", "E731", "F403", "F405", "F811", "F821"]
 

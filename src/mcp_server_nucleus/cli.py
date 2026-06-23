@@ -311,11 +311,11 @@ def _seed_default_config(brain_path: Path):
             "\n"
             "telemetry:\n"
             "  anonymous:\n"
-            "    enabled: false  # opt in: nucleus config --telemetry\n"
+            "    enabled: true  # opt out: nucleus config --no-telemetry\n"
             "    endpoint: \"https://telemetry.nucleusos.dev:4317\"\n",
             encoding="utf-8",
         )
-        print("  ⚙️  Created config/nucleus.yaml (anonymous telemetry: off — opt in via `nucleus config --telemetry`)")
+        print("  ⚙️  Created config/nucleus.yaml (anonymous telemetry: on — opt out via `nucleus config --no-telemetry`)")
 
 
 def init_brain_solo(brain_path: Path) -> bool:
@@ -726,6 +726,237 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
 # Slash commands are a SUPERSET of Claude Code + Gemini CLI.
 # ============================================================
 
+# Optional routing switch for interactive chat's Anthropic backend. Off by
+# default; the endpoint is supplied entirely via env (no host is baked into the
+# shipped source). NUCLEUS_CHAT_BACKEND=anthropic_direct (default) uses the
+# normal provider path; =shim points the Anthropic client at NUCLEUS_CHAT_SHIM_URL.
+_CHAT_SHIM_ROLE = "nucleus_internal"
+
+
+def _chat_shim_config(batch: bool):
+    """Resolve the NUCLEUS_CHAT_BACKEND switch for interactive chat.
+
+    Returns {provider, base_url, role, user_agent} when chat should route its
+    Anthropic backend through NUCLEUS_CHAT_SHIM_URL, else None (normal provider).
+
+    Guardrails enforced here:
+      - (2) interactive only: a batch / non-interactive run never routes through
+        the switch, so autonomous sweeps stay on the normal provider path.
+      - (3) one-move kill-switch: NUCLEUS_CHAT_BACKEND=anthropic_direct (the
+        default) bypasses; =shim opts in. A missing NUCLEUS_CHAT_SHIM_URL is
+        treated as not-configured → None (safe no-op).
+    """
+    backend = (os.environ.get("NUCLEUS_CHAT_BACKEND") or "anthropic_direct").strip().lower()
+    if backend != "shim" or batch:
+        return None
+    url = (os.environ.get("NUCLEUS_CHAT_SHIM_URL") or "").strip()
+    if not url:
+        return None
+    # Some proxy front-ends reject the SDK's default User-Agent; send a neutral
+    # product UA instead. Scoped to the shim path only (the anthropic_direct path
+    # keeps the SDK's native UA, so the real API is untouched).
+    try:
+        from mcp_server_nucleus import __version__ as _nuc_ver
+    except Exception:
+        _nuc_ver = "0"
+    return {
+        "provider": "anthropic",
+        "base_url": url,
+        "role": _CHAT_SHIM_ROLE,
+        "user_agent": f"nucleus-mcp/{_nuc_ver}",
+    }
+
+
+def _is_secret_ref(_s: str) -> bool:
+    """True if a path/command string references a secret or credential the
+    contained drive loop must never read or exfil. Module-level + pure (no
+    _run_chat closure deps) so the safety boundary is unit-testable."""
+    _s = str(_s or "")
+    import re as _re
+    _needles = (
+        "/.tb/", "~/.tb", ".ssh", ".aws", ".gnupg", ".config/gcloud",
+        "id_rsa", "id_ed25519", "id_dsa", "id_ecdsa",
+        "stripe_live", "cf_user_token", "relay_token", "gemini_keys",
+        "credentials", ".netrc", ".npmrc", ".pypirc", ".pgpass",
+        ".docker/config", ".kube/config", "/gh/hosts", ".cloudflared",
+        ".pem", ".p12", ".pfx", "private_key", "privatekey",
+        "token.json", ".secrets", "secrets.yaml", "secrets.yml",
+        "secrets.json",
+        # shell-history files leak typed secrets / tokens / env wholesale.
+        ".zsh_history", ".bash_history", ".python_history", ".node_repl_history",
+    )
+    if any(_n in _s for _n in _needles):
+        return True
+    if "buffer_" in _s and "token" in _s:
+        return True
+    # A real dotenv, but NOT the committed .env.example/.sample/.template/.dist.
+    if _re.search(r"\.env(?!\.(?:example|sample|template|dist))", _s):
+        return True
+    return False
+
+
+def _auto_guard(tool_name: str, tool_input: dict) -> str:
+    """Return '' if this tool call is allowed during a heartbeat-free auto-
+    advanced turn, else a one-line reason it is BLOCKED. Write authority is
+    granted but contained: file writes must land inside the worktree write-
+    root (NUCLEUS_CHAT_WRITE_ROOT); shell may do anything EXCEPT the
+    irreversible / remote-mutating / exfil set or touching a secret path.
+    Reads of non-secret paths are never blocked.
+
+    Honesty boundary: this is a SPEED BUMP against a confidently-wrong model,
+    not a sandbox against an adversarial one — arbitrary `python3 -c`/`bash -c`
+    can construct paths at runtime to evade a denylist. The true container is
+    the throwaway worktree (every write is `git worktree remove` away from
+    gone), the auto-advance bound (loop halts after N turns if nobody is
+    there to press Enter), and operator review before any merge to main."""
+    _root = os.environ.get("NUCLEUS_CHAT_WRITE_ROOT", "").strip()
+    if tool_name == "read_file":
+        if _is_secret_ref(tool_input.get("path", "")):
+            return "read of a secret/credential path"
+        return ""
+    if tool_name in ("write_file", "edit_file"):
+        if not _root:
+            return "no NUCLEUS_CHAT_WRITE_ROOT — writes need a worktree container"
+        try:
+            _rp = Path(tool_input.get("path", "")).expanduser().resolve()
+            _rr = Path(_root).expanduser().resolve()
+            if _rp != _rr and _rr not in _rp.parents:
+                return f"write target is outside the worktree root ({_rr})"
+        except Exception as _e:
+            return f"could not resolve write path: {_e}"
+        return ""
+    if tool_name == "shell_execute":
+        _cmd = str(tool_input.get("command", ""))
+        if _is_secret_ref(_cmd):
+            return "shell references a secret/credential path"
+        import re as _re
+        _bad = [
+            # ── deletion / filesystem destruction ──
+            # bare `rm <path>` escapes a flag-only pattern; require only a target.
+            (r"\brm\b\s+\S", "rm with a path target"),
+            (r"\b(shred|unlink)\b", "shred/unlink (destructive)"),
+            (r"\bfind\b.{0,400}(-delete\b|-exec\s+rm)", "find -delete / -exec rm"),
+            (r"\bxargs\b.{0,200}\b(rm|mv|cp|dd|tee|truncate|shred|unlink)\b", "xargs into a mutator"),
+            (r"\bdd\b", "dd"),
+            (r"\bmkfs", "mkfs"),
+            (r"\btruncate\b\s", "truncate (destructive write)"),
+            # ── positional-arg file mutators: write/replace a path given as an
+            #    ARGUMENT (not a redirect), so the redirect-resolver below never
+            #    sees them. `cp /tmp/fixed <real-source>` is a bug-fixer's natural
+            #    happy-path and escaped the worktree. The loop's real write path is
+            #    edit_file/write_file (worktree-gated) — block the verbs outright. ──
+            (r"\b(cp|mv|ln|patch|touch|ditto)\b\s", "positional-arg file mutator — use edit_file (worktree-gated) or escalate to a manual turn"),
+            # command-initial `install` is the coreutils file-copier; `pip/npm/brew
+            # install` keep `install` as a SUBCOMMAND (preceded by the tool name),
+            # so anchoring to start-or-separator spares the package managers.
+            (r"(?:^|[;&|])\s*install\s", "install (file copy) — use edit_file or escalate"),
+            # tar -x extracts files over the tree; create/list (-c/-t) stay allowed.
+            (r"\btar\s+(-?[a-z]*x|--extract)", "tar extract (writes over tree) — use edit_file or escalate"),
+            # verb-needle evasion: `$(which cp) src dst` resolves cp to a path so the
+            # positional-mutator pattern (which keys on `cp<space>`) never sees it.
+            # Block the path-resolver substitution forms ($(…)/backtick) + bare
+            # `which <mutator>`. `$(echo cp)`-class stays an accepted adversarial residual.
+            (r"(?:\$\(|`)\s*(?:which|command\s+-v|type\s+-p|whereis)\b", "command-substitution path-resolver (verb-needle evasion)"),
+            (r"\bwhich\s+(cp|mv|ln|dd|ditto|rm|install|truncate|tar|tee|shred|rsync|chmod|chown)\b", "which <mutator> (verb-needle evasion)"),
+            # ── git tree / history / config mutation (shared MAIN tree) ──
+            (r"\bgit\s+push\b", "git push (remote mutate)"),
+            (r"\bgit\s+reset\b", "git reset (tree/index mutation)"),
+            (r"\bgit\s+(checkout|restore|switch)\b", "git checkout/restore/switch (discards tree state)"),
+            (r"\bgit\s+(stash|update-ref|rebase|filter-branch)\b", "git history/ref mutation"),
+            (r"\bgit\s+clean\b", "git clean"),
+            (r"\bgit\s+branch\s+-D\b", "git branch -D force-delete"),
+            (r"\bgit\s+config\b[^\n]*(user\.(name|email)|core\.hookspath|alias\.)", "git config identity/hooks/alias"),
+            (r"\bgit\s+(apply|am)\b", "git apply/am (patches the working tree)"),
+            # gh write surrogates: PR merge / release / repo mutate / api write verb.
+            (r"\bgh\s+(pr\s+merge|release\s+create|repo\s+(create|delete|edit))\b", "gh write op (merge/release/repo mutate)"),
+            (r"\bgh\s+api\b.{0,200}-X\s*(POST|PUT|PATCH|DELETE)", "gh api write verb"),
+            # ── permission / privilege / system-state ──
+            (r"--force\b", "force flag"),
+            (r"\bchmod\b", "chmod"),
+            (r"\bchown\b", "chown"),
+            (r":\s*\(\s*\)\s*\{", "fork bomb"),
+            (r"\b(shutdown|reboot|halt)\b", "power-state change"),
+            (r"\bsudo\b", "sudo"),
+            (r"\blaunchctl\b", "launchctl"),
+            (r"\bcrontab\b", "crontab"),
+            # ── secret / environment exfil ──
+            (r"\bprintenv\b", "printenv (env dump)"),
+            (r"(?:^|[;&|])\s*env\s*(?:$|[;&|])", "bare env (environment dump)"),
+            (r"(?:^|[;&|])\s*set\s*(?:$|[;&|])", "bare set (shell+env var dump)"),
+            (r"\b(export\s+-p\b|declare\s+-[xp]\b)", "export -p / declare -x (environment dump)"),
+            (r"\bsecurity\s+dump-keychain\b", "keychain dump"),
+            # ── network exfil ──
+            (r"\b(nc|ncat|netcat)\b", "raw socket (exfil)"),
+            (r"\b(mail|mailx|sendmail)\b", "mail (exfil)"),
+            (r"\bopenssl\s+s_client\b", "openssl s_client (raw network)"),
+            (r"\b(curl|wget)\b.{0,200}(-X\s*(POST|PUT|PATCH|DELETE)|--data|--data-\w+|--upload-file|--post-data|--post-file|\s-d\s|\s-T\s|\s-F\s)", "curl/wget write or upload (exfil)"),
+            # command-substitution in a fetch is data-gathering exfil; a plain GET
+            # (health check) carries no payload out and stays allowed by design.
+            (r"\b(curl|wget)\b.{0,400}(\$\(|`)", "curl/wget with command substitution (exfil)"),
+            (r">\s*/(etc|usr|bin|sbin|System|Library|var)\b", "redirect into a system path"),
+        ]
+        for _pat, _why in _bad:
+            if _re.search(_pat, _cmd, _re.IGNORECASE):
+                return f"shell blocked: {_why}"
+        # ── shell-write containment: mirror the tool-level write-gate so a
+        #    redirect/tee/-o/sed -i can't reach outside the worktree the way
+        #    write_file/edit_file already can't. Closes the shell-vs-tool
+        #    asymmetry cc-peer proved (echo X > <main-tree-file> escaped). ──
+        if _re.search(r"\b(sed|perl)\s+-i\b", _cmd):
+            return "shell blocked: in-place edit — use edit_file so the write is worktree-gated"
+        if _re.search(r"\bgit\s+remote\s+set-url\b", _cmd) or _re.search(r"\bgit\s+config\b[^\n]*remote\.[^\n]*\.url", _cmd):
+            return "shell blocked: git remote re-point (mutates shared repo config)"
+        if "/dev/tcp" in _cmd or "/dev/udp" in _cmd or _re.search(r"\b(scp|rsync|sftp|ftp|telnet)\s", _cmd):
+            return "shell blocked: alternate network transport (exfil)"
+        # un-statically-parseable interpreter code → escalate to a manual Enter.
+        # ONLY python(3) -c gets a token-scan carve-out, because the loop's own
+        # ACK path (`python3 -c "...relay_post(...)"`) is python and carries none
+        # of the danger tokens, so it survives. EVERY other interpreter
+        # (node/ruby/perl/bash/sh/zsh -c/-e) is escalated outright — we don't
+        # enumerate each language's write API (that's how node's writeFileSync
+        # slipped past a python-centric token list). Standalone `eval` too.
+        _interp = _re.search(r"\b(python3?|bash|sh|zsh|node|ruby|perl)\s+-[ce]\b", _cmd)
+        if _interp:
+            _lang = _interp.group(1)
+            if _lang in ("python", "python3"):
+                _danger = (
+                    "open(", ".write(", "write_text(", "write_bytes(", "os.remove(",
+                    "os.unlink(", "os.rename(", "os.replace(", "shutil.", "rmtree(",
+                    "mkfifo(", "os.system(", "subprocess", "popen(", "socket.",
+                    "socket(", "urllib", "requests.", "httpx", "__import__(",
+                    "exec(", "eval(", "/dev/tcp",
+                    "os.truncate(", "os.ftruncate(", "io.open(", "os.open(",
+                    ".unlink(", ".truncate(",
+                )
+                if any(_t in _cmd for _t in _danger):
+                    return "shell blocked: inline interpreter code with write/network/process call — escalate to a manual turn"
+            else:
+                return "shell blocked: inline interpreter code with write/network/process call — escalate to a manual turn"
+        if _re.search(r"\beval\b", _cmd):
+            return "shell blocked: inline interpreter code with write/network/process call — escalate to a manual turn"
+        if _root:
+            _rr = Path(_root).expanduser().resolve()
+            for _m in _re.finditer(r"(?:>>?[|!]?|\btee\s+(?:-a\s+)?|\s-[oO]\s+)\s*\"?'?([^\s\"'|;&<>]+)", _cmd):
+                _tgt = _m.group(1)
+                if _tgt.startswith("&") or _tgt in ("/dev/null", "/dev/stdout", "/dev/stderr"):
+                    continue
+                try:
+                    _tp = Path(_tgt).expanduser()
+                    if not _tp.is_absolute():
+                        _tp = _rr / _tp
+                    _tp = _tp.resolve()
+                    if _tp != _rr and _rr not in _tp.parents:
+                        return f"shell blocked: write target {_tgt} is outside the worktree root"
+                except Exception as _e:
+                    return f"shell blocked: unparsable write target {_tgt} ({_e})"
+        elif _re.search(r">>?[|!]?\s*[^\s&|;<]", _cmd):
+            return "shell blocked: redirect with no NUCLEUS_CHAT_WRITE_ROOT container"
+        return ""
+    # write_engram + all read-only tools (search_files, search_code,
+    # search_engrams, nucleus_ask, …) → allowed.
+    return ""
+
+
 def _run_chat(tier_name: str = "local_free", model_override: str = None, system_prompt: str = None, batch: bool = False, prompt: str = None, provider: str = None, output_format: str = "text", brother_context: str = None):
     """Interactive multi-turn chat. Works from any install location.
 
@@ -961,6 +1192,23 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     brain_context += "\n".join(_engram_lines) + "\n\n"
             except Exception:
                 pass
+
+            # ── Startup Relay Injection: surface unread cross-agent relays ──
+            try:
+                from mcp_server_nucleus.runtime.relay.core import relay_inbox as _relay_inbox
+                _rinbox = _relay_inbox(unread_only=True, limit=50)
+                _rmsgs = _rinbox.get("messages", []) if isinstance(_rinbox, dict) else []
+                if _rmsgs:
+                    _rprio = {"urgent": 0, "high": 0, "normal": 1, "low": 2}
+                    _rmsgs.sort(key=lambda m: _rprio.get(str(m.get("priority", "normal")).lower(), 1))
+                    _rtop = _rmsgs[:10]
+                    _rrecip = _rinbox.get("recipient", "?")
+                    _relay_lines = [f"### UNREAD RELAYS (showing {len(_rtop)} of {len(_rmsgs)}, inbox={_rrecip})"]
+                    for _m in _rtop:
+                        _relay_lines.append(f"- from={_m.get('from', '?')} ({_m.get('priority', 'normal')}): {str(_m.get('subject', ''))[:120]}")
+                    brain_context += "\n".join(_relay_lines) + "\n\n"
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -987,6 +1235,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         "     nucleus combo pulse      — run pulse combo\n"
         "     nucleus sovereign        — sovereign status\n"
         "     nucleus archive stats    — training data flywheel\n"
+        "     nucleus sync             — sync brain with hosted engram store\n"
+        "     nucleus export           — export brain to portable archive (sovereignty)\n"
+        "     nucleus import ARCHIVE   — import brain archive (restore)\n"
     )
 
     _tail_system = (
@@ -1078,9 +1329,9 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 
     # ── Proxy Sovereignty Auto-Discovery ───────────────────────
     if "GEMINI_API_BASE_URL" not in os.environ:
-        if Path(tempfile.gettempdir()) / "gemini_proxy.port".exists():
+        if (Path(tempfile.gettempdir()) / "gemini_proxy.port").exists():
             try:
-                port = Path(tempfile.gettempdir()) / "gemini_proxy.port".read_text().strip()
+                port = (Path(tempfile.gettempdir()) / "gemini_proxy.port").read_text().strip()
                 os.environ["GEMINI_API_BASE_URL"] = f"http://localhost:{port}/v1"
             except: pass
         elif os.environ.get("NUCLEUS_PROXY_DEFAULT_URL"):
@@ -1093,12 +1344,39 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         or os.environ.get("NUCLEUS_LLM_PROVIDER", "gemini")
     ).strip().lower()
 
+    # ── NUCLEUS_CHAT_BACKEND switch (see DECISIONS.md ADR-0040) ──
+    _shim_cfg = _chat_shim_config(batch)
+    _backend_req = (os.environ.get("NUCLEUS_CHAT_BACKEND") or "").strip().lower()
+    if _shim_cfg:
+        _provider = _shim_cfg["provider"]
+        os.environ["NUCLEUS_ANTHROPIC_BASE_URL"] = _shim_cfg["base_url"]
+        # The endpoint authenticates callers by shared secret (x-api-key); the
+        # upstream bearer never leaves the endpoint host. In shim mode the secret
+        # file is authoritative — read it unconditionally so a real Anthropic key
+        # injected via .env/load_dotenv can't shadow it and get rejected as
+        # "invalid x-api-key".
+        _secret_file = Path.home() / ".tb" / "oauth_shim_shared_secret"
+        try:
+            if _secret_file.exists():
+                os.environ["NUCLEUS_ANTHROPIC_API_KEY"] = _secret_file.read_text().strip()
+        except OSError:
+            pass
+        # Send a neutral product User-Agent to the endpoint (caller-set value
+        # wins). Scoped to the shim path only.
+        if not os.environ.get("NUCLEUS_ANTHROPIC_USER_AGENT") and _shim_cfg.get("user_agent"):
+            os.environ["NUCLEUS_ANTHROPIC_USER_AGENT"] = _shim_cfg["user_agent"]
+        print(f"🔁 chat backend: shim → {_shim_cfg['base_url']} (role={_shim_cfg['role']})")
+    elif _backend_req == "shim" and batch:
+        print("⚠️  NUCLEUS_CHAT_BACKEND=shim ignored for non-interactive/batch run (interactive chat only).")
+    elif _backend_req == "shim":
+        print("⚠️  NUCLEUS_CHAT_BACKEND=shim set but NUCLEUS_CHAT_SHIM_URL is empty — using normal provider.")
+
     # ── Model Capability Detection ─────────────────────────────
     # Models known to reliably support native tool/function calling.
     # Small models (8b) fail ~50% of the time — better to use <execute> tags.
     _TOOL_CAPABLE_MODELS = {
         # Anthropic — all models support tool_use
-        "claude-sonnet-4-6-20250514", "claude-opus-4-6-20250514", "claude-haiku-4-5-20251001",
+        "claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5-20251001",
         # Groq — only 70b+ models handle function calling reliably
         "llama-3.3-70b-versatile",
         "meta-llama/llama-4-scout-17b-16e-instruct",
@@ -1443,6 +1721,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
 ║  /tier              Show current tier info                    ║
 ║  /history           Show conversation stats                  ║
 ║  /compact           Compress conversation history            ║
+║  /render [on|off]   Toggle rich code-block highlighting       ║
 ║  /diff              Show git diff for files edited this session║
 ║  /files             List all files touched this session       ║
 ║  /recall [query]    Search conversation archive (on-demand RAG)║
@@ -1534,6 +1813,87 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 _a_size = _archive_path.stat().st_size
                 _a_turns = sum(1 for l in open(_archive_path) if l.strip())
                 print(f"           • Archive: {_a_turns} turns ({round(_a_size/1024, 1)} KB) — /recall to search")
+            except Exception:
+                pass
+
+        # ── Proactive Recall: the "Welcome back" moment ──────────────
+        # This is the wedge vs Claude Code / OpenCode: Nucleus REMEMBERS.
+        # On startup, surface the most recent high-signal engram + last
+        # work thread so the user instantly sees continuity. Never blocks,
+        # never fails — purely additive. Suppress with NUCLEUS_NO_RECALL=1.
+        if not os.environ.get("NUCLEUS_NO_RECALL"):
+            try:
+                _wb_lines = []
+                # 1) Most recent decision/handoff engram as "last focus".
+                #    Uses the SAME real API the startup loader uses
+                #    (_brain_search_engrams_impl → JSON → data.engrams list of
+                #    dicts with key/value/context/intensity). We prefer recent
+                #    session/handoff/decision markers, then fall back to the
+                #    single highest-intensity engram found.
+                try:
+                    from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl as _wb_search
+                    import json as _wb_json
+                    _wb_cands = []
+                    _wb_seen = set()
+                    for _wb_term in ("chat_session_", "handoff", "session_", "status", "decision"):
+                        try:
+                            _wb_raw = _wb_search(_wb_term, limit=3)
+                            _wb_data = _wb_json.loads(_wb_raw) if isinstance(_wb_raw, str) else _wb_raw
+                        except Exception:
+                            continue
+                        for _wb_e in _wb_data.get("data", {}).get("engrams", []):
+                            _wb_k = _wb_e.get("key", "")
+                            if _wb_k and _wb_k not in _wb_seen:
+                                _wb_seen.add(_wb_k)
+                                _wb_cands.append(_wb_e)
+                    if _wb_cands:
+                        # Ranking: "where you left off" = RECENCY first, not just
+                        # intensity. A fresh chat_session_<proj>_<date> marker (the
+                        # auto-engram from last exit) should win over a months-old
+                        # high-intensity engram. We score: (1) chat_session for THIS
+                        # project gets a strong recency boost via the trailing date in
+                        # its key; (2) otherwise fall back to intensity. This is what
+                        # makes "Welcome back" show what we ACTUALLY just did.
+                        import re as _wb_re
+                        _wb_proj = Path.cwd().name
+                        def _wb_score(_x):
+                            _k = _x.get("key", "")
+                            _inten = _x.get("intensity", 5)
+                            # extract a YYYYMMDD suffix if present → recency signal
+                            _m = _wb_re.search(r"(\d{8})$", _k)
+                            _date_num = int(_m.group(1)) if _m else 0
+                            # this-project session marker is the strongest "left off" cue
+                            _is_my_session = 1 if _k.startswith(f"chat_session_{_wb_proj}_") else 0
+                            # tuple sort: my-session-recency >> any dated engram >> intensity
+                            return (_is_my_session, _date_num, _inten)
+                        _wb_cands.sort(key=_wb_score, reverse=True)
+                        _e = _wb_cands[0]
+                        _ekey = _e.get("key", "")
+                        _esnip = str(_e.get("value", "")).strip().split("\n")[0][:72]
+                        if _ekey:
+                            _wb_lines.append(f"           • Last focus: {_ekey} — {_esnip}…")
+                except Exception:
+                    pass
+                # 2) Last user turn from the archive (what we were doing).
+                if _archive_path and _archive_path.exists():
+                    _last_user = None
+                    for _ln in open(_archive_path):
+                        _ln = _ln.strip()
+                        if not _ln:
+                            continue
+                        try:
+                            _obj = json.loads(_ln)
+                            if _obj.get("role") == "user":
+                                _last_user = _obj.get("content", "")
+                        except Exception:
+                            continue
+                    if _last_user:
+                        _wb_lines.append(f"           • You last asked: \"{_last_user.strip()[:64]}…\"")
+                if _wb_lines:
+                    print("  👋 Welcome back. Picking up where you left off:")
+                    for _wl in _wb_lines:
+                        print(_wl)
+                    print("           (try: \"what were we working on?\"  •  /recall to search history)")
             except Exception:
                 pass
     else:
@@ -1646,6 +2006,50 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         _undo_stack.append({"path": str(p), "op": op, "backup": backup, "existed": existed})
         if len(_undo_stack) > _MAX_UNDO:
             _undo_stack.pop(0)
+
+    # GAP #4 — diff preview: before applying write_file/edit_file, show a real
+    # colored unified diff so the user SEES exactly what changed (like CC/Aider),
+    # not just a one-line summary. /undo remains the one-key safety net. Capped
+    # so a huge rewrite doesn't flood the terminal. Never raises.
+    def _print_unified_diff(path: str, old_text: str, new_text: str, *, max_lines: int = 60) -> None:
+        try:
+            import difflib as _dl
+            _fname = Path(path).name
+            _old_lines = (old_text or "").splitlines()
+            _new_lines = (new_text or "").splitlines()
+            _diff = list(_dl.unified_diff(
+                _old_lines, _new_lines,
+                fromfile=f"a/{_fname}", tofile=f"b/{_fname}", lineterm="",
+            ))
+            if not _diff:
+                print("   │ (no textual change)")
+                return
+            # ANSI colors (green add / red del / cyan hunk) — degrade to plain
+            # if NO_COLOR is set or stdout isn't a tty.
+            _color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+            _G, _R, _C, _Z = ("\033[32m", "\033[31m", "\033[36m", "\033[0m") if _color else ("", "", "", "")
+            _shown = 0
+            _adds = sum(1 for l in _diff if l.startswith("+") and not l.startswith("+++"))
+            _dels = sum(1 for l in _diff if l.startswith("-") and not l.startswith("---"))
+            print(f"   ┌─ diff: {_fname}  ({_G}+{_adds}{_Z} {_R}-{_dels}{_Z})")
+            for _line in _diff:
+                if _shown >= max_lines:
+                    print(f"   │ … (+{len(_diff) - _shown} more diff lines; /diff for full)")
+                    break
+                if _line.startswith("+++") or _line.startswith("---"):
+                    continue
+                if _line.startswith("@@"):
+                    print(f"   │ {_C}{_line}{_Z}")
+                elif _line.startswith("+"):
+                    print(f"   │ {_G}{_line}{_Z}")
+                elif _line.startswith("-"):
+                    print(f"   │ {_R}{_line}{_Z}")
+                else:
+                    print(f"   │ {_line}")
+                _shown += 1
+            print("   └─ applied (use /undo to revert)")
+        except Exception:
+            pass
 
     # No global SIGINT handler — let KeyboardInterrupt propagate naturally.
     # Ctrl+C during streaming → cancel response (caught in ReAct loop)
@@ -1804,18 +2208,53 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     _pt_session = None
     try:
         from prompt_toolkit import PromptSession
-        from prompt_toolkit.history import InMemoryHistory
         from prompt_toolkit.completion import WordCompleter
         from prompt_toolkit.patch_stdout import patch_stdout as _pt_patch_stdout
 
+        # GAP #2 — persistent command history: up-arrow recalls inputs ACROSS
+        # sessions (FileHistory in the brain), falling back to in-memory if the
+        # brain dir isn't available. This is table-stakes parity with CC/Aider.
+        try:
+            from prompt_toolkit.history import FileHistory, InMemoryHistory
+            if brain_dir:
+                _hist_dir = brain_dir / "chat"
+                _hist_dir.mkdir(parents=True, exist_ok=True)
+                _pt_history = FileHistory(str(_hist_dir / "input_history"))
+            else:
+                _pt_history = InMemoryHistory()
+        except Exception:
+            from prompt_toolkit.history import InMemoryHistory as _IMH
+            _pt_history = _IMH()
+
         _slash_commands = ["/help", "/model", "/auth", "/provider", "/dual",
                            "/tier", "/status", "/tools", "/brain", "/learn", "/history", "/retry",
-                           "/compact", "/diff", "/files", "/undo", "/clear", "/chat", "/quit", "/exit"]
-        _pt_session = PromptSession(
-            history=InMemoryHistory(),
+                           "/compact", "/diff", "/files", "/undo", "/clear", "/recall",
+                           "/archive", "/render", "/chat", "/quit", "/exit"]
+
+        # GAP #3 — input syntax: highlight slash-commands as the user types so
+        # the prompt feels alive (subtle, terminal-native; no heavy lexer).
+        _pt_kwargs = dict(
+            history=_pt_history,
             completer=WordCompleter(_slash_commands, sentence=True),
             complete_while_typing=False,
         )
+        try:
+            from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+            _pt_kwargs["auto_suggest"] = AutoSuggestFromHistory()  # ghost-text suggest
+        except Exception:
+            pass
+
+        # GAP #5 — bottom toolbar: a persistent status line (model • provider •
+        # cost) while typing, like CC. Closes over live counters defined below.
+        def _pt_bottom_toolbar():
+            try:
+                _m = getattr(llm, "model_name", "?")
+                return f" 🧬 {_m} • {_provider} • /help for commands • Ctrl+C to cancel "
+            except Exception:
+                return " 🧬 Nucleus Brother "
+        _pt_kwargs["bottom_toolbar"] = _pt_bottom_toolbar
+
+        _pt_session = PromptSession(**_pt_kwargs)
     except ImportError:
         _pt_patch_stdout = None  # Fallback: bare input()
 
@@ -1878,8 +2317,24 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         except Exception:
             return ""
 
+    # ── Heartbeat-free auto-advance: write-authority containment (F4) ──────
+    # When the drive loop advances WITHOUT a manual Enter (see the main loop),
+    # the turn keeps WRITE authority but on a bounded blast radius. This flag is
+    # flipped True for the duration of each such turn and read by the guard
+    # below. Default False → ordinary interactive turns are never constrained.
+    _auto_turn = {"active": False}
+
     def _execute_tool(tool_name: str, tool_input: dict, step: int) -> str:
         """Execute a tool call and return the result string. Shows compact preview."""
+        if _auto_turn.get("active"):
+            _deny = _auto_guard(tool_name, tool_input)
+            if _deny:
+                print(f"   ⛔ [auto-contained] {tool_name}: {_deny}")
+                return (
+                    f"BLOCKED by auto-advance containment: {_deny}. "
+                    "Surface this as a recommendation in your ACK to cc-main "
+                    "instead of performing it directly."
+                )
         if tool_name == "shell_execute":
             command = tool_input.get("command", "")
             print(f"   [Step {step}: $ {command}]")
@@ -1931,9 +2386,12 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             _snapshot_before(fpath, "write")
             try:
                 p = Path(fpath).expanduser()
+                _old_content = p.read_text() if p.exists() else ""
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text(content)
                 lines = content.count("\n") + 1
+                # GAP #4 — show what actually changed (new file or overwrite).
+                _print_unified_diff(fpath, _old_content, content)
                 print(f"   │ wrote {lines} lines ({len(content)} bytes)")
                 return f"Successfully wrote {fpath} ({lines} lines, {len(content)} bytes)"
             except Exception as e:
@@ -1958,11 +2416,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     return f"Error: old_string matches {count} times in {fpath}. Make it more specific."
                 new_text = text.replace(old, new, 1)
                 p.write_text(new_text)
-                # Show diff preview
-                old_preview = old.strip().split("\n")[0][:60]
-                new_preview = new.strip().split("\n")[0][:60]
-                print(f"   │ - {old_preview}")
-                print(f"   │ + {new_preview}")
+                # GAP #4 — full colored unified diff (replaces the old 1-line preview).
+                _print_unified_diff(fpath, text, new_text)
                 brain_ctx = _brain_context_for(fpath)
                 return f"Successfully edited {fpath}" + brain_ctx
             except Exception as e:
@@ -2120,13 +2575,237 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             return _pt_session.prompt("You › ").strip()
         return input("You › ").strip()
 
+    # GAP #1 — rich rendering: after a reply streams as plain text (for
+    # responsiveness), if it contains fenced code blocks AND `rich` is
+    # available, re-print just those blocks with syntax highlighting + a
+    # border, like Claude Code / Aider. Freeze-safe: `rich` is an OPTIONAL
+    # dependency — if absent, we silently skip (plain streaming stands).
+    # Toggle with /render (off|on) or env NUCLEUS_NO_RICH=1.
+    _rich_state = {"enabled": not bool(os.environ.get("NUCLEUS_NO_RICH"))}
+
+    def _render_code_blocks(reply_text: str) -> None:
+        """If the reply has ``` fenced code, pretty-print those blocks with
+        syntax highlighting below the streamed text. Never raises."""
+        if not _rich_state["enabled"] or not reply_text:
+            return
+        if "```" not in reply_text:
+            return
+        try:
+            from rich.console import Console as _RConsole
+            from rich.syntax import Syntax as _RSyntax
+        except Exception:
+            # rich not installed — graceful no-op, plain streaming remains.
+            _rich_state["enabled"] = False
+            return
+        try:
+            import re as _rc_re
+            # Capture ```lang\n...code...``` blocks
+            _blocks = _rc_re.findall(r"```([a-zA-Z0-9_+-]*)\n(.*?)```", reply_text, _rc_re.DOTALL)
+            if not _blocks:
+                return
+            _console = _RConsole()
+            for _lang, _code in _blocks:
+                _lang = (_lang or "text").strip() or "text"
+                _code = _code.rstrip("\n")
+                if not _code.strip():
+                    continue
+                try:
+                    _syntax = _RSyntax(
+                        _code, _lang,
+                        theme="monokai",
+                        line_numbers=False,
+                        word_wrap=True,
+                        background_color="default",
+                    )
+                    _console.print(_syntax)
+                except Exception:
+                    # Unknown lexer or render error — skip this block quietly.
+                    continue
+        except Exception:
+            pass
+
+    # ── Session-End Auto-Engram ──────────────────────────────────
+    # Closes the continuity loop: on exit, silently capture a compact
+    # "what we did this session" engram so the NEXT session's proactive
+    # "Welcome back" recall is always rich — without relying on the user
+    # (or model) remembering to call write_engram. Idempotent-ish: keyed
+    # by date so re-runs the same day overwrite rather than pile up.
+    # Never blocks, never fails. Suppress with NUCLEUS_NO_AUTOENGRAM=1.
+    _session_autoengram_done = {"v": False}
+
+    def _session_end_autoengram() -> None:
+        if _session_autoengram_done["v"]:
+            return
+        _session_autoengram_done["v"] = True
+        if os.environ.get("NUCLEUS_NO_AUTOENGRAM"):
+            return
+        if not brain_dir:
+            return
+        try:
+            # Pull the last few user turns from the in-memory history as the
+            # session's "what we worked on" trace. Fall back to archive tail.
+            _ae_users = []
+            try:
+                for _h in reversed(history):
+                    _role = _h[0] if isinstance(_h, (list, tuple)) else _h.get("role", "")
+                    _content = _h[1] if isinstance(_h, (list, tuple)) else _h.get("content", "")
+                    if _role == "user" and _content and not str(_content).startswith("/"):
+                        _ae_users.append(str(_content).strip().split("\n")[0][:120])
+                    if len(_ae_users) >= 4:
+                        break
+            except Exception:
+                pass
+            if not _ae_users:
+                return  # nothing meaningful happened; don't pollute the brain
+            _ae_users.reverse()
+            from datetime import datetime as _ae_dt
+            _ae_date = _ae_dt.now().strftime("%Y%m%d")
+            _ae_proj = Path.cwd().name
+            _ae_key = f"chat_session_{_ae_proj}_{_ae_date}"
+            _ae_value = (
+                f"Chat session ({_ae_proj}, {_ae_date}). Topics this session: "
+                + " | ".join(_ae_users)
+            )[:480]
+            from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl as _ae_write
+            _ae_write(
+                key=_ae_key,
+                value=_ae_value,
+                context="Strategy",
+                intensity=4,
+            )
+        except Exception:
+            pass
+
+    # ── Live-drive: in-memory dedup of relays already injected this session ──
+    _driven_relay_ids: set = set()
+
+    def _is_auto_safe(_m: dict) -> bool:
+        """A directive is auto-advance-eligible (heartbeat-free) only when it is
+        explicitly tagged safe-class: context.autonomy in {read_only, readonly,
+        safe} OR subject contains the [DRIVE-AUTO] marker. Everything else still
+        requires a manual Enter — the per-task consent gate stays in force."""
+        try:
+            _ctx = _m.get("context") or {}
+            if isinstance(_ctx, dict) and str(_ctx.get("autonomy", "")).strip().lower() in ("read_only", "readonly", "safe"):
+                return True
+            # Anchored marker: subject must START with [DRIVE-AUTO] (after strip).
+            # An unanchored substring let any message mentioning the token mid-line
+            # trip auto-advance — the F1 hole. Require it at position 0.
+            return str(_m.get("subject", "")).strip().startswith("[DRIVE-AUTO]")
+        except Exception:
+            return False
+
+    def _poll_drive_relays(auto_only: bool = False) -> str:
+        """Poll this chat's own inbox for new relays each turn (live-drive).
+
+        Dedups via an in-memory id set AND persists a mark-read on consume so a
+        directive injects exactly once and never self-replays across restarts.
+        Returns a text block to fold into the turn, or "" when nothing new.
+        NUCLEUS_CHAT_NO_DRIVE=1 disables it.
+
+        auto_only=True: surface ONLY safe-class directives (see _is_auto_safe)
+        and leave every other message untouched (not deduped, not marked) so the
+        manual, consent-gated poll still sees them. Used by the heartbeat-free
+        auto-advance path.
+        """
+        if os.environ.get("NUCLEUS_CHAT_NO_DRIVE"):
+            return ""
+        try:
+            from mcp_server_nucleus.runtime.relay.core import relay_inbox as _ri
+            _res = _ri(unread_only=True, limit=50)
+            _msgs = _res.get("messages", []) if isinstance(_res, dict) else []
+        except Exception:
+            return ""
+        _inbox = _res.get("recipient") if isinstance(_res, dict) else None
+        _new = []
+        for _m in _msgs:
+            if not isinstance(_m, dict):
+                continue
+            _real_id = _m.get("id") or ""
+            _dedup_key = _real_id or _m.get("_file") or ""
+            if not _dedup_key or _dedup_key in _driven_relay_ids:
+                continue
+            if auto_only and not _is_auto_safe(_m):
+                continue  # leave non-safe-class for the manual (consent-gated) poll
+            # Persist mark-read so a consumed directive cannot self-replay on the
+            # next restart. relay_ack matches on msg["id"], so a message with no
+            # real id can never be persisted-read — under heartbeat-free auto-
+            # advance that means replay-forever. Require a persisted ack on the
+            # auto path; on failure, skip (leave it for the manual consent-gated
+            # poll where a human is present) rather than risk an infinite loop.
+            _ack_ok = False
+            try:
+                from mcp_server_nucleus.runtime.relay.core import relay_ack as _rack
+                _ack_res = _rack(_real_id, recipient=_inbox, force_fs=True) if _real_id else None
+                _ack_ok = bool(_real_id) and not (isinstance(_ack_res, dict) and _ack_res.get("error"))
+            except Exception as _ae:
+                print(f"   ⚠ relay mark-read failed for {_dedup_key}: {_ae}")
+                _ack_ok = False
+            if auto_only and not _ack_ok:
+                print(f"   ⚠ auto-advance skipped for unpersistable relay {_dedup_key} (left for manual)")
+                continue
+            _driven_relay_ids.add(_dedup_key)
+            _new.append(_m)
+        if not _new:
+            return ""
+        _new.reverse()  # relay_inbox is newest-first; read oldest-first
+        _lines = [f"### INCOMING RELAY ({len(_new)} new · inbox={_res.get('recipient', '?')})"]
+        for _m in _new:
+            _frm = _m.get("from", "?")
+            _pri = _m.get("priority", "normal")
+            _subj = str(_m.get("subject", ""))[:200]
+            _body = _m.get("body", "")
+            if isinstance(_body, (dict, list)):
+                _body = json.dumps(_body)[:1500]
+            else:
+                _body = str(_body)[:1500]
+            _lines.append(f"\n[from {_frm} · {_pri}] {_subj}\n{_body}")
+        _lines.append("\n\n(Directive from the fleet — act on it now, then continue.)")
+        return "\n".join(_lines)
+
+    # ── Auto-advance (heartbeat-free) config ────────────────────
+    # Drive mode (ndrive) sets NUCLEUS_CHAT_DRIVE_AUTO=1 so SAFE-CLASS directives
+    # (see _is_auto_safe) advance WITHOUT a manual Enter. Default off → ordinary
+    # interactive chats are unchanged. NUCLEUS_CHAT_NO_DRIVE=1 still disables
+    # drive entirely. A per-session bound caps runaway; any manual turn resets it
+    # so the human stays in the loop between bursts.
+    _drive_auto_on = bool(os.environ.get("NUCLEUS_CHAT_DRIVE_AUTO"))
+    try:
+        _drive_auto_max = int(os.environ.get("NUCLEUS_CHAT_DRIVE_AUTO_MAX", "25"))
+    except ValueError:
+        _drive_auto_max = 25
+    _drive_auto_n = {"v": 0}
+
     # ── Main Loop ───────────────────────────────────────────────
     while True:
-        try:
-            user_input = _get_input()
-        except (EOFError, KeyboardInterrupt):
-            print("\n\n👋 Goodbye!")
-            break
+        # Heartbeat-free auto-advance: if enabled and a safe-class directive is
+        # queued, fold it straight in WITHOUT blocking on _get_input(). Bounded;
+        # falls back to the manual Enter (consent gate) when the safe-class queue
+        # drains or the bound is hit.
+        _auto_block = ""
+        if _drive_auto_on and _drive_auto_n["v"] < _drive_auto_max:
+            _auto_block = _poll_drive_relays(auto_only=True)
+        if _auto_block:
+            _drive_auto_n["v"] += 1
+            _auto_turn["active"] = True  # arm write-authority containment for this turn
+            print(f"\n[auto-advance {_drive_auto_n['v']}/{_drive_auto_max} · heartbeat-free · contained]\n" + _auto_block + "\n")
+            user_input = _auto_block
+        else:
+            _drive_auto_n["v"] = 0  # manual turn — reset the runaway bound
+            _auto_turn["active"] = False  # manual turn — operator present, full authority
+            try:
+                user_input = _get_input()
+            except (EOFError, KeyboardInterrupt):
+                _session_end_autoengram()
+                print("\n\n👋 Goodbye!")
+                break
+
+            # ── Live-drive: fold any new inbox relays into this turn ──
+            if not user_input.startswith("/"):
+                _drive_block = _poll_drive_relays()
+                if _drive_block:
+                    print("\n" + _drive_block + "\n")
+                    user_input = (_drive_block + "\n\n" + user_input) if user_input else _drive_block
 
         if not user_input:
             continue
@@ -2138,6 +2817,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             cmd_arg = parts[1].strip() if len(parts) > 1 else ""
 
             if cmd in ("/exit", "/quit", "/q"):
+                _session_end_autoengram()
                 print("\n👋 Goodbye!")
                 break
 
@@ -2402,8 +3082,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                         print(f"   Available: {', '.join(cc_models)}  ($0 via Max subscription)\n")
                     else:
                         anthropic_models = [
-                            "claude-sonnet-4-6-20250514",
-                            "claude-opus-4-6-20250514",
+                            "claude-sonnet-4-6",
+                            "claude-opus-4-7",
                             "claude-haiku-4-5-20251001",
                         ]
                         print(f"   Available: {', '.join(anthropic_models)}\n")
@@ -2724,6 +3404,29 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 for k in _session_files:
                     _session_files[k].clear()
                 print("🗑️  Conversation and file tracker cleared.\n")
+                continue
+
+            elif cmd == "/render":
+                # GAP #1 toggle — turn rich code-block highlighting on/off.
+                _arg = cmd_arg.strip().lower()
+                if _arg in ("on", "1", "true", "yes"):
+                    _rich_state["enabled"] = True
+                elif _arg in ("off", "0", "false", "no"):
+                    _rich_state["enabled"] = False
+                else:
+                    _rich_state["enabled"] = not _rich_state["enabled"]
+                # Probe whether rich is actually importable so the message is honest.
+                _rich_ok = True
+                try:
+                    import rich as _probe_rich  # noqa: F401
+                except Exception:
+                    _rich_ok = False
+                if _rich_state["enabled"] and not _rich_ok:
+                    print("🎨 Rich rendering requested but `rich` is not installed.")
+                    print("   Install with:  pip install rich   (optional — plain text works fine)\n")
+                    _rich_state["enabled"] = False
+                else:
+                    print(f"🎨 Rich code rendering: {'ON' if _rich_state['enabled'] else 'OFF'}\n")
                 continue
 
             elif cmd == "/undo":
@@ -3265,6 +3968,11 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 history.append(("user", current_input))
                 history.append(("assistant", reply))
                 turn_count += 1
+
+                # GAP #1 — rich code rendering: after the final answer streamed
+                # as plain text, pretty-print any fenced code blocks with syntax
+                # highlighting (optional `rich` dep; silent no-op if absent).
+                _render_code_blocks(reply)
 
                 # Archive to disk (permanent, append-only — survives /compact and session end)
                 _archive_turn("user", current_input)
@@ -3872,7 +4580,7 @@ def main():
     audit_parser.add_argument('--hours', type=float, help='Only include events from last N hours')
     audit_parser.add_argument('--output', '-o', help='Write report to file instead of stdout')
     audit_parser.add_argument('--brain', default=None, help='Path to .brain directory (default: auto-detect)')
-    audit_parser.add_argument('--signed', action='store_true', help='Cryptographically sign the report (Nucleus Pro)')
+    # --signed will return with 1.13.3 (PRs #595/#596)
 
     # ============================================================
     # SOVEREIGN COMMAND — Identity & Status (Sovereign Agent OS)
@@ -4248,12 +4956,87 @@ def main():
         pass
 
     # ============================================================
+    # SYNC COMMAND — brain content sync (local ↔ hosted)
+    # ============================================================
+    sync_parser = subparsers.add_parser(
+        'sync', help='🔄 Sync brain content with hosted engram store'
+    )
+    sync_parser.add_argument(
+        '--url', type=str, default=None,
+        help='Hosted sync endpoint URL (default: NUCLEUS_SYNC_URL env or relay.nucleusos.dev)'
+    )
+    sync_parser.add_argument(
+        '--dry-run', action='store_true',
+        help='Show what would sync without writing'
+    )
+    sync_parser.add_argument(
+        '--full', action='store_true',
+        help='Full sync (ignore last sync timestamp — sync everything)'
+    )
+    sync_parser.add_argument(
+        '--status', action='store_true',
+        help='Show sync state without syncing'
+    )
+    sync_parser.add_argument(
+        '--verbose', '-v', action='store_true',
+        help='Verbose output'
+    )
+
+    # ============================================================
+    # EXPORT / IMPORT — sovereignty guarantee (data portability)
+    # ============================================================
+    export_parser = subparsers.add_parser(
+        'export', help='📦 Export your brain to a portable archive (sovereignty guarantee)'
+    )
+    export_parser.add_argument(
+        '--output', '-o', type=str, default=None,
+        help='Output file path (default: ./nucleus-brain-export-<timestamp>.tar.gz)'
+    )
+    export_parser.add_argument(
+        '--include-secrets', action='store_true',
+        help='Include secrets/ directory + secret-bearing config (default: redacted)'
+    )
+    export_parser.add_argument(
+        '--include-relay', action='store_true',
+        help='Include .brain/relay/ cross-agent messages (default: excluded)'
+    )
+
+    import_parser = subparsers.add_parser(
+        'import', help='📦 Import a brain archive (restore from export)'
+    )
+    import_parser.add_argument(
+        'archive', type=str, nargs='?', default=None,
+        help='Path to the .tar.gz export archive'
+    )
+    import_parser.add_argument(
+        '--target', '-t', type=str, default=None,
+        help='Target brain directory (default: current NUCLEUS_BRAIN_PATH)'
+    )
+    import_parser.add_argument(
+        '--replace', action='store_true',
+        help='Overwrite existing files (destructive — requires --force)'
+    )
+    import_parser.add_argument(
+        '--force', action='store_true',
+        help='Confirm destructive --replace operation'
+    )
+    import_parser.add_argument(
+        '--dry-run', action='store_true',
+        help='Validate archive + report what would happen without writing'
+    )
+    import_parser.add_argument(
+        '--verify', action='store_true',
+        help='Verify archive integrity (SHA-256 check) without importing'
+    )
+
+    # ============================================================
     # CONFIG COMMAND — Nucleus settings (telemetry, etc.)
     # ============================================================
     config_parser = subparsers.add_parser('config', help='⚙️  View or change Nucleus configuration')
     config_parser.add_argument('--show', action='store_true', help='Show current configuration')
     config_parser.add_argument('--no-telemetry', action='store_true', help='Opt out of anonymous usage telemetry')
     config_parser.add_argument('--telemetry', action='store_true', help='Opt in to anonymous usage telemetry')
+    config_parser.add_argument('--enable-telemetry', action='store_true', help='Opt in to anonymous usage telemetry (alias for --telemetry)')
     config_parser.add_argument('--telemetry-endpoint', type=str, default=None, help='Set anonymous telemetry endpoint')
 
     # ============================================================
@@ -4362,15 +5145,17 @@ def main():
             except Exception:
                 pass
 
-    # ── Anonymous telemetry: opt-in prompt fires ONLY on `nucleus init` ──
-    # (per cc-main advice 2026-06-14 + peer crack PR #572: firing on every CLI
-    # invocation would write stray .brain/config/nucleus.yaml from random cwds)
-    if cli_command == 'init':
-        try:
-            from .runtime.anon_telemetry import show_first_run_prompt
-            show_first_run_prompt()
-        except Exception:
-            pass
+    # ── Anonymous telemetry: opt-out first-run NOTICE on every CLI entry ──
+    # Notice fires on every CLI entry; marker file in show_first_run_notice()
+    # ensures once-per-machine. v1.13.2 flip: notice no longer reads stdin or
+    # writes yaml (the 1.13.1 "stray nucleus.yaml from random cwds" concern is
+    # gone), so it's safe to call on every entry point — first-run-marker gates
+    # repetition.
+    try:
+        from .runtime.anon_telemetry import show_first_run_notice
+        show_first_run_notice()
+    except Exception:
+        pass
 
     _cli_t0 = time.perf_counter()
 
@@ -4669,6 +5454,18 @@ def main():
             except ImportError:
                 print("Archive commands not available in this build.")
                 sys.exit(1)
+
+        elif cli_command == 'sync':
+            from .sync import handle_sync_command
+            sys.exit(handle_sync_command(args))
+
+        elif cli_command == 'export':
+            from .export_import import handle_export_command
+            sys.exit(handle_export_command(args))
+
+        elif cli_command == 'import':
+            from .export_import import handle_import_command
+            sys.exit(handle_import_command(args))
 
         elif cli_command == 'skill':
             sys.exit(handle_skill_command(args))
@@ -7188,10 +7985,10 @@ def handle_compliance_check_command(args):
             print("  Run: nucleus trial")
             return
         from .runtime.audit_report import generate_audit_report
+        # --signed will return with 1.13.3 (PRs #595/#596)
         report = generate_audit_report(
             brain_path=brain_path,
             report_format=args.format if args.format != "text" else "html",
-            signed=True,
         )
         Path(args.output).write_text(report.get("formatted", ""))
         print(f"  Compliance report exported to {args.output}")
@@ -7210,12 +8007,10 @@ def handle_audit_report_command(args):
         return
 
     try:
-        signed = getattr(args, 'signed', False)
         report = generate_audit_report(
             brain_path=brain_path,
             report_format=args.format,
             since_hours=args.hours,
-            signed=signed,
         )
 
         output_text = report.get("formatted", "No report generated")
@@ -7225,10 +8020,6 @@ def handle_audit_report_command(args):
             output_path.write_text(output_text)
             print(f"Audit report written to {output_path}")
             print(f"   Format: {args.format}")
-            if signed and report.get("signature", {}).get("signed"):
-                print(f"   Signed: Yes (Ed25519, key {report['signature']['key_id']}...)")
-            elif signed:
-                print(f"   Signed: No ({report.get('signature', {}).get('reason', 'unknown')})")
             if args.format == 'html':
                 print(f"   Open in browser: file://{output_path.absolute()}")
         else:
@@ -7810,10 +8601,10 @@ def handle_summon_command(args):
         env["GEMINI_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
         env["GEMINI_NEXT_GEN_API_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
         env["GOOGLE_GEMINI_BASE_URL"] = os.environ["GEMINI_API_BASE_URL"]
-    elif Path(tempfile.gettempdir()) / "gemini_proxy.port".exists():
+    elif (Path(tempfile.gettempdir()) / "gemini_proxy.port").exists():
         # Auto-detect local proxy (Phase 23 Hardening)
         try:
-            port = Path(tempfile.gettempdir()) / "gemini_proxy.port".read_text().strip()
+            port = (Path(tempfile.gettempdir()) / "gemini_proxy.port").read_text().strip()
             env["GEMINI_API_BASE_URL"] = f"http://localhost:{port}/v1"
             env["GEMINI_BASE_URL"] = f"http://localhost:{port}/v1"
             env["GEMINI_NEXT_GEN_API_BASE_URL"] = f"http://localhost:{port}/v1"
@@ -8356,6 +9147,7 @@ def handle_config_command(args):
     if getattr(args, 'show', False) or (
         not getattr(args, 'no_telemetry', False)
         and not getattr(args, 'telemetry', False)
+        and not getattr(args, 'enable_telemetry', False)
         and not getattr(args, 'telemetry_endpoint', None)
     ):
         if config_file.exists():
@@ -8389,8 +9181,8 @@ def handle_config_command(args):
         print("   No usage data will be sent.")
         changed = True
 
-    # ── --telemetry ──
-    if getattr(args, 'telemetry', False):
+    # ── --telemetry / --enable-telemetry ──
+    if getattr(args, 'telemetry', False) or getattr(args, 'enable_telemetry', False):
         config["telemetry"]["anonymous"]["enabled"] = True
         print("✅ Anonymous telemetry enabled.")
         print("   Thank you for helping improve Nucleus!")

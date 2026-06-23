@@ -37,9 +37,8 @@ async def generate_tool_schema(mcp) -> Dict[str, Any]:
         }
         
         # 1. Tools
-        tool_names = await mcp.get_tools()
-        for name in tool_names:
-            tool = await mcp.get_tool(name)
+        tools_list = await mcp.list_tools()
+        for tool in tools_list:
             path = f"/tools/{tool.name}"
             schema["paths"][path] = {
                 "post": {

@@ -69,6 +69,15 @@ STATE_MAX_IDS = 2000
 # fire wake side-effects for stale mail.
 PUSH_MAX_AGE_S = float(os.environ.get("NUCLEUS_BRIDGE_PUSH_MAX_AGE_S", str(48 * 3600)))
 
+# ── Engram sync (background, slower cadence than relay messages) ──────
+# Enabled when NUCLEUS_BRIDGE_ENGRAM_SYNC=1 OR when NUCLEUS_SYNC_URL is
+# explicitly set. The engram sync endpoint is heavier than the relay
+# message bus (full ledger scan + ADUN apply), so it runs on its own
+# interval — default 300s (5 min) — separate from the 5s relay loop.
+DEFAULT_ENGRAM_SYNC_INTERVAL_S = float(
+    os.environ.get("NUCLEUS_BRIDGE_ENGRAM_SYNC_INTERVAL_S", str(300))
+)
+
 _VALID_MID_RE = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
 
 
@@ -438,9 +447,60 @@ def sync_all() -> Dict[str, Any]:
     return totals
 
 
+# ── Engram sync (background, composed on the sync module) ─────────────
+
+
+def _engram_sync_enabled() -> bool:
+    """Engram sync is opt-in via env, auto-on when NUCLEUS_SYNC_URL is set."""
+    flag = os.environ.get("NUCLEUS_BRIDGE_ENGRAM_SYNC", "").strip().lower()
+    if flag in ("1", "true", "yes", "on"):
+        return True
+    if flag in ("0", "false", "no", "off"):
+        return False
+    # Auto-on when the operator has explicitly set a sync URL
+    return bool(os.environ.get("NUCLEUS_SYNC_URL", "").strip())
+
+
+def sync_engrams() -> Dict[str, Any]:
+    """One engram sync pass via the sync module. Returns stats; never raises.
+
+    Composes ``sync.perform_sync_cycle`` (daemon-safe, no stdout). The
+    engram sync endpoint is heavier than the relay message bus, so this
+    runs on its own slower cadence (see ``DEFAULT_ENGRAM_SYNC_INTERVAL_S``)
+    — not every relay cycle.
+    """
+    if not _engram_sync_enabled():
+        return {"skipped": True, "reason": "disabled"}
+    try:
+        from ...sync import perform_sync_cycle
+    except ImportError as e:
+        logger.warning("bridge: sync module unavailable: %s", e)
+        return {"skipped": True, "reason": "import_error"}
+    try:
+        stats = perform_sync_cycle()
+    except Exception as e:  # never let engram sync crash the relay loop
+        logger.warning("bridge: engram sync crashed: %s", e)
+        return {"ok": False, "error": str(e), "transport_down": False}
+    if stats.get("ok"):
+        logger.info(
+            "bridge engram sync: pushed=%d received=%d applied=%d conflicts=%d",
+            stats.get("pushed", 0), stats.get("received", 0),
+            stats.get("applied", 0), stats.get("conflicts", 0),
+        )
+    elif stats.get("error"):
+        logger.warning("bridge engram sync error: %s", stats["error"])
+    return stats
+
+
 def run_loop(interval_s: float = DEFAULT_INTERVAL_S) -> None:
-    """Poll-and-mirror forever. Exponential backoff while OCI is unreachable."""
+    """Poll-and-mirror forever. Exponential backoff while OCI is unreachable.
+
+    Engram sync runs on its own slower cadence
+    (``DEFAULT_ENGRAM_SYNC_INTERVAL_S``) interleaved with the relay loop.
+    """
     backoff = interval_s
+    last_engram_sync = 0.0
+    engram_interval = DEFAULT_ENGRAM_SYNC_INTERVAL_S
     while True:
         totals = sync_all()
         if totals["transport_down"]:
@@ -456,6 +516,19 @@ def run_loop(interval_s: float = DEFAULT_INTERVAL_S) -> None:
                     totals["pulled"], totals["merged"],
                     totals["acked_up"], totals["pushed"],
                 )
+
+        # Engram sync on its own cadence (not every relay cycle)
+        now = time.time()
+        if _engram_sync_enabled() and (now - last_engram_sync) >= engram_interval:
+            es = sync_engrams()
+            if es.get("transport_down"):
+                # Don't reset the engram timer on transport failure —
+                # retry next eligible cycle so a brief outage doesn't
+                # push the next attempt out by a full interval.
+                pass
+            else:
+                last_engram_sync = now
+
         time.sleep(backoff)
 
 
@@ -466,6 +539,8 @@ def main() -> int:
     )
     parser = argparse.ArgumentParser(description="Nucleus relay FS<->HTTP bridge")
     parser.add_argument("--once", action="store_true", help="single sync pass, then exit")
+    parser.add_argument("--with-engrams", action="store_true",
+                        help="also run one engram sync pass (requires NUCLEUS_SYNC_URL or NUCLEUS_BRIDGE_ENGRAM_SYNC=1)")
     parser.add_argument("--interval", type=float,
                         default=float(os.environ.get("NUCLEUS_BRIDGE_INTERVAL_S",
                                                      str(DEFAULT_INTERVAL_S))))
@@ -480,7 +555,10 @@ def main() -> int:
 
     if args.once:
         totals = sync_all()
-        print(json.dumps(totals))
+        result: Dict[str, Any] = dict(totals)
+        if args.with_engrams:
+            result["engram_sync"] = sync_engrams()
+        print(json.dumps(result))
         return 1 if totals["transport_down"] else 0
     run_loop(args.interval)
     return 0

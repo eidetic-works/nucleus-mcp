@@ -118,10 +118,10 @@ class TierRouter:
             "description": "Paid-tier Gemini, massive quota (149.5K RPD)"
         },
         LLMTier.LOCAL_FREE: {
-            "model": "gemini-3-flash-preview",
+            "model": "gemini-3.1-flash-lite-preview",
             "platform": "api_key",
             "cost_level": "free",
-            "description": "Gemini 3 Flash (Free)"
+            "description": "Gemini 3.1 Flash Lite (Free, 500 RPD — best for fuzzing/testing/background)"
         },
     }
 
@@ -613,7 +613,7 @@ class AnthropicLLM:
     interface as DualEngineLLM.  Text generation only (no tools, no streaming).
     """
 
-    DEFAULT_MODEL = "claude-sonnet-4-6-20250514"
+    DEFAULT_MODEL = "claude-sonnet-4-6"
     DEFAULT_MAX_TOKENS = 4096
 
     def __init__(
@@ -657,6 +657,12 @@ class AnthropicLLM:
         client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
         if self.base_url:
             client_kwargs["base_url"] = self.base_url
+        # Optional User-Agent override. Some proxy front-ends reject the SDK's
+        # default UA; callers can supply a neutral product UA via env. Unset by
+        # default, so the real Anthropic API path keeps the SDK's native UA.
+        _ua_override = os.environ.get("NUCLEUS_ANTHROPIC_USER_AGENT")
+        if _ua_override:
+            client_kwargs["default_headers"] = {"User-Agent": _ua_override}
         self._client = anthropic.Anthropic(**client_kwargs)
 
         logger.info(

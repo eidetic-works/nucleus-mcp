@@ -45,6 +45,11 @@ from mcp_server_nucleus.http_transport.relay_route import (
     relay_ack_route,
     relay_status_route,
 )
+from mcp_server_nucleus.http_transport.engram_sync_route import (
+    engram_sync_route,
+    engram_sync_status_route,
+)
+from mcp_server_nucleus.http_transport.oauth_server import oauth_routes as _oauth_routes
 
 from starlette.applications import Starlette
 from starlette.routing import Route
@@ -66,6 +71,7 @@ async def root(request: Request):
     tenant_map_configured = bool(os.environ.get("NUCLEUS_TENANT_MAP"))
     tenant_id = os.environ.get("NUCLEUS_TENANT_ID")
     mode = "multi-tenant" if tenant_map_configured else ("single-tenant" if tenant_id else "solo")
+    oauth_enabled = os.environ.get("NUCLEUS_OAUTH_ENABLED", "false").lower() == "true"
     return JSONResponse({
         "name": "Nucleus Sovereign Agent OS",
         "version": __version__,
@@ -74,6 +80,15 @@ async def root(request: Request):
         "mcp_endpoint": _mcp_path,
         "jurisdiction": os.environ.get("NUCLEUS_JURISDICTION", "global-default"),
         "auth_required": os.environ.get("NUCLEUS_REQUIRE_AUTH", "false").lower() == "true",
+        "oauth_enabled": oauth_enabled,
+        "oauth_endpoints": {
+            "protected_resource": "/.well-known/oauth-protected-resource",
+            "authorization_server": "/.well-known/oauth-authorization-server",
+            "register": "/register",
+            "authorize": "/authorize",
+            "token": "/token",
+            "revoke": "/revoke",
+        } if oauth_enabled else None,
         "docs": "https://github.com/eidetic-works/nucleus-mcp",
     })
 
@@ -108,16 +123,55 @@ async def metrics_handler(request: Request):
     return Response(content=body, media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
+async def openai_apps_verification(request: Request):
+    """OpenAI App Catalog domain verification endpoint.
+
+    Serves the verification token at /.well-known/openai-apps and
+    /.well-known/openai-apps-challenge on the same domain that hosts the
+    MCP endpoint. Required for ChatGPT App Catalog submission per OpenAI's
+    domain-verification policy.
+
+    Set NUCLEUS_OPENAI_APPS_TOKEN env var to the token OpenAI provides
+    during the submission flow. If unset, returns 404 (verification not
+    configured).
+
+    Returns the token as PLAIN TEXT (Content-Type: text/plain) — NOT JSON.
+    OpenAI's domain-verification flow requires the raw token string with no
+    JSON wrapper, no HTML, no trailing newline. See:
+    https://developers.openai.com/apps-sdk/deploy/submission
+    """
+    from starlette.responses import PlainTextResponse
+    token = os.environ.get("NUCLEUS_OPENAI_APPS_TOKEN", "").strip()
+    if not token:
+        return PlainTextResponse(
+            "openai-apps verification not configured",
+            status_code=404,
+            media_type="text/plain",
+        )
+    return PlainTextResponse(token, media_type="text/plain")
+
+
 # Add health/identity routes directly to the fastmcp Starlette app
 # instead of using Mount (which causes 307 trailing-slash redirects)
 _mcp_app.router.routes.insert(0, Route("/", root))
 _mcp_app.router.routes.insert(1, Route("/health", health))
 _mcp_app.router.routes.insert(2, Route("/ready", ready))
 _mcp_app.router.routes.insert(3, Route("/metrics", metrics_handler))
-_mcp_app.router.routes.insert(4, relay_route)
-_mcp_app.router.routes.insert(5, relay_get_route)
-_mcp_app.router.routes.insert(6, relay_ack_route)
-_mcp_app.router.routes.insert(7, relay_status_route)
+_mcp_app.router.routes.insert(4, Route("/.well-known/openai-apps", openai_apps_verification))
+_mcp_app.router.routes.insert(4, Route("/.well-known/openai-apps-challenge", openai_apps_verification))
+_mcp_app.router.routes.insert(5, relay_route)
+_mcp_app.router.routes.insert(6, relay_get_route)
+_mcp_app.router.routes.insert(7, relay_ack_route)
+_mcp_app.router.routes.insert(8, relay_status_route)
+_mcp_app.router.routes.insert(9, engram_sync_route)
+_mcp_app.router.routes.insert(10, engram_sync_status_route)
+
+# OAuth 2.1 routes — for ChatGPT Connectors, Claude Connectors, and any
+# MCP client that follows the MCP authorization spec.
+# Inserted at the front so .well-known/* and /authorize /token /register
+# are matched before the MCP /mcp catch-all.
+for _i, _route in enumerate(_oauth_routes):
+    _mcp_app.router.routes.insert(9 + _i, _route)
 
 app = _mcp_app
 

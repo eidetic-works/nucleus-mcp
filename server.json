@@ -6,30 +6,18 @@
     "url": "https://github.com/eidetic-works/nucleus-mcp",
     "source": "github"
   },
-  "version": "1.13.1",
-  "packages": [
+  "version": "1.13.3",
+  "remotes": [
     {
-      "registryType": "npm",
-      "identifier": "nucleus-mcp",
-      "version": "1.13.1",
-      "runtimeHint": "npx",
-      "transport": {
-        "type": "stdio"
-      },
-      "environmentVariables": [
-        {
-          "description": "Path to .brain/ directory (defaults to .brain in current directory)",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": false,
-          "name": "NUCLEUS_BRAIN_PATH"
-        }
-      ]
-    },
+      "type": "streamable-http",
+      "url": "https://relay.nucleusos.dev/mcp"
+    }
+  ],
+  "packages": [
     {
       "registryType": "pypi",
       "identifier": "nucleus-mcp",
-      "version": "1.13.1",
+      "version": "1.13.3",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **OAuth 2.1 Authorization Server** for MCP HTTP transport. Self-contained
+  OAuth 2.1 server (`http_transport/oauth_server.py`) enabling ChatGPT
+  Connectors, Claude Connectors, and any MCP client following the MCP
+  authorization spec. Implements DCR (RFC 7591), Protected Resource Metadata
+  (RFC 9728), Authorization Server Metadata (RFC 8414), authorization code
+  flow, refresh tokens, and token revocation (RFC 7009). Enable with
+  `NUCLEUS_OAUTH_ENABLED=true`.
+- **Perplexity connector setup doc** (`docs/connectors/PERPLEXITY_CONNECTOR.md`).
+  Perplexity Pro/Max/Enterprise users can now connect to Nucleus MCP via
+  Settings → Connectors → Custom MCP server → `https://relay.nucleusos.dev/mcp`.
+- **ChatGPT connector setup doc** (`docs/connectors/CHATGPT_CONNECTOR.md`).
+  ChatGPT Plus/Pro/Team/Enterprise users with Developer Mode can connect to
+  Nucleus MCP via Settings → Connectors → Add custom connector →
+  `https://relay.nucleusos.dev/mcp`. OAuth 2.1 flow is auto-discovered.
+- **Connector index** (`docs/connectors/README.md`) documenting all ecosystem
+  connectors (Claude, Perplexity, ChatGPT, VS Code) and their status.
+- **OAuth bearer token validation in tenant middleware**. Bearer tokens
+  issued by the Nucleus OAuth server (`nucleus_at_*`) are now validated by
+  the tenant middleware, enabling OAuth-authenticated MCP tool calls without
+  a static tenant map.
+- **MCP tool annotations for ChatGPT App Catalog**. All 17 facade tools now
+  declare `readOnlyHint`, `destructiveHint`, and `openWorldHint` annotations
+  per the MCP spec. Required for ChatGPT App Catalog submission and used by
+  ChatGPT Developer Mode to determine which tools require user confirmation.
+- **`/.well-known/openai-apps` domain verification endpoint**. New HTTP
+  transport route serves the OpenAI domain verification token from
+  `NUCLEUS_OPENAI_APPS_TOKEN` env var. Required for ChatGPT App Catalog
+  submission (domain ownership proof).
+- **ChatGPT App Catalog submission checklist**
+  (`docs/connectors/CHATGPT_APP_SUBMISSION.md`). Documents the full
+  submission process: code-side items (done), operator-keyboard items
+  (org verification, demo video, screenshots, demo account, submission
+  form), test prompts, and tool annotation reference table.
+
+## [1.13.2] - 2026-06-16 — "Telemetry Default-Flip: Opt-OUT with Disclosure"
+
+### Changed
+- **Telemetry: default flipped from opt-IN to opt-OUT with informed consent.** v1.13.1's y/N prompt on `nucleus init` is replaced with a one-time first-run notice on any CLI invocation. Spans now flow by default; three trivial disable paths preserved (env var, yaml, CLI). Industry-standard dev-tool posture (Homebrew, npm, VS Code, Sentry SaaS, Docker Desktop).
+
+### Added
+- `TELEMETRY.md` at repo root documenting exactly what's collected, what isn't, and how to disable.
+
 ## [1.13.1] - 2026-06-14 — "Opt-In Telemetry + Release-Protocol Audit"
 
 ### Security / Privacy

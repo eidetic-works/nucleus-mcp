@@ -211,8 +211,12 @@ def _post_oauth(
             "oauth: grant=%s rejected status=%d",
             grant_type, resp.status_code,
         )
+        try:
+            _err_body = resp.text[:200]
+        except Exception:
+            _err_body = "<unreadable body>"
         raise OAuthExchangeError(
-            f"oauth grant_type={grant_type} rejected with status={resp.status_code}"
+            f"oauth grant_type={grant_type} rejected with status={resp.status_code}: {_err_body}"
         )
     return resp.json()
 
