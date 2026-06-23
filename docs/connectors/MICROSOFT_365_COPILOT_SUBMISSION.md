@@ -1,8 +1,13 @@
-# Microsoft 365 Copilot Federated Connector — Submission Prep
+# Microsoft 365 Copilot Federated Connector — Submission
 
-> Status: **READY TO SUBMIT** — read-only endpoint built (`/mcp-readonly`),
-> 4 tools all `readOnlyHint=True`. Remaining: (1) deploy endpoint to VM,
-> (2) apply to Microsoft for Startups for BD rep, (3) submit connector.
+> Status: **SUBMITTED 2026-06-23** — Federated Copilot Connector submission
+> form (8 pages, 32 fields) completed and submitted via
+> https://aka.ms/FccSubmissionForm. Awaiting Microsoft review.
+>
+> Remaining: (1) deploy endpoint to VM (operator-keyboard),
+> (2) apply to Microsoft for Startups for BD rep (Microsoft may route
+> submission to Founders Hub if no BD rep is named),
+> (3) deploy 32x32 outline logo to eidetic.works.
 
 ## Submission Path
 
@@ -73,35 +78,53 @@ curl -sS -X POST https://relay.nucleusos.dev/mcp-readonly/ \
 The VM is behind a firewall that only allows Cloudflare-proxied HTTP.
 Deploy must be run from a machine with SSH access to the VM.
 
-## Required Submission Artifacts (once BD rep engaged)
+## Required Submission Artifacts (SUBMITTED 2026-06-23)
 
 | Field | Value |
 |-------|-------|
 | MCP server URL | `https://relay.nucleusos.dev/mcp-readonly/` |
 | Connector display name | Nucleus Brain |
 | Short description (≤80 chars) | Persistent memory & cross-agent coordination for AI agents |
-| Synonyms | memory, engrams, tasks, relay, audit, coordination, brain |
-| Logo (color.png) | 192x192 full-color PNG — needs creation |
-| Logo (outline.png) | 32x32 white-on-transparent PNG — needs creation |
-| OAuth credentials | OAuth reference ID from Microsoft registration (needs setup) |
-| Tool list | All tools with readOnlyHint=True + human-readable names |
-| Documentation | https://eidetic.works + https://github.com/eidetic-works/nucleus-mcp |
-| Privacy policy | https://eidetic.works/privacy |
+| Synonyms | memory, engrams, tasks, relay, audit, coordination, brain, nucleus |
+| Logo (color.png) | 192x192 — https://eidetic.works/icon-192.png (live) |
+| Logo (outline.png) | 32x32 white-on-transparent — https://eidetic.works/icon-32-outline.png (created locally, needs deploy) |
+| Auth type | No auth needed (read-only endpoint) |
+| Tool list | nucleus_search (Search Engrams), nucleus_audit (Audit Log Query), nucleus_route (Model Cost Router), nucleus_relay_subscribe (Relay Inbox Subscription) |
+| Documentation | https://github.com/eidetic-works/nucleus-mcp |
+| Privacy policy | https://eidetic.works/privacy-policy |
 | Support channel | hello@nucleusos.dev |
-| Test credentials | OAuth 2.1 email-only consent (same as Claude Directory submission) |
-| Sample prompts | 1. "Search my engrams for decisions about authentication" 2. "Show the last 10 audit log entries" 3. "Check Nucleus system health" |
+| Test credentials | N/A — no auth required |
+| Sample prompts | 4 prompts: search engrams, audit log, system health, relay subscription |
+| GA date | 2026-06-23 |
+| Category | Developer Tools |
+| Capabilities | Read Only (all 4 tools readOnlyHint=True) |
+| Third-party access | Third-party AI model integration (nucleus_route routes to LLM APIs) |
+| Data handling | Server only accesses data explicitly requested by user; HTTPS/TLS encrypted |
+| Health data | No |
+| BD rep | "N/A — seeking BD rep via Microsoft for Startups Founders Hub" |
+
+## Submission Confirmation
+
+- **Form URL:** https://aka.ms/FccSubmissionForm
+- **Submitted:** 2026-06-23
+- **Confirmation:** "Your response was submitted." (Microsoft Forms)
+- **Screenshot:** `microsoft-fcc-submission-confirmation.png` (this directory)
+- **Update contact:** submit-fcc@microsoft.com (for updates to existing submissions)
 
 ## Next Steps
 
 1. **Deploy `/mcp-readonly` to relay.nucleusos.dev** — run deploy commands
-   from a machine with SSH access to the VM (see above).
+   from a machine with SSH access to the VM (see above). Microsoft will
+   verify the endpoint during review.
 2. **Apply to Microsoft for Startups Founders Hub** —
    https://foundershub.startups.microsoft.com/signup
    This gets you a BD rep + up to $150K Azure credits. Self-serve, no
-   investor referral code needed.
-3. **Create logo assets** (192x192 color PNG + 32x32 outline PNG).
-4. **Register OAuth credentials** with Microsoft identity platform.
-5. **Submit connector** once BD rep + legal agreement are in place.
+   investor referral code needed. Update the submission with the BD rep
+   email via submit-fcc@microsoft.com once assigned.
+3. **Deploy 32x32 outline logo** to eidetic.works (file created at
+   `landing/public/icon-32-outline.png`, needs landing page redeploy).
+4. **Monitor hello@nucleusos.dev inbox** for Microsoft review emails —
+   use `scripts/zoho_mail_reader.py --search microsoft` to check.
 
 ## Reference
 
