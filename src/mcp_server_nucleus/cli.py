@@ -5157,6 +5157,13 @@ def main():
     except Exception:
         pass
 
+    # ── Anonymous telemetry: session_start ──
+    try:
+        from .runtime.anon_telemetry import record_session_start
+        record_session_start()
+    except Exception:
+        pass
+
     _cli_t0 = time.perf_counter()
 
     try:
@@ -5482,13 +5489,39 @@ def main():
         # ── Anonymous telemetry: record CLI command (fire-and-forget) ──
         try:
             _cli_duration = (time.perf_counter() - _cli_t0) * 1000
-            from .runtime.anon_telemetry import record_anon_command, shutdown_anon_telemetry
+            from .runtime.anon_telemetry import record_anon_command, record_feature_adoption, shutdown_anon_telemetry
             record_anon_command(cli_command or "bare", "cli", _cli_duration)
+            # Track feature adoption for key features
+            _trackable_features = {
+                'morning-brief', 'engram', 'federation', 'depth', 'loop',
+                'sessions', 'features', 'billing', 'graph', 'channels',
+                'skill', 'growth', 'task', 'review', 'train', 'drive',
+                'doctor', 'mount', 'install', 'init', 'status',
+            }
+            if cli_command in _trackable_features:
+                record_feature_adoption(cli_command)
             shutdown_anon_telemetry()  # Flush metrics before exit
         except Exception:
             pass
 
     except SystemExit:
+        # Record telemetry before sys.exit() passes through
+        # (sys.exit() in the dispatch block bypasses the normal telemetry path)
+        try:
+            _cli_duration = (time.perf_counter() - _cli_t0) * 1000
+            from .runtime.anon_telemetry import record_anon_command, record_feature_adoption, shutdown_anon_telemetry
+            record_anon_command(cli_command or "bare", "cli", _cli_duration)
+            _trackable_features = {
+                'morning-brief', 'engram', 'federation', 'depth', 'loop',
+                'sessions', 'features', 'billing', 'graph', 'channels',
+                'skill', 'growth', 'task', 'review', 'train', 'drive',
+                'doctor', 'mount', 'install', 'init', 'status',
+            }
+            if cli_command in _trackable_features:
+                record_feature_adoption(cli_command)
+            shutdown_anon_telemetry()
+        except Exception:
+            pass
         raise  # Let sys.exit() pass through cleanly
     except NameError as ne:
         handler_name = str(ne).split("'")[1] if "'" in str(ne) else str(ne)
@@ -5499,11 +5532,12 @@ def main():
         # ── Anonymous telemetry: record CLI error (fire-and-forget) ──
         try:
             _cli_duration = (time.perf_counter() - _cli_t0) * 1000
-            from .runtime.anon_telemetry import record_anon_command, shutdown_anon_telemetry
+            from .runtime.anon_telemetry import record_anon_command, record_error, shutdown_anon_telemetry
             record_anon_command(
                 cli_command or "bare", "cli", _cli_duration,
                 error_type=type(exc).__name__,
             )
+            record_error(type(exc).__name__, command=cli_command or "bare")
             shutdown_anon_telemetry()  # Flush metrics before exit
         except Exception:
             pass
@@ -6899,7 +6933,14 @@ def handle_install_command(args):
     """Handle install command."""
     # Import Installer lazily
     from .runtime.installer import Installer
-    
+
+    # Record daemon_install telemetry
+    try:
+        from .runtime.anon_telemetry import record_daemon_install
+        record_daemon_install()
+    except Exception:
+        pass
+
     try:
         nuke_path = Path(args.path)
         if not nuke_path.exists():

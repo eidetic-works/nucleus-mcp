@@ -31,7 +31,7 @@ try:
     FILELOCK_AVAILABLE = True
 except ImportError:
     FILELOCK_AVAILABLE = False
-    logger.warning("filelock not installed - using basic locking (less robust)")
+    logger.debug("filelock not installed - using basic locking (less robust)")
 
 
 class LockError(Exception):

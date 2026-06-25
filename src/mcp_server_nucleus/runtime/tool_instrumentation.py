@@ -239,6 +239,6 @@ def install_instrumentation(mcp: Any) -> None:
     mcp.tool = patched_tool
     mcp._nucleus_instrumentation_installed = True
 
-    _is_quiet = any(a in sys.argv for a in ("-q", "--quiet", "--json", "json"))
+    _is_quiet = any(a in sys.argv for a in ("-q", "--quiet", "--json", "json")) or not os.environ.get("NUCLEUS_DEBUG")
     if not _is_quiet:
         print("[NUCLEUS] tool-call instrumentation installed (JSONL @ .brain/instrumentation/)", file=sys.stderr)

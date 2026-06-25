@@ -135,19 +135,21 @@ from .core.tool_registration_impl import configure_tiered_tool_registration
 
 configure_tiered_tool_registration(mcp)
 
-# Log tier info to stderr so users know what's active
+# Log tier info to stderr only when NUCLEUS_DEBUG is set
 try:
-    _tier = get_active_tier()
-    _tier_info = get_tier_info()
-    _tier_names = {0: "LAUNCH", 1: "CORE", 2: "ADVANCED", 3: "SYSTEM"}
-    _tier_label = _tier_names.get(_tier, f"T{_tier}")
-    _allowed_count = _tier_info.get("tools_allowed", 0)
-    import sys as _sys
-    _sys.stderr.write(f"[Nucleus] Tier {_tier} ({_tier_label}): {_allowed_count} tool facades enabled.")
-    if _tier == 0:
-        _sys.stderr.write(" Set NUCLEUS_BETA_TOKEN to unlock more. Run 'nucleus doctor' for details.")
-    _sys.stderr.write("\n")
-    _sys.stderr.flush()
+    import os as _os
+    if _os.environ.get("NUCLEUS_DEBUG"):
+        _tier = get_active_tier()
+        _tier_info = get_tier_info()
+        _tier_names = {0: "LAUNCH", 1: "CORE", 2: "ADVANCED", 3: "SYSTEM"}
+        _tier_label = _tier_names.get(_tier, f"T{_tier}")
+        _allowed_count = _tier_info.get("tools_allowed", 0)
+        import sys as _sys
+        _sys.stderr.write(f"[Nucleus] Tier {_tier} ({_tier_label}): {_allowed_count} tool facades enabled.")
+        if _tier == 0:
+            _sys.stderr.write(" Set NUCLEUS_BETA_TOKEN to unlock more. Run 'nucleus doctor' for details.")
+        _sys.stderr.write("\n")
+        _sys.stderr.flush()
 except Exception:
     pass
 

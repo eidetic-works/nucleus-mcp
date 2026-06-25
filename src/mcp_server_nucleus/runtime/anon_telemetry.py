@@ -63,7 +63,7 @@ from typing import Optional
 logger = logging.getLogger("nucleus.anon_telemetry")
 
 # ── Constants ────────────────────────────────────────────────────
-_DEFAULT_ENDPOINT = "https://telemetry.nucleusos.dev"
+_DEFAULT_ENDPOINT = "https://eidetic.works"
 _FIRST_RUN_MARKER = ".nucleus_telemetry_notice_shown"
 
 # ── Module-level cache ───────────────────────────────────────────
@@ -71,6 +71,20 @@ _config_checked = False
 _enabled_cache: Optional[bool] = None
 _pending_spans: list = []
 _lock = threading.Lock()
+
+# ── Session tracking ─────────────────────────────────────────────
+_session_id: Optional[str] = None
+_session_start_time: Optional[float] = None
+_session_commands: list = []
+
+
+def _get_session_id() -> str:
+    """Return a per-process session UUID (regenerated each CLI invocation)."""
+    global _session_id
+    if _session_id is None:
+        _session_id = uuid.uuid4().hex
+        _session_start_time = time.time()
+    return _session_id
 
 
 # ── Config helpers ───────────────────────────────────────────────
@@ -217,77 +231,13 @@ def _get_static_attributes() -> dict:
     }
 
 
-# ── OTLP Span Construction ──────────────────────────────────────
-
-def _build_otlp_span(
-    command: str,
-    category: str,
-    duration_ms: float,
-    error_type: Optional[str] = None,
-) -> dict:
-    """Build a minimal OTLP JSON span for a single command invocation."""
-    now_ns = int(time.time() * 1e9)
-    start_ns = now_ns - int(duration_ms * 1e6)
-    trace_id = uuid.uuid4().hex
-    span_id = uuid.uuid4().hex[:16]
-
-    attributes = [
-        {"key": "nucleus.command", "value": {"stringValue": command}},
-        {"key": "nucleus.category", "value": {"stringValue": category}},
-        {"key": "nucleus.duration_ms", "value": {"doubleValue": duration_ms}},
-    ]
-
-    # Add static attributes
-    for k, v in _get_static_attributes().items():
-        attributes.append({"key": k, "value": {"stringValue": str(v)}})
-
-    if error_type:
-        attributes.append(
-            {"key": "nucleus.error_type", "value": {"stringValue": error_type}}
-        )
-
-    status = {"code": 2, "message": error_type} if error_type else {"code": 1}
-
-    return {
-        "resourceSpans": [
-            {
-                "resource": {
-                    "attributes": [
-                        {
-                            "key": "service.name",
-                            "value": {"stringValue": "nucleus-anon"},
-                        }
-                    ]
-                },
-                "scopeSpans": [
-                    {
-                        "scope": {"name": "nucleus.anon_telemetry", "version": "1.0.0"},
-                        "spans": [
-                            {
-                                "traceId": trace_id,
-                                "spanId": span_id,
-                                "name": command,
-                                "kind": 3,  # SPAN_KIND_CLIENT
-                                "startTimeUnixNano": str(start_ns),
-                                "endTimeUnixNano": str(now_ns),
-                                "attributes": attributes,
-                                "status": status,
-                            }
-                        ],
-                    }
-                ],
-            }
-        ]
-    }
-
-
 # ── Send Logic (fire-and-forget in background thread) ────────────
 
-def _send_span(span_data: dict):
-    """Send a single OTLP JSON span to the telemetry endpoint."""
+def _send_event(event: dict):
+    """Send a single telemetry event to the eidetic.works endpoint."""
     endpoint = _get_endpoint()
-    url = f"{endpoint}/v1/traces"
-    body = json.dumps(span_data).encode("utf-8")
+    url = f"{endpoint}/api/telemetry/install"
+    body = json.dumps(event).encode("utf-8")
 
     try:
         req = urllib.request.Request(
@@ -301,20 +251,78 @@ def _send_span(span_data: dict):
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
             _ = resp.read()
-            logger.debug("Telemetry span sent (%d bytes)", len(body))
+            logger.debug("Telemetry event sent (%d bytes)", len(body))
     except Exception as exc:
         logger.debug("Telemetry send failed (non-blocking): %s", exc)
 
 
-def _send_in_background(span_data: dict):
-    """Fire-and-forget: send span in a daemon thread."""
-    t = threading.Thread(target=_send_span, args=(span_data,), daemon=True)
+def _send_in_background(event: dict):
+    """Fire-and-forget: send event in a daemon thread."""
+    t = threading.Thread(target=_send_event, args=(event,), daemon=True)
     t.start()
     with _lock:
         _pending_spans.append(t)
 
 
+def _build_event(
+    event_type: str,
+    command: str = "",
+    category: str = "",
+    duration_ms: float = 0.0,
+    error_type: Optional[str] = None,
+    extra: Optional[dict] = None,
+) -> dict:
+    """Build a rich telemetry event with all attributes."""
+    event = {
+        "event_type": event_type,
+        "install_id": _get_install_id(),
+        "session_id": _get_session_id(),
+        "timestamp": time.time(),
+        "command": command,
+        "category": category,
+        "duration_ms": round(duration_ms, 2),
+        "nucleus_version": _get_nucleus_version(),
+        "python_version": platform.python_version(),
+        "os": sys.platform,
+        "os_arch": platform.machine(),
+        "is_ci": _is_ci_env(),
+        "is_claude_code": _is_claude_code_env(),
+    }
+    if error_type:
+        event["error_type"] = error_type
+    if extra:
+        event.update(extra)
+    return event
+
+
 # ── Public API ───────────────────────────────────────────────────
+
+def record_session_start():
+    """Record a session_start event — call once at CLI/MCP startup."""
+    if not is_anon_telemetry_enabled():
+        return
+    try:
+        event = _build_event("session_start")
+        _send_in_background(event)
+    except Exception:
+        pass
+
+
+def record_session_end():
+    """Record a session_end event — call once at CLI/MCP exit."""
+    if not is_anon_telemetry_enabled():
+        return
+    try:
+        duration = time.time() - (_session_start_time or time.time())
+        event = _build_event("session_end", extra={
+            "session_duration_s": round(duration, 2),
+            "commands_run": len(_session_commands),
+            "commands_list": ",".join(_session_commands[-50:]),  # last 50
+        })
+        _send_in_background(event)
+    except Exception:
+        pass
+
 
 def record_anon_command(
     command: str,
@@ -331,14 +339,53 @@ def record_anon_command(
         return
 
     try:
-        span = _build_otlp_span(command, category, duration_ms, error_type)
-        _send_in_background(span)
+        _session_commands.append(command)
+        event = _build_event("command", command=command, category=category,
+                             duration_ms=duration_ms, error_type=error_type)
+        _send_in_background(event)
     except Exception:
         pass  # Never let telemetry break the user's workflow
 
 
+def record_feature_adoption(feature: str, context: Optional[dict] = None):
+    """Record that a user adopted a feature (first-time use of a capability)."""
+    if not is_anon_telemetry_enabled():
+        return
+    try:
+        event = _build_event("feature_adoption", command=feature, extra=context)
+        _send_in_background(event)
+    except Exception:
+        pass
+
+
+def record_error(error_type: str, command: str = "", context: Optional[dict] = None):
+    """Record an error event with type and optional context."""
+    if not is_anon_telemetry_enabled():
+        return
+    try:
+        event = _build_event("error", command=command, error_type=error_type, extra=context)
+        _send_in_background(event)
+    except Exception:
+        pass
+
+
+def record_daemon_install():
+    """Record a daemon_install event — call when the daemon is first installed."""
+    if not is_anon_telemetry_enabled():
+        return
+    try:
+        event = _build_event("daemon_install")
+        _send_in_background(event)
+    except Exception:
+        pass
+
+
 def shutdown_anon_telemetry(timeout: float = 2.0):
-    """Wait for pending telemetry spans to flush (called before CLI exit)."""
+    """Wait for pending telemetry events to flush (called before CLI exit)."""
+    # Send session_end if we haven't already
+    if _session_id and _session_commands:
+        record_session_end()
+
     with _lock:
         threads = list(_pending_spans)
         _pending_spans.clear()
@@ -412,8 +459,8 @@ def show_first_run_notice():
             "\n"
             "  📡 Nucleus collects anonymous usage telemetry. To opt out:\n"
             "     nucleus config --no-telemetry\n"
-            "     What's sent: command name, duration, version, OS, is_ci flag, random install_id.\n"
-            "     NEVER sent: content, prompts, paths, identity.\n"
+            "     What's sent: commands, sessions, feature adoption, errors, version, OS, install_id.\n"
+            "     NEVER sent: content, prompts, file paths, API keys, identity.\n"
             "     Details: https://github.com/eidetic-works/nucleus-mcp/blob/main/TELEMETRY.md\n"
         )
     except Exception:
