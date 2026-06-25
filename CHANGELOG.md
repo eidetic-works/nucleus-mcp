@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.6] - 2026-06-25 — "README: Hosted Relay Quick Start"
+
+### Changed
+- **README quick start now shows two paths.** Option A: add `https://relay.nucleusos.dev/mcp`
+  as a remote MCP server (zero install — for ChatGPT, Claude, Perplexity users). Option B:
+  `pip install nucleus-mcp && nucleus init` (local install — for Cursor, Windsurf, Claude
+  Desktop users). The relay path was buried in connector docs; now it's the first thing
+  a new visitor sees.
+
+## [1.13.5] - 2026-06-25 — "Telemetry sys.exit Fix"
+
+### Fixed
+- **Telemetry bypass on sys.exit commands.** 14 commands (`doctor`, `engram`, `federation`,
+  `task`, `session`, `growth`, `outbound`, `skill`, `sync`, `export`, `import`, `chief`,
+  `run`, `archive`) used `sys.exit()` in the dispatch block, which raised `SystemExit` and
+  jumped past the telemetry recording code. Now telemetry is recorded in the `SystemExit`
+  handler before re-raising. This was causing most command-level telemetry to silently drop.
+
+## [1.13.4] - 2026-06-25 — "Clean First Impression"
+
+### Fixed
+- **Startup noise eliminated.** Three debug messages (`[Nucleus] Tier 2 (ADVANCED)...`,
+  `[NUCLEUS] tool-call instrumentation installed...`, `[NUCLEUS] Registered 17 facade
+  tools...`) were printed on every single CLI invocation. Now suppressed unless
+  `NUCLEUS_DEBUG=1` is set. A new user running `nucleus --version` or `nucleus help`
+  now sees clean output instead of internal diagnostics.
+- **Telemetry endpoint fixed.** Client SDK was sending to `telemetry.nucleusos.dev`
+  (a domain that doesn't exist). Now sends to `https://eidetic.works/api/telemetry/install`.
+  All telemetry was silently dropping before this fix.
+- **Telemetry SDK rebuilt.** Replaced dead OTLP span builder with simple JSON events.
+  New event types: `session_start`, `session_end`, `command`, `feature_adoption`,
+  `error`, `daemon_install`. Every event includes `session_id`, OS, Python version,
+  nucleus version, and is_ci flag. Enables per-install journey tracking.
+- **Feature adoption tracking wired.** 21 trackable CLI commands now fire
+  `feature_adoption` events when used, so we can see which features users actually try.
+- **Error tracking wired.** Uncaught CLI exceptions now fire `error` events with
+  error type and command context.
+- **`filelock` dependency added.** Was used but not declared in `pyproject.toml`,
+  causing a warning on every invocation. Now a proper dependency.
+- **filelock warning demoted to debug.** Even if `filelock` isn't installed,
+  users no longer see the warning unless debug logging is enabled.
+- **Dead OTLP code removed.** `_build_otlp_span()` function was 60 lines of dead
+  code after the SDK rebuild. Removed.
+
+### Added
+- **`filelock>=3.16.0`** as a core dependency.
+- **Per-install journey endpoint** on the telemetry worker (`/api/telemetry/detail`).
+  Returns full event timeline per install, grouped by session, with feature adoption,
+  error heatmap, command popularity, and retention metrics.
+
 ### Added
 - **OAuth 2.1 Authorization Server** for MCP HTTP transport. Self-contained
   OAuth 2.1 server (`http_transport/oauth_server.py`) enabling ChatGPT

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nucleus-mcp"
-version = "1.13.3"
+version = "1.13.6"
 description = "Sovereign Agent OS — Persistent Memory, Governance & Compliance for AI Agents"
 readme = "README.md"
 authors = [
@@ -28,6 +28,7 @@ dependencies = [
     "opentelemetry-sdk>=1.40.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.40.0",
     "rank-bm25>=0.2",
+    "filelock>=3.16.0",
 ]
 
 [project.optional-dependencies]

@@ -47,12 +47,18 @@ Every tool response shows frontier health:
 
 ## Quick Start
 
+**Option A — No install (ChatGPT, Claude, Perplexity):**
+
+Add `https://relay.nucleusos.dev/mcp` as a remote MCP server in your platform's connector settings. That's it — your AI now has persistent memory.
+
+**Option B — Local install (Cursor, Windsurf, Claude Desktop):**
+
 ```bash
 pip install nucleus-mcp
 nucleus init --recipe founder
 ```
 
-Two commands. Nucleus is running. AI outputs are now verified.
+Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` auto-configures your MCP client — just restart it.
 
 ---
 
