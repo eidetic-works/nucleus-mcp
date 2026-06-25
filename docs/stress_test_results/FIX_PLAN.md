@@ -1,8 +1,10 @@
 # Deterministic Fix Plan — Nucleus Tool Facade Stress Test
 
+> **STATUS: ALL ISSUES RESOLVED (2026-06-25).** All 126 sync-dispatch actions converted to `async_dispatch`. All "claude" references removed from sync module logic. Harness ROUTER extraction fixed (AST-based, multi-router per module). Sessions + orchestration modules now register correctly. Re-run: 266 actions × 7 angles = 1,862 tests, 0 crashes, 0 fails, 0 warns. This document is retained as a historical record of the fix plan.
+
 **Source:** `mcp-server-nucleus/docs/stress_test_results/stress_test_full_report_20260625.md`
 **Date:** 2026-06-25
-**Scope:** 218 actions × 7 angles = 1,526 tests
+**Scope:** 218 actions × 7 angles = 1,526 tests (original run; re-run = 266 actions × 7 = 1,862 tests)
 
 ## Triage Summary
 

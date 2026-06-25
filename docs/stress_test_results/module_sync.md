@@ -1,20 +1,20 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T21:25:45
-**Total tests:** 469
-**Actions tested:** 67
+**Generated:** 2026-06-25T23:16:16
+**Total tests:** 441
+**Actions tested:** 63
 **Angles per action:** 7
 
 ## Executive Summary
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 24 | 5.1% | Tool returned a successful response |
-| ⚠️ handled | 378 | 80.6% | Tool returned a graceful error (no crash) |
-| 🔶 warn | 67 | 14.3% | Cross-agent compat warning (static analysis) |
+| ✅ pass | 96 | 21.8% | Tool returned a successful response |
+| ⚠️ handled | 345 | 78.2% | Tool returned a graceful error (no crash) |
+| 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
-| **Total** | **469** | **100%** | |
+| **Total** | **441** | **100%** | |
 
 ## Results by Angle
 
@@ -24,12 +24,12 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 4 | 6.0% |
-| ⚠️ handled | 63 | 94.0% |
+| ✅ pass | 7 | 11.1% |
+| ⚠️ handled | 56 | 88.9% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ### missing_params
 
@@ -37,12 +37,12 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 10 | 14.9% |
-| ⚠️ handled | 57 | 85.1% |
+| ✅ pass | 13 | 20.6% |
+| ⚠️ handled | 50 | 79.4% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ### wrong_types
 
@@ -51,11 +51,11 @@
 | Status | Count | % |
 |--------|-------|---|
 | ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 67 | 100.0% |
+| ⚠️ handled | 63 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ### empty_params
 
@@ -63,12 +63,12 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 10 | 14.9% |
-| ⚠️ handled | 57 | 85.1% |
+| ✅ pass | 13 | 20.6% |
+| ⚠️ handled | 50 | 79.4% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ### unknown_action
 
@@ -77,11 +77,11 @@
 | Status | Count | % |
 |--------|-------|---|
 | ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 67 | 100.0% |
+| ⚠️ handled | 63 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ### fire_without_thinking
 
@@ -90,11 +90,11 @@
 | Status | Count | % |
 |--------|-------|---|
 | ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 67 | 100.0% |
+| ⚠️ handled | 63 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ### cross_agent_compat
 
@@ -102,244 +102,82 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
+| ✅ pass | 63 | 100.0% |
 | ⚠️ handled | 0 | 0.0% |
-| 🔶 warn | 67 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **67** | **100%** |
+| **Total** | **63** | **100%** |
 
 ## Per-Module Breakdown
 
-### Module: `sync` (67 actions)
+### Module: `sync` (63 actions)
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `*` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `/api/health` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `add_channel` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `admin` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `audit_pair` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `check_deploy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `complete_deploy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `evaluate_triggers` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `get_triggers` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `identify_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `info` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `list_artifacts` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `list_channels` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `marketplace_alert` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_audit` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_can_call` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_compare` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `marketplace_diff` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_export` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `marketplace_federation_proxy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_federation_register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_federation_sync` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_history` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_promote` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_quarantine` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_recommend` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_search` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `marketplace_subscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_subscriptions` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_trends` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `marketplace_unsubscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `marketplace_whoami` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `notify` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `pair_fire` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `pair_register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `pair_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `pair_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `read_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_classify_skip` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_clear` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_event_stats` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_inbox` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_listen` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_poll_start` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_poll_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_poll_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_skip_review` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `relay_wait` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `saturation_baselines` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `saturation_check` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `shared_list` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `shared_read` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `shared_write` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `smoke_test` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `start_deploy_poll` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `sync_auto` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `sync_now` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `sync_resolve` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `sync_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `test_channel` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `trigger_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `write_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-
-#### `sync.*`
-
-**happy** — ⚠️ handled
-- *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action '*' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers",`
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action '*' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers",`
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action '*' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers",`
-
-**empty_params** — ⚠️ handled
-- *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action '*' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers",`
-
-**unknown_action** — ⚠️ handled
-- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers"`
-
-**fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers`
-
-**cross_agent_compat** — 🔶 warn
-- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
-
----
-
-#### `sync./api/health`
-
-**happy** — ⚠️ handled
-- *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action '/api/health' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_`
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action '/api/health' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_`
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action '/api/health' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_`
-
-**empty_params** — ⚠️ handled
-- *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action '/api/health' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_`
-
-**unknown_action** — ⚠️ handled
-- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers"`
-
-**fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers`
-
-**cross_agent_compat** — 🔶 warn
-- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
-
----
+| `add_channel` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `audit_pair` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `check_deploy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `complete_deploy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `evaluate_triggers` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `get_triggers` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `identify_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `list_artifacts` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `list_channels` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_alert` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_audit` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_can_call` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_compare` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `marketplace_diff` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_export` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_federation_proxy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_federation_register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_federation_sync` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_history` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_promote` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_quarantine` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_recommend` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_search` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_subscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_subscriptions` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_trends` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `marketplace_unsubscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_whoami` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `notify` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `pair_fire` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `pair_register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `pair_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `pair_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `read_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_classify_skip` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_clear` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_event_stats` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_listen` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_poll_start` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_poll_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_poll_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_skip_review` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_wait` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `saturation_baselines` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `saturation_check` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `shared_list` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `shared_read` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `shared_write` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `smoke_test` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `start_deploy_poll` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `sync_auto` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `sync_now` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `sync_resolve` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `sync_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `test_channel` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `trigger_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `write_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `sync.add_channel`
 
@@ -394,88 +232,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
-
----
-
-#### `sync.admin`
-
-**happy** — ⚠️ handled
-- *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action 'admin' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigge`
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action 'admin' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigge`
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action 'admin' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigge`
-
-**empty_params** — ⚠️ handled
-- *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action 'admin' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigge`
-
-**unknown_action** — ⚠️ handled
-- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers"`
-
-**fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers`
-
-**cross_agent_compat** — 🔶 warn
-- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -546,9 +305,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -607,9 +366,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -662,9 +421,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -718,9 +477,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -738,15 +497,7 @@
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `[
-  {
-    "id": "trigger-synthesis",
-    "event_type": "user_intent",
-    "target_agent": "synthesizer",
-    "description": "Synthesizer triages incoming user intent."
-  },
-  {
-    "id": "trigger-groo`
+- *Result preview:* `[]`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -760,15 +511,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `[
-  {
-    "id": "trigger-synthesis",
-    "event_type": "user_intent",
-    "target_agent": "synthesizer",
-    "description": "Synthesizer triages incoming user intent."
-  },
-  {
-    "id": "trigger-groo`
+- *Result preview:* `[]`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -793,9 +536,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -848,88 +591,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
-
----
-
-#### `sync.info`
-
-**happy** — ⚠️ handled
-- *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action 'info' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigger`
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action 'info' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigger`
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action 'info' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigger`
-
-**empty_params** — ⚠️ handled
-- *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action 'info' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_trigger`
-
-**unknown_action** — ⚠️ handled
-- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers"`
-
-**fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_sync",
-  "available_actions": [
-    "add_channel",
-    "audit_pair",
-    "check_deploy",
-    "complete_deploy",
-    "evaluate_triggers",
-    "get_triggers`
-
-**cross_agent_compat** — 🔶 warn
-- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -945,14 +609,7 @@
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `[
-  ".DS_Store",
-  "dummy.md",
-  "research/mcp_debugging_guide.md",
-  "research/clinical_advisor_playbook.md",
-  "research/user_interview_script.md",
-  "research/hardening_patterns_research.md",
-  "re`
+- *Result preview:* `[]`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -965,14 +622,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `[
-  ".DS_Store",
-  "dummy.md",
-  "research/mcp_debugging_guide.md",
-  "research/clinical_advisor_playbook.md",
-  "research/user_interview_script.md",
-  "research/hardening_patterns_research.md",
-  "re`
+- *Result preview:* `[]`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -997,9 +647,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1059,9 +709,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1115,9 +765,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1170,9 +820,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1230,9 +880,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1291,9 +941,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1302,32 +952,30 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "total_registered": 3,
+  "total_registered": 0,
   "by_tier": {
-    "unverified": 2,
+    "unverified": 0,
     "active": 0,
     "trusted": 0,
-    "verified": 1
+    "verified": 0
   },
   "inactive_count": 0,
-  "top_10_by_reputation": [
-    {
-      "address": "sonn`
+  "top_10_by_reputation": [],
+  "tier_flips_recorded": 0`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "total_registered": 3,
+  "total_registered": 0,
   "by_tier": {
-    "unverified": 2,
+    "unverified": 0,
     "active": 0,
     "trusted": 0,
-    "verified": 1
+    "verified": 0
   },
   "inactive_count": 0,
-  "top_10_by_reputation": [
-    {
-      "address": "sonn`
+  "top_10_by_reputation": [],
+  "tier_flips_recorded": 0`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1341,17 +989,16 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "total_registered": 3,
+  "total_registered": 0,
   "by_tier": {
-    "unverified": 2,
+    "unverified": 0,
     "active": 0,
     "trusted": 0,
-    "verified": 1
+    "verified": 0
   },
   "inactive_count": 0,
-  "top_10_by_reputation": [
-    {
-      "address": "sonn`
+  "top_10_by_reputation": [],
+  "tier_flips_recorded": 0`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1376,9 +1023,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1432,9 +1079,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1452,15 +1099,9 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "snapshot": [
-    {
-      "address": "sonnet-helper-cc-tb@nucleus",
-      "display_name": "sonnet_helper_cc_tb",
-      "accepts": [
-        "spawn_brief"
-      ],
-      "emits": [
-        "spawn_r`
+  "snapshot": [],
+  "total": 0
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1474,15 +1115,9 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "snapshot": [
-    {
-      "address": "sonnet-helper-cc-tb@nucleus",
-      "display_name": "sonnet_helper_cc_tb",
-      "accepts": [
-        "spawn_brief"
-      ],
-      "emits": [
-        "spawn_r`
+  "snapshot": [],
+  "total": 0
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1507,9 +1142,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1562,9 +1197,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1617,9 +1252,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1677,9 +1312,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1736,9 +1371,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1792,9 +1427,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1848,9 +1483,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1908,9 +1543,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -1926,11 +1561,9 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "cards": [
-    {
-      "address": "multi-cascade@nucleus",
-      "display_name": "Multi-Cascade Parallel Execution",
-      "description": "Parallel AI execution with CRDT-based atomic claiming. 4+`
+  "cards": [],
+  "count": 0
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1942,11 +1575,9 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "cards": [
-    {
-      "address": "multi-cascade@nucleus",
-      "display_name": "Multi-Cascade Parallel Execution",
-      "description": "Parallel AI execution with CRDT-based atomic claiming. 4+`
+  "cards": [],
+  "count": 0
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1971,9 +1602,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2026,9 +1657,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2088,9 +1719,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2099,28 +1730,20 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "trend": "stable",
+  "trend": "insufficient_data",
   "days_analyzed": 30,
   "total_changes": 0,
-  "snapshots": [
-    {
-      "date": "2026-05-26",
-      "total_registered": 3,
-      "distribution": {
-        "unverified": 66.67,`
+  "snapshots": []
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "trend": "stable",
+  "trend": "insufficient_data",
   "days_analyzed": 30,
   "total_changes": 0,
-  "snapshots": [
-    {
-      "date": "2026-05-26",
-      "total_registered": 3,
-      "distribution": {
-        "unverified": 66.67,`
+  "snapshots": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2132,15 +1755,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "trend": "stable",
+  "trend": "insufficient_data",
   "days_analyzed": 30,
   "total_changes": 0,
-  "snapshots": [
-    {
-      "date": "2026-05-26",
-      "total_registered": 3,
-      "distribution": {
-        "unverified": 66.67,`
+  "snapshots": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2165,9 +1784,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2224,9 +1843,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2284,9 +1903,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2344,9 +1963,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2399,9 +2018,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2458,9 +2077,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2540,9 +2159,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2604,9 +2223,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2670,9 +2289,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2726,9 +2345,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2737,37 +2356,38 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_classify_skip': register.<locals>.<lambda>() missing 3 required positional arguments: 'ts', 'subject', and 'classification'",
+  "expected_params": "(ts, `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_classify_skip': register.<locals>.<lambda>() missing 3 required positional arguments: 'ts', 'subject', and 'classification'",
+  "expected_params": "(ts, `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_classify_skip': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(ts, subject, classification, note=None)",
+ `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_classify_skip': register.<locals>.<lambda>() missing 3 required positional arguments: 'ts', 'subject', and 'classification'",
+  "expected_params": "(ts, `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2781,48 +2401,55 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
 #### `sync.relay_clear`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "deleted": 0,
+  "errors": 0,
+  "older_than_hours": 168
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "deleted": 0,
+  "errors": 0,
+  "older_than_hours": 168
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_clear': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(recipient=None, older_than_hours=168)",
+  "provided`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "deleted": 0,
+  "errors": 0,
+  "older_than_hours": 168
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2836,48 +2463,66 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
 #### `sync.relay_event_stats`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "total_fires": 0,
+  "total_skips": 0,
+  "total_attempts": 0,
+  "override_count": 0,
+  "override_rate": 0.0,
+  "skip_rate": 0.0
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "total_fires": 0,
+  "total_skips": 0,
+  "total_attempts": 0,
+  "override_count": 0,
+  "override_rate": 0.0,
+  "skip_rate": 0.0
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_event_stats': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "()",
+  "provided_params": [
+    "id",
+    "que`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "total_fires": 0,
+  "total_skips": 0,
+  "total_attempts": 0,
+  "override_count": 0,
+  "override_rate": 0.0,
+  "skip_rate": 0.0
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2891,48 +2536,60 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
 #### `sync.relay_inbox`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "recipient": "claude_code_main",
+  "messages": [],
+  "count": 0,
+  "unread_only": true,
+  "session_id": null
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "recipient": "claude_code_main",
+  "messages": [],
+  "count": 0,
+  "unread_only": true,
+  "session_id": null
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_inbox': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(unread_only=True, limit=20, recipient=None, session`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
+  "recipient": "claude_code_main",
+  "messages": [],
+  "count": 0,
+  "unread_only": true,
+  "session_id": null
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2946,9 +2603,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -2957,35 +2614,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3001,9 +2658,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3012,35 +2669,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3056,9 +2713,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3067,35 +2724,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3111,9 +2768,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3122,35 +2779,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3166,9 +2823,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3177,35 +2834,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3221,9 +2878,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3232,35 +2889,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3276,9 +2933,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3287,35 +2944,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3331,9 +2988,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3342,35 +2999,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3386,9 +3043,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3397,35 +3054,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3441,9 +3098,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3452,35 +3109,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3496,9 +3153,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3507,35 +3164,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3551,9 +3208,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3562,35 +3219,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3606,9 +3263,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3617,35 +3274,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3661,9 +3318,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3672,35 +3329,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3716,9 +3373,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3727,35 +3384,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3771,9 +3428,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3782,35 +3439,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3826,9 +3483,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3837,35 +3494,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3881,9 +3538,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3892,35 +3549,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3936,9 +3593,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -3947,35 +3604,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -3991,9 +3648,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -4002,35 +3659,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -4046,9 +3703,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -4057,35 +3714,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -4101,9 +3758,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -4112,35 +3769,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -4156,9 +3813,9 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
@@ -4167,35 +3824,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.7s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
   "module": "nucleus_sync"
 }`
 
@@ -4211,96 +3868,17 @@
     "evaluate_triggers",
     "get_triggers`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic`
+- *No error, no result preview*
 
 ---
 
 ## Cross-Agent Compatibility Details
 
-**67 actions have cross-agent compatibility warnings.**
-
-| Module | Action | Warning |
-|--------|--------|---------|
-| sync | `*` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `/api/health` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `add_channel` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `admin` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `audit_pair` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `check_deploy` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `complete_deploy` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `evaluate_triggers` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `get_triggers` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `identify_agent` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `info` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `list_artifacts` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `list_channels` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_alert` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_audit` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_can_call` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_compare` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_dashboard` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_diff` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_export` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_federation_proxy` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_federation_register` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_federation_sync` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_history` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_promote` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_quarantine` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_recommend` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_search` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_subscribe` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_subscriptions` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_trends` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_unsubscribe` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `marketplace_whoami` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `notify` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `pair_fire` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `pair_register` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `pair_status` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `pair_stop` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `read_artifact` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_ack` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_classify_skip` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_clear` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_event_stats` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_inbox` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_listen` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_log_event` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_poll_start` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_poll_status` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_poll_stop` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_post` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_skip_review` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_status` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `relay_wait` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `saturation_baselines` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `saturation_check` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `shared_list` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `shared_read` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `shared_write` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `smoke_test` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `start_deploy_poll` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `sync_auto` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `sync_now` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `sync_resolve` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `sync_status` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `test_channel` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `trigger_agent` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-| sync | `write_artifact` | not async — some MCP clients expect async tools; references "claude" in logic — may not be client-agnostic |
-
-### Warning Categories
-
-| Warning | Count |
-|---------|-------|
-| not async — some MCP clients expect async tools | 67 |
-| references "claude" in logic — may not be client-agnostic | 67 |
-
 ## Fire-Without-Thinking (Zero-Config) Details
 
-**67/67 actions return a useful response when called with empty action + empty params.**
+**63/63 actions return a useful response when called with empty action + empty params.**
 **0 actions fail or crash.**
 
 This tests the 'fire without thinking' pattern — an LLM that just calls `nucleus_engrams('', {})`

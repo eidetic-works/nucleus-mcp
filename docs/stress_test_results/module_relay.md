@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T21:25:45
+**Generated:** 2026-06-25T23:16:16
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7
@@ -9,9 +9,9 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 6 | 21.4% | Tool returned a successful response |
+| ✅ pass | 10 | 35.7% | Tool returned a successful response |
 | ⚠️ handled | 18 | 64.3% | Tool returned a graceful error (no crash) |
-| 🔶 warn | 4 | 14.3% | Cross-agent compat warning (static analysis) |
+| 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
 | **Total** | **28** | **100%** | |
@@ -102,9 +102,9 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
+| ✅ pass | 4 | 100.0% |
 | ⚠️ handled | 0 | 0.0% |
-| 🔶 warn | 4 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
 | **Total** | **4** | **100%** |
@@ -115,10 +115,10 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
+| `ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 
 #### `relay.ack`
 
@@ -178,9 +178,9 @@
   ]
 }`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -247,9 +247,9 @@
   ]
 }`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -305,9 +305,9 @@
   ]
 }`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -376,28 +376,13 @@
   ]
 }`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
 ## Cross-Agent Compatibility Details
-
-**4 actions have cross-agent compatibility warnings.**
-
-| Module | Action | Warning |
-|--------|--------|---------|
-| relay | `ack` | not async — some MCP clients expect async tools |
-| relay | `inbox` | not async — some MCP clients expect async tools |
-| relay | `post` | not async — some MCP clients expect async tools |
-| relay | `status` | not async — some MCP clients expect async tools |
-
-### Warning Categories
-
-| Warning | Count |
-|---------|-------|
-| not async — some MCP clients expect async tools | 4 |
 
 ## Fire-Without-Thinking (Zero-Config) Details
 

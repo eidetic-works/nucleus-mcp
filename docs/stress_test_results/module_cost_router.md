@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T21:25:45
+**Generated:** 2026-06-25T23:16:16
 **Total tests:** 7
 **Actions tested:** 1
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 1 | 14.3% | Tool returned a successful response |
-| ⚠️ handled | 6 | 85.7% | Tool returned a graceful error (no crash) |
+| ✅ pass | 5 | 71.4% | Tool returned a successful response |
+| ⚠️ handled | 2 | 28.6% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 1 | 100.0% |
+| ✅ pass | 1 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 1 | 100.0% |
+| ✅ pass | 1 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 1 | 100.0% |
+| ✅ pass | 1 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 1 | 100.0% |
+| ✅ pass | 1 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -115,81 +115,33 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `route` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `route` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `cost_router.route`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action 'route' in nucleus_engrams",
-  "available_actions": [
-    "add",
-    "audit_log",
-    "billing_summary",
-    "compounding_status",
-    "context_graph",
-    "dsor_get_trace`
+- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action 'route' in nucleus_engrams",
-  "available_actions": [
-    "add",
-    "audit_log",
-    "billing_summary",
-    "compounding_status",
-    "context_graph",
-    "dsor_get_trace`
+- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action 'route' in nucleus_engrams",
-  "available_actions": [
-    "add",
-    "audit_log",
-    "billing_summary",
-    "compounding_status",
-    "context_graph",
-    "dsor_get_trace`
+- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action 'route' in nucleus_engrams",
-  "available_actions": [
-    "add",
-    "audit_log",
-    "billing_summary",
-    "compounding_status",
-    "context_graph",
-    "dsor_get_trace`
+- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_engrams",
-  "available_actions": [
-    "add",
-    "audit_log",
-    "billing_summary",
-    "compounding_status",
-    "context_graph",
-  `
+- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: route"}`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_engrams",
-  "available_actions": [
-    "add",
-    "audit_log",
-    "billing_summary",
-    "compounding_status",
-    "context_graph",
-    "dsor_get_trace",`
+- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: route"}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients

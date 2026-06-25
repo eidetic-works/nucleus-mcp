@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T21:25:45
+**Generated:** 2026-06-25T23:16:16
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7
@@ -9,9 +9,9 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 7 | 25.0% | Tool returned a successful response |
+| ✅ pass | 11 | 39.3% | Tool returned a successful response |
 | ⚠️ handled | 17 | 60.7% | Tool returned a graceful error (no crash) |
-| 🔶 warn | 4 | 14.3% | Cross-agent compat warning (static analysis) |
+| 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
 | **Total** | **28** | **100%** | |
@@ -102,9 +102,9 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
+| ✅ pass | 4 | 100.0% |
 | ⚠️ handled | 0 | 0.0% |
-| 🔶 warn | 4 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
 | **Total** | **4** | **100%** |
@@ -115,10 +115,10 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `admin_query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `query` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `verify` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 4 pass |
+| `admin_query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `query` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `verify` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `audit_log_tool.admin_query`
 
@@ -146,9 +146,9 @@
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
 - *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -178,9 +178,9 @@
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
 - *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -210,9 +210,9 @@
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
 - *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -242,28 +242,13 @@
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
 - *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
 ## Cross-Agent Compatibility Details
-
-**4 actions have cross-agent compatibility warnings.**
-
-| Module | Action | Warning |
-|--------|--------|---------|
-| audit_log_tool | `admin_query` | not async — some MCP clients expect async tools |
-| audit_log_tool | `log_event` | not async — some MCP clients expect async tools |
-| audit_log_tool | `query` | not async — some MCP clients expect async tools |
-| audit_log_tool | `verify` | not async — some MCP clients expect async tools |
-
-### Warning Categories
-
-| Warning | Count |
-|---------|-------|
-| not async — some MCP clients expect async tools | 4 |
 
 ## Fire-Without-Thinking (Zero-Config) Details
 

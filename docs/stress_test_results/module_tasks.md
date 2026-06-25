@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T21:25:45
+**Generated:** 2026-06-25T23:16:16
 **Total tests:** 119
 **Actions tested:** 17
 **Angles per action:** 7
@@ -9,9 +9,9 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 18 | 15.1% | Tool returned a successful response |
+| ✅ pass | 35 | 29.4% | Tool returned a successful response |
 | ⚠️ handled | 84 | 70.6% | Tool returned a graceful error (no crash) |
-| 🔶 warn | 17 | 14.3% | Cross-agent compat warning (static analysis) |
+| 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
 | **Total** | **119** | **100%** | |
@@ -102,9 +102,9 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
+| ✅ pass | 17 | 100.0% |
 | ⚠️ handled | 0 | 0.0% |
-| 🔶 warn | 17 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
 | **Total** | **17** | **100%** |
@@ -115,23 +115,23 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `add` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `claim` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `context_switch` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `context_switch_reset` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `context_switch_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `create` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `depth_map` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `depth_pop` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `depth_push` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `depth_reset` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `depth_set_max` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `depth_show` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `escalate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `get_next` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `import_jsonl` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `update` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
+| `add` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `claim` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `context_switch` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `context_switch_reset` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `context_switch_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `create` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `depth_map` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `depth_pop` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `depth_push` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `depth_reset` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `depth_set_max` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `depth_show` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `escalate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `get_next` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `import_jsonl` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `update` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `tasks.add`
 
@@ -183,9 +183,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -245,9 +245,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -307,9 +307,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -322,7 +322,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625212116"
+    "session_id": "session-20260625231547"
   },
   "error": null
 }`
@@ -334,7 +334,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625212116"
+    "session_id": "session-20260625231547"
   },
   "error": null
 }`
@@ -355,7 +355,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625212116"
+    "session_id": "session-20260625231547"
   },
   "error": null
 }`
@@ -384,9 +384,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -461,9 +461,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -517,9 +517,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -585,9 +585,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -610,7 +610,7 @@
   "data": {
     "current_depth": 0,
     "message": "Already at root level (depth 0). Nothing to pop.",
-    "indicator": "[\u2591\u2591\u2591]"
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
   },
   "error": null
 }`
@@ -632,7 +632,7 @@
   "data": {
     "current_depth": 0,
     "message": "Already at root level (depth 0). Nothing to pop.",
-    "indicator": "[\u2591\u2591\u2591]"
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
   },
   "error": null
 }`
@@ -661,9 +661,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -728,9 +728,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -743,7 +743,7 @@
   "data": {
     "current_depth": 0,
     "message": "\u2705 Depth reset to root level.",
-    "indicator": "[\u2591\u2591\u2591]"
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
   },
   "error": null
 }`
@@ -755,7 +755,7 @@
   "data": {
     "current_depth": 0,
     "message": "\u2705 Depth reset to root level.",
-    "indicator": "[\u2591\u2591\u2591]"
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
   },
   "error": null
 }`
@@ -777,7 +777,7 @@
   "data": {
     "current_depth": 0,
     "message": "\u2705 Depth reset to root level.",
-    "indicator": "[\u2591\u2591\u2591]"
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
   },
   "error": null
 }`
@@ -806,9 +806,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -871,9 +871,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -885,7 +885,7 @@
   "success": true,
   "data": {
     "current_depth": 0,
-    "max_safe_depth": 3,
+    "max_safe_depth": 5,
     "status": "\ud83d\udfe2 SAFE",
     "breadcrumbs": "(root)",
     "tree": "(At root level)",
@@ -897,7 +897,7 @@
   "success": true,
   "data": {
     "current_depth": 0,
-    "max_safe_depth": 3,
+    "max_safe_depth": 5,
     "status": "\ud83d\udfe2 SAFE",
     "breadcrumbs": "(root)",
     "tree": "(At root level)",
@@ -919,7 +919,7 @@
   "success": true,
   "data": {
     "current_depth": 0,
-    "max_safe_depth": 3,
+    "max_safe_depth": 5,
     "status": "\ud83d\udfe2 SAFE",
     "breadcrumbs": "(root)",
     "tree": "(At root level)",
@@ -949,9 +949,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1011,9 +1011,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1077,9 +1077,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1133,9 +1133,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1153,8 +1153,10 @@
   "success": true,
   "data": [
     {
-      "id": "task-7bdd42ef",
-      "description": "v1.0.9 Sovereign Outreach Execution: Post 3 Reddit strikes (secithub, pwnhub, LocalLLaMA) using Comet Striker `
+      "id": "task-10140ad6",
+      "description": "[heartbeat][velocity_drop] Velocity dropped \u2014 0 writes in 48h.",
+      "status": "PENDING",
+      "priori`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1169,8 +1171,10 @@
   "success": true,
   "data": [
     {
-      "id": "task-7bdd42ef",
-      "description": "v1.0.9 Sovereign Outreach Execution: Post 3 Reddit strikes (secithub, pwnhub, LocalLLaMA) using Comet Striker `
+      "id": "task-10140ad6",
+      "description": "[heartbeat][velocity_drop] Velocity dropped \u2014 0 writes in 48h.",
+      "status": "PENDING",
+      "priori`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1196,9 +1200,9 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1260,41 +1264,13 @@
     "create",
     `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
 ## Cross-Agent Compatibility Details
-
-**17 actions have cross-agent compatibility warnings.**
-
-| Module | Action | Warning |
-|--------|--------|---------|
-| tasks | `add` | not async — some MCP clients expect async tools |
-| tasks | `claim` | not async — some MCP clients expect async tools |
-| tasks | `context_switch` | not async — some MCP clients expect async tools |
-| tasks | `context_switch_reset` | not async — some MCP clients expect async tools |
-| tasks | `context_switch_status` | not async — some MCP clients expect async tools |
-| tasks | `create` | not async — some MCP clients expect async tools |
-| tasks | `depth_map` | not async — some MCP clients expect async tools |
-| tasks | `depth_pop` | not async — some MCP clients expect async tools |
-| tasks | `depth_push` | not async — some MCP clients expect async tools |
-| tasks | `depth_reset` | not async — some MCP clients expect async tools |
-| tasks | `depth_set_max` | not async — some MCP clients expect async tools |
-| tasks | `depth_show` | not async — some MCP clients expect async tools |
-| tasks | `escalate` | not async — some MCP clients expect async tools |
-| tasks | `get_next` | not async — some MCP clients expect async tools |
-| tasks | `import_jsonl` | not async — some MCP clients expect async tools |
-| tasks | `list` | not async — some MCP clients expect async tools |
-| tasks | `update` | not async — some MCP clients expect async tools |
-
-### Warning Categories
-
-| Warning | Count |
-|---------|-------|
-| not async — some MCP clients expect async tools | 17 |
 
 ## Fire-Without-Thinking (Zero-Config) Details
 

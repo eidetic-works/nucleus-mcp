@@ -1,20 +1,20 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T21:25:45
-**Total tests:** 147
-**Actions tested:** 21
+**Generated:** 2026-06-25T23:16:16
+**Total tests:** 133
+**Actions tested:** 19
 **Angles per action:** 7
 
 ## Executive Summary
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 18 | 12.2% | Tool returned a successful response |
-| ⚠️ handled | 108 | 73.5% | Tool returned a graceful error (no crash) |
-| 🔶 warn | 21 | 14.3% | Cross-agent compat warning (static analysis) |
+| ✅ pass | 39 | 29.3% | Tool returned a successful response |
+| ⚠️ handled | 94 | 70.7% | Tool returned a graceful error (no crash) |
+| 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
-| **Total** | **147** | **100%** | |
+| **Total** | **133** | **100%** | |
 
 ## Results by Angle
 
@@ -24,12 +24,12 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 4 | 19.0% |
-| ⚠️ handled | 17 | 81.0% |
+| ✅ pass | 4 | 21.1% |
+| ⚠️ handled | 15 | 78.9% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ### missing_params
 
@@ -37,12 +37,12 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 7 | 33.3% |
-| ⚠️ handled | 14 | 66.7% |
+| ✅ pass | 8 | 42.1% |
+| ⚠️ handled | 11 | 57.9% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ### wrong_types
 
@@ -51,11 +51,11 @@
 | Status | Count | % |
 |--------|-------|---|
 | ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 21 | 100.0% |
+| ⚠️ handled | 19 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ### empty_params
 
@@ -63,12 +63,12 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 7 | 33.3% |
-| ⚠️ handled | 14 | 66.7% |
+| ✅ pass | 8 | 42.1% |
+| ⚠️ handled | 11 | 57.9% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ### unknown_action
 
@@ -77,11 +77,11 @@
 | Status | Count | % |
 |--------|-------|---|
 | ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 21 | 100.0% |
+| ⚠️ handled | 19 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ### fire_without_thinking
 
@@ -90,11 +90,11 @@
 | Status | Count | % |
 |--------|-------|---|
 | ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 21 | 100.0% |
+| ⚠️ handled | 19 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ### cross_agent_compat
 
@@ -102,124 +102,38 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
+| ✅ pass | 19 | 100.0% |
 | ⚠️ handled | 0 | 0.0% |
-| 🔶 warn | 21 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
-| **Total** | **21** | **100%** |
+| **Total** | **19** | **100%** |
 
 ## Per-Module Breakdown
 
-### Module: `governance` (21 actions)
+### Module: `governance` (19 actions)
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `GET` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `audit_report` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `auto_fix_loop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `comply_apply` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `comply_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `comply_report` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `curl` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `delete_file` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `kyc_review` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `list_directory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `lock` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `pip_install` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `set_mode` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `sovereign_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 3 pass |
-| `strategic` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `trace_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `trace_view` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | 🔶 | ✅ 2 pass |
-| `unlock` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `validate_strategic_plan` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-| `watch` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | 🔶 | 🔶 1 warn |
-
-#### `governance.GET`
-
-**happy** — ⚠️ handled
-- *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action 'GET' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl",
-   `
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action 'GET' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl",
-   `
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action 'GET' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl",
-   `
-
-**empty_params** — ⚠️ handled
-- *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action 'GET' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl",
-   `
-
-**unknown_action** — ⚠️ handled
-- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_repor`
-
-**fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl",
-   `
-
-**cross_agent_compat** — 🔶 warn
-- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
-
----
+| `audit_report` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `auto_fix_loop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `comply_apply` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `comply_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `comply_report` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `curl` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `delete_file` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `kyc_review` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `list_directory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `lock` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `pip_install` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `set_mode` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `sovereign_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `trace_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `trace_view` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `unlock` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `validate_strategic_plan` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `watch` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `governance.audit_report`
 
@@ -229,12 +143,10 @@
   "error": "Invalid params for action 'audit_report': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
   "expected_params": "(report_format='text', since_hours=None, brain_p`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_report': 'NoneType' object is not subscriptable",
-  "expected_params": "(report_format='text', since_hours=None, brain_path=None)",
-  "provided_params": `
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:45:24.646937+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -242,12 +154,10 @@
   "error": "Invalid params for action 'audit_report': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
   "expected_params": "(report_format='text', since_hours=None, brain_path`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_report': 'NoneType' object is not subscriptable",
-  "expected_params": "(report_format='text', since_hours=None, brain_path=None)",
-  "provided_params": `
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:45:24.650341+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -273,9 +183,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -330,9 +240,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -390,9 +300,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -458,9 +368,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -469,24 +379,28 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "status": "compliant",
+  "status": "non_compliant",
   "checks": {
     "jurisdiction": {
-      "status": "configured",
-      "id": "eu-dora",
-      "name": "EU DORA (Digital Operational Resilience Act)",
-      "applied_at": "2`
+      "status": "not_configured"
+    },
+    "audit_logs": {
+      "status": "present",
+      "audit_files": 0,
+      "event_files": 1`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "status": "compliant",
+  "status": "non_compliant",
   "checks": {
     "jurisdiction": {
-      "status": "configured",
-      "id": "eu-dora",
-      "name": "EU DORA (Digital Operational Resilience Act)",
-      "applied_at": "2`
+      "status": "not_configured"
+    },
+    "audit_logs": {
+      "status": "present",
+      "audit_files": 0,
+      "event_files": 1`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -499,13 +413,15 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "status": "compliant",
+  "status": "non_compliant",
   "checks": {
     "jurisdiction": {
-      "status": "configured",
-      "id": "eu-dora",
-      "name": "EU DORA (Digital Operational Resilience Act)",
-      "applied_at": "2`
+      "status": "not_configured"
+    },
+    "audit_logs": {
+      "status": "present",
+      "audit_files": 0,
+      "event_files": 1`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -531,9 +447,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -596,9 +512,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -658,9 +574,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -669,21 +585,21 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-FB808C52",
+  "review_id": "KYC-441C33D2",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T15:51:15.053345+00:00",
-  "completed_at": "2026-06-25T15:51:15.053378+00:00",
+  "started_at": "2026-06-25T17:45:24.654975+00:00",
+  "completed_at": "2026-06-25T17:45:24.654989+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-7ADC7FAB",
+  "review_id": "KYC-D262F8A2",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T15:51:15.054532+00:00",
-  "completed_at": "2026-06-25T15:51:15.054556+00:00",
+  "started_at": "2026-06-25T17:45:24.655427+00:00",
+  "completed_at": "2026-06-25T17:45:24.655439+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -696,11 +612,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-C47AAE33",
+  "review_id": "KYC-D6097431",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T15:51:15.055940+00:00",
-  "completed_at": "2026-06-25T15:51:15.055964+00:00",
+  "started_at": "2026-06-25T17:45:24.655892+00:00",
+  "completed_at": "2026-06-25T17:45:24.655901+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -727,9 +643,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -793,9 +709,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -859,9 +775,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -924,9 +840,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -990,9 +906,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1001,14 +917,14 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sovereignty_score": 100,
-  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`
+  "sovereignty_score": 55,
+  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sovereignty_score": 100,
-  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`
+  "sovereignty_score": 55,
+  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1021,8 +937,8 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sovereignty_score": 100,
-  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`
+  "sovereignty_score": 55,
+  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1048,9 +964,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1059,7 +975,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)
-📍 Workspace: <BRAIN_PATH>
+📍 Workspace: /private/tmp
 👁️  Watchdog: Inactive
 🔒 Protected Paths: 0
 🎨 Injector: Ready`
@@ -1067,7 +983,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)
-📍 Workspace: <BRAIN_PATH>
+📍 Workspace: /private/tmp
 👁️  Watchdog: Inactive
 🔒 Protected Paths: 0
 🎨 Injector: Ready`
@@ -1085,7 +1001,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)
-📍 Workspace: <BRAIN_PATH>
+📍 Workspace: /private/tmp
 👁️  Watchdog: Inactive
 🔒 Protected Paths: 0
 🎨 Injector: Ready`
@@ -1114,89 +1030,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
-
----
-
-#### `governance.strategic`
-
-**happy** — ⚠️ handled
-- *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Unknown action 'strategic' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl`
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Unknown action 'strategic' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl`
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Unknown action 'strategic' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl`
-
-**empty_params** — ⚠️ handled
-- *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Unknown action 'strategic' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl`
-
-**unknown_action** — ⚠️ handled
-- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{
-  "error": "Unknown action '__nonexistent_action__' in nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_repor`
-
-**fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{
-  "error": "No action specified for nucleus_governance",
-  "available_actions": [
-    "audit_report",
-    "auto_fix_loop",
-    "comply_apply",
-    "comply_list",
-    "comply_report",
-    "curl",
-   `
-
-**cross_agent_compat** — 🔶 warn
-- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1212,15 +1048,15 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 99,
+  "count": 12,
   "traces": [
     {
-      "file": "KYC-0247F068.json",
+      "file": "KYC-11934284.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-0247F068",
-      "recommendation": "REJECT",
-      "risk_score": 175,
-      `
+      "review_id": "KYC-11934284",
+      "recommendation": "APPROVE",
+      "risk_score": 0,
+      "`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1232,15 +1068,15 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 99,
+  "count": 12,
   "traces": [
     {
-      "file": "KYC-0247F068.json",
+      "file": "KYC-11934284.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-0247F068",
-      "recommendation": "REJECT",
-      "risk_score": 175,
-      `
+      "review_id": "KYC-11934284",
+      "recommendation": "APPROVE",
+      "risk_score": 0,
+      "`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1266,9 +1102,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1285,11 +1121,11 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-74E5C72F",
-  "application_id": "APP-003",
-  "applicant": "Dmitri Volkov",
-  "started_at": "2026-03-03T08:21:57.981452Z",
-  "completed_at": "2026-03-03T08:`
+  "review_id": "KYC-11934284",
+  "application_id": "APP-001",
+  "applicant": "John Smith",
+  "started_at": "2026-06-25T17:43:44.808150+00:00",
+  "completed_at": "2026-06-25T1`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1302,11 +1138,11 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-74E5C72F",
-  "application_id": "APP-003",
-  "applicant": "Dmitri Volkov",
-  "started_at": "2026-03-03T08:21:57.981452Z",
-  "completed_at": "2026-03-03T08:`
+  "review_id": "KYC-11934284",
+  "application_id": "APP-001",
+  "applicant": "John Smith",
+  "started_at": "2026-06-25T17:43:44.808150+00:00",
+  "completed_at": "2026-06-25T1`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1332,9 +1168,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1398,9 +1234,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1455,9 +1291,9 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
@@ -1521,49 +1357,17 @@
     "curl",
    `
 
-**cross_agent_compat** — 🔶 warn
+**cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
-- *Error:* `not async — some MCP clients expect async tools`
+- *No error, no result preview*
 
 ---
 
 ## Cross-Agent Compatibility Details
 
-**21 actions have cross-agent compatibility warnings.**
-
-| Module | Action | Warning |
-|--------|--------|---------|
-| governance | `GET` | not async — some MCP clients expect async tools |
-| governance | `audit_report` | not async — some MCP clients expect async tools |
-| governance | `auto_fix_loop` | not async — some MCP clients expect async tools |
-| governance | `comply_apply` | not async — some MCP clients expect async tools |
-| governance | `comply_list` | not async — some MCP clients expect async tools |
-| governance | `comply_report` | not async — some MCP clients expect async tools |
-| governance | `curl` | not async — some MCP clients expect async tools |
-| governance | `delete_file` | not async — some MCP clients expect async tools |
-| governance | `kyc_review` | not async — some MCP clients expect async tools |
-| governance | `list_directory` | not async — some MCP clients expect async tools |
-| governance | `lock` | not async — some MCP clients expect async tools |
-| governance | `pip_install` | not async — some MCP clients expect async tools |
-| governance | `set_mode` | not async — some MCP clients expect async tools |
-| governance | `sovereign_status` | not async — some MCP clients expect async tools |
-| governance | `status` | not async — some MCP clients expect async tools |
-| governance | `strategic` | not async — some MCP clients expect async tools |
-| governance | `trace_list` | not async — some MCP clients expect async tools |
-| governance | `trace_view` | not async — some MCP clients expect async tools |
-| governance | `unlock` | not async — some MCP clients expect async tools |
-| governance | `validate_strategic_plan` | not async — some MCP clients expect async tools |
-| governance | `watch` | not async — some MCP clients expect async tools |
-
-### Warning Categories
-
-| Warning | Count |
-|---------|-------|
-| not async — some MCP clients expect async tools | 21 |
-
 ## Fire-Without-Thinking (Zero-Config) Details
 
-**21/21 actions return a useful response when called with empty action + empty params.**
+**19/19 actions return a useful response when called with empty action + empty params.**
 **0 actions fail or crash.**
 
 This tests the 'fire without thinking' pattern — an LLM that just calls `nucleus_engrams('', {})`
