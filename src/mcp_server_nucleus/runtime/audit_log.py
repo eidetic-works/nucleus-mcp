@@ -336,7 +336,14 @@ def query_audit(
     list[AuditRecord]
         Matching records ordered by ts ascending.
     """
-    limit = min(int(limit), 1_000)
+    try:
+        limit = min(int(limit), 1_000)
+    except (TypeError, ValueError):
+        limit = 100
+    try:
+        offset = int(offset)
+    except (TypeError, ValueError):
+        offset = 0
     conn = _get_conn(db_path)
 
     clauses = []
