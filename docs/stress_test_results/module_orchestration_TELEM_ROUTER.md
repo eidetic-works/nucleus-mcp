@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -338,28 +338,31 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "total_dispatches": 695,
-  "total_errors": 461,
-  "error_rate": 0.6633093525179856,
+  "total_dispatches": 720,
+  "total_errors": 486,
+  "error_rate": 0.675,
   "facades": {
-    "nucleus_engrams": {
-      "calls": 190,
-      "errors": 105
+    "nucleus_audit": {
+      "calls": 20,
+      "errors": 20
     },
-    "nucleus_features": {`
+    "nucleus_route": {
+      "calls": 5,
+ `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "total_dispatches": 696,
-  "total_errors": 461,
-  "error_rate": 0.6623563218390804,
+  "total_dispatches": 721,
+  "total_errors": 486,
+  "error_rate": 0.6740638002773925,
   "facades": {
-    "nucleus_engrams": {
-      "calls": 190,
-      "errors": 105
+    "nucleus_audit": {
+      "calls": 20,
+      "errors": 20
     },
-    "nucleus_features": {`
+    "nucleus_route": {
+      `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -372,16 +375,16 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "total_dispatches": 698,
-  "total_errors": 462,
-  "error_rate": 0.66189111747851,
+  "total_dispatches": 723,
+  "total_errors": 487,
+  "error_rate": 0.673582295988935,
   "facades": {
-    "nucleus_engrams": {
-      "calls": 190,
-      "errors": 105
+    "nucleus_audit": {
+      "calls": 20,
+      "errors": 20
     },
-    "nucleus_features": {
- `
+    "nucleus_route": {
+      "`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -634,11 +637,11 @@
   "max_calls": 200,
   "window_seconds": 60,
   "facades": {
+    "nucleus_audit": 20,
+    "nucleus_route": 5,
     "nucleus_engrams": 190,
     "nucleus_features": 80,
-    "nucleus_federation": 35,
-    "nucleus_governance": 95,
-    `
+    "nucleus_fe`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -647,11 +650,11 @@
   "max_calls": 200,
   "window_seconds": 60,
   "facades": {
+    "nucleus_audit": 20,
+    "nucleus_route": 5,
     "nucleus_engrams": 190,
     "nucleus_features": 80,
-    "nucleus_federation": 35,
-    "nucleus_governance": 95,
-    `
+    "nucleus_fe`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -668,11 +671,11 @@
   "max_calls": 200,
   "window_seconds": 60,
   "facades": {
+    "nucleus_audit": 20,
+    "nucleus_route": 5,
     "nucleus_engrams": 190,
     "nucleus_features": 80,
-    "nucleus_federation": 35,
-    "nucleus_governance": 95,
-    `
+    "nucleus_fe`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -977,7 +980,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 6
+**High Impact Closures:** 12
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -987,7 +990,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 6
+**High Impact Closures:** 12
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1007,7 +1010,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 6
+**High Impact Closures:** 12
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `

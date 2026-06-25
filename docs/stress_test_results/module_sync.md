@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 441
 **Actions tested:** 63
 **Angles per action:** 7
@@ -2614,35 +2614,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2669,35 +2669,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2724,35 +2724,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2779,35 +2779,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2834,35 +2834,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2889,35 +2889,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2944,35 +2944,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -2999,35 +2999,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3054,35 +3054,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3109,35 +3109,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3164,35 +3164,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3219,35 +3219,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3274,35 +3274,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3329,35 +3329,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3384,35 +3384,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3439,35 +3439,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3494,35 +3494,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3549,35 +3549,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3604,35 +3604,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3659,35 +3659,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3714,35 +3714,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3769,35 +3769,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -3824,35 +3824,35 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 

@@ -60,11 +60,42 @@ If you only care about one module, read its individual file:
 - **Unknown actions: 266/266 handled.** Every tool gracefully rejects typos in the action name.
 - **Cross-agent compat: 266/266 pass (100%).** All 11 tool facades are now fully async (using `async_dispatch`) with no client-specific references in their logic. Every tool is agent-agnostic — Claude, Cursor, Windsurf, or any MCP client can call them identically.
 
+### Bugs found and fixed during stress test
+1. **Federation async impls never awaited (CRITICAL, fixed in `f04a1f64`):** `_brain_federation_{join,leave,sync,route}_impl` are `async def` but were wrapped in sync lambdas in the ROUTER. `async_dispatch` checked `iscoroutinefunction(handler)` on the lambda (which is sync), so the returned coroutine was never awaited. This means federation `join`/`leave`/`sync`/`route` were **silently no-ops in production** — the functions were called but never executed. Fix: `async_dispatch` now checks if the result is a coroutine and awaits it if so.
+2. **audit_log `int(limit)` crashed on non-integer input (fixed in `f04a1f64`):** `query_audit()` did `int(limit)` with no type guard. When `limit='not_a_number'` was passed, it threw `ValueError`. The dispatch caught it, but the error message was ugly and a traceback was logged. Fix: try/except with fallback to default (100). Same for `offset`.
+3. **audit_log + cost_router used sync dispatch despite async wrapper (fixed in `f04a1f64`):** Both were `async def` but called `make_response_dispatch` (sync) inside. Converted to `async_dispatch` for consistency with the other 9 facades.
+
+### Low happy-path pass rate (35%, expected)
+The happy-path angle passes only 92/266 (35%) because the harness uses generic params that don't match real brain state. Breakdown by module:
+
+| Module | Pass | Handled | Pass % | Root cause |
+|--------|------|---------|--------|------------|
+| federation | 5 | 2 | 71% | Most actions work standalone |
+| engrams | 20 | 18 | 53% | Many read actions work; write actions need specific keys |
+| relay | 2 | 2 | 50% | Needs real relay state |
+| sessions | 13 | 13 | 50% | Needs real session IDs |
+| orchestration | 35 | 36 | 49% | Many ops work; some need real commitments/slots |
+| tasks | 4 | 13 | 24% | Needs real task IDs |
+| governance | 4 | 15 | 21% | Needs real compliance configs |
+| features | 2 | 14 | 12% | Needs real feature IDs + MCP servers |
+| sync | 7 | 56 | 11% | Needs real channels, pair configs, relay endpoints |
+| audit_log | 0 | 4 | 0% | admin_query needs token; query returns empty; log_event/verify need specific params |
+| cost_router | 0 | 1 | 0% | route action needs a real prompt (generic test prompt is too short) |
+
+This is **expected behavior** — `handled` means the tool correctly rejected invalid/incomplete input with a structured error response. The tools are working correctly; the test params just don't match real brain state.
+
+### Remaining harness limitations
+1. **Schema generation fails** with `'str' object has no attribute 'name'` — the schema generator expects Tool objects, not strings. The MockMCP's `list_tools()` returns strings, but the schema code expects objects with a `.name` attribute. This is a harness limitation, not a production bug.
+2. **PyPI 429 rate limiting** — the growth_ops module hits PyPI's API and gets rate-limited during testing. Not a bug, but indicates the test makes real network calls.
+3. **Secret Manager warnings** — `google-cloud-secret-manager not installed` warnings for Telegram/Slack/Discord/WhatsApp tokens. Expected in test environment.
+
 ### Changes since last run
 - **All 11 tool facades converted to async dispatch.** Previously 126 actions used sync `make_response_dispatch`; now all 266 actions use `async_dispatch`.
 - **"claude" references removed from sync module logic.** Previously 67 actions in the `sync` module referenced "claude" in their source; now zero actions have client-specific assumptions.
 - **Orchestration correctly decomposed into 5 separate ROUTERs.** The harness now correctly identifies that `orchestration` registers 5 separate tools (ORCH_ROUTER, TELEM_ROUTER, SLOTS_ROUTER, INFRA_ROUTER, AGENTS_ROUTER), each with its own action set.
 - **Sessions module now registers.** Fixed missing mock helpers (`get_orch`, `read_events`, `get_state`, `update_state`) that prevented the sessions and orchestration modules from registering in the test harness.
+- **Federation coroutine bug fixed.** `async_dispatch` now awaits coroutines returned from sync lambdas wrapping async impls.
+- **audit_log type coercion hardened.** `int(limit)` and `int(offset)` now have try/except fallbacks.
 
 ## How to reproduce
 

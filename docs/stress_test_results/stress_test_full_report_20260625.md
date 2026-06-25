@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 1862
 **Actions tested:** 266
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 607 | 32.6% | Tool returned a successful response |
-| ⚠️ handled | 1255 | 67.4% | Tool returned a graceful error (no crash) |
+| ✅ pass | 596 | 32.0% | Tool returned a successful response |
+| ⚠️ handled | 1266 | 68.0% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 95 | 35.7% |
-| ⚠️ handled | 171 | 64.3% |
+| ✅ pass | 92 | 34.6% |
+| ⚠️ handled | 174 | 65.4% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 122 | 45.9% |
-| ⚠️ handled | 144 | 54.1% |
+| ✅ pass | 119 | 44.7% |
+| ⚠️ handled | 147 | 55.3% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 2 | 0.8% |
-| ⚠️ handled | 264 | 99.2% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 266 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 122 | 45.9% |
-| ⚠️ handled | 144 | 54.1% |
+| ✅ pass | 119 | 44.7% |
+| ⚠️ handled | 147 | 55.3% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -117,34 +117,67 @@
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `admin_query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `query` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `verify` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `verify` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `audit_log_tool.admin_query`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() got an unexpected keyword argument 'query'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "quer`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+  `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -156,27 +189,61 @@
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() got an unexpected keyword argument 'limit'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "limit"
+ `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "q`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -186,29 +253,64 @@
 
 #### `audit_log_tool.query`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': True, 'data': {'count': 0, 'records': []}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() got an unexpected keyword argument 'query'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "query",
+    "lim`
 
-**missing_params** — ✅ pass
+**missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': True, 'data': {'count': 0, 'records': []}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': False, 'data': None, 'error': "invalid literal for int() with base 10: 'not_a_number'"}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "query",
+ `
 
-**empty_params** — ✅ pass
+**empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': True, 'data': {'count': 0, 'records': []}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -218,29 +320,62 @@
 
 #### `audit_log_tool.verify`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**missing_params** — ✅ pass
+**missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "query",`
 
-**empty_params** — ✅ pass
+**empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -252,33 +387,62 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `route` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `route` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `cost_router.route`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**missing_params** — ✅ pass
+**missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "query",
+ `
 
-**empty_params** — ✅ pass
+**empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: route"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_route",
+  "available_actions": [
+    "route"
+  ],
+  "hint": "Try: nucleus_route(action='route', params={...})"
+}`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: route"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_route",
+  "available_actions": [
+    "route"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -396,7 +560,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T17:45:13.568681Z",
+        "timestamp": "2026-06-25T17:59:31.012366Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -408,7 +572,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T17:45:13.568681Z",
+        "timestamp": "2026-06-25T17:59:31.012366Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -429,7 +593,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T17:45:13.568681Z",
+        "timestamp": "2026-06-25T17:59:31.012366Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -471,12 +635,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 32.6,
-    "total_interactions": 326,
+    "total_cost_units": 76.8,
+    "total_interactions": 768,
     "breakdown": {
       "unknown": {
-        "cost": 16.3,
-        "count": 163,
+        "cost": 38.4,
+        "count": 384,
         "tier": 1
       `
 
@@ -485,12 +649,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 32.6,
-    "total_interactions": 326,
+    "total_cost_units": 76.8,
+    "total_interactions": 768,
     "breakdown": {
       "unknown": {
-        "cost": 16.3,
-        "count": 163,
+        "cost": 38.4,
+        "count": 384,
         "tier": 1
       `
 
@@ -506,12 +670,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 32.6,
-    "total_interactions": 326,
+    "total_cost_units": 76.8,
+    "total_interactions": 768,
     "breakdown": {
       "unknown": {
-        "cost": 16.3,
-        "count": 163,
+        "cost": 38.4,
+        "count": 384,
         "tier": 1
       `
 
@@ -615,12 +779,12 @@
   "data": {
     "nodes": [
       {
-        "id": "growth_hook_morning_brief_generated_9519",
+        "id": "growth_hook_morning_brief_generated_10385",
         "context": "Strategy",
         "intensity": 5
       },
       {
-        "id": "`
+        "id": `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -629,12 +793,12 @@
   "data": {
     "nodes": [
       {
-        "id": "growth_hook_morning_brief_generated_9519",
+        "id": "growth_hook_morning_brief_generated_10385",
         "context": "Strategy",
         "intensity": 5
       },
       {
-        "id": "`
+        "id": `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -650,12 +814,12 @@
   "data": {
     "nodes": [
       {
-        "id": "growth_hook_morning_brief_generated_9519",
+        "id": "growth_hook_morning_brief_generated_10385",
         "context": "Strategy",
         "intensity": 5
       },
       {
-        "id": "`
+        "id": `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1020,7 +1184,7 @@
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "'MockMCP' object has no attribute 'list_tools'"
+  "error": "'str' object has no attribute 'name'"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -1035,7 +1199,7 @@
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "'MockMCP' object has no attribute 'list_tools'"
+  "error": "'str' object has no attribute 'name'"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -1351,23 +1515,23 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T17:45:22.035127+00:00",
-    "triggers": [
-      {
-        "signal": "VELOCITY_DROP",
-        "recent_writes": 0,
-        "window_hours": 4`
+    "timestamp": "2026-06-25T17:59:47.998517+00:00",
+    "triggers": [],
+    "trigger_count": 0,
+    "should_notify": false,
+    "check_duration_ms": 1.4,
+    "formatt`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T17:45:22.370456+00:00",
+    "timestamp": "2026-06-25T17:59:49.551297+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 1.5,
+    "check_duration_ms": 4.9,
     "formatt`
 
 **wrong_types** — ⚠️ handled
@@ -1382,11 +1546,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T17:45:23.763686+00:00",
+    "timestamp": "2026-06-25T17:59:49.864867+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.3,
+    "check_duration_ms": 3.8,
     "formatt`
 
 **unknown_action** — ⚠️ handled
@@ -1499,30 +1663,30 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 148,
+    "total_executions": 334,
     "outcomes": {
-      "ADD": 26,
-      "NOOP": 39,
-      "UNKNOWN": 63,
-      "UPDATE": 20
+      "ADD": 66,
+      "NOOP": 95,
+      "UNKNOWN": 115,
+      "UPDATE": 58
     },
     "by_event_type": {
-      "morning_`
+      "morning`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 148,
+    "total_executions": 334,
     "outcomes": {
-      "ADD": 26,
-      "NOOP": 39,
-      "UNKNOWN": 63,
-      "UPDATE": 20
+      "ADD": 66,
+      "NOOP": 95,
+      "UNKNOWN": 115,
+      "UPDATE": 58
     },
     "by_event_type": {
-      "morning_`
+      "morning`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1539,15 +1703,15 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 148,
+    "total_executions": 334,
     "outcomes": {
-      "ADD": 26,
-      "NOOP": 39,
-      "UNKNOWN": 63,
-      "UPDATE": 20
+      "ADD": 66,
+      "NOOP": 95,
+      "UNKNOWN": 115,
+      "UPDATE": 58
     },
     "by_event_type": {
-      "morning_`
+      "morning`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1918,14 +2082,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:15 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:29 PM\n==================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:15 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:29 PM\n==================`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1941,7 +2105,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:15 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:29 PM\n==================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2047,7 +2211,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T17:45:23.784897+00:00
+# Generated at 2026-06-25T17:59:49.902272+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2057,7 +2221,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T17:45:23.785284+00:00
+# Generated at 2026-06-25T17:59:49.902587+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2074,7 +2238,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T17:45:23.785659+00:00
+# Generated at 2026-06-25T17:59:49.902921+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2201,8 +2365,8 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (7x): Behind pace: github_issues at 0.0% of target",
-        "context`
+        "value": "RECURRING PATTERN (19x): Behind pace: github_issues at 0.0% of target",
+        "contex`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2219,8 +2383,8 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (7x): Behind pace: github_issues at 0.0% of target",
-        "context`
+        "value": "RECURRING PATTERN (19x): Behind pace: github_issues at 0.0% of target",
+        "contex`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2576,14 +2740,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (7x): Behind pace: github_issues at 0.0% of`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (19x): Behind pace: github_issues at 0.0% o`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (7x): Behind pace: github_issues at 0.0% of`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (19x): Behind pace: github_issues at 0.0% o`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2599,7 +2763,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (7x): Behind pace: github_issues at 0.0% of`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (19x): Behind pace: github_issues at 0.0% o`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -3031,7 +3195,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T17:45:24.633402Z"
+  "timestamp": "2026-06-25T17:59:50.665801Z"
 }`
 
 **missing_params** — ✅ pass
@@ -3041,7 +3205,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T17:45:24.633457Z"
+  "timestamp": "2026-06-25T17:59:50.665852Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -3059,7 +3223,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T17:45:24.633550Z"
+  "timestamp": "2026-06-25T17:59:50.665948Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -4179,11 +4343,17 @@ Search: Connected ✅`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `"<coroutine object _brain_federation_leave_impl at 0x10cefb350>"`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `"<coroutine object _brain_federation_leave_impl at 0x10cefb350>"`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -4197,7 +4367,10 @@ Search: Connected ✅`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `"<coroutine object _brain_federation_leave_impl at 0x10cefb350>"`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -4480,11 +4653,11 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `"<coroutine object _brain_federation_sync_impl at 0x10d2a2740>"`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `"<coroutine object _brain_federation_sync_impl at 0x10d2a2740>"`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -4498,7 +4671,7 @@ No peers discovered.
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `"<coroutine object _brain_federation_sync_impl at 0x10d2a2740>"`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -4571,7 +4744,7 @@ No peers discovered.
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:45:24.646937+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:59:50.679076+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -4582,7 +4755,7 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:45:24.650341+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:59:50.681478+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -5010,21 +5183,21 @@ No peers discovered.
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-441C33D2",
+  "review_id": "KYC-E423C396",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:45:24.654975+00:00",
-  "completed_at": "2026-06-25T17:45:24.654989+00:00",
+  "started_at": "2026-06-25T17:59:50.686733+00:00",
+  "completed_at": "2026-06-25T17:59:50.686747+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-D262F8A2",
+  "review_id": "KYC-DEE95215",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:45:24.655427+00:00",
-  "completed_at": "2026-06-25T17:45:24.655439+00:00",
+  "started_at": "2026-06-25T17:59:50.687164+00:00",
+  "completed_at": "2026-06-25T17:59:50.687175+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -5037,11 +5210,11 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-D6097431",
+  "review_id": "KYC-82260156",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:45:24.655892+00:00",
-  "completed_at": "2026-06-25T17:45:24.655901+00:00",
+  "started_at": "2026-06-25T17:59:50.687617+00:00",
+  "completed_at": "2026-06-25T17:59:50.687627+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -5473,7 +5646,7 @@ No peers discovered.
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 12,
+  "count": 18,
   "traces": [
     {
       "file": "KYC-11934284.json",
@@ -5493,7 +5666,7 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 12,
+  "count": 18,
   "traces": [
     {
       "file": "KYC-11934284.json",
@@ -5546,10 +5719,10 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-11934284",
+  "review_id": "KYC-82260156",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:43:44.808150+00:00",
+  "started_at": "2026-06-25T17:59:50.687617+00:00",
   "completed_at": "2026-06-25T1`
 
 **wrong_types** — ⚠️ handled
@@ -5563,10 +5736,10 @@ No peers discovered.
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-11934284",
+  "review_id": "KYC-82260156",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:43:44.808150+00:00",
+  "started_at": "2026-06-25T17:59:50.687617+00:00",
   "completed_at": "2026-06-25T1`
 
 **unknown_action** — ⚠️ handled
@@ -5937,7 +6110,7 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:15:24
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:29:50
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -5947,7 +6120,7 @@ No peers discovered.
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:15:24
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:29:50
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -5963,7 +6136,7 @@ No peers discovered.
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:15:24
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:29:50
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6313,15 +6486,15 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782409487_d8d38e: Snapshot 2026-06-25T17:44:47Z (2026-06-25T17:44:47Z)
-   snap_1782409487_59a257: Snapshot 2026-06-25T17:44:47Z `
+   snap_1782410353_a5c3c0: Snapshot 2026-06-25T17:59:13Z (2026-06-25T17:59:13Z)
+   snap_1782410353_a58337: Snapshot 2026-06-25T17:59:13Z `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782409487_d8d38e: Snapshot 2026-06-25T17:44:47Z (2026-06-25T17:44:47Z)
-   snap_1782409487_59a257: Snapshot 2026-06-25T17:44:47Z `
+   snap_1782410353_a5c3c0: Snapshot 2026-06-25T17:59:13Z (2026-06-25T17:59:13Z)
+   snap_1782410353_a58337: Snapshot 2026-06-25T17:59:13Z `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -6335,8 +6508,8 @@ No peers discovered.
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782409487_d8d38e: Snapshot 2026-06-25T17:44:47Z (2026-06-25T17:44:47Z)
-   snap_1782409487_59a257: Snapshot 2026-06-25T17:44:47Z `
+   snap_1782410353_a5c3c0: Snapshot 2026-06-25T17:59:13Z (2026-06-25T17:59:13Z)
+   snap_1782410353_a58337: Snapshot 2026-06-25T17:59:13Z `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -6920,20 +7093,20 @@ No peers discovered.
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782409529_b870f3
-   Name: Snapshot 2026-06-25T17:45:29Z
-   Timestamp: 2026-06-25T17:45:29Z
+   ID: snap_1782410395_203edd
+   Name: Snapshot 2026-06-25T17:59:55Z
+   Timestamp: 2026-06-25T17:59:55Z
    
-💡 To compare: brain_compare_dashboards('snap_1782409529_b870f3', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782410395_203edd', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782409529_ca91e2
-   Name: Snapshot 2026-06-25T17:45:29Z
-   Timestamp: 2026-06-25T17:45:29Z
+   ID: snap_1782410395_6cfe30
+   Name: Snapshot 2026-06-25T17:59:55Z
+   Timestamp: 2026-06-25T17:59:55Z
    
-💡 To compare: brain_compare_dashboards('snap_1782409529_ca91e2', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782410395_6cfe30', 'other_s`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -6946,11 +7119,11 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782409529_dda720
-   Name: Snapshot 2026-06-25T17:45:29Z
-   Timestamp: 2026-06-25T17:45:29Z
+   ID: snap_1782410395_454b36
+   Name: Snapshot 2026-06-25T17:59:55Z
+   Timestamp: 2026-06-25T17:59:55Z
    
-💡 To compare: brain_compare_dashboards('snap_1782409529_dda720', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782410395_454b36', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7068,10 +7241,10 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 1,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:45:29.851116+00:00"
+    "fetched_at": "2026-06-25T17:59:55.567324+00:00"
   },
   "pypi": {
-    "error": `
+    "last_mon`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7082,10 +7255,10 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 1,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:45:30.728479+00:00"
+    "fetched_at": "2026-06-25T17:59:56.528739+00:00"
   },
   "pypi": {
-    "error": `
+    "last_mon`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -7104,7 +7277,7 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 1,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:45:31.738232+00:00"
+    "fetched_at": "2026-06-25T17:59:57.415135+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7321,25 +7494,25 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T17:45:40.359908+00:00",
+  "timestamp": "2026-06-25T18:00:05.954316+00:00",
   "sections": {
     "brief": {
-      "engram_count": 52,
+      "engram_count": 111,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T17:45:41.311657+00:00",
+  "timestamp": "2026-06-25T18:00:06.978910+00:00",
   "sections": {
     "brief": {
-      "engram_count": 57,
+      "engram_count": 116,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -7353,13 +7526,13 @@ No peers discovered.
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T17:45:42.363186+00:00",
+  "timestamp": "2026-06-25T18:00:08.046420+00:00",
   "sections": {
     "brief": {
-      "engram_count": 62,
+      "engram_count": 121,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -8538,19 +8711,19 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782409544_8b6e",
+  "sprint_id": "sprint_1782410410_8e63",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:15:44+0530"
+  "timestamp": "2026-06-25T23:30:10+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782409544_6e6c",
+  "sprint_id": "sprint_1782410410_d0bc",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:15:44+0530"
+  "timestamp": "2026-06-25T23:30:10+0530"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -8562,10 +8735,10 @@ No peers discovered.
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782409544_1c58",
+  "sprint_id": "sprint_1782410410_d526",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:15:44+0530"
+  "timestamp": "2026-06-25T23:30:10+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -8601,7 +8774,7 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782409544_8bfbb2
+- *Result preview:* `🚀 Sprint Report: sprint_1782410410_f1eaaf
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8615,7 +8788,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782409544_ef7287
+- *Result preview:* `🚀 Sprint Report: sprint_1782410410_e96ecb
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8635,7 +8808,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782409544_1bd658
+- *Result preview:* `🚀 Sprint Report: sprint_1782410410_f2e552
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8736,7 +8909,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782409544_1bd658
+   Sprint ID: sprint_1782410410_f2e552
    Reason: User requested halt
    Status: halt_requested
    
@@ -8745,7 +8918,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782409544_1bd658
+   Sprint ID: sprint_1782410410_f2e552
    Reason: User requested halt
    Status: halt_requested
    
@@ -8761,7 +8934,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782409544_1bd658
+   Sprint ID: sprint_1782410410_f2e552
    Reason: User requested halt
    Status: halt_requested
    
@@ -9166,14 +9339,14 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:15 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:30 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:15 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:30 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
@@ -9187,7 +9360,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:15 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:30 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
@@ -9447,28 +9620,31 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "total_dispatches": 695,
-  "total_errors": 461,
-  "error_rate": 0.6633093525179856,
+  "total_dispatches": 720,
+  "total_errors": 486,
+  "error_rate": 0.675,
   "facades": {
-    "nucleus_engrams": {
-      "calls": 190,
-      "errors": 105
+    "nucleus_audit": {
+      "calls": 20,
+      "errors": 20
     },
-    "nucleus_features": {`
+    "nucleus_route": {
+      "calls": 5,
+ `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "total_dispatches": 696,
-  "total_errors": 461,
-  "error_rate": 0.6623563218390804,
+  "total_dispatches": 721,
+  "total_errors": 486,
+  "error_rate": 0.6740638002773925,
   "facades": {
-    "nucleus_engrams": {
-      "calls": 190,
-      "errors": 105
+    "nucleus_audit": {
+      "calls": 20,
+      "errors": 20
     },
-    "nucleus_features": {`
+    "nucleus_route": {
+      `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -9481,16 +9657,16 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "total_dispatches": 698,
-  "total_errors": 462,
-  "error_rate": 0.66189111747851,
+  "total_dispatches": 723,
+  "total_errors": 487,
+  "error_rate": 0.673582295988935,
   "facades": {
-    "nucleus_engrams": {
-      "calls": 190,
-      "errors": 105
+    "nucleus_audit": {
+      "calls": 20,
+      "errors": 20
     },
-    "nucleus_features": {
- `
+    "nucleus_route": {
+      "`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -9743,11 +9919,11 @@ Duration: 0.0s
   "max_calls": 200,
   "window_seconds": 60,
   "facades": {
+    "nucleus_audit": 20,
+    "nucleus_route": 5,
     "nucleus_engrams": 190,
     "nucleus_features": 80,
-    "nucleus_federation": 35,
-    "nucleus_governance": 95,
-    `
+    "nucleus_fe`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -9756,11 +9932,11 @@ Duration: 0.0s
   "max_calls": 200,
   "window_seconds": 60,
   "facades": {
+    "nucleus_audit": 20,
+    "nucleus_route": 5,
     "nucleus_engrams": 190,
     "nucleus_features": 80,
-    "nucleus_federation": 35,
-    "nucleus_governance": 95,
-    `
+    "nucleus_fe`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -9777,11 +9953,11 @@ Duration: 0.0s
   "max_calls": 200,
   "window_seconds": 60,
   "facades": {
+    "nucleus_audit": 20,
+    "nucleus_route": 5,
     "nucleus_engrams": 190,
     "nucleus_features": 80,
-    "nucleus_federation": 35,
-    "nucleus_governance": 95,
-    `
+    "nucleus_fe`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -10086,7 +10262,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 6
+**High Impact Closures:** 12
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10096,7 +10272,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 6
+**High Impact Closures:** 12
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10116,7 +10292,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 6
+**High Impact Closures:** 12
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10931,9 +11107,9 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 12 tasks done, 1 tasks created, 250 total events",
+    "summary": "Session ended (neutral): 18 tasks done, 1 tasks created, 478 total events",
     "activity": {
-      "total_events": 250,
+      "total_events": 478,
       "ta`
 
 **missing_params** — ✅ pass
@@ -10942,9 +11118,9 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 12 tasks done, 1 tasks created, 256 total events",
+    "summary": "Session ended (neutral): 18 tasks done, 1 tasks created, 484 total events",
     "activity": {
-      "total_events": 256,
+      "total_events": 484,
       "ta`
 
 **wrong_types** — ⚠️ handled
@@ -10960,9 +11136,9 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 12 tasks done, 1 tasks created, 261 total events",
+    "summary": "Session ended (neutral): 18 tasks done, 1 tasks created, 489 total events",
     "activity": {
-      "total_events": 261,
+      "total_events": 489,
       "ta`
 
 **unknown_action** — ⚠️ handled
@@ -11264,7 +11440,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 275
+    "duration_ms": 223
   },
   "error": nu`
 
@@ -11278,7 +11454,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 221
+    "duration_ms": 164
   },
   "error": nu`
 
@@ -11298,7 +11474,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 202
+    "duration_ms": 185
   },
   "error": nu`
 
@@ -14682,35 +14858,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -14737,35 +14913,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -14792,35 +14968,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -14847,35 +15023,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -14902,35 +15078,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -14957,35 +15133,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15012,35 +15188,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15067,35 +15243,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15122,35 +15298,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15177,35 +15353,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15232,35 +15408,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15287,35 +15463,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15342,35 +15518,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15397,35 +15573,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15452,35 +15628,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15507,35 +15683,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15562,35 +15738,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15617,35 +15793,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15672,35 +15848,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15727,35 +15903,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15782,35 +15958,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15837,35 +16013,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -15892,35 +16068,35 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.6s.",
+  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
   "module": "nucleus_sync"
 }`
 
@@ -16153,7 +16329,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625231547"
+    "session_id": "session-20260625233012"
   },
   "error": null
 }`
@@ -16165,7 +16341,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625231547"
+    "session_id": "session-20260625233012"
   },
   "error": null
 }`
@@ -16186,7 +16362,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625231547"
+    "session_id": "session-20260625233012"
   },
   "error": null
 }`

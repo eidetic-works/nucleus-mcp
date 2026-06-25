@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 11 | 39.3% | Tool returned a successful response |
-| ⚠️ handled | 17 | 60.7% | Tool returned a graceful error (no crash) |
+| ✅ pass | 4 | 14.3% | Tool returned a successful response |
+| ⚠️ handled | 24 | 85.7% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 2 | 50.0% |
-| ⚠️ handled | 2 | 50.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 4 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 2 | 50.0% |
-| ⚠️ handled | 2 | 50.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 4 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 1 | 25.0% |
-| ⚠️ handled | 3 | 75.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 4 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 2 | 50.0% |
-| ⚠️ handled | 2 | 50.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 4 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -117,34 +117,67 @@
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `admin_query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `query` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `verify` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `verify` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `audit_log_tool.admin_query`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() got an unexpected keyword argument 'query'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "quer`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+  `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': False, 'data': None, 'error': 'admin_query: invalid or missing admin_token'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -156,27 +189,61 @@
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() got an unexpected keyword argument 'limit'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "limit"
+ `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "q`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': False, 'data': None, 'error': 'log_event requires: event_type, actor, resource, outcome'}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -186,29 +253,64 @@
 
 #### `audit_log_tool.query`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': True, 'data': {'count': 0, 'records': []}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() got an unexpected keyword argument 'query'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "query",
+    "lim`
 
-**missing_params** — ✅ pass
+**missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': True, 'data': {'count': 0, 'records': []}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': False, 'data': None, 'error': "invalid literal for int() with base 10: 'not_a_number'"}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "query",
+ `
 
-**empty_params** — ✅ pass
+**empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': True, 'data': {'count': 0, 'records': []}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'query': register.<locals>._h_query() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
@@ -218,29 +320,62 @@
 
 #### `audit_log_tool.verify`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**missing_params** — ✅ pass
+**missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "query",`
 
-**empty_params** — ✅ pass
+**empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': True, 'data': {'chain_ok': True, 'broken_at_id': None}, 'error': None}`
+- *Result preview:* `{
+  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ],
+  "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: log_event | query | admin_query | verify"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_audit",
+  "available_actions": [
+    "admin_query",
+    "log_event",
+    "query",
+    "verify"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients

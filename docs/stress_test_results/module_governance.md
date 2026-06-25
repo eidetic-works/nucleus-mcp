@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 133
 **Actions tested:** 19
 **Angles per action:** 7
@@ -146,7 +146,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:45:24.646937+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:59:50.679076+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -157,7 +157,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:45:24.650341+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T17:59:50.681478+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -585,21 +585,21 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-441C33D2",
+  "review_id": "KYC-E423C396",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:45:24.654975+00:00",
-  "completed_at": "2026-06-25T17:45:24.654989+00:00",
+  "started_at": "2026-06-25T17:59:50.686733+00:00",
+  "completed_at": "2026-06-25T17:59:50.686747+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-D262F8A2",
+  "review_id": "KYC-DEE95215",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:45:24.655427+00:00",
-  "completed_at": "2026-06-25T17:45:24.655439+00:00",
+  "started_at": "2026-06-25T17:59:50.687164+00:00",
+  "completed_at": "2026-06-25T17:59:50.687175+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -612,11 +612,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-D6097431",
+  "review_id": "KYC-82260156",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:45:24.655892+00:00",
-  "completed_at": "2026-06-25T17:45:24.655901+00:00",
+  "started_at": "2026-06-25T17:59:50.687617+00:00",
+  "completed_at": "2026-06-25T17:59:50.687627+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -1048,7 +1048,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 12,
+  "count": 18,
   "traces": [
     {
       "file": "KYC-11934284.json",
@@ -1068,7 +1068,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 12,
+  "count": 18,
   "traces": [
     {
       "file": "KYC-11934284.json",
@@ -1121,10 +1121,10 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-11934284",
+  "review_id": "KYC-82260156",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:43:44.808150+00:00",
+  "started_at": "2026-06-25T17:59:50.687617+00:00",
   "completed_at": "2026-06-25T1`
 
 **wrong_types** — ⚠️ handled
@@ -1138,10 +1138,10 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-11934284",
+  "review_id": "KYC-82260156",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T17:43:44.808150+00:00",
+  "started_at": "2026-06-25T17:59:50.687617+00:00",
   "completed_at": "2026-06-25T1`
 
 **unknown_action** — ⚠️ handled

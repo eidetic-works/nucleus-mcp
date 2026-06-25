@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 84
 **Actions tested:** 12
 **Angles per action:** 7
@@ -139,10 +139,10 @@
     "open_issues": 0,
     "watchers": 1,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:45:29.851116+00:00"
+    "fetched_at": "2026-06-25T17:59:55.567324+00:00"
   },
   "pypi": {
-    "error": `
+    "last_mon`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -153,10 +153,10 @@
     "open_issues": 0,
     "watchers": 1,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:45:30.728479+00:00"
+    "fetched_at": "2026-06-25T17:59:56.528739+00:00"
   },
   "pypi": {
-    "error": `
+    "last_mon`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -175,7 +175,7 @@
     "open_issues": 0,
     "watchers": 1,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:45:31.738232+00:00"
+    "fetched_at": "2026-06-25T17:59:57.415135+00:00"
   },
   "pypi": {
     "last_mon`
@@ -392,25 +392,25 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T17:45:40.359908+00:00",
+  "timestamp": "2026-06-25T18:00:05.954316+00:00",
   "sections": {
     "brief": {
-      "engram_count": 52,
+      "engram_count": 111,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T17:45:41.311657+00:00",
+  "timestamp": "2026-06-25T18:00:06.978910+00:00",
   "sections": {
     "brief": {
-      "engram_count": 57,
+      "engram_count": 116,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -424,13 +424,13 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T17:45:42.363186+00:00",
+  "timestamp": "2026-06-25T18:00:08.046420+00:00",
   "sections": {
     "brief": {
-      "engram_count": 62,
+      "engram_count": 121,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

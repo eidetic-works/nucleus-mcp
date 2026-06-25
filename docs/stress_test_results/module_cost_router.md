@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 7
 **Actions tested:** 1
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 5 | 71.4% | Tool returned a successful response |
-| ⚠️ handled | 2 | 28.6% | Tool returned a graceful error (no crash) |
+| ✅ pass | 1 | 14.3% | Tool returned a successful response |
+| ⚠️ handled | 6 | 85.7% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 1 | 100.0% |
-| ⚠️ handled | 0 | 0.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 1 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 1 | 100.0% |
-| ⚠️ handled | 0 | 0.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 1 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 1 | 100.0% |
-| ⚠️ handled | 0 | 0.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 1 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 1 | 100.0% |
-| ⚠️ handled | 0 | 0.0% |
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 1 | 100.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -115,33 +115,62 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `route` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `route` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `cost_router.route`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**missing_params** — ✅ pass
+**missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() got an unexpected keyword argument 'id'",
+  "expected_params": "(params)",
+  "provided_params": [
+    "id",
+    "query",
+ `
 
-**empty_params** — ✅ pass
+**empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{'success': True, 'data': {'provider': 'anthropic', 'model': 'claude-haiku-3-5', 'complexity': 'routine', 'sovereignty_tier': 'standard', 'estimated_input_tokens': 1, 'expected_input_cost_usd': 8e-07,`
+- *Result preview:* `{
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'params'",
+  "expected_params": "(params)",
+  "provided_params": []
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action '__nonexistent_action__'. Valid: route"}`
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_route",
+  "available_actions": [
+    "route"
+  ],
+  "hint": "Try: nucleus_route(action='route', params={...})"
+}`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
-- *Result preview:* `{'success': False, 'data': None, 'error': "Unknown action ''. Valid: route"}`
+- *Result preview:* `{
+  "error": "No action specified for nucleus_route",
+  "available_actions": [
+    "route"
+  ]
+}`
 
 **cross_agent_compat** — ✅ pass
 - *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients

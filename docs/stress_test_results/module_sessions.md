@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 182
 **Actions tested:** 26
 **Angles per action:** 7
@@ -623,9 +623,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 12 tasks done, 1 tasks created, 250 total events",
+    "summary": "Session ended (neutral): 18 tasks done, 1 tasks created, 478 total events",
     "activity": {
-      "total_events": 250,
+      "total_events": 478,
       "ta`
 
 **missing_params** — ✅ pass
@@ -634,9 +634,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 12 tasks done, 1 tasks created, 256 total events",
+    "summary": "Session ended (neutral): 18 tasks done, 1 tasks created, 484 total events",
     "activity": {
-      "total_events": 256,
+      "total_events": 484,
       "ta`
 
 **wrong_types** — ⚠️ handled
@@ -652,9 +652,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 12 tasks done, 1 tasks created, 261 total events",
+    "summary": "Session ended (neutral): 18 tasks done, 1 tasks created, 489 total events",
     "activity": {
-      "total_events": 261,
+      "total_events": 489,
       "ta`
 
 **unknown_action** — ⚠️ handled
@@ -956,7 +956,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 275
+    "duration_ms": 223
   },
   "error": nu`
 
@@ -970,7 +970,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 221
+    "duration_ms": 164
   },
   "error": nu`
 
@@ -990,7 +990,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 202
+    "duration_ms": 185
   },
   "error": nu`
 

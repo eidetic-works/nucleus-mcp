@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:16:16
+**Generated:** 2026-06-25T23:31:27
 **Total tests:** 49
 **Actions tested:** 7
 **Angles per action:** 7
@@ -297,11 +297,17 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `"<coroutine object _brain_federation_leave_impl at 0x10cefb350>"`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `"<coroutine object _brain_federation_leave_impl at 0x10cefb350>"`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -315,7 +321,10 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `"<coroutine object _brain_federation_leave_impl at 0x10cefb350>"`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -598,11 +607,11 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `"<coroutine object _brain_federation_sync_impl at 0x10d2a2740>"`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `"<coroutine object _brain_federation_sync_impl at 0x10d2a2740>"`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -616,7 +625,7 @@ No peers discovered.
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `"<coroutine object _brain_federation_sync_impl at 0x10d2a2740>"`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
