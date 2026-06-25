@@ -4,6 +4,8 @@
 **Total tests:** 1,862 (266 actions × 7 angles)
 **Zero crashes. Zero unhandled failures. Zero cross-agent compat warnings.**
 
+> **Refinement run:** The fire_without_thinking angle now tests 5 confused-LLM scenarios per action (empty action, None action, params-as-string, swapped args, guessed action + garbage params). The wrong_types angle now introspects handler signatures for per-param type mismatches. Network calls are mocked for deterministic results.
+
 ## How to read this
 
 ### Start here
@@ -56,14 +58,15 @@ If you only care about one module, read its individual file:
 
 ### The good
 - **Zero crashes across 1,862 tests.** Bad params, wrong types, empty calls, unknown actions — nothing crashes.
-- **Fire-without-thinking: 266/266.** Every action returns a structured response when called with empty action + empty params. An LLM can fire blindly and never crash the tool.
+- **Fire-without-thinking: 266/266.** Every action returns a structured response across 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), and guessed action + garbage params. An LLM can fire blindly and never crash the tool.
 - **Unknown actions: 266/266 handled.** Every tool gracefully rejects typos in the action name.
 - **Cross-agent compat: 266/266 pass (100%).** All 11 tool facades are now fully async (using `async_dispatch`) with no client-specific references in their logic. Every tool is agent-agnostic — Claude, Cursor, Windsurf, or any MCP client can call them identically.
 
 ### Bugs found and fixed during stress test
-1. **Federation async impls never awaited (CRITICAL, fixed in `f04a1f64`):** `_brain_federation_{join,leave,sync,route}_impl` are `async def` but were wrapped in sync lambdas in the ROUTER. `async_dispatch` checked `iscoroutinefunction(handler)` on the lambda (which is sync), so the returned coroutine was never awaited. This means federation `join`/`leave`/`sync`/`route` were **silently no-ops in production** — the functions were called but never executed. Fix: `async_dispatch` now checks if the result is a coroutine and awaits it if so.
-2. **audit_log `int(limit)` crashed on non-integer input (fixed in `f04a1f64`):** `query_audit()` did `int(limit)` with no type guard. When `limit='not_a_number'` was passed, it threw `ValueError`. The dispatch caught it, but the error message was ugly and a traceback was logged. Fix: try/except with fallback to default (100). Same for `offset`.
-3. **audit_log + cost_router used sync dispatch despite async wrapper (fixed in `f04a1f64`):** Both were `async def` but called `make_response_dispatch` (sync) inside. Converted to `async_dispatch` for consistency with the other 9 facades.
+1. **Federation async impls never awaited (CRITICAL, fixed in `f04a1f64`):** `_brain_federation_{join,leave,sync,route}_impl` are `async def` but were wrapped in sync lambdas in the ROUTER. `async_dispatch` checked `iscoroutinefunction(handler)` on the lambda (which is sync), so the returned coroutine was never awaited. This means federation `join`/`leave`/`sync`/`route` were **silently no-ops in production** — the functions were called but never executed. Fix: federation ROUTER now uses explicit `async def` wrapper functions. `async_dispatch` also has a safety net that awaits coroutines returned from sync handlers.
+2. **Non-string action crashes dispatch (found by fire_without_thinking, fixed in refinement run):** When an LLM swaps the `action` and `params` arguments (passes a dict as `action`), `router.get(action)` throws `TypeError: cannot use 'dict' as a dict key (unhashable type: 'dict')`. 79/266 actions failed this scenario. Fix: both `dispatch()` and `async_dispatch()` now type-check `action` and return a structured error if it's not a string.
+3. **audit_log `int(limit)` crashed on non-integer input (fixed in `f04a1f64`):** `query_audit()` did `int(limit)` with no type guard. When `limit='not_a_number'` was passed, it threw `ValueError`. Fix: try/except with fallback to default (100). Same for `offset`.
+4. **audit_log + cost_router used sync dispatch despite async wrapper (fixed in `f04a1f64`):** Both were `async def` but called `make_response_dispatch` (sync) inside. Converted to `async_dispatch` for consistency with the other 9 facades.
 
 ### Low happy-path pass rate (35%, expected)
 The happy-path angle passes only 92/266 (35%) because the harness uses generic params that don't match real brain state. Breakdown by module:
@@ -86,16 +89,20 @@ This is **expected behavior** — `handled` means the tool correctly rejected in
 
 ### Remaining harness limitations
 1. **Schema generation fails** with `'str' object has no attribute 'name'` — the schema generator expects Tool objects, not strings. The MockMCP's `list_tools()` returns strings, but the schema code expects objects with a `.name` attribute. This is a harness limitation, not a production bug.
-2. **PyPI 429 rate limiting** — the growth_ops module hits PyPI's API and gets rate-limited during testing. Not a bug, but indicates the test makes real network calls.
-3. **Secret Manager warnings** — `google-cloud-secret-manager not installed` warnings for Telegram/Slack/Discord/WhatsApp tokens. Expected in test environment.
+2. **Secret Manager warnings** — `google-cloud-secret-manager not installed` warnings for Telegram/Slack/Discord/WhatsApp tokens. Expected in test environment (network calls are mocked but the import-time check still fires).
 
 ### Changes since last run
 - **All 11 tool facades converted to async dispatch.** Previously 126 actions used sync `make_response_dispatch`; now all 266 actions use `async_dispatch`.
 - **"claude" references removed from sync module logic.** Previously 67 actions in the `sync` module referenced "claude" in their source; now zero actions have client-specific assumptions.
 - **Orchestration correctly decomposed into 5 separate ROUTERs.** The harness now correctly identifies that `orchestration` registers 5 separate tools (ORCH_ROUTER, TELEM_ROUTER, SLOTS_ROUTER, INFRA_ROUTER, AGENTS_ROUTER), each with its own action set.
 - **Sessions module now registers.** Fixed missing mock helpers (`get_orch`, `read_events`, `get_state`, `update_state`) that prevented the sessions and orchestration modules from registering in the test harness.
-- **Federation coroutine bug fixed.** `async_dispatch` now awaits coroutines returned from sync lambdas wrapping async impls.
+- **Federation coroutine bug fixed.** Federation ROUTER now uses explicit `async def` wrappers instead of sync lambdas. `async_dispatch` also has a safety net for any remaining sync lambdas wrapping async impls.
+- **Non-string action guard added.** Both `dispatch()` and `async_dispatch()` now type-check the `action` parameter and return a structured error if it's not a string. Prevents `TypeError: unhashable type: 'dict'` when an LLM swaps action/params args.
 - **audit_log type coercion hardened.** `int(limit)` and `int(offset)` now have try/except fallbacks.
+- **Fire_without_thinking angle upgraded.** Now tests 5 confused-LLM scenarios per action instead of just empty-string action.
+- **Wrong_types angle upgraded.** Now introspects handler signatures for per-param type mismatches instead of generic wrong types for all actions.
+- **Network calls mocked.** `urllib.request.urlopen` is patched to return mock responses, making the harness deterministic (no PyPI 429s, no GitHub rate limits).
+- **Dead code cleaned.** Unused `dispatch` imports removed from 7 tool modules. Unused `json` import removed from federation.py. `DeprecationWarning` for `asyncio.iscoroutinefunction` fixed.
 
 ## How to reproduce
 

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:31:27
+**Generated:** 2026-06-25T23:43:52
 **Total tests:** 84
 **Actions tested:** 12
 **Angles per action:** 7
@@ -134,12 +134,12 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "github": {
-    "stars": 3,
-    "forks": 3,
+    "stars": 0,
+    "forks": 0,
     "open_issues": 0,
-    "watchers": 1,
+    "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:59:55.567324+00:00"
+    "fetched_at": "2026-06-25T18:13:22.152162+00:00"
   },
   "pypi": {
     "last_mon`
@@ -148,12 +148,12 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "github": {
-    "stars": 3,
-    "forks": 3,
+    "stars": 0,
+    "forks": 0,
     "open_issues": 0,
-    "watchers": 1,
+    "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:59:56.528739+00:00"
+    "fetched_at": "2026-06-25T18:13:22.168828+00:00"
   },
   "pypi": {
     "last_mon`
@@ -170,12 +170,12 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "github": {
-    "stars": 3,
-    "forks": 3,
+    "stars": 0,
+    "forks": 0,
     "open_issues": 0,
-    "watchers": 1,
+    "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T17:59:57.415135+00:00"
+    "fetched_at": "2026-06-25T18:13:22.186082+00:00"
   },
   "pypi": {
     "last_mon`
@@ -392,10 +392,10 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:00:05.954316+00:00",
+  "timestamp": "2026-06-25T18:13:30.209445+00:00",
   "sections": {
     "brief": {
-      "engram_count": 111,
+      "engram_count": 166,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -404,10 +404,10 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:00:06.978910+00:00",
+  "timestamp": "2026-06-25T18:13:30.241702+00:00",
   "sections": {
     "brief": {
-      "engram_count": 116,
+      "engram_count": 171,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -424,10 +424,10 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:00:08.046420+00:00",
+  "timestamp": "2026-06-25T18:13:30.270224+00:00",
   "sections": {
     "brief": {
-      "engram_count": 121,
+      "engram_count": 171,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `

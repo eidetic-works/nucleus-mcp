@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:31:27
+**Generated:** 2026-06-25T23:43:52
 **Total tests:** 441
 **Actions tested:** 63
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 96 | 21.8% | Tool returned a successful response |
-| ⚠️ handled | 345 | 78.2% | Tool returned a graceful error (no crash) |
+| ✅ pass | 116 | 26.3% | Tool returned a successful response |
+| ⚠️ handled | 325 | 73.7% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 7 | 11.1% |
-| ⚠️ handled | 56 | 88.9% |
+| ✅ pass | 13 | 20.6% |
+| ⚠️ handled | 50 | 79.4% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 13 | 20.6% |
-| ⚠️ handled | 50 | 79.4% |
+| ✅ pass | 20 | 31.7% |
+| ⚠️ handled | 43 | 68.3% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 13 | 20.6% |
-| ⚠️ handled | 50 | 79.4% |
+| ✅ pass | 20 | 31.7% |
+| ⚠️ handled | 43 | 68.3% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -161,12 +161,12 @@
 | `relay_poll_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_poll_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_skip_review` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_skip_review` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `relay_wait` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `saturation_baselines` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `saturation_check` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `shared_list` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `saturation_baselines` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `saturation_check` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `shared_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `shared_read` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `shared_write` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `smoke_test` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
@@ -174,8 +174,8 @@
 | `sync_auto` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `sync_now` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `sync_resolve` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `sync_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `test_channel` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `sync_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `test_channel` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `trigger_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `write_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
@@ -2614,37 +2614,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_listen': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
+  "expected_params": "(recipient, window_s=60, poll_s=5, in_reply_to=N`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_listen': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient, window_s=60, poll_s=5, in_r`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_listen': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(recipient, window_s=60, poll_s=5, in_reply_to=None`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_listen': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient, window_s=60, poll_s=5, in_r`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2669,37 +2669,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_log_event': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
+  "expected_params": "(event, side, subject, tags=None, match_reaso`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_log_event': register.<locals>.<lambda>() missing 3 required positional arguments: 'event', 'side', and 'subject'",
+  "expected_params": "(event, side, su`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_log_event': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(event, side, subject, tags=None, match_reason='`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_log_event': register.<locals>.<lambda>() missing 3 required positional arguments: 'event', 'side', and 'subject'",
+  "expected_params": "(event, side, su`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2724,37 +2724,38 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_start': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient, interval_s=10, session_`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_start': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient, interval_s=10, session_`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_start': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(recipient, interval_s=10, session_id=None)",
+ `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_start': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient, interval_s=10, session_`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2779,37 +2780,42 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_status': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient)",
+  "provided_params":`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_status': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient)",
+  "provided_params":`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(recipient)",
+  "provided_params": [
+    "id",`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_status': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient)",
+  "provided_params":`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2834,37 +2840,43 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_stop': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient)",
+  "provided_params": [`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_stop': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient)",
+  "provided_params": [`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_stop': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(recipient)",
+  "provided_params": [
+    "id",
+ `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_poll_stop': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
+  "expected_params": "(recipient)",
+  "provided_params": [`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2889,37 +2901,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() got an unexpected keyword argument 'message'",
+  "expected_params": "(to, subject, body, priority='normal', context=N`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() missing 3 required positional arguments: 'to', 'subject', and 'body'",
+  "expected_params": "(to, subject, body, prio`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(to, subject, body, priority='normal', context=None, `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() missing 3 required positional arguments: 'to', 'subject', and 'body'",
+  "expected_params": "(to, subject, body, prio`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2941,40 +2953,52 @@
 
 #### `sync.relay_skip_review`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "total_skips": 0,
+  "total_classified": 0,
+  "unclassified_count": 0,
+  "unclassified": []
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "total_skips": 0,
+  "total_classified": 0,
+  "unclassified_count": 0,
+  "unclassified": []
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_skip_review': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(limit=20)",
+  "provided_params": [
+    "id",
+`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "total_skips": 0,
+  "total_classified": 0,
+  "unclassified_count": 0,
+  "unclassified": []
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -2996,40 +3020,65 @@
 
 #### `sync.relay_status`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "current_session_type": "claude_code_main",
+  "mailboxes": {
+    "claude_code": {
+      "total": 0,
+      "unread": 0,
+      "latest_message_at": null
+    },
+    "claude_code_main": {
+      "total`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "current_session_type": "claude_code_main",
+  "mailboxes": {
+    "claude_code": {
+      "total": 0,
+      "unread": 0,
+      "latest_message_at": null
+    },
+    "claude_code_main": {
+      "total`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "()",
+  "provided_params": [
+    "id",
+    "query",
+`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "current_session_type": "claude_code_main",
+  "mailboxes": {
+    "claude_code": {
+      "total": 0,
+      "unread": 0,
+      "latest_message_at": null
+    },
+    "claude_code_main": {
+      "total`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3054,37 +3103,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_wait': register.<locals>.<lambda>() missing 2 required positional arguments: 'in_reply_to' and 'recipient'",
+  "expected_params": "(in_reply_to, recipien`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_wait': register.<locals>.<lambda>() missing 2 required positional arguments: 'in_reply_to' and 'recipient'",
+  "expected_params": "(in_reply_to, recipien`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_wait': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(in_reply_to, recipient, timeout_s=60, poll_interval_`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'relay_wait': register.<locals>.<lambda>() missing 2 required positional arguments: 'in_reply_to' and 'recipient'",
+  "expected_params": "(in_reply_to, recipien`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3106,40 +3155,59 @@
 
 #### `sync.saturation_baselines`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "surface": "main",
+  "window_size": 100,
+  "turn_count": 0,
+  "tokens_baseline_median": null,
+  "tokens_p95": null,
+  "latency_baseline_median_s": null,
+  "latency_p95_s": null,
+  "data_present": `
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "surface": "main",
+  "window_size": 100,
+  "turn_count": 0,
+  "tokens_baseline_median": null,
+  "tokens_p95": null,
+  "latency_baseline_median_s": null,
+  "latency_p95_s": null,
+  "data_present": `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'saturation_baselines': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(surface='main', window_size=100)",
+  "prov`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "surface": "main",
+  "window_size": 100,
+  "turn_count": 0,
+  "tokens_baseline_median": null,
+  "tokens_p95": null,
+  "latency_baseline_median_s": null,
+  "latency_p95_s": null,
+  "data_present": `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3161,40 +3229,61 @@
 
 #### `sync.saturation_check`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "surface": "main",
+  "saturated": false,
+  "threshold_factor": 2.0,
+  "baselines": {
+    "surface": "main",
+    "window_size": 100,
+    "turn_count": 0,
+    "tokens_baseline_median": null,
+    "to`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "surface": "main",
+  "saturated": false,
+  "threshold_factor": 2.0,
+  "baselines": {
+    "surface": "main",
+    "window_size": 100,
+    "turn_count": 0,
+    "tokens_baseline_median": null,
+    "to`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'saturation_check': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(surface='main', window_size=100, threshold_fac`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "surface": "main",
+  "saturated": false,
+  "threshold_factor": 2.0,
+  "baselines": {
+    "surface": "main",
+    "window_size": 100,
+    "turn_count": 0,
+    "tokens_baseline_median": null,
+    "to`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3219,37 +3308,47 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'shared_list': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
+  "expected_params": "()",
+  "provided_params": [
+    "limit"
+  ]
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "keys": [],
+  "count": 0
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'shared_list': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "()",
+  "provided_params": [
+    "id",
+    "query",
+ `
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "keys": [],
+  "count": 0
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3274,37 +3373,48 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'shared_read': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(key)",
+  "provided_params": [
+    "id"
+  ]
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'shared_read': register.<locals>.<lambda>() missing 1 required positional argument: 'key'",
+  "expected_params": "(key)",
+  "provided_params": []
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'shared_read': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(key)",
+  "provided_params": [
+    "id",
+    "query"`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'shared_read': register.<locals>.<lambda>() missing 1 required positional argument: 'key'",
+  "expected_params": "(key)",
+  "provided_params": []
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3329,37 +3439,42 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'shared_write': register.<locals>.<lambda>() got an unexpected keyword argument 'content'",
+  "expected_params": "(key, value, agent_id='')",
+  "provided_params`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'shared_write': register.<locals>.<lambda>() missing 2 required positional arguments: 'key' and 'value'",
+  "expected_params": "(key, value, agent_id='')",
+  "p`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'shared_write': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(key, value, agent_id='')",
+  "provided_params": [
+`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'shared_write': register.<locals>.<lambda>() missing 2 required positional arguments: 'key' and 'value'",
+  "expected_params": "(key, value, agent_id='')",
+  "p`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3384,37 +3499,41 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'smoke_test': register.<locals>.<lambda>() missing 1 required positional argument: 'url'",
+  "expected_params": "(url, endpoint='/api/health')",
+  "provided_par`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'smoke_test': register.<locals>.<lambda>() missing 1 required positional argument: 'url'",
+  "expected_params": "(url, endpoint='/api/health')",
+  "provided_par`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'smoke_test': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(url, endpoint='/api/health')",
+  "provided_params": `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'smoke_test': register.<locals>.<lambda>() missing 1 required positional argument: 'url'",
+  "expected_params": "(url, endpoint='/api/health')",
+  "provided_par`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3439,37 +3558,41 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'start_deploy_poll': register.<locals>.<lambda>() missing 1 required positional argument: 'service_id'",
+  "expected_params": "(service_id, commit_sha=None)",
+ `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'start_deploy_poll': register.<locals>.<lambda>() missing 1 required positional argument: 'service_id'",
+  "expected_params": "(service_id, commit_sha=None)",
+ `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'start_deploy_poll': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(service_id, commit_sha=None)",
+  "provided_pa`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'start_deploy_poll': register.<locals>.<lambda>() missing 1 required positional argument: 'service_id'",
+  "expected_params": "(service_id, commit_sha=None)",
+ `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3494,37 +3617,46 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'sync_auto': register.<locals>._sync_auto() missing 1 required positional argument: 'enable'",
+  "expected_params": "(enable)",
+  "provided_params": []
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'sync_auto': register.<locals>._sync_auto() missing 1 required positional argument: 'enable'",
+  "expected_params": "(enable)",
+  "provided_params": []
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_auto': register.<locals>._sync_auto() got an unexpected keyword argument 'id'",
+  "expected_params": "(enable)",
+  "provided_params": [
+    "id",
+    "que`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Invalid params for action 'sync_auto': register.<locals>._sync_auto() missing 1 required positional argument: 'enable'",
+  "expected_params": "(enable)",
+  "provided_params": []
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3549,37 +3681,43 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Sync not enabled",
+  "hint": "Create .brain/config/nucleus.yaml with sync.enabled: true"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Sync not enabled",
+  "hint": "Create .brain/config/nucleus.yaml with sync.enabled: true"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_now': register.<locals>._sync_now() got an unexpected keyword argument 'id'",
+  "expected_params": "(force=False)",
+  "provided_params": [
+    "id",
+    "`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "error": "Sync not enabled",
+  "hint": "Create .brain/config/nucleus.yaml with sync.enabled: true"
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3604,37 +3742,38 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() missing 1 required positional argument: 'file_path'",
+  "expected_params": "(file_path, strategy='last_write_w`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() missing 1 required positional argument: 'file_path'",
+  "expected_params": "(file_path, strategy='last_write_w`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() got an unexpected keyword argument 'id'",
+  "expected_params": "(file_path, strategy='last_write_wins')",
+  "p`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() missing 1 required positional argument: 'file_path'",
+  "expected_params": "(file_path, strategy='last_write_w`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3656,40 +3795,62 @@
 
 #### `sync.sync_status`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "sync_enabled": false,
+  "mode": "manual",
+  "last_sync": null,
+  "current_agent": "unknown_agent",
+  "agent_info": {
+    "agent_id": "unknown_agent",
+    "environment": "unknown",
+    "role": "wo`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "sync_enabled": false,
+  "mode": "manual",
+  "last_sync": null,
+  "current_agent": "unknown_agent",
+  "agent_info": {
+    "agent_id": "unknown_agent",
+    "environment": "unknown",
+    "role": "wo`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'sync_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "()",
+  "provided_params": [
+    "id",
+    "query",
+ `
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "sync_enabled": false,
+  "mode": "manual",
+  "last_sync": null,
+  "current_agent": "unknown_agent",
+  "agent_info": {
+    "agent_id": "unknown_agent",
+    "environment": "unknown",
+    "role": "wo`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3711,40 +3872,42 @@
 
 #### `sync.test_channel`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "results": {}
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "results": {}
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'test_channel': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(channel_name=None)",
+  "provided_params": [
+    "i`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
+  "results": {}
 }`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3769,37 +3932,38 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() missing 2 required positional arguments: 'agent' and 'task_description'",
+  "expected_params": "(agent, task_descr`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() missing 2 required positional arguments: 'agent' and 'task_description'",
+  "expected_params": "(agent, task_descr`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(agent, task_description, context_files=None)",
+  `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() missing 2 required positional arguments: 'agent' and 'task_description'",
+  "expected_params": "(agent, task_descr`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
@@ -3824,37 +3988,43 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'write_artifact': register.<locals>.<lambda>() got an unexpected keyword argument 'tags'",
+  "expected_params": "(path, content)",
+  "provided_params": [
+    "c`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'write_artifact': register.<locals>.<lambda>() missing 2 required positional arguments: 'path' and 'content'",
+  "expected_params": "(path, content)",
+  "provid`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'write_artifact': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "expected_params": "(path, content)",
+  "provided_params": [
+    "id"`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Invalid params for action 'write_artifact': register.<locals>.<lambda>() missing 2 required positional arguments: 'path' and 'content'",
+  "expected_params": "(path, content)",
+  "provid`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
 - *Result preview:* `{
-  "error": "Rate limit exceeded for nucleus_sync: 200 calls per 60s window. Try again in 59.5s.",
-  "module": "nucleus_sync"
-}`
+  "error": "Unknown action '__nonexistent_action__' in nucleus_sync",
+  "available_actions": [
+    "add_channel",
+    "audit_pair",
+    "check_deploy",
+    "complete_deploy",
+    "evaluate_triggers"`
 
 **fire_without_thinking** — ⚠️ handled
 - *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly

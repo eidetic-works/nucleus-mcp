@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:31:27
+**Generated:** 2026-06-25T23:43:52
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -338,31 +338,29 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "total_dispatches": 720,
-  "total_errors": 486,
-  "error_rate": 0.675,
+  "total_dispatches": 1023,
+  "total_errors": 789,
+  "error_rate": 0.7712609970674487,
   "facades": {
-    "nucleus_audit": {
-      "calls": 20,
-      "errors": 20
+    "nucleus_governance": {
+      "calls": 134,
+      "errors": 114
     },
-    "nucleus_route": {
-      "calls": 5,
- `
+    "nucleus_features`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "total_dispatches": 721,
-  "total_errors": 486,
-  "error_rate": 0.6740638002773925,
+  "total_dispatches": 1024,
+  "total_errors": 789,
+  "error_rate": 0.7705078125,
   "facades": {
-    "nucleus_audit": {
-      "calls": 20,
-      "errors": 20
+    "nucleus_governance": {
+      "calls": 134,
+      "errors": 114
     },
-    "nucleus_route": {
-      `
+    "nucleus_features": {
+ `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -375,16 +373,15 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "total_dispatches": 723,
-  "total_errors": 487,
-  "error_rate": 0.673582295988935,
+  "total_dispatches": 1026,
+  "total_errors": 790,
+  "error_rate": 0.7699805068226121,
   "facades": {
-    "nucleus_audit": {
-      "calls": 20,
-      "errors": 20
+    "nucleus_governance": {
+      "calls": 134,
+      "errors": 114
     },
-    "nucleus_route": {
-      "`
+    "nucleus_features`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -633,28 +630,20 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "enabled": true,
+  "enabled": false,
   "max_calls": 200,
   "window_seconds": 60,
-  "facades": {
-    "nucleus_audit": 20,
-    "nucleus_route": 5,
-    "nucleus_engrams": 190,
-    "nucleus_features": 80,
-    "nucleus_fe`
+  "facades": {}
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "enabled": true,
+  "enabled": false,
   "max_calls": 200,
   "window_seconds": 60,
-  "facades": {
-    "nucleus_audit": 20,
-    "nucleus_route": 5,
-    "nucleus_engrams": 190,
-    "nucleus_features": 80,
-    "nucleus_fe`
+  "facades": {}
+}`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -667,15 +656,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "enabled": true,
+  "enabled": false,
   "max_calls": 200,
   "window_seconds": 60,
-  "facades": {
-    "nucleus_audit": 20,
-    "nucleus_route": 5,
-    "nucleus_engrams": 190,
-    "nucleus_features": 80,
-    "nucleus_fe`
+  "facades": {}
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -980,7 +965,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 12
+**High Impact Closures:** 21
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -990,7 +975,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 12
+**High Impact Closures:** 21
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1010,7 +995,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 12
+**High Impact Closures:** 21
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `

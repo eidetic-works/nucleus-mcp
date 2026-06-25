@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:31:27
+**Generated:** 2026-06-25T23:43:52
 **Total tests:** 49
 **Actions tested:** 7
 **Angles per action:** 7
@@ -227,33 +227,33 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>.<lambda>() missing 1 required positional argument: 'seed_peer'",
-  "expected_params": "(seed_peer)",
+  "error": "Invalid params for action 'join': register.<locals>._h_join() missing 1 required positional argument: 'seed_peer'",
+  "expected_params": "(seed_peer: str)",
   "provided_params": []
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>.<lambda>() missing 1 required positional argument: 'seed_peer'",
-  "expected_params": "(seed_peer)",
+  "error": "Invalid params for action 'join': register.<locals>._h_join() missing 1 required positional argument: 'seed_peer'",
+  "expected_params": "(seed_peer: str)",
   "provided_params": []
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(seed_peer)",
+  "error": "Invalid params for action 'join': register.<locals>._h_join() got an unexpected keyword argument 'id'",
+  "expected_params": "(seed_peer: str)",
   "provided_params": [
     "id",
-    "query",`
+    "que`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>.<lambda>() missing 1 required positional argument: 'seed_peer'",
-  "expected_params": "(seed_peer)",
+  "error": "Invalid params for action 'join': register.<locals>._h_join() missing 1 required positional argument: 'seed_peer'",
+  "expected_params": "(seed_peer: str)",
   "provided_params": []
 }`
 
@@ -312,7 +312,7 @@ Local brain now operating in standalone mode.`
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'leave': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'leave': register.<locals>._h_leave() got an unexpected keyword argument 'id'",
   "expected_params": "()",
   "provided_params": [
     "id",
@@ -442,31 +442,30 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>.<lambda>() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id, profile='default')",
-  "provided_param`
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'task_id'",
+  "expected_params": "(task_id: str, profile: str = 'default')",
+  "pr`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>.<lambda>() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id, profile='default')",
-  "provided_param`
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'task_id'",
+  "expected_params": "(task_id: str, profile: str = 'default')",
+  "pr`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, profile='default')",
-  "provided_params": [
-    `
+  "error": "Invalid params for action 'route': register.<locals>._h_route() got an unexpected keyword argument 'id'",
+  "expected_params": "(task_id: str, profile: str = 'default')",
+  "provided_par`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>.<lambda>() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id, profile='default')",
-  "provided_param`
+  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'task_id'",
+  "expected_params": "(task_id: str, profile: str = 'default')",
+  "pr`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -616,12 +615,12 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'sync': register.<locals>._h_sync() got an unexpected keyword argument 'id'",
   "expected_params": "()",
   "provided_params": [
     "id",
     "query",
-    "lim`
+    "limi`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

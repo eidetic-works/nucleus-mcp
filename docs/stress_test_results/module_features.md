@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:31:27
+**Generated:** 2026-06-25T23:43:52
 **Total tests:** 112
 **Actions tested:** 16
 **Angles per action:** 7
@@ -196,7 +196,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T17:59:50.665801Z"
+  "timestamp": "2026-06-25T18:13:17.342508Z"
 }`
 
 **missing_params** — ✅ pass
@@ -206,7 +206,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T17:59:50.665852Z"
+  "timestamp": "2026-06-25T18:13:17.342613Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -224,7 +224,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T17:59:50.665948Z"
+  "timestamp": "2026-06-25T18:13:17.342755Z"
 }`
 
 **unknown_action** — ⚠️ handled
