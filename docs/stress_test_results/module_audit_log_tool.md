@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:05:36
+**Generated:** 2026-06-26T06:33:41
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 4 | 14.3% | Tool returned a successful response |
-| ⚠️ handled | 24 | 85.7% | Tool returned a graceful error (no crash) |
+| ✅ pass | 12 | 42.9% | Tool returned a successful response |
+| ⚠️ handled | 16 | 57.1% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 4 | 100.0% |
+| ✅ pass | 2 | 50.0% |
+| ⚠️ handled | 2 | 50.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 4 | 100.0% |
+| ✅ pass | 2 | 50.0% |
+| ⚠️ handled | 2 | 50.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 4 | 100.0% |
+| ✅ pass | 2 | 50.0% |
+| ⚠️ handled | 2 | 50.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 4 | 100.0% |
+| ✅ pass | 2 | 50.0% |
+| ⚠️ handled | 2 | 50.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -85,7 +85,7 @@
 
 ### fire_without_thinking
 
-**What it tests:** Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+**What it tests:** 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 
 | Status | Count | % |
 |--------|-------|---|
@@ -117,42 +117,41 @@
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `admin_query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `query` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `verify` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `query` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `verify` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `audit_log_tool.admin_query`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() got an unexpected keyword argument 'query'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "quer`
+  "success": false,
+  "data": null,
+  "error": "admin_query: invalid or missing admin_token"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": false,
+  "data": null,
+  "error": "admin_query: invalid or missing admin_token"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() got an unexpected keyword argument 'id'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "id",
-  `
+  "success": false,
+  "data": null,
+  "error": "admin_query: invalid or missing admin_token"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'admin_query': register.<locals>._h_admin_query() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": false,
+  "data": null,
+  "error": "admin_query: invalid or missing admin_token"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -168,7 +167,7 @@
   "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_audit",
   "available_actions": [
@@ -190,35 +189,33 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() got an unexpected keyword argument 'limit'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "limit"
- `
+  "success": false,
+  "data": null,
+  "error": "log_event requires: event_type, actor, resource, outcome"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": false,
+  "data": null,
+  "error": "log_event requires: event_type, actor, resource, outcome"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() got an unexpected keyword argument 'id'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "id",
-    "q`
+  "success": false,
+  "data": null,
+  "error": "log_event requires: event_type, actor, resource, outcome"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'log_event': register.<locals>._h_log_event() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": false,
+  "data": null,
+  "error": "log_event requires: event_type, actor, resource, outcome"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -234,7 +231,7 @@
   "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_audit",
   "available_actions": [
@@ -253,39 +250,48 @@
 
 #### `audit_log_tool.query`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'query': register.<locals>._h_query() got an unexpected keyword argument 'query'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "query",
-    "lim`
-
-**missing_params** — ⚠️ handled
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Invalid params for action 'query': register.<locals>._h_query() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": true,
+  "data": {
+    "count": 0,
+    "records": []
+  },
+  "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "success": true,
+  "data": {
+    "count": 0,
+    "records": []
+  },
+  "error": null
+}`
+
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'query': register.<locals>._h_query() got an unexpected keyword argument 'id'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "id",
-    "query",
- `
+  "success": true,
+  "data": {
+    "count": 0,
+    "records": []
+  },
+  "error": null
+}`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'query': register.<locals>._h_query() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": true,
+  "data": {
+    "count": 0,
+    "records": []
+  },
+  "error": null
 }`
 
 **unknown_action** — ⚠️ handled
@@ -301,7 +307,7 @@
   "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_audit",
   "available_actions": [
@@ -320,37 +326,48 @@
 
 #### `audit_log_tool.verify`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": true,
+  "data": {
+    "chain_ok": true,
+    "broken_at_id": null
+  },
+  "error": null
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": true,
+  "data": {
+    "chain_ok": true,
+    "broken_at_id": null
+  },
+  "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'verify': register.<locals>._h_verify() got an unexpected keyword argument 'id'",
-  "expected_params": "(params)",
-  "provided_params": [
-    "id",
-    "query",`
+  "success": true,
+  "data": {
+    "chain_ok": true,
+    "broken_at_id": null
+  },
+  "error": null
+}`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'verify': register.<locals>._h_verify() missing 1 required positional argument: 'params'",
-  "expected_params": "(params)",
-  "provided_params": []
+  "success": true,
+  "data": {
+    "chain_ok": true,
+    "broken_at_id": null
+  },
+  "error": null
 }`
 
 **unknown_action** — ⚠️ handled
@@ -366,7 +383,7 @@
   "hint": "Try: nucleus_audit(actio`
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_audit",
   "available_actions": [
@@ -385,14 +402,19 @@
 
 ## Cross-Agent Compatibility Details
 
-## Fire-Without-Thinking (Zero-Config) Details
+## Fire-Without-Thinking (Confused-LLM) Details
 
-**4/4 actions return a useful response when called with empty action + empty params.**
+**4/4 actions return a useful response across 5 confused-LLM scenarios.**
 **0 actions fail or crash.**
 
-This tests the 'fire without thinking' pattern — an LLM that just calls `nucleus_engrams('', {})`
-without knowing what action to use or what params to pass. Every action should return a
-structured response (even if it's an error), not crash.
+This tests 5 scenarios an LLM might produce when confused:
+1. **empty_action** — `('', {})` — LLM sends empty string
+2. **none_action** — `(None, {})` — LLM forgot to fill the action param
+3. **params_as_string** — `(action, 'just a prompt string')` — LLM passed a string instead of dict
+4. **swapped_args** — `(params_dict, action_string)` — LLM put params in the action slot
+5. **guessed_action** — `(action, {'random_garbage': True})` — LLM guessed an action but passed garbage
+
+Every action should return a structured response (even if it's an error), not crash.
 
 ## Methodology
 
@@ -426,7 +448,7 @@ directly with the test params, and the result is classified as:
 - Action name that does not exist in this tool's ROUTER — tests error handling for typos
 
 **fire_without_thinking**
-- Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 
 **cross_agent_compat**
 - Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:05:36
+**Generated:** 2026-06-26T06:33:41
 **Total tests:** 266
 **Actions tested:** 38
 **Angles per action:** 7
@@ -85,7 +85,7 @@
 
 ### fire_without_thinking
 
-**What it tests:** Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+**What it tests:** 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 
 | Status | Count | % |
 |--------|-------|---|
@@ -195,7 +195,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -221,7 +221,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:47:16.577085Z",
+        "timestamp": "2026-06-26T01:01:33.746255Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -233,7 +233,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:47:16.577085Z",
+        "timestamp": "2026-06-26T01:01:33.746255Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -254,7 +254,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:47:16.577085Z",
+        "timestamp": "2026-06-26T01:01:33.746255Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -272,7 +272,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -296,28 +296,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 193.8,
-    "total_interactions": 1938,
+    "total_cost_units": 241.0,
+    "total_interactions": 2410,
     "breakdown": {
       "unknown": {
-        "cost": 96.9,
-        "count": 969,
+        "cost": 120.5,
+        "count": 1205,
         "tier": 1
-    `
+  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 193.8,
-    "total_interactions": 1938,
+    "total_cost_units": 241.0,
+    "total_interactions": 2410,
     "breakdown": {
       "unknown": {
-        "cost": 96.9,
-        "count": 969,
+        "cost": 120.5,
+        "count": 1205,
         "tier": 1
-    `
+  `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -331,14 +331,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 193.8,
-    "total_interactions": 1938,
+    "total_cost_units": 241.0,
+    "total_interactions": 2410,
     "breakdown": {
       "unknown": {
-        "cost": 96.9,
-        "count": 969,
+        "cost": 120.5,
+        "count": 1205,
         "tier": 1
-    `
+  `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -353,7 +353,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -414,7 +414,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -440,12 +440,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_34043",
+        "id": "growth_hook_morning_brief_generated_35795",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -454,12 +454,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_34043",
+        "id": "growth_hook_morning_brief_generated_35795",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -475,12 +475,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_34043",
+        "id": "growth_hook_morning_brief_generated_35795",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -495,7 +495,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -558,7 +558,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -632,7 +632,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -697,7 +697,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -754,7 +754,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -815,7 +815,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -876,7 +876,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -941,7 +941,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -997,7 +997,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1077,7 +1077,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1103,7 +1103,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 1,
+  "uptime_seconds": 2,
   "python_version": "3.14.4"
 }`
 
@@ -1114,7 +1114,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 1,
+  "uptime_seconds": 2,
   "python_version": "3.14.4"
 }`
 
@@ -1135,7 +1135,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 1,
+  "uptime_seconds": 2,
   "python_version": "3.14.4"
 }`
 
@@ -1152,7 +1152,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1176,11 +1176,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T00:34:06.492030+00:00",
+    "timestamp": "2026-06-26T01:03:18.803242+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.8,
+    "check_duration_ms": 3.8,
     "formatt`
 
 **missing_params** — ✅ pass
@@ -1188,11 +1188,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T00:34:06.841998+00:00",
+    "timestamp": "2026-06-26T01:03:19.172962+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 8.8,
+    "check_duration_ms": 3.6,
     "formatt`
 
 **wrong_types** — ⚠️ handled
@@ -1207,11 +1207,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T00:34:08.364130+00:00",
+    "timestamp": "2026-06-26T01:03:20.490466+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 8.3,
+    "check_duration_ms": 3.7,
     "formatt`
 
 **unknown_action** — ⚠️ handled
@@ -1227,7 +1227,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1300,7 +1300,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1324,30 +1324,30 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 834,
+    "total_executions": 1036,
     "outcomes": {
-      "ADD": 129,
-      "NOOP": 272,
-      "UNKNOWN": 260,
-      "UPDATE": 173
+      "ADD": 154,
+      "NOOP": 345,
+      "UNKNOWN": 318,
+      "UPDATE": 219
     },
     "by_event_type": {
-      "morn`
+      "mor`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 834,
+    "total_executions": 1036,
     "outcomes": {
-      "ADD": 129,
-      "NOOP": 272,
-      "UNKNOWN": 260,
-      "UPDATE": 173
+      "ADD": 154,
+      "NOOP": 345,
+      "UNKNOWN": 318,
+      "UPDATE": 219
     },
     "by_event_type": {
-      "morn`
+      "mor`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1364,15 +1364,15 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 834,
+    "total_executions": 1036,
     "outcomes": {
-      "ADD": 129,
-      "NOOP": 272,
-      "UNKNOWN": 260,
-      "UPDATE": 173
+      "ADD": 154,
+      "NOOP": 345,
+      "UNKNOWN": 318,
+      "UPDATE": 219
     },
     "by_event_type": {
-      "morn`
+      "mor`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1387,7 +1387,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1451,7 +1451,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1515,7 +1515,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1579,7 +1579,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1655,7 +1655,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1719,7 +1719,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1743,14 +1743,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:33 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:33 AM\n====================`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1766,7 +1766,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:33 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1781,7 +1781,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1850,7 +1850,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1872,7 +1872,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T00:34:08.411249+00:00
+# Generated at 2026-06-26T01:03:20.525784+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -1882,7 +1882,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T00:34:08.411623+00:00
+# Generated at 2026-06-26T01:03:20.526139+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -1899,7 +1899,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T00:34:08.411959+00:00
+# Generated at 2026-06-26T01:03:20.526481+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -1919,7 +1919,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -1992,7 +1992,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2026,8 +2026,8 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% of target",
-        "contex`
+        "value": "RECURRING PATTERN (109x): Behind pace: github_issues at 0.0% of target",
+        "conte`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2044,8 +2044,8 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% of target",
-        "contex`
+        "value": "RECURRING PATTERN (109x): Behind pace: github_issues at 0.0% of target",
+        "conte`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2060,7 +2060,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2120,7 +2120,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2183,7 +2183,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2251,7 +2251,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2317,7 +2317,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2377,7 +2377,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2401,14 +2401,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (109x): Behind pace: github_issues at 0.0% `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (109x): Behind pace: github_issues at 0.0% `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2424,7 +2424,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (109x): Behind pace: github_issues at 0.0% `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2439,7 +2439,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2525,7 +2525,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2609,7 +2609,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2697,7 +2697,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2754,7 +2754,7 @@
   `
 
 **fire_without_thinking** — ⚠️ handled
-- *Tests:* Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 - *Result preview:* `{
   "error": "No action specified for nucleus_engrams",
   "available_actions": [
@@ -2773,14 +2773,19 @@
 
 ## Cross-Agent Compatibility Details
 
-## Fire-Without-Thinking (Zero-Config) Details
+## Fire-Without-Thinking (Confused-LLM) Details
 
-**38/38 actions return a useful response when called with empty action + empty params.**
+**38/38 actions return a useful response across 5 confused-LLM scenarios.**
 **0 actions fail or crash.**
 
-This tests the 'fire without thinking' pattern — an LLM that just calls `nucleus_engrams('', {})`
-without knowing what action to use or what params to pass. Every action should return a
-structured response (even if it's an error), not crash.
+This tests 5 scenarios an LLM might produce when confused:
+1. **empty_action** — `('', {})` — LLM sends empty string
+2. **none_action** — `(None, {})` — LLM forgot to fill the action param
+3. **params_as_string** — `(action, 'just a prompt string')` — LLM passed a string instead of dict
+4. **swapped_args** — `(params_dict, action_string)` — LLM put params in the action slot
+5. **guessed_action** — `(action, {'random_garbage': True})` — LLM guessed an action but passed garbage
+
+Every action should return a structured response (even if it's an error), not crash.
 
 ## Methodology
 
@@ -2814,7 +2819,7 @@ directly with the test params, and the result is classified as:
 - Action name that does not exist in this tool's ROUTER — tests error handling for typos
 
 **fire_without_thinking**
-- Empty action string + empty params — zero-config call, tests what happens when an LLM just fires blindly
+- 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
 
 **cross_agent_compat**
 - Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
