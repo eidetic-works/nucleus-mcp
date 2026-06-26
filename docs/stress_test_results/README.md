@@ -1,15 +1,15 @@
 # Nucleus Tool Facade Stress Test Results
 
-**Test date:** 2026-06-25
+**Test date:** 2026-06-26
 **Total tests:** 1,862 (266 actions × 7 angles)
 **Zero crashes. Zero unhandled failures. Zero cross-agent compat warnings.**
 
-> **Refinement run:** The fire_without_thinking angle now tests 5 confused-LLM scenarios per action (empty action, None action, params-as-string, swapped args, guessed action + garbage params). The wrong_types angle now introspects handler signatures for per-param type mismatches. Network calls are mocked for deterministic results.
+> **Refinement run:** The fire_without_thinking angle now tests 5 confused-LLM scenarios per action (empty action, None action, params-as-string, swapped args, guessed action + garbage params). The wrong_types angle now introspects handler signatures for per-param type mismatches. The happy-path angle now introspects handler signatures for accurate per-action params. Network calls are mocked for deterministic results.
 
 ## How to read this
 
 ### Start here
-- **`stress_test_full_report_20260625.md`** — the master report. Contains every action, every angle, every result preview. 17,168 lines. If you only read one file, read this.
+- **`stress_test_full_report_20260626.md`** — the master report. Contains every action, every angle, every result preview. 17,534 lines. If you only read one file, read this.
 
 ### Per-module breakdowns
 If you only care about one module, read its individual file:
@@ -36,12 +36,12 @@ If you only care about one module, read its individual file:
 
 | # | Angle | What it tests | Pass | Handled | Crash |
 |---|-------|---------------|------|---------|-------|
-| 1 | `happy` | Valid params — the normal call an LLM would make | 95 (36%) | 171 | 0 |
-| 2 | `missing_params` | No params provided — tests required-param validation | 122 (46%) | 144 | 0 |
-| 3 | `wrong_types` | Wrong param types (int where str expected, etc.) | 2 (1%) | 264 | 0 |
-| 4 | `empty_params` | Empty params dict — tests default handling | 122 (46%) | 144 | 0 |
+| 1 | `happy` | Valid params — the normal call an LLM would make | 198 (74%) | 68 | 0 |
+| 2 | `missing_params` | No params provided — tests required-param validation | 129 (48%) | 137 | 0 |
+| 3 | `wrong_types` | Wrong param types (int where str expected, etc.) | 161 (61%) | 105 | 0 |
+| 4 | `empty_params` | Empty params dict — tests default handling | 129 (48%) | 137 | 0 |
 | 5 | `unknown_action` | Action name that doesn't exist — tests typo handling | 0 (0%) | 266 | 0 |
-| 6 | `fire_without_thinking` | Empty action + empty params — zero-config call | 0 (0%) | 266 | 0 |
+| 6 | `fire_without_thinking` | 5 confused-LLM scenarios — zero-config calls | 0 (0%) | 266 | 0 |
 | 7 | `cross_agent_compat` | Static analysis for Claude/Cursor/Windsurf compat | 266 (100%) | 0 | 0 |
 
 ### Status meanings
@@ -67,25 +67,26 @@ If you only care about one module, read its individual file:
 2. **Non-string action crashes dispatch (found by fire_without_thinking, fixed in refinement run):** When an LLM swaps the `action` and `params` arguments (passes a dict as `action`), `router.get(action)` throws `TypeError: cannot use 'dict' as a dict key (unhashable type: 'dict')`. 79/266 actions failed this scenario. Fix: both `dispatch()` and `async_dispatch()` now type-check `action` and return a structured error if it's not a string.
 3. **audit_log `int(limit)` crashed on non-integer input (fixed in `f04a1f64`):** `query_audit()` did `int(limit)` with no type guard. When `limit='not_a_number'` was passed, it threw `ValueError`. Fix: try/except with fallback to default (100). Same for `offset`.
 4. **audit_log + cost_router used sync dispatch despite async wrapper (fixed in `f04a1f64`):** Both were `async def` but called `make_response_dispatch` (sync) inside. Converted to `async_dispatch` for consistency with the other 9 facades.
+5. **audit_log + cost_router handlers took single `params` dict (CRITICAL, fixed in `ddb7c861`):** Handlers were `def _h_query(params):` but `async_dispatch` calls `handler(**params)` which unpacks the dict as kwargs. So `_h_query(team_id='default')` failed with "got an unexpected keyword argument 'team_id'". Every call through the MCP tool returned an error — the handlers never actually ran. Fix: changed all 5 handlers from `def _h_x(params)` to `def _h_x(**params)`.
 
-### Low happy-path pass rate (37%, expected)
-The happy-path angle passes 98/266 (37%) because the harness uses generic params that don't match real brain state. Breakdown by module:
+### Happy-path pass rate (74%, expected)
+The happy-path angle passes 198/266 (74%) with introspected handler-signature params. Breakdown by module:
 
 | Module | Pass | Handled | Pass % | Root cause |
 |--------|------|---------|--------|------------|
-| federation | 5 | 2 | 71% | Most actions work standalone |
-| engrams | 20 | 18 | 53% | Many read actions work; write actions need specific keys |
+| cost_router | 1 | 0 | 100% | Route works with test prompt |
+| federation | 7 | 0 | 100% | All actions work standalone |
+| orchestration | 59 | 12 | 83% | Most ops work; some need real commitments/slots |
+| sessions | 20 | 6 | 77% | Most ops work; some need real session IDs |
+| tasks | 13 | 4 | 76% | Most ops work; some need real task IDs |
+| engrams | 29 | 9 | 76% | Most read/write work; some need specific brain state |
+| governance | 14 | 5 | 74% | Most ops work; some need real compliance configs |
+| sync | 41 | 22 | 65% | Many ops work; some need real channels/pair configs |
+| features | 10 | 6 | 62% | Most ops work; some need real feature IDs + MCP servers |
+| audit_log | 2 | 2 | 50% | admin_query needs token; log_event needs all required fields |
 | relay | 2 | 2 | 50% | Needs real relay state |
-| sessions | 13 | 13 | 50% | Needs real session IDs |
-| orchestration | 35 | 36 | 49% | Many ops work; some need real commitments/slots |
-| sync | 13 | 50 | 21% | Needs real channels, pair configs, relay endpoints (network mocking improved some) |
-| tasks | 4 | 13 | 24% | Needs real task IDs |
-| governance | 4 | 15 | 21% | Needs real compliance configs |
-| features | 2 | 14 | 12% | Needs real feature IDs + MCP servers |
-| audit_log | 0 | 4 | 0% | admin_query needs token; query returns empty; log_event/verify need specific params |
-| cost_router | 0 | 1 | 0% | route action needs a real prompt (generic test prompt is too short) |
 
-This is **expected behavior** — `handled` means the tool correctly rejected invalid/incomplete input with a structured error response. The tools are working correctly; the test params just don't match real brain state.
+The remaining `handled` results are **expected behavior** — the tool correctly rejected the call because the test params don't match real brain state (e.g., a non-existent session ID). The tools are working correctly.
 
 ### Remaining harness limitations
 1. **Schema generation fails** with `'str' object has no attribute 'name'` — the schema generator expects Tool objects, not strings. The MockMCP's `list_tools()` returns strings, but the schema code expects objects with a `.name` attribute. This is a harness limitation, not a production bug.

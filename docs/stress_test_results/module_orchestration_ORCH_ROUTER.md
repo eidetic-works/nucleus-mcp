@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 91
 **Actions tested:** 13
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 44 | 48.4% | Tool returned a successful response |
-| ⚠️ handled | 47 | 51.6% | Tool returned a graceful error (no crash) |
+| ✅ pass | 61 | 67.0% | Tool returned a successful response |
+| ⚠️ handled | 30 | 33.0% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 9 | 69.2% |
-| ⚠️ handled | 4 | 30.8% |
+| ✅ pass | 13 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 13 | 100.0% |
+| ✅ pass | 13 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -115,28 +115,25 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `add_loop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `archive_stale` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `close_commitment` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `commitment_health` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `export` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `list_commitments` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `open_loops` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `patterns` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `pr_watch` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `satellite` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `scan_commitments` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `weekly_challenge` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `add_loop` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `archive_stale` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `close_commitment` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `commitment_health` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `export` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_commitments` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `open_loops` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `patterns` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `pr_watch` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `satellite` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `scan_commitments` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `weekly_challenge` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `orchestration.ORCH_ROUTER.add_loop`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'add_loop': register.<locals>._h_add_loop() got an unexpected keyword argument 'name'",
-  "expected_params": "(description, loop_type='task', priority=3)",
-  "p`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -144,12 +141,9 @@
   "error": "Invalid params for action 'add_loop': register.<locals>._h_add_loop() missing 1 required positional argument: 'description'",
   "expected_params": "(description, loop_type='task', priori`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'add_loop': register.<locals>._h_add_loop() got an unexpected keyword argument 'id'",
-  "expected_params": "(description, loop_type='task', priority=3)",
-  "pro`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -196,14 +190,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'archive_stale': register.<locals>._h_archive_stale() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -240,11 +229,9 @@
 
 #### `orchestration.ORCH_ROUTER.close_commitment`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'close_commitment': register.<locals>._h_close_commitment() missing 2 required positional arguments: 'commitment_id' and 'method'",
-  "expected_params": "(commi`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -252,12 +239,9 @@
   "error": "Invalid params for action 'close_commitment': register.<locals>._h_close_commitment() missing 2 required positional arguments: 'commitment_id' and 'method'",
   "expected_params": "(commi`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'close_commitment': register.<locals>._h_close_commitment() got an unexpected keyword argument 'id'",
-  "expected_params": "(commitment_id, method)",
-  "provide`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -304,13 +288,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'commitment_health': register.<locals>._h_commitment_health() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "i`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -347,29 +327,17 @@
 
 #### `orchestration.ORCH_ROUTER.export`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'export': register.<locals>._h_export() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'export': register.<locals>._h_export() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -406,23 +374,17 @@
 
 #### `orchestration.ORCH_ROUTER.list_commitments`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_commitments': register.<locals>._h_list_commitments() got an unexpected keyword argument 'limit'",
-  "expected_params": "(tier=None)",
-  "provided_params"`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_commitments': register.<locals>._h_list_commitments() got an unexpected keyword argument 'id'",
-  "expected_params": "(tier=None)",
-  "provided_params": [`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -467,15 +429,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'metrics': register.<locals>._h_metrics() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-   `
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -520,12 +476,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'open_loops': register.<locals>._h_open_loops() got an unexpected keyword argument 'id'",
-  "expected_params": "(type_filter=None, tier_filter=None)",
-  "provid`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -570,14 +523,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'patterns': register.<locals>._h_patterns() got an unexpected keyword argument 'id'",
-  "expected_params": "(action='list')",
-  "provided_params": [
-    "id",
- `
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -632,12 +580,14 @@
   "dry_run": false
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pr_watch': register.<locals>._h_pr_watch() got an unexpected keyword argument 'id'",
-  "expected_params": "(threshold_days=None, dry_run=False)",
-  "provided_p`
+  "stale_count": 0,
+  "by_classification": {},
+  "relays_emitted": [],
+  "dry_run": "not_a_bool"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -691,12 +641,11 @@
   "success": true,
   "data": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'satellite': register.<locals>._h_satellite() got an unexpected keyword argument 'id'",
-  "expected_params": "(detail_level='standard')",
-  "provided_params": [`
+  "success": true,
+  "data": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -743,13 +692,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'scan_commitments': register.<locals>._h_scan_commitments() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id"`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -794,12 +739,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'weekly_challenge': register.<locals>._h_weekly_challenge() got an unexpected keyword argument 'id'",
-  "expected_params": "(action='get', challenge_id=None)",
-`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 77
 **Actions tested:** 11
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 26 | 33.8% | Tool returned a successful response |
-| ⚠️ handled | 51 | 66.2% | Tool returned a graceful error (no crash) |
+| ✅ pass | 34 | 44.2% | Tool returned a successful response |
+| ⚠️ handled | 43 | 55.8% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 5 | 45.5% |
-| ⚠️ handled | 6 | 54.5% |
+| ✅ pass | 7 | 63.6% |
+| ⚠️ handled | 4 | 36.4% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 11 | 100.0% |
+| ✅ pass | 6 | 54.5% |
+| ⚠️ handled | 5 | 45.5% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -116,50 +116,53 @@
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `autopilot_sprint` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `autopilot_sprint_v2` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `autopilot_sprint_v2` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `force_assign` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `halt_sprint` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `mission_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `halt_sprint` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `mission_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `orchestrate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `resume_sprint` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `resume_sprint` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `slot_complete` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `slot_exhaust` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `start_mission` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `status_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `slot_exhaust` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `start_mission` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `status_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `orchestration.SLOTS_ROUTER.autopilot_sprint`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782436055_2e8c",
+  "sprint_id": "sprint_1782436716_109a",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T06:37:35+0530"
+  "timestamp": "2026-06-26T06:48:36+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782436055_4569",
+  "sprint_id": "sprint_1782436716_f983",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T06:37:35+0530"
+  "timestamp": "2026-06-26T06:48:36+0530"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'autopilot_sprint': register.<locals>._h_autopilot_sprint() got an unexpected keyword argument 'id'",
-  "expected_params": "(slots=None, mode='auto', halt_on_bl`
+  "sprint_id": "sprint_1782436716_ba3d",
+  "status": "ERROR",
+  "error": "No active slots found",
+  "timestamp": "2026-06-26T06:48:36+0530"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782436055_e388",
+  "sprint_id": "sprint_1782436716_1445",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T06:37:35+0530"
+  "timestamp": "2026-06-26T06:48:36+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -195,7 +198,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782436055_df1276
+- *Result preview:* `🚀 Sprint Report: sprint_1782436716_a466b1
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -209,7 +212,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782436055_054a19
+- *Result preview:* `🚀 Sprint Report: sprint_1782436716_663b54
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -221,15 +224,13 @@ Duration: 0.0s
    ├── Failed: 0
  `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'autopilot_sprint_v2': register.<locals>._h_autopilot_sprint_v2() got an unexpected keyword argument 'id'",
-  "expected_params": "(slots=None, mode='auto', halt`
+- *Result preview:* `❌ Sprint error: 'int' object has no attribute 'lower'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782436055_73fbaa
+- *Result preview:* `🚀 Sprint Report: sprint_1782436716_9bc301
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -274,9 +275,7 @@ Duration: 0.0s
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'force_assign': register.<locals>._h_force_assign() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, acknowledge_risk=False)",`
+- *Result preview:* `{"error": "Slot test not found"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -286,9 +285,7 @@ Duration: 0.0s
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'force_assign': register.<locals>._h_force_assign() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, acknowledge_risk=False)",`
+- *Result preview:* `{"error": "Slot wrong_type not found"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -330,7 +327,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782436055_73fbaa
+   Sprint ID: sprint_1782436716_9bc301
    Reason: User requested halt
    Status: halt_requested
    
@@ -339,23 +336,25 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782436055_73fbaa
+   Sprint ID: sprint_1782436716_9bc301
    Reason: User requested halt
    Status: halt_requested
    
 💡 Sprint will complete current task then stop gracefully`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'halt_sprint': register.<locals>._h_halt_sprint() got an unexpected keyword argument 'id'",
-  "expected_params": "(reason='User requested halt')",
-  "provided_p`
+- *Result preview:* `⛔ Sprint Halt Requested
+   Sprint ID: sprint_1782436716_9bc301
+   Reason: 12345
+   Status: halt_requested
+   
+💡 Sprint will complete current task then stop gracefully`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782436055_73fbaa
+   Sprint ID: sprint_1782436716_9bc301
    Reason: User requested halt
    Status: halt_requested
    
@@ -400,13 +399,9 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ No mission found`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'mission_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(mission_id=None)",
-  "provided_params": [
-    "i`
+- *Result preview:* `❌ No mission found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -460,8 +455,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'orchestrate': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id=None, model=None, alias=None, mode='auto')"`
+  "error": "Action 'orchestrate' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
+  "module": "nucleus_slots"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -533,13 +529,19 @@ Duration: 0.0s
 
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'resume_sprint': register.<locals>._h_resume_sprint() got an unexpected keyword argument 'id'",
-  "expected_params": "(sprint_id=None)",
-  "provided_params": [
-`
+- *Result preview:* `🚀 Sprint Report: wrong_type
+══════════════════════════════════════════════════
+Status: FAILED
+Mode: auto
+Duration: 0.0s
+
+📊 TASKS
+   ├── Total: 0
+   ├── Completed: 0
+   ├── Failed: 0
+   └── Remaining: `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -591,8 +593,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_complete': register.<locals>._h_slot_complete() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, outcome='success', note`
+  "error": "Action 'slot_complete' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
+  "module": "nucleus_slots"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -603,8 +606,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_complete': register.<locals>._h_slot_complete() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, outcome='success', note`
+  "error": "Action 'slot_complete' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
+  "module": "nucleus_slots"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -643,12 +647,9 @@ Duration: 0.0s
 
 #### `orchestration.SLOTS_ROUTER.slot_exhaust`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'slot_exhaust': register.<locals>._h_slot_exhaust() missing 1 required positional argument: 'slot_id'",
-  "expected_params": "(slot_id, reset_hours=5)",
-  "prov`
+- *Result preview:* `Error: Slot test not found`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -660,9 +661,11 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_exhaust': register.<locals>._h_slot_exhaust() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'slot_exhaust': unsupported operand type(s) for +: 'float' and 'str'",
   "expected_params": "(slot_id, reset_hours=5)",
-  "provided_param`
+  "provided_params": [
+    "slot_id",
+  `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -702,11 +705,17 @@ Duration: 0.0s
 
 #### `orchestration.SLOTS_ROUTER.start_mission`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'start_mission': register.<locals>._h_start_mission() missing 3 required positional arguments: 'name', 'goal', and 'task_ids'",
-  "expected_params": "(name, goa`
+- *Result preview:* `✅ Mission Started
+   ID: mission_1782436716_9f86d0
+   Name: test
+   Goal: test
+   Tasks: 4
+   Budget: $10.00
+   Time Limit: 4.0h
+   
+💡 Use brain_mission_status() to track progress`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -714,11 +723,9 @@ Duration: 0.0s
   "error": "Invalid params for action 'start_mission': register.<locals>._h_start_mission() missing 3 required positional arguments: 'name', 'goal', and 'task_ids'",
   "expected_params": "(name, goa`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'start_mission': register.<locals>._h_start_mission() got an unexpected keyword argument 'id'",
-  "expected_params": "(name, goal, task_ids, slot_ids=None, budg`
+- *Result preview:* `❌ Mission error: Unknown format code 'f' for object of type 'str'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -759,31 +766,19 @@ Duration: 0.0s
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:37 IST      ║
-╠══════════════════════════════════════════════════════════════╣
-║ AGENT SLOTS `
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:37 IST      ║
-╠══════════════════════════════════════════════════════════════╣
-║ AGENT SLOTS `
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status_dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(detail_level='standard')",
-  "provided_params"`
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:37 IST      ║
-╠══════════════════════════════════════════════════════════════╣
-║ AGENT SLOTS `
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

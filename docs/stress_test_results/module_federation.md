@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 49
 **Actions tested:** 7
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 22 | 44.9% | Tool returned a successful response |
-| ⚠️ handled | 27 | 55.1% | Tool returned a graceful error (no crash) |
+| ✅ pass | 31 | 63.3% | Tool returned a successful response |
+| ⚠️ handled | 18 | 36.7% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 5 | 71.4% |
-| ⚠️ handled | 2 | 28.6% |
+| ✅ pass | 7 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 7 | 100.0% |
+| ✅ pass | 7 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -115,13 +115,13 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `health` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `join` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `leave` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `peers` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `route` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `sync` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `health` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `join` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `leave` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `peers` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `route` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `sync` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `federation.health`
 
@@ -159,15 +159,22 @@
    Tasks Routed: 0
    `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'health': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "l`
+- *Result preview:* `💚 FEDERATION HEALTH
+═══════════════════════════════════════
+
+🟢 HEALTHY
+[████████████████████] 100%
+
+📊 PARTITION
+   Status: NORMAL
+   Peers Online: 0/0
+   Leader: None
+
+📈 METRICS
+   Tasks Routed: 0
+   `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -224,13 +231,13 @@
 
 #### `federation.join`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>._h_join() missing 1 required positional argument: 'seed_peer'",
-  "expected_params": "(seed_peer: str)",
-  "provided_params": []
-}`
+- *Result preview:* `✅ JOINED FEDERATION
+   Seed Peer: http://localhost:9999
+   Total Peers: 1
+
+💡 Federation engine is now active and syncing`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -240,14 +247,9 @@
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>._h_join() got an unexpected keyword argument 'id'",
-  "expected_params": "(seed_peer: str)",
-  "provided_params": [
-    "id",
-    "que`
+- *Result preview:* `❌ Failed to join: argument of type 'int' is not a container or iterable`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -309,15 +311,12 @@ Local brain now operating in standalone mode.`
 Federation engine stopped gracefully.
 Local brain now operating in standalone mode.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'leave': register.<locals>._h_leave() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "li`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -369,37 +368,52 @@ Local brain now operating in standalone mode.`
 - *Result preview:* `🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
-No peers discovered.
-
-💡 Use brain_federation_join(seed_peer) to connect to a federation.`
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
-No peers discovered.
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
-💡 Use brain_federation_join(seed_peer) to connect to a federation.`
-
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'peers': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "li`
+- *Result preview:* `🔗 FEDERATION PEERS
+═══════════════════════════════════════
+
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
-No peers discovered.
-
-💡 Use brain_federation_join(seed_peer) to connect to a federation.`
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -439,12 +453,23 @@ No peers discovered.
 
 #### `federation.route`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id: str, profile: str = 'default')",
-  "pr`
+- *Result preview:* `🎯 ROUTING DECISION
+═══════════════════════════════════════
+
+📋 Task: test-id
+📊 Profile: default
+
+🏆 TARGET
+   Brain: brain_test-brain
+   Score: 0.630
+
+⏱️ ROUTING TIME
+   0.086ms
+
+🔄 ALTERNATIVES
+   1. pe`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -453,12 +478,23 @@ No peers discovered.
   "expected_params": "(task_id: str, profile: str = 'default')",
   "pr`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>._h_route() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id: str, profile: str = 'default')",
-  "provided_par`
+- *Result preview:* `🎯 ROUTING DECISION
+═══════════════════════════════════════
+
+📋 Task: 12345
+📊 Profile: 12345
+
+🏆 TARGET
+   Brain: brain_test-brain
+   Score: 0.630
+
+⏱️ ROUTING TIME
+   0.082ms
+
+🔄 ALTERNATIVES
+   1. peer_h`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -520,7 +556,7 @@ No peers discovered.
    Is Leader: ❌
    Term: 0
 
-🔗 PEERS (0/`
+🔗 PEERS (1/`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -537,17 +573,24 @@ No peers discovered.
    Is Leader: ❌
    Term: 0
 
-🔗 PEERS (0/`
+🔗 PEERS (1/`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "l`
+- *Result preview:* `🌐 FEDERATION STATUS
+═══════════════════════════════════════
+
+🧠 LOCAL BRAIN
+   ID: brain_test-brain
+   Region: default
+   Running: ❌
+
+👑 CONSENSUS
+   Leader: None
+   Is Leader: ❌
+   Term: 0
+
+🔗 PEERS (1/`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -564,7 +607,7 @@ No peers discovered.
    Is Leader: ❌
    Term: 0
 
-🔗 PEERS (0/`
+🔗 PEERS (1/`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -612,15 +655,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'sync': register.<locals>._h_sync() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "limi`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

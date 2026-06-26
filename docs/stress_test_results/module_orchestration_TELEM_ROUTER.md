@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 44 | 41.9% | Tool returned a successful response |
-| ⚠️ handled | 61 | 58.1% | Tool returned a graceful error (no crash) |
+| ✅ pass | 63 | 60.0% | Tool returned a successful response |
+| ⚠️ handled | 42 | 40.0% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 9 | 60.0% |
-| ⚠️ handled | 6 | 40.0% |
+| ✅ pass | 14 | 93.3% |
+| ⚠️ handled | 1 | 6.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 15 | 100.0% |
+| ✅ pass | 14 | 93.3% |
+| ⚠️ handled | 1 | 6.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -115,21 +115,21 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `agent_cost_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `check_kill_switch` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `check_protocol` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `dispatch_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `get_handoffs` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `agent_cost_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `check_kill_switch` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `check_protocol` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `dispatch_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `get_handoffs` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `get_llm_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `mark_high_impact` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `pause_notifications` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `rate_limit_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `record_feedback` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `record_interaction` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `request_handoff` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `resume_notifications` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `set_llm_tier` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `value_ratio` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `mark_high_impact` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `pause_notifications` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `rate_limit_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `record_feedback` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `record_interaction` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `request_handoff` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `resume_notifications` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `set_llm_tier` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `value_ratio` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `orchestration.TELEM_ROUTER.agent_cost_dashboard`
 
@@ -137,51 +137,49 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 0,
+    "total_allowed": 2,
     "total_limited": 0,
-    "tokens_available": 10.0,
+    "tokens_available": 8.212104320526123,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {}
-  },
-  "cost_summary": {
-  `
+    "spawns_by_persona": {
+      "wrong_ty`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 0,
+    "total_allowed": 2,
     "total_limited": 0,
-    "tokens_available": 10.0,
+    "tokens_available": 8.212104320526123,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {}
-  },
-  "cost_summary": {
-  `
+    "spawns_by_persona": {
+      "wrong_ty`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'agent_cost_dashboard': register.<locals>._h_agent_cost_dashboard() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-`
+  "spawn_limiter": {
+    "total_allowed": 2,
+    "total_limited": 0,
+    "tokens_available": 8.212104320526123,
+    "capacity": 10.0,
+    "fill_rate": 2.0,
+    "spawns_by_persona": {
+      "wrong_ty`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 0,
+    "total_allowed": 2,
     "total_limited": 0,
-    "tokens_available": 10.0,
+    "tokens_available": 8.212104320526123,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {}
-  },
-  "cost_summary": {
-  `
+    "spawns_by_persona": {
+      "wrong_ty`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -230,14 +228,14 @@
 **Days Inactive:** 0
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'check_kill_switch': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "que`
+- *Result preview:* `## 🛑 Kill Switch Status (MDR_010)
+
+**Action:** continue
+**Message:** N/A
+**Days Inactive:** 0
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -277,12 +275,14 @@
 
 #### `orchestration.TELEM_ROUTER.check_protocol`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_protocol': register.<locals>._h_check_protocol() missing 1 required positional argument: 'agent_id'",
-  "expected_params": "(agent_id)",
-  "provided_para`
+  "compliant": true,
+  "warnings": [
+    "Protocol definition not found - assuming compliant"
+  ]
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -291,13 +291,14 @@
   "expected_params": "(agent_id)",
   "provided_para`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_protocol': register.<locals>._h_check_protocol() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id)",
-  "provided_params": [
-    `
+  "compliant": true,
+  "warnings": [
+    "Protocol definition not found - assuming compliant"
+  ]
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -338,50 +339,58 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "total_dispatches": 1023,
-  "total_errors": 764,
-  "error_rate": 0.7468230694037146,
+  "total_dispatches": 1008,
+  "total_errors": 553,
+  "error_rate": 0.5486111111111112,
   "facades": {
-    "nucleus_governance": {
-      "calls": 134,
-      "errors": 114
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
     },
-    "nucleus_features`
+    "nucleus_route": {
+      `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "total_dispatches": 1024,
-  "total_errors": 764,
-  "error_rate": 0.74609375,
+  "total_dispatches": 1009,
+  "total_errors": 553,
+  "error_rate": 0.5480673934588701,
   "facades": {
-    "nucleus_governance": {
-      "calls": 134,
-      "errors": 114
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
     },
-    "nucleus_features": {
-   `
+    "nucleus_route": {
+      `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'dispatch_metrics': register.<locals>._h_dispatch_metrics() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id"`
+  "total_dispatches": 1010,
+  "total_errors": 553,
+  "error_rate": 0.5475247524752476,
+  "facades": {
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
+    },
+    "nucleus_route": {
+      `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "total_dispatches": 1026,
-  "total_errors": 765,
-  "error_rate": 0.7456140350877193,
+  "total_dispatches": 1011,
+  "total_errors": 553,
+  "error_rate": 0.5469831849653808,
   "facades": {
-    "nucleus_governance": {
-      "calls": 134,
-      "errors": 114
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
     },
-    "nucleus_features`
+    "nucleus_route": {
+      `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -412,29 +421,52 @@
 
 #### `orchestration.TELEM_ROUTER.get_handoffs`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_handoffs': register.<locals>._h_get_handoffs() got an unexpected keyword argument 'limit'",
-  "expected_params": "(agent_id=None)",
-  "provided_params": [
-`
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-9921",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "test",
+      "priority": 3,
+    `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{"handoffs": [], "message": "No handoffs found"}`
+- *Result preview:* `{
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-9921",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "test",
+      "priority": 3,
+    `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_handoffs': register.<locals>._h_get_handoffs() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id=None)",
-  "provided_params": [
-   `
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-96a7",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "wrong_type",
+      "priority": "`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{"handoffs": [], "message": "No handoffs found"}`
+- *Result preview:* `{
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-9921",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "test",
+      "priority": 3,
+    `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -484,11 +516,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_llm_status': register.<locals>._h_get_llm_status() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'get_llm_status': unsupported operand type(s) for /: 'str' and 'str'",
   "expected_params": "()",
-  "provided_params": [
-    "id",
-  `
+  "provided_params": []
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -535,14 +566,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Marked as high-impact closure. Value ratio updated.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'mark_high_impact': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "quer`
+- *Result preview:* `✅ Marked as high-impact closure. Value ratio updated.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -585,14 +611,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `🛑 Notifications paused. Use brain_resume_notifications() to restart.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'pause_notifications': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "q`
+- *Result preview:* `🛑 Notifications paused. Use brain_resume_notifications() to restart.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -645,13 +666,14 @@
   "facades": {}
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'rate_limit_status': register.<locals>._h_rate_limit_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "i`
+  "enabled": false,
+  "max_calls": 200,
+  "window_seconds": 60,
+  "facades": {}
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -691,11 +713,9 @@
 
 #### `orchestration.TELEM_ROUTER.record_feedback`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'record_feedback': register.<locals>.<lambda>() missing 2 required positional arguments: 'notification_type' and 'score'",
-  "expected_params": "(notification_t`
+- *Result preview:* `Error: '>=' not supported between instances of 'str' and 'int'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -703,12 +723,9 @@
   "error": "Invalid params for action 'record_feedback': register.<locals>.<lambda>() missing 2 required positional arguments: 'notification_type' and 'score'",
   "expected_params": "(notification_t`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'record_feedback': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(notification_type, score)",
-  "provided_params"`
+- *Result preview:* `Error: '>=' not supported between instances of 'str' and 'int'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -753,14 +770,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Interaction recorded`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'record_interaction': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "qu`
+- *Result preview:* `✅ Interaction recorded`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -795,11 +807,19 @@
 
 #### `orchestration.TELEM_ROUTER.request_handoff`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'request_handoff': register.<locals>._h_request_handoff() missing 3 required positional arguments: 'to_agent', 'context', and 'request'",
-  "expected_params": "`
+- *Result preview:* `
+📬 HANDOFF REQUEST
+━━━━━━━━━━━━━━━━━━
+TO: test
+PRIORITY: P3
+CONTEXT: {}
+REQUEST: test
+ARTIFACTS: None
+━━━━━━━━━━━━━━━━━━
+ID: handoff-1782436716-5da8
+Status: Pending - will appear in target agent's ses`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -807,11 +827,18 @@
   "error": "Invalid params for action 'request_handoff': register.<locals>._h_request_handoff() missing 3 required positional arguments: 'to_agent', 'context', and 'request'",
   "expected_params": "`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'request_handoff': register.<locals>._h_request_handoff() got an unexpected keyword argument 'id'",
-  "expected_params": "(to_agent, context, request, priority=`
+- *Result preview:* `
+📬 HANDOFF REQUEST
+━━━━━━━━━━━━━━━━━━
+TO: wrong_type
+PRIORITY: Pnot_a_number
+CONTEXT: not_a_dict
+REQUEST: wrong_type
+ARTIFACTS: w, r, o, n, g, _, t, y, p, e
+━━━━━━━━━━━━━━━━━━
+ID: handoff-1782436716-2`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -856,14 +883,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Notifications resumed. Interaction recorded.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'resume_notifications': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "`
+- *Result preview:* `✅ Notifications resumed. Interaction recorded.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -898,13 +920,9 @@
 
 #### `orchestration.TELEM_ROUTER.set_llm_tier`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_llm_tier': register.<locals>._h_set_llm_tier() missing 1 required positional argument: 'tier'",
-  "expected_params": "(tier)",
-  "provided_params": []
-}`
+- *Result preview:* `❌ Invalid tier 'test'. Valid tiers: premium, standard, economy, local_paid, local_free`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -914,14 +932,9 @@
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_llm_tier': register.<locals>._h_set_llm_tier() got an unexpected keyword argument 'id'",
-  "expected_params": "(tier)",
-  "provided_params": [
-    "id",
-  `
+- *Result preview:* `❌ Invalid tier 'wrong_type'. Valid tiers: premium, standard, economy, local_paid, local_free`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -965,7 +978,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 36
+**High Impact Closures:** 48
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -975,27 +988,27 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 36
+**High Impact Closures:** 48
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'value_ratio': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+- *Result preview:* `## 📊 Value Ratio (MDR_010)
+
+**Notifications Sent:** 0
+**High Impact Closures:** 48
+**Ratio:** None
+**Verdict:** No notifications sent yet
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 36
+**High Impact Closures:** 48
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `

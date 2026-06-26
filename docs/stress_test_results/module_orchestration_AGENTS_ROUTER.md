@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 140
 **Actions tested:** 20
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 39 | 27.9% | Tool returned a successful response |
-| ⚠️ handled | 101 | 72.1% | Tool returned a graceful error (no crash) |
+| ✅ pass | 63 | 45.0% | Tool returned a successful response |
+| ⚠️ handled | 77 | 55.0% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 5 | 25.0% |
-| ⚠️ handled | 15 | 75.0% |
+| ✅ pass | 16 | 80.0% |
+| ⚠️ handled | 4 | 20.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 20 | 100.0% |
+| ✅ pass | 13 | 65.0% |
+| ⚠️ handled | 7 | 35.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -117,33 +117,30 @@
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `apply_critique` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `critique_code` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `fix_code` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `get_alerts` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `handoff_task` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `ingest_tasks` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `ingestion_stats` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_dashboard_snapshots` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_pending_consents` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `fix_code` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `get_alerts` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `handoff_task` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `ingest_tasks` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `ingestion_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_dashboard_snapshots` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_pending_consents` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `orchestrate_swarm` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `read_memory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `register_session` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `respond_to_consent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `rollback_ingestion` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `search_memory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `session_briefing` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `set_alert_threshold` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `snapshot_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `spawn_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `register_session` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `respond_to_consent` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `rollback_ingestion` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `search_memory` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `session_briefing` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `set_alert_threshold` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `snapshot_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `spawn_agent` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 
 #### `orchestration.AGENTS_ROUTER.apply_critique`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'apply_critique': register.<locals>._h_apply_critique() missing 1 required positional argument: 'review_path'",
-  "expected_params": "(review_path)",
-  "provide`
+- *Result preview:* `{"error": "Failed: Expecting value: line 1 column 1 (char 0)"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -154,11 +151,7 @@
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'apply_critique': register.<locals>._h_apply_critique() got an unexpected keyword argument 'id'",
-  "expected_params": "(review_path)",
-  "provided_params": [
- `
+- *Result preview:* `{"error": "Error: File not found: wrong_type"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -202,9 +195,7 @@
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'critique_code': register.<locals>._h_critique_code() missing 1 required positional argument: 'file_path'",
-  "expected_params": "(file_path, context='General R`
+- *Result preview:* `{"error": "[Errno 21] Is a directory: 'test'"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -214,10 +205,7 @@
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'critique_code': register.<locals>._h_critique_code() got an unexpected keyword argument 'id'",
-  "expected_params": "(file_path, context='General Review')",
-  `
+- *Result preview:* `{"error": "[Errno 21] Is a directory: 'wrong_type'"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -260,7 +248,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:48:07
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -270,7 +258,7 @@
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:48:07
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -278,15 +266,13 @@
    ├── Active: 0/0 
    ├── Idle:`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(detail_level='standard', format='ascii', include_aler`
+- *Result preview:* `❌ Dashboard error: 'int' object has no attribute 'lower'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:48:07
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -327,11 +313,9 @@
 
 #### `orchestration.AGENTS_ROUTER.fix_code`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'fix_code': register.<locals>._h_fix_code() missing 2 required positional arguments: 'file_path' and 'issues_context'",
-  "expected_params": "(file_path, issues`
+- *Result preview:* `{"status": "error", "message": "[Errno 21] Is a directory: 'test'"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -339,12 +323,9 @@
   "error": "Invalid params for action 'fix_code': register.<locals>._h_fix_code() missing 2 required positional arguments: 'file_path' and 'issues_context'",
   "expected_params": "(file_path, issues`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'fix_code': register.<locals>._h_fix_code() got an unexpected keyword argument 'id'",
-  "expected_params": "(file_path, issues_context)",
-  "provided_params": [`
+- *Result preview:* `{"status": "error", "message": "[Errno 21] Is a directory: 'wrong_type'"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -385,29 +366,17 @@
 
 #### `orchestration.AGENTS_ROUTER.get_alerts`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_alerts': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+- *Result preview:* `✅ No active alerts - all systems healthy`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ No active alerts - all systems healthy`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_alerts': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-  `
+- *Result preview:* `✅ No active alerts - all systems healthy`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -446,11 +415,9 @@
 
 #### `orchestration.AGENTS_ROUTER.handoff_task`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'handoff_task': register.<locals>._h_handoff_task() missing 1 required positional argument: 'task_description'",
-  "expected_params": "(task_description, target`
+- *Result preview:* `✅ Task handed off to shared queue. ID: task-f59710b1`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -458,11 +425,9 @@
   "error": "Invalid params for action 'handoff_task': register.<locals>._h_handoff_task() missing 1 required positional argument: 'task_description'",
   "expected_params": "(task_description, target`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'handoff_task': register.<locals>._h_handoff_task() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_description, target_session_id=None, p`
+- *Result preview:* `✅ Task handed off for session wrong_ty. ID: task-8df60aa4`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -503,11 +468,9 @@
 
 #### `orchestration.AGENTS_ROUTER.ingest_tasks`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'ingest_tasks': register.<locals>._h_ingest_tasks() missing 1 required positional argument: 'source'",
-  "expected_params": "(source, source_type='auto', sessio`
+- *Result preview:* `❌ Ingestion error: [Errno 21] Is a directory: 'test'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -515,11 +478,9 @@
   "error": "Invalid params for action 'ingest_tasks': register.<locals>._h_ingest_tasks() missing 1 required positional argument: 'source'",
   "expected_params": "(source, source_type='auto', sessio`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'ingest_tasks': register.<locals>._h_ingest_tasks() got an unexpected keyword argument 'id'",
-  "expected_params": "(source, source_type='auto', session_id=None`
+- *Result preview:* `❌ Ingestion error: [Errno 21] Is a directory: 'wrong_type'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -580,14 +541,15 @@
    Batches: 0
    Dedup cache: 0`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'ingestion_stats': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query`
+- *Result preview:* `📊 **Ingestion Statistics**
+========================================
+   Total ingested: 0
+   Total skipped: 0
+   Total failed: 0
+   Batches: 0
+   Dedup cache: 0`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -636,30 +598,26 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
-   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
+   snap_1782436508_c642af: wrong_type (2026-06-26T01:15:08Z)
+   snap_1782436508_a98b4b: Snapshot 2026-06-26T01:15:08Z (2026-06-26T01:15:0`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
-   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
+   snap_1782436508_c642af: wrong_type (2026-06-26T01:15:08Z)
+   snap_1782436508_a98b4b: Snapshot 2026-06-26T01:15:08Z (2026-06-26T01:15:0`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_dashboard_snapshots': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=10)",
-  "provided_params": [
-   `
+- *Result preview:* `❌ List snapshots error: slice indices must be integers or None or have an __index__ method`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
-   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
+   snap_1782436508_c642af: wrong_type (2026-06-26T01:15:08Z)
+   snap_1782436508_a98b4b: Snapshot 2026-06-26T01:15:08Z (2026-06-26T01:15:0`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -694,26 +652,17 @@
 
 #### `orchestration.AGENTS_ROUTER.list_pending_consents`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_pending_consents': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"`
+- *Result preview:* `{"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_pending_consents': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+- *Result preview:* `{"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -755,8 +704,10 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'orchestrate_swarm': register.<locals>._h_orchestrate_swarm() missing 1 required positional argument: 'mission'",
-  "expected_params": "(mission, agents=None)",`
+  "success": false,
+  "data": null,
+  "error": "Swarm failed: 'NoneType' object has no attribute 'start_mission'"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -767,9 +718,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'orchestrate_swarm': register.<locals>._h_orchestrate_swarm() got an unexpected keyword argument 'id'",
-  "expected_params": "(mission, agents=None)",
-  "provid`
+  "success": false,
+  "data": null,
+  "error": "Swarm failed: 'NoneType' object has no attribute 'start_mission'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -813,11 +765,7 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'read_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(category)",
-  "provided_params": [
-    "id"
-  ]
+  "error": "Invalid category. Allowed: ['context', 'patterns', 'learnings', 'decisions']"
 }`
 
 **missing_params** — ⚠️ handled
@@ -831,11 +779,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'read_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(category)",
-  "provided_params": [
-    "id",
-    "q`
+  "error": "Invalid category. Allowed: ['context', 'patterns', 'learnings', 'decisions']"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -878,11 +823,9 @@
 
 #### `orchestration.AGENTS_ROUTER.register_session`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'register_session': register.<locals>._h_register_session() missing 2 required positional arguments: 'conversation_id' and 'focus_area'",
-  "expected_params": "`
+- *Result preview:* `Registered session test... focused on: test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -893,8 +836,9 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'register_session': register.<locals>._h_register_session() got an unexpected keyword argument 'id'",
-  "expected_params": "(conversation_id, focus_area, role=N`
+  "error": "Action 'register_session' failed: Invalid tier 'wrong_type'; must be one of ['haiku', 'opus', 'sonnet']",
+  "module": "nucleus_agents"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -935,12 +879,9 @@
 
 #### `orchestration.AGENTS_ROUTER.respond_to_consent`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'respond_to_consent': register.<locals>.<lambda>() missing 1 required positional argument: 'agent_id'",
-  "expected_params": "(agent_id, choice='cold')",
-  "pro`
+- *Result preview:* `{"success": true, "agent_id": "test", "choice": "COLD", "message": "Consent recorded. Agent will respawn in COLD mode."}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -952,9 +893,9 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'respond_to_consent': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id, choice='cold')",
-  "provided_param`
+  "error": "Action 'respond_to_consent' failed: 'int' object has no attribute 'upper'",
+  "module": "nucleus_agents"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -996,11 +937,9 @@
 
 #### `orchestration.AGENTS_ROUTER.rollback_ingestion`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'rollback_ingestion': register.<locals>._h_rollback_ingestion() missing 1 required positional argument: 'batch_id'",
-  "expected_params": "(batch_id, reason=Non`
+- *Result preview:* `❌ Rollback failed: Batch test not found`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1008,12 +947,9 @@
   "error": "Invalid params for action 'rollback_ingestion': register.<locals>._h_rollback_ingestion() missing 1 required positional argument: 'batch_id'",
   "expected_params": "(batch_id, reason=Non`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'rollback_ingestion': register.<locals>._h_rollback_ingestion() got an unexpected keyword argument 'id'",
-  "expected_params": "(batch_id, reason=None)",
-  "pro`
+- *Result preview:* `❌ Rollback failed: Batch wrong_type not found`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1054,14 +990,13 @@
 
 #### `orchestration.AGENTS_ROUTER.search_memory`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'search_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(query)",
-  "provided_params": [
-    "query",
- `
+  "query": "test",
+  "count": 0,
+  "results": []
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1074,11 +1009,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'search_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(query)",
-  "provided_params": [
-    "id",
-    "qu`
+  "error": "expected str, bytes or os.PathLike object, not int"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1125,29 +1057,57 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 📋 Session Briefing
 
-### 📌 Pending (1)
-- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
+### 👥 Active Sessions (1)
+- `test`: test
+
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 📋 Session Briefing
 
-### 📌 Pending (1)
-- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
+### 👥 Active Sessions (1)
+- `test`: test
 
-**wrong_types** — ⚠️ handled
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
+
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'session_briefing': register.<locals>._h_session_briefing() got an unexpected keyword argument 'id'",
-  "expected_params": "(conversation_id=None)",
-  "provided`
+- *Result preview:* `## 📋 Session Briefing
+
+### 👥 Active Sessions (1)
+- `test`: test
+
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 📋 Session Briefing
 
-### 📌 Pending (1)
-- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
+### 👥 Active Sessions (1)
+- `test`: test
+
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1182,11 +1142,12 @@
 
 #### `orchestration.AGENTS_ROUTER.set_alert_threshold`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_alert_threshold': register.<locals>._h_set_alert_threshold() missing 3 required positional arguments: 'metric', 'level', and 'value'",
-  "expected_params":`
+- *Result preview:* `✅ Threshold Set
+   Metric: test
+   Level: 5
+   Value: test-value`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1194,12 +1155,12 @@
   "error": "Invalid params for action 'set_alert_threshold': register.<locals>._h_set_alert_threshold() missing 3 required positional arguments: 'metric', 'level', and 'value'",
   "expected_params":`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_alert_threshold': register.<locals>._h_set_alert_threshold() got an unexpected keyword argument 'id'",
-  "expected_params": "(metric, level, value)",
-  "pr`
+- *Result preview:* `✅ Threshold Set
+   Metric: wrong_type
+   Level: not_a_number
+   Value: wrong_type`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1243,37 +1204,38 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782436045_8e01d2
-   Name: Snapshot 2026-06-26T01:07:25Z
-   Timestamp: 2026-06-26T01:07:25Z
+   ID: snap_1782436694_b6f36d
+   Name: Snapshot 2026-06-26T01:18:14Z
+   Timestamp: 2026-06-26T01:18:14Z
    
-💡 To compare: brain_compare_dashboards('snap_1782436045_8e01d2', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436694_b6f36d', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782436045_316df4
-   Name: Snapshot 2026-06-26T01:07:25Z
-   Timestamp: 2026-06-26T01:07:25Z
+   ID: snap_1782436694_957e24
+   Name: Snapshot 2026-06-26T01:18:14Z
+   Timestamp: 2026-06-26T01:18:14Z
    
-💡 To compare: brain_compare_dashboards('snap_1782436045_316df4', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436694_957e24', 'other_s`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'snapshot_dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(name=None)",
-  "provided_params": [
-    "id"`
+- *Result preview:* `✅ Snapshot Created
+   ID: snap_1782436694_2486e2
+   Name: wrong_type
+   Timestamp: 2026-06-26T01:18:14Z
+   
+💡 To compare: brain_compare_dashboards('snap_1782436694_2486e2', 'other_snapshot_id')`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782436045_2a705e
-   Name: Snapshot 2026-06-26T01:07:25Z
-   Timestamp: 2026-06-26T01:07:25Z
+   ID: snap_1782436694_71a71e
+   Name: Snapshot 2026-06-26T01:18:14Z
+   Timestamp: 2026-06-26T01:18:14Z
    
-💡 To compare: brain_compare_dashboards('snap_1782436045_2a705e', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436694_71a71e', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1308,11 +1270,12 @@
 
 #### `orchestration.AGENTS_ROUTER.spawn_agent`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'spawn_agent': register.<locals>._h_spawn_agent() missing 1 required positional argument: 'intent'",
-  "expected_params": "(intent, execute_now=True, persona=No`
+- *Result preview:* `⚠️ HITL GATE: spawn_agent requires confirm=true.
+Intent: test
+Persona: default
+Re-call with confirm=true to proceed. Agent spawning consumes compute resources.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1320,11 +1283,16 @@
   "error": "Invalid params for action 'spawn_agent': register.<locals>._h_spawn_agent() missing 1 required positional argument: 'intent'",
   "expected_params": "(intent, execute_now=True, persona=No`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'spawn_agent': register.<locals>._h_spawn_agent() got an unexpected keyword argument 'id'",
-  "expected_params": "(intent, execute_now=True, persona=None, confi`
+- *Result preview:* `## 🏭 NAR Factory Receipt
+**Intent:** wrong_type
+**Persona:** Librarian
+**Job Type:** BACKGROUND
+**Capabilities:** brain_ops, memory_ops, code_ops
+**Tools Mapped:** 14
+**Agent ID:** agent-b7a83a14b90f
+`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

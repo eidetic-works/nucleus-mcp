@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 10 | 35.7% | Tool returned a successful response |
-| ⚠️ handled | 18 | 64.3% | Tool returned a graceful error (no crash) |
+| ✅ pass | 11 | 39.3% | Tool returned a successful response |
+| ⚠️ handled | 17 | 60.7% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 4 | 100.0% |
+| ✅ pass | 1 | 25.0% |
+| ⚠️ handled | 3 | 75.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -118,7 +118,7 @@
 | `ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `relay.ack`
 
@@ -141,10 +141,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'ack': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(message_ids=None, role=None)",
-  "provided_params": [
-    "`
+  "error": "Action 'ack' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucleu`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -209,9 +207,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'inbox': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(role=None, unread_only=True, limit=50)",
-  "provided_para`
+  "error": "Action 'inbox' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucl`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -258,8 +255,9 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'post': register.<locals>.<lambda>() got an unexpected keyword argument 'message'",
-  "expected_params": "(to=None, subject='', body=None, sender=None, priority`
+  "sent": false,
+  "error": "missing_to_field"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -271,8 +269,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'post': register.<locals>.<lambda>() got an unexpected keyword argument 'query'",
-  "expected_params": "(to=None, subject='', body=None, sender=None, priority='`
+  "error": "Action 'post' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucle`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -333,14 +331,15 @@
   "resolved_inbox_dir": "claude_code_main"
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(role=None)",
-  "provided_params": [
-    "id",
-    "query`
+  "is_http_mode": false,
+  "relay_url_set": false,
+  "bearer_set": false,
+  "canonical_role": "wrong_type",
+  "resolved_inbox_dir": "wrong_type"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

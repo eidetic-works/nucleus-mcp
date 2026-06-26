@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 1862
 **Actions tested:** 266
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 628 | 33.7% | Tool returned a successful response |
-| ⚠️ handled | 1234 | 66.3% | Tool returned a graceful error (no crash) |
+| ✅ pass | 883 | 47.4% | Tool returned a successful response |
+| ⚠️ handled | 979 | 52.6% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 101 | 38.0% |
-| ⚠️ handled | 165 | 62.0% |
+| ✅ pass | 198 | 74.4% |
+| ⚠️ handled | 68 | 25.6% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 3 | 1.1% |
-| ⚠️ handled | 263 | 98.9% |
+| ✅ pass | 161 | 60.5% |
+| ⚠️ handled | 105 | 39.5% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -485,53 +485,60 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `add` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `add` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `audit_log` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `billing_summary` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `compounding_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `compounding_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `context_graph` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `dsor_get_trace` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `dsor_query_decisions` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `dsor_query_decisions` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `dsor_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `end_of_day` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `engram_neighbors` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `end_of_day` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `engram_neighbors` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `export_schema` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `federation_dsor` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `fusion_reactor` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `governance_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `health` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `heartbeat_check` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `heartbeat_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `hook_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `fusion_reactor` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `governance_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `health` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `heartbeat_check` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `heartbeat_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `hook_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `ipc_tokens` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `list_decisions` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `list_snapshots` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `list_tools` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `list_tools` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `metering_summary` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `morning_brief` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `performance_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `morning_brief` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `performance_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `prometheus_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `pulse_and_polish` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `query_engrams` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `pulse_and_polish` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `query_engrams` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `render_graph` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `routing_decisions` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `search` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `search_engrams` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
-| `self_healing_sre` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `session_inject` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `tier_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `version` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `weekly_consolidate` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `write_engram` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `self_healing_sre` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `session_inject` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `tier_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `version` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `weekly_consolidate` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `write_engram` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 
 #### `engrams.add`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'add': register.<locals>.<lambda>() got an unexpected keyword argument 'name'",
-  "expected_params": "(key, value, context='Decision', intensity=5)",
-  "provide`
+  "success": true,
+  "data": {
+    "key": "test-key",
+    "value": "test-value",
+    "context": "Decision",
+    "intensity": 5,
+    "adun": {
+      "added": 0,
+      "updated": 0,
+      "deleted": 0`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -542,9 +549,12 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'add': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(key, value, context='Decision', intensity=5)",
-  "provided_`
+  "success": false,
+  "data": null,
+  "error": "An internal error occurred. Error ID: 224e029b",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:17:49.294221Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -591,10 +601,10 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T01:03:38.992727Z",
-        "emitter": "brain",
-        "type": "session_started",
-        "hash": "ef84ee3d70`
+        "timestamp": "2026-06-26T01:17:49.291857Z",
+        "emitter": "brain_write_engram",
+        "type": "engram_written",
+        "hash":`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -603,19 +613,20 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T01:03:38.992727Z",
-        "emitter": "brain",
-        "type": "session_started",
-        "hash": "ef84ee3d70`
+        "timestamp": "2026-06-26T01:17:49.291857Z",
+        "emitter": "brain_write_engram",
+        "type": "engram_written",
+        "hash":`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_log': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=20)",
-  "provided_params": [
-    "id",
-    "que`
+  "success": false,
+  "data": null,
+  "error": "Error reading audit log: '>' not supported between instances of 'int' and 'str'",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:17:49.302089Z"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -624,10 +635,10 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T01:03:38.992727Z",
-        "emitter": "brain",
-        "type": "session_started",
-        "hash": "ef84ee3d70`
+        "timestamp": "2026-06-26T01:17:49.291857Z",
+        "emitter": "brain_write_engram",
+        "type": "engram_written",
+        "hash":`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -666,12 +677,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 264.6,
-    "total_interactions": 2646,
+    "total_cost_units": 375.2,
+    "total_interactions": 3752,
     "breakdown": {
       "unknown": {
-        "cost": 132.3,
-        "count": 1323,
+        "cost": 187.4,
+        "count": 1874,
         "tier": 1
   `
 
@@ -680,33 +691,34 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 264.6,
-    "total_interactions": 2646,
+    "total_cost_units": 375.2,
+    "total_interactions": 3752,
     "breakdown": {
       "unknown": {
-        "cost": 132.3,
-        "count": 1323,
+        "cost": 187.4,
+        "count": 1874,
         "tier": 1
   `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'billing_summary': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'billing_summary': unsupported type for timedelta hours component: str",
   "expected_params": "(since_hours=None, group_by='tool')",
-  "provide`
+  "provided_params": [
+    `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 264.6,
-    "total_interactions": 2646,
+    "total_cost_units": 375.2,
+    "total_interactions": 3752,
     "breakdown": {
       "unknown": {
-        "cost": 132.3,
-        "count": 1323,
+        "cost": 187.4,
+        "count": 1874,
         "tier": 1
   `
 
@@ -747,29 +759,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'compounding_status': register.<locals>._h_compounding_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    `
+  "success": true,
+  "data": {
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -810,12 +821,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_36034",
+        "id": "growth_hook_morning_brief_generated_36669",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -824,19 +835,20 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_36034",
+        "id": "growth_hook_morning_brief_generated_36669",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'context_graph': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'context_graph': '>=' not supported between instances of 'int' and 'str'",
   "expected_params": "(include_edges=True, min_intensity=1)",
-  "provide`
+  "provided_params": [
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -845,12 +857,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_36034",
+        "id": "growth_hook_morning_brief_generated_36669",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -887,10 +899,12 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'dsor_get_trace': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(decision_id)",
-  "provided_params": [
-    "li`
+  "success": false,
+  "data": null,
+  "error": "Decision ID test-id not found in ledger.",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:17:51.553449Z"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -902,11 +916,12 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'dsor_get_trace': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(decision_id)",
-  "provided_params": [
-    "id",
-`
+  "success": false,
+  "data": null,
+  "error": "Decision ID 12345 not found in ledger.",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:17:51.554062Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -947,47 +962,48 @@
 
 #### `engrams.dsor_query_decisions`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'dsor_query_decisions': register.<locals>.<lambda>() got an unexpected keyword argument 'query'",
-  "expected_params": "(limit=50)",
-  "provided_params": [
-    `
+  "success": true,
+  "data": {
+    "decisions": [
+      {
+        "decision_id": "dec-c1881a208883",
+        "intent": "Route task 12345 to brain_test-brain",
+        "reasoning": "Composite score=0`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [],
-    "count": 0,
-    "message": "No decisions found. DSoR ledger is empty."
-  },
-  "error": null,
-  "error_code": null,
-  "timestamp": "2026-06-26T`
+    "decisions": [
+      {
+        "decision_id": "dec-c1881a208883",
+        "intent": "Route task 12345 to brain_test-brain",
+        "reasoning": "Composite score=0`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'dsor_query_decisions': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=50)",
-  "provided_params": [
-    "id`
+  "success": false,
+  "data": null,
+  "error": "An internal error occurred. Error ID: 1d944f92",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:17:51.557257Z"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [],
-    "count": 0,
-    "message": "No decisions found. DSoR ledger is empty."
-  },
-  "error": null,
-  "error_code": null,
-  "timestamp": "2026-06-26T`
+    "decisions": [
+      {
+        "decision_id": "dec-c1881a208883",
+        "intent": "Route task 12345 to brain_test-brain",
+        "reasoning": "Composite score=0`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1040,11 +1056,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'dsor_status': register.<locals>._h_dsor_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "que`
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1086,11 +1101,19 @@
 
 #### `engrams.end_of_day`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'end_of_day': register.<locals>.<lambda>() missing 1 required positional argument: 'summary'",
-  "expected_params": "(summary, key_decisions=None, blockers=None`
+  "success": true,
+  "data": {
+    "success": true,
+    "day": "Friday",
+    "week": 26,
+    "engrams_written": 1,
+    "details": [
+      {
+        "key": "daily_summary_2026-06-26",
+        "result`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1101,9 +1124,11 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'end_of_day': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'end_of_day': object of type 'int' has no len()",
   "expected_params": "(summary, key_decisions=None, blockers=None)",
-  "pro`
+  "provided_params": [
+    "summary",
+   `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1143,12 +1168,20 @@
 
 #### `engrams.engram_neighbors`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'engram_neighbors': register.<locals>.<lambda>() missing 1 required positional argument: 'key'",
-  "expected_params": "(key, max_depth=1)",
-  "provided_params":`
+  "success": true,
+  "data": {
+    "target": {
+      "id": "test-key",
+      "context": "Decision",
+      "intensity": 5
+    },
+    "neighbors": [
+      {
+        "id": "daily_summary_2026-06-26",
+ `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1157,13 +1190,16 @@
   "expected_params": "(key, max_depth=1)",
   "provided_params":`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'engram_neighbors': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(key, max_depth=1)",
-  "provided_params": [
-   `
+  "success": true,
+  "data": {
+    "error": "Engram 'wrong_type' not found in graph",
+    "node_count": 321
+  },
+  "error": null
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1207,10 +1243,8 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'export_schema': register.<locals>._h_export_schema() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"`
+  "error": "'str' object has no attribute 'name'"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1221,11 +1255,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'export_schema': register.<locals>._h_export_schema() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "error": "'str' object has no attribute 'name'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1284,11 +1315,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'federation_dsor': register.<locals>._h_fed_dsor() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "qu`
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1330,11 +1360,17 @@
 
 #### `engrams.fusion_reactor`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'fusion_reactor': register.<locals>.<lambda>() missing 1 required positional argument: 'observation'",
-  "expected_params": "(observation, context='Decision', i`
+  "success": true,
+  "data": {
+    "pipeline": "fusion_reactor",
+    "version": "1.0.0",
+    "timestamp": "2026-06-26T06:47:52.834578",
+    "observation": "test",
+    "sections": {
+      "capture": `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1345,8 +1381,9 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'fusion_reactor': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(observation, context='Decision', intensity=6, wr`
+  "error": "Invalid params for action 'fusion_reactor': can only concatenate str (not \"int\") to str",
+  "expected_params": "(observation, context='Decision', intensity=6, write_engrams=True)",
+  "`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1412,14 +1449,18 @@
     },
     "stat`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'governance_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "que`
+  "success": true,
+  "data": {
+    "policies": {
+      "default_deny": true,
+      "isolation_boundaries": true,
+      "immutable_audit": false,
+      "cryptographic_hashing": false
+    },
+    "stat`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1473,7 +1514,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
@@ -1484,19 +1525,20 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'health': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "l`
+  "status": "healthy",
+  "version": "1.2.1",
+  "tools_registered": "unknown",
+  "brain_path": "/tmp/test-brain",
+  "uptime_seconds": 4,
+  "python_version": "3.14.4"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1505,7 +1547,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
@@ -1546,42 +1588,47 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:07:17.202608+00:00",
+    "timestamp": "2026-06-26T01:17:57.662173+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 4.3,
-    "formatt`
+    "check_duration_ms": 17.3,
+    "format`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:07:17.566111+00:00",
+    "timestamp": "2026-06-26T01:17:58.175930+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 3.9,
+    "check_duration_ms": 7.2,
     "formatt`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'heartbeat_check': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(notify=False, brain_path=None)",
-  "provided_pa`
+  "success": true,
+  "data": {
+    "timestamp": "2026-06-26T01:17:59.438751+00:00",
+    "triggers": [],
+    "trigger_count": 0,
+    "should_notify": false,
+    "check_duration_ms": 0.1,
+    "formatt`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:07:18.878770+00:00",
+    "timestamp": "2026-06-26T01:17:59.939245+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 3.8,
+    "check_duration_ms": 6.5,
     "formatt`
 
 **unknown_action** — ⚠️ handled
@@ -1638,13 +1685,16 @@
       "plist_path": "/home/operator/Library/LaunchAgents/dev.nucleusos.heartbeat.plist",
       "`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'heartbeat_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(brain_path=None)",
-  "provided_params": [
-    `
+  "success": true,
+  "data": {
+    "installed": true,
+    "platform": {
+      "platform": "macOS",
+      "plist_path": "/home/operator/Library/LaunchAgents/dev.nucleusos.heartbeat.plist",
+      "`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1694,12 +1744,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 1137,
+    "total_executions": 1581,
     "outcomes": {
-      "ADD": 165,
-      "NOOP": 382,
-      "UNKNOWN": 347,
-      "UPDATE": 243
+      "ADD": 208,
+      "NOOP": 520,
+      "UNKNOWN": 518,
+      "UPDATE": 335
     },
     "by_event_type": {
       "mor`
@@ -1709,37 +1759,42 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 1137,
+    "total_executions": 1581,
     "outcomes": {
-      "ADD": 165,
-      "NOOP": 382,
-      "UNKNOWN": 347,
-      "UPDATE": 243
+      "ADD": 208,
+      "NOOP": 520,
+      "UNKNOWN": 518,
+      "UPDATE": 335
     },
     "by_event_type": {
       "mor`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'hook_metrics': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-`
+  "success": true,
+  "data": {
+    "total_executions": 1581,
+    "outcomes": {
+      "ADD": 208,
+      "NOOP": 520,
+      "UNKNOWN": 518,
+      "UPDATE": 335
+    },
+    "by_event_type": {
+      "mor`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 1137,
+    "total_executions": 1581,
     "outcomes": {
-      "ADD": 165,
-      "NOOP": 382,
-      "UNKNOWN": 347,
-      "UPDATE": 243
+      "ADD": 208,
+      "NOOP": 520,
+      "UNKNOWN": 518,
+      "UPDATE": 335
     },
     "by_event_type": {
       "mor`
@@ -1795,10 +1850,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'ipc_tokens': register.<locals>._h_ipc_tokens() got an unexpected keyword argument 'id'",
-  "expected_params": "(active_only=True)",
-  "provided_params": [
-    `
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1859,10 +1914,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_decisions': register.<locals>._h_list_decisions() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=20)",
-  "provided_params": [
-    `
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1923,10 +1978,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_snapshots': register.<locals>._h_ledger_snapshots() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=10)",
-  "provided_params": [
-  `
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1968,13 +2023,19 @@
 
 #### `engrams.list_tools`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_tools': register.<locals>._h_list_tools() got an unexpected keyword argument 'limit'",
-  "expected_params": "(category=None)",
-  "provided_params": [
-    `
+  "success": true,
+  "data": {
+    "tier": "ADVANCED",
+    "tier_level": 2,
+    "total_tools": 21,
+    "tools": [
+      "nucleus_agents",
+      "nucleus_audit",
+      "nucleus_ccr_arm",
+      "nucle`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1990,13 +2051,18 @@
       "nucleus_ccr_arm",
       "nucle`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_tools': register.<locals>._h_list_tools() got an unexpected keyword argument 'id'",
-  "expected_params": "(category=None)",
-  "provided_params": [
-    "id`
+  "success": true,
+  "data": {
+    "tier": "ADVANCED",
+    "tier_level": 2,
+    "total_tools": 0,
+    "tools": []
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2063,10 +2129,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'metering_summary': register.<locals>._h_metering() got an unexpected keyword argument 'id'",
-  "expected_params": "(since_hours=24)",
-  "provided_params": [
-  `
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2113,30 +2179,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:47 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:47 AM\n====================`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'morning_brief': register.<locals>._h_morning_brief() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "success": true,
+  "data": {
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:48 AM\n====================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:48 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2190,12 +2254,15 @@
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'performance_metrics': register.<locals>._h_perf_metrics() got an unexpected keyword argument 'id'",
-  "expected_params": "(export_to_file=False)",
-  "provided_`
+  "success": true,
+  "data": {
+    "message": "No metrics collected. Set NUCLEUS_PROFILING=true."
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2242,7 +2309,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T01:07:18.947643+00:00
+# Generated at 2026-06-26T01:18:00.027574+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2252,7 +2319,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T01:07:18.950587+00:00
+# Generated at 2026-06-26T01:18:00.028366+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2262,14 +2329,14 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'prometheus_metrics': register.<locals>._h_prom_metrics() got an unexpected keyword argument 'id'",
-  "expected_params": "(format='prometheus')",
-  "provided_pa`
+  "error": "Action 'prometheus_metrics' failed: 'int' object has no attribute 'lower'",
+  "module": "nucleus_engrams"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T01:07:18.951115+00:00
+# Generated at 2026-06-26T01:18:00.028915+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2330,13 +2397,16 @@
         "status": "skipped",
         "reason": "cannot import name 'capture_pulse' from 'mcp_server_nucleus.runtime.pul`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pulse_and_polish': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(write_engram=True)",
-  "provided_params": [
-  `
+  "success": true,
+  "data": {
+    "steps": [
+      {
+        "name": "pulse",
+        "status": "skipped",
+        "reason": "cannot import name 'capture_pulse' from 'mcp_server_nucleus.runtime.pul`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2381,12 +2451,16 @@
 
 #### `engrams.query_engrams`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'query_engrams': register.<locals>.<lambda>() got an unexpected keyword argument 'query'",
-  "expected_params": "(context=None, min_intensity=1, limit=50)",
-  "`
+  "success": true,
+  "data": {
+    "engrams": [
+      {
+        "key": "recurring_38a2326e",
+        "value": "RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% of target",
+        "conte`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2396,15 +2470,18 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (110x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% of target",
         "conte`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'query_engrams': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(context=None, min_intensity=1, limit=50)",
-  "pro`
+  "success": false,
+  "data": null,
+  "error": "An internal error occurred. Error ID: 328ba343",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:00.038304Z"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2414,7 +2491,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (110x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% of target",
         "conte`
 
 **unknown_action** — ⚠️ handled
@@ -2466,9 +2543,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'render_graph': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'render_graph': '>=' not supported between instances of 'int' and 'str'",
   "expected_params": "(max_nodes=30, min_intensity=1)",
-  "provided_param`
+  "provided_params": [
+    "ma`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2528,9 +2606,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'routing_decisions': register.<locals>._h_routing_decisions() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=20)",
-  "provided_params": `
+  "success": false,
+  "data": null,
+  "error": "Error: unsupported operand type(s) for /: 'str' and 'str'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2577,15 +2656,10 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "engrams": [],
-    "count": 0,
-    "total_matching": 0,
-    "truncated": false,
-    "limit": 5,
-    "query": "test",
-    "case_sensitive": false,
-    "sources": [
-`
+    "engrams": [
+      {
+        "key": "sre_diagnosis_20260626_0642",
+        "value": "SRE Diagnosis 2026-06-26 06:42: symptom='test' severity=CRITICAL findings=2 ac`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2597,9 +2671,12 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'search': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(query, case_sensitive=False, limit=50)",
-  "provided_par`
+  "success": false,
+  "data": null,
+  "error": "An internal error occurred. Error ID: eb1ea9fa",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:00.558882Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2645,15 +2722,10 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "engrams": [],
-    "count": 0,
-    "total_matching": 0,
-    "truncated": false,
-    "limit": 5,
-    "query": "test",
-    "case_sensitive": false,
-    "sources": [
-`
+    "engrams": [
+      {
+        "key": "sre_diagnosis_20260626_0642",
+        "value": "SRE Diagnosis 2026-06-26 06:42: symptom='test' severity=CRITICAL findings=2 ac`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2664,9 +2736,12 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'search_engrams': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(query, case_sensitive=False, limit=50)",
-  "prov`
+  "success": false,
+  "data": null,
+  "error": "An internal error occurred. Error ID: ed8e05d6",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:00.560801Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2706,12 +2781,18 @@
 
 #### `engrams.self_healing_sre`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'self_healing_sre': register.<locals>.<lambda>() missing 1 required positional argument: 'symptom'",
-  "expected_params": "(symptom, write_engram=True)",
-  "pro`
+  "success": true,
+  "data": {
+    "pipeline": "self_healing_sre",
+    "version": "1.0.0",
+    "timestamp": "2026-06-26T06:48:00.562202",
+    "symptom": "test",
+    "sections": {
+      "search": {
+ `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2720,12 +2801,17 @@
   "expected_params": "(symptom, write_engram=True)",
   "pro`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'self_healing_sre': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(symptom, write_engram=True)",
-  "provided_para`
+  "success": true,
+  "data": {
+    "pipeline": "self_healing_sre",
+    "version": "1.0.0",
+    "timestamp": "2026-06-26T06:48:00.565913",
+    "symptom": "wrong_type",
+    "sections": {
+      "search`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2771,30 +2857,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (110x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (110x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'session_inject': register.<locals>._h_session_inject() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-  `
+  "success": true,
+  "data": {
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (110x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (116x): Behind pace: github_issues at 0.0% `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2858,14 +2942,20 @@
     },
    `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'tier_status': register.<locals>._h_tier_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "que`
+  "success": true,
+  "data": {
+    "version": "0.6.0",
+    "current_tier": "ADVANCED",
+    "tier_level": 2,
+    "tier_breakdown": {
+      "tier_0": 2,
+      "tier_1": 5,
+      "tier_2": 5
+    },
+   `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2942,15 +3032,19 @@
    MCP Tools: 110+
    Architecture: Trinity (Or`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'version': register.<locals>._h_version() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-   `
+- *Result preview:* `🧠 NUCLEUS VERSION INFO
+═══════════════════════════════════════
+
+📦 VERSION
+   Nucleus: 1.2.1
+   Python: 3.14.4
+   Platform: Darwin 25.5.0
+
+🔧 CAPABILITIES
+   MCP Tools: 110+
+   Architecture: Trinity (Or`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3030,13 +3124,20 @@
       {
     `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'weekly_consolidate': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(dry_run=True)",
-  "provided_params": [
-    "`
+  "success": true,
+  "data": {
+    "week": 26,
+    "dry_run": "not_a_bool",
+    "actions": [
+      {
+        "action": "garbage_collect_tasks",
+        "archived": 0,
+        "kept": 0
+      },
+    `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3086,11 +3187,19 @@
 
 #### `engrams.write_engram`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'write_engram': register.<locals>.<lambda>() got an unexpected keyword argument 'content'. Did you mean 'context'?",
-  "expected_params": "(key, value, context=`
+  "success": true,
+  "data": {
+    "key": "test-key",
+    "value": "test-value",
+    "context": "Decision",
+    "intensity": 5,
+    "adun": {
+      "added": 0,
+      "updated": 0,
+      "deleted": 0`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3101,9 +3210,12 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'write_engram': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(key, value, context='Decision', intensity=5)",
-  "`
+  "success": false,
+  "data": null,
+  "error": "An internal error occurred. Error ID: 45cb1ab1",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:03.599835Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3147,18 +3259,18 @@
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `add` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `discover_tools` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `generate_proof` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `generate_proof` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `get` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `get_proof` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `get_proof` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `invoke_tool` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `list_mounted` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `list_proofs` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `mount_server` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `search` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `thanos_snap` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_mounted` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_proofs` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `mount_server` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `search` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `thanos_snap` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `traverse_mount` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `unmount_server` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `unmount_server` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `update` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `validate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
@@ -3167,7 +3279,8 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'add': register.<locals>._h_add() missing 6 required positional arguments: 'product', 'description', 'source', 'version', 'how_to_test', and 'expected_result'",`
+  "error": "Feature 'test' already exists"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3177,8 +3290,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'add': register.<locals>._h_add() got an unexpected keyword argument 'id'",
-  "expected_params": "(product, name, description, source, version, how_to_test, exp`
+  "error": "Feature 'wrong_type' already exists"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3226,7 +3339,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T01:07:20.306491Z"
+  "timestamp": "2026-06-26T01:18:03.605032Z"
 }`
 
 **missing_params** — ✅ pass
@@ -3236,16 +3349,18 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T01:07:20.306554Z"
+  "timestamp": "2026-06-26T01:18:03.605396Z"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'discover_tools': register.<locals>._h_discover() got an unexpected keyword argument 'id'",
-  "expected_params": "(server_id=None)",
-  "provided_params": [
-    `
+  "success": false,
+  "data": null,
+  "error": "Server wrong_type not found",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:03.606045Z"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3254,7 +3369,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T01:07:20.306664Z"
+  "timestamp": "2026-06-26T01:18:03.606452Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -3291,11 +3406,9 @@
 
 #### `features.generate_proof`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'generate_proof': register.<locals>._h_gen_proof() missing 1 required positional argument: 'feature_id'",
-  "expected_params": "(feature_id, thinking=None, depl`
+- *Result preview:* `{"success": true, "message": "Proof generated for test-id", "path": "/tmp/test-brain/features/proofs/test-id.md"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3303,11 +3416,9 @@
   "error": "Invalid params for action 'generate_proof': register.<locals>._h_gen_proof() missing 1 required positional argument: 'feature_id'",
   "expected_params": "(feature_id, thinking=None, depl`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'generate_proof': register.<locals>._h_gen_proof() got an unexpected keyword argument 'id'",
-  "expected_params": "(feature_id, thinking=None, deployed_url=None`
+- *Result preview:* `Error generating proof: 'int' object has no attribute 'upper'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3352,11 +3463,7 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'get': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(feature_id)",
-  "provided_params": [
-    "limit"
-  ]
+  "error": "Feature 'test-id' not found"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3370,11 +3477,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(feature_id)",
-  "provided_params": [
-    "id",
-    "query",`
+  "error": "Feature '12345' not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3418,14 +3522,25 @@
 
 #### `features.get_proof`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_proof': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(feature_id)",
-  "provided_params": [
-    "limit"
- `
+- *Result preview:* `# Proof: test-id
+
+> Generated: 2026-06-26 06:48:03
+
+## Thinking
+None
+
+## Deployed URL
+None
+
+## Files Changed
+None
+
+## Rollback Plan
+- **Risk Level:** LOW
+- **Estimated Time:** 15 minutes
+- **Strategy:`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3435,14 +3550,9 @@
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_proof': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(feature_id)",
-  "provided_params": [
-    "id",
-    "q`
+- *Result preview:* `Proof for 12345 not found.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3488,9 +3598,7 @@
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'invoke_tool': register.<locals>._h_invoke() missing 2 required positional arguments: 'server_id' and 'tool_name'",
-  "expected_params": "(server_id, tool_name,`
+- *Result preview:* `{"success": false, "error": "Server test not found"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3500,10 +3608,7 @@
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'invoke_tool': register.<locals>._h_invoke() got an unexpected keyword argument 'id'",
-  "expected_params": "(server_id, tool_name, arguments={})",
-  "provided_`
+- *Result preview:* `{"success": false, "error": "Server wrong_type not found"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3545,33 +3650,54 @@
 
 #### `features.list`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(product=None, status=None, tag=None)",
-  "provided_para`
+  "features": [
+    {
+      "id": "test",
+      "name": "test",
+      "description": "test",
+      "product": "test",
+      "source": "test",
+      "version": "test",
+      "status": "development",
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
+  "features": [
+    {
+      "id": "test",
+      "name": "test",
+      "description": "test",
+      "product": "test",
+      "source": "test",
+      "version": "test",
+      "status": "development",
+`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
   "features": [],
   "total": 0
 }`
-
-**wrong_types** — ⚠️ handled
-- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(product=None, status=None, tag=None)",
-  "provided_params"`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "features": [],
-  "total": 0
-}`
+  "features": [
+    {
+      "id": "test",
+      "name": "test",
+      "description": "test",
+      "product": "test",
+      "source": "test",
+      "version": "test",
+      "status": "development",
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -3607,14 +3733,17 @@
 
 #### `features.list_mounted`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_mounted': register.<locals>._h_list_mounted() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
- `
+  "success": true,
+  "data": [
+    {
+      "id": "stripe",
+      "transport": "stdio",
+      "command": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "args": [
+        "/home/operator/ai-`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3628,14 +3757,17 @@
       "args": [
         "/home/operator/ai-`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_mounted': register.<locals>._h_list_mounted() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "q`
+  "success": true,
+  "data": [
+    {
+      "id": "stripe",
+      "transport": "stdio",
+      "command": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "args": [
+        "/home/operator/ai-`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3683,33 +3815,29 @@
 
 #### `features.list_proofs`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_proofs': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+- *Result preview:* `[
+  "test-id.md"
+]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `[]`
+- *Result preview:* `[
+  "test-id.md"
+]`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_proofs': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+- *Result preview:* `[
+  "test-id.md"
+]`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `[]`
+- *Result preview:* `[
+  "test-id.md"
+]`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -3745,12 +3873,9 @@
 
 #### `features.mount_server`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'mount_server': register.<locals>._h_mount() missing 2 required positional arguments: 'name' and 'command'",
-  "expected_params": "(name, command, args=[])",
-  `
+- *Result preview:* `Error: Connection closed`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3759,13 +3884,12 @@
   "expected_params": "(name, command, args=[])",
   `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'mount_server': register.<locals>._h_mount() got an unexpected keyword argument 'id'",
-  "expected_params": "(name, command, args=[])",
-  "provided_params": [
- `
+- *Result preview:* `Error: 1 validation error for StdioServerParameters
+args
+  Input should be a valid list [type=list_type, input_value='not_a_list', input_type=str]
+    For further information visit https://errors.pyda`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3808,14 +3932,19 @@
 
 #### `features.search`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'search': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(query)",
-  "provided_params": [
-    "query",
-    "lim`
+  "features": [
+    {
+      "id": "test",
+      "name": "test",
+      "description": "test",
+      "product": "test",
+      "source": "test",
+      "version": "test",
+      "status": "development",
+`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3828,12 +3957,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'search': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(query)",
-  "provided_params": [
-    "id",
-    "query",
- `
+  "error": "'int' object has no attribute 'lower'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3891,15 +4016,12 @@ Stripe: Connected ✅
 Postgres: Connected ✅
 Search: Connected ✅`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'thanos_snap': register.<locals>._h_thanos() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-`
+- *Result preview:* `✨ Thanos Snap Sequence:
+Stripe: Connected ✅
+Postgres: Connected ✅
+Search: Connected ✅`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3945,9 +4067,12 @@ Search: Connected ✅`
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'traverse_mount': register.<locals>._h_traverse() missing 1 required positional argument: 'root_mount_id'",
-  "expected_params": "(root_mount_id)",
-  "provided_`
+  "success": false,
+  "data": null,
+  "error": "Root mount 'test' not found",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:03.674879Z"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -3959,10 +4084,12 @@ Search: Connected ✅`
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'traverse_mount': register.<locals>._h_traverse() got an unexpected keyword argument 'id'",
-  "expected_params": "(root_mount_id)",
-  "provided_params": [
-    "`
+  "success": false,
+  "data": null,
+  "error": "Root mount 'wrong_type' not found",
+  "error_code": null,
+  "timestamp": "2026-06-26T01:18:03.675172Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4005,12 +4132,9 @@ Search: Connected ✅`
 
 #### `features.unmount_server`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'unmount_server': register.<locals>._h_unmount() missing 1 required positional argument: 'server_id'",
-  "expected_params": "(server_id)",
-  "provided_params": `
+- *Result preview:* `Unmounted test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4019,14 +4143,9 @@ Search: Connected ✅`
   "expected_params": "(server_id)",
   "provided_params": `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'unmount_server': register.<locals>._h_unmount() got an unexpected keyword argument 'id'",
-  "expected_params": "(server_id)",
-  "provided_params": [
-    "id",
-`
+- *Result preview:* `Unmounted wrong_type`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4072,8 +4191,8 @@ Search: Connected ✅`
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'update': register.<locals>._h_update() got an unexpected keyword argument 'id'",
-  "expected_params": "(feature_id, status=None, description=None, version=None`
+  "error": "No updates provided"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4084,8 +4203,8 @@ Search: Connected ✅`
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'update': register.<locals>._h_update() got an unexpected keyword argument 'id'",
-  "expected_params": "(feature_id, status=None, description=None, version=None`
+  "error": "Feature '12345' not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4130,9 +4249,8 @@ Search: Connected ✅`
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'validate': register.<locals>.<lambda>() missing 2 required positional arguments: 'feature_id' and 'result'",
-  "expected_params": "(feature_id, result)",
-  "pr`
+  "error": "Result must be 'passed' or 'failed'"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4144,10 +4262,8 @@ Search: Connected ✅`
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'validate': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(feature_id, result)",
-  "provided_params": [
-    "id",`
+  "error": "Result must be 'passed' or 'failed'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4192,13 +4308,13 @@ Search: Connected ✅`
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `health` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `join` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `leave` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `peers` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `route` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `sync` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `health` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `join` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `leave` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `peers` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `route` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `sync` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `federation.health`
 
@@ -4236,15 +4352,22 @@ Search: Connected ✅`
    Tasks Routed: 0
    `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'health': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "l`
+- *Result preview:* `💚 FEDERATION HEALTH
+═══════════════════════════════════════
+
+🟢 HEALTHY
+[████████████████████] 100%
+
+📊 PARTITION
+   Status: NORMAL
+   Peers Online: 0/0
+   Leader: None
+
+📈 METRICS
+   Tasks Routed: 0
+   `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4301,13 +4424,13 @@ Search: Connected ✅`
 
 #### `federation.join`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>._h_join() missing 1 required positional argument: 'seed_peer'",
-  "expected_params": "(seed_peer: str)",
-  "provided_params": []
-}`
+- *Result preview:* `✅ JOINED FEDERATION
+   Seed Peer: http://localhost:9999
+   Total Peers: 1
+
+💡 Federation engine is now active and syncing`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4317,14 +4440,9 @@ Search: Connected ✅`
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'join': register.<locals>._h_join() got an unexpected keyword argument 'id'",
-  "expected_params": "(seed_peer: str)",
-  "provided_params": [
-    "id",
-    "que`
+- *Result preview:* `❌ Failed to join: argument of type 'int' is not a container or iterable`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4386,15 +4504,12 @@ Local brain now operating in standalone mode.`
 Federation engine stopped gracefully.
 Local brain now operating in standalone mode.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'leave': register.<locals>._h_leave() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "li`
+- *Result preview:* `✅ LEFT FEDERATION
+
+Federation engine stopped gracefully.
+Local brain now operating in standalone mode.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4446,37 +4561,52 @@ Local brain now operating in standalone mode.`
 - *Result preview:* `🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
-No peers discovered.
-
-💡 Use brain_federation_join(seed_peer) to connect to a federation.`
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
-No peers discovered.
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
-💡 Use brain_federation_join(seed_peer) to connect to a federation.`
-
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'peers': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "li`
+- *Result preview:* `🔗 FEDERATION PEERS
+═══════════════════════════════════════
+
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `🔗 FEDERATION PEERS
 ═══════════════════════════════════════
 
-No peers discovered.
-
-💡 Use brain_federation_join(seed_peer) to connect to a federation.`
+🟢 peer_http://localhost_9999
+   Address: http://localhost:9999
+   Region: unknown
+   Trust: 👤 MEMBER
+   Latency: 0.0ms
+   Load: 0%
+   Capabi`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -4516,12 +4646,23 @@ No peers discovered.
 
 #### `federation.route`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>._h_route() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id: str, profile: str = 'default')",
-  "pr`
+- *Result preview:* `🎯 ROUTING DECISION
+═══════════════════════════════════════
+
+📋 Task: test-id
+📊 Profile: default
+
+🏆 TARGET
+   Brain: brain_test-brain
+   Score: 0.630
+
+⏱️ ROUTING TIME
+   0.086ms
+
+🔄 ALTERNATIVES
+   1. pe`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4530,12 +4671,23 @@ No peers discovered.
   "expected_params": "(task_id: str, profile: str = 'default')",
   "pr`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'route': register.<locals>._h_route() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id: str, profile: str = 'default')",
-  "provided_par`
+- *Result preview:* `🎯 ROUTING DECISION
+═══════════════════════════════════════
+
+📋 Task: 12345
+📊 Profile: 12345
+
+🏆 TARGET
+   Brain: brain_test-brain
+   Score: 0.630
+
+⏱️ ROUTING TIME
+   0.082ms
+
+🔄 ALTERNATIVES
+   1. peer_h`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4597,7 +4749,7 @@ No peers discovered.
    Is Leader: ❌
    Term: 0
 
-🔗 PEERS (0/`
+🔗 PEERS (1/`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4614,17 +4766,24 @@ No peers discovered.
    Is Leader: ❌
    Term: 0
 
-🔗 PEERS (0/`
+🔗 PEERS (1/`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "l`
+- *Result preview:* `🌐 FEDERATION STATUS
+═══════════════════════════════════════
+
+🧠 LOCAL BRAIN
+   ID: brain_test-brain
+   Region: default
+   Running: ❌
+
+👑 CONSENSUS
+   Leader: None
+   Is Leader: ❌
+   Term: 0
+
+🔗 PEERS (1/`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4641,7 +4800,7 @@ No peers discovered.
    Is Leader: ❌
    Term: 0
 
-🔗 PEERS (0/`
+🔗 PEERS (1/`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -4689,15 +4848,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'sync': register.<locals>._h_sync() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "limi`
+- *Result preview:* `❌ Federation engine not running. Use brain_federation_join first.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4743,49 +4896,47 @@ No peers discovered.
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `audit_report` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `auto_fix_loop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `audit_report` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `auto_fix_loop` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `comply_apply` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `comply_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `comply_report` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `comply_list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `comply_report` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `curl` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `delete_file` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `delete_file` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `kyc_review` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_directory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `lock` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `list_directory` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `lock` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `pip_install` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `set_mode` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `sovereign_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `trace_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `set_mode` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `sovereign_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `trace_list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `trace_view` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `unlock` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `unlock` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `validate_strategic_plan` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `watch` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `watch` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 
 #### `governance.audit_report`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_report': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(report_format='text', since_hours=None, brain_p`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:18:05.330681+00:00\n  Jurisdiction: N`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:07:20.331061+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:18:05.376104+00:00\n  Jurisdiction: N`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_report': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(report_format='text', since_hours=None, brain_path`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:18:05.397276+00:00\n  Jurisdiction: N`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:07:20.343357+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:18:05.398299+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -4819,11 +4970,16 @@ No peers discovered.
 
 #### `governance.auto_fix_loop`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'auto_fix_loop': register.<locals>.<lambda>() missing 2 required positional arguments: 'file_path' and 'verification_command'",
-  "expected_params": "(file_path`
+  "status": "failure",
+  "message": "Failed to fix after 3 attempts.",
+  "last_output": "\n",
+  "logs": [
+    "[06:48:05] Starting Fixer Loop for test",
+    "[06:48:05] Running verification: test",
+`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4831,12 +4987,14 @@ No peers discovered.
   "error": "Invalid params for action 'auto_fix_loop': register.<locals>.<lambda>() missing 2 required positional arguments: 'file_path' and 'verification_command'",
   "expected_params": "(file_path`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'auto_fix_loop': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(file_path, verification_command)",
-  "provided_pa`
+  "status": "failure",
+  "message": "Failed to fix after 3 attempts.",
+  "last_output": "Verification failed to run: [Errno 2] No such file or directory: 'wrong_type'",
+  "logs": [
+    "[06:48:05] S`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4879,9 +5037,9 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'comply_apply': register.<locals>.<lambda>() missing 1 required positional argument: 'jurisdiction'",
-  "expected_params": "(jurisdiction, brain_path=None)",
-  `
+  "error": "Unknown jurisdiction: test",
+  "available": "eu-dora, sg-mas-trm, us-soc2, global-default"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4893,9 +5051,9 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'comply_apply': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(jurisdiction, brain_path=None)",
-  "provided_param`
+  "error": "Unknown jurisdiction: wrong_type",
+  "available": "eu-dora, sg-mas-trm, us-soc2, global-default"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -4936,15 +5094,13 @@ No peers discovered.
 
 #### `governance.comply_list`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'comply_list': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+  "eu-dora": "EU DORA (Digital Operational Resilience Act)",
+  "sg-mas-trm": "Singapore MAS TRM (Technology Risk Management)",
+  "us-soc2": "SOC2 Type II",
+  "global-default": "Global Default (Best `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4954,15 +5110,13 @@ No peers discovered.
   "us-soc2": "SOC2 Type II",
   "global-default": "Global Default (Best `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'comply_list': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+  "eu-dora": "EU DORA (Digital Operational Resilience Act)",
+  "sg-mas-trm": "Singapore MAS TRM (Technology Risk Management)",
+  "us-soc2": "SOC2 Type II",
+  "global-default": "Global Default (Best `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5030,13 +5184,19 @@ No peers discovered.
       "audit_files": 0,
       "event_files": 1`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'comply_report': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(brain_path=None)",
-  "provided_params": [
-    "id`
+  "status": "non_compliant",
+  "checks": {
+    "jurisdiction": {
+      "status": "not_configured"
+    },
+    "audit_logs": {
+      "status": "missing"
+    },
+    "hitl_policy": {
+      "status": "no`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5085,11 +5245,7 @@ No peers discovered.
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'curl': register.<locals>.<lambda>() missing 1 required positional argument: 'url'",
-  "expected_params": "(url, method='GET')",
-  "provided_params": []
-}`
+- *Result preview:* `{"success": false, "error": "\ud83d\udea8 Egress Firewall Blocked: Domain not in ALLOWED_DOMAINS. URL: test"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5101,12 +5257,7 @@ No peers discovered.
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'curl': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(url, method='GET')",
-  "provided_params": [
-    "id",
-    `
+- *Result preview:* `{"success": false, "error": "\ud83d\udea8 Egress Firewall Blocked: Domain not in ALLOWED_DOMAINS. URL: wrong_type"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5148,13 +5299,11 @@ No peers discovered.
 
 #### `governance.delete_file`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'delete_file': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path, confirm=False)",
-  "provided_params": [
-    "`
+- *Result preview:* `⚠️ HITL GATE: delete_file requires confirm=true.
+Target: /home/operator/ai-mvp-backend/test
+Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5163,13 +5312,9 @@ No peers discovered.
   "expected_params": "(path, confirm=False)",
   "provided_params": `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'delete_file': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path, confirm=False)",
-  "provided_params": [
-    "`
+- *Result preview:* `❌ BLOCKED: wrong_type is locked by Nucleus Hypervisor. Permission Denied.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5213,38 +5358,42 @@ No peers discovered.
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-A219B914",
+  "review_id": "KYC-34BA23D4",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:07:20.356938+00:00",
-  "completed_at": "2026-06-26T01:07:20.356962+00:00",
+  "started_at": "2026-06-26T01:18:05.607256+00:00",
+  "completed_at": "2026-06-26T01:18:05.607307+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-16A49196",
+  "review_id": "KYC-F318457C",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:07:20.357545+00:00",
-  "completed_at": "2026-06-26T01:07:20.357558+00:00",
+  "started_at": "2026-06-26T01:18:05.608455+00:00",
+  "completed_at": "2026-06-26T01:18:05.608483+00:00",
  `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'kyc_review': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(application_id='APP-001', brain_path=None)",
-  "prov`
+  "error": "Unknown application: 12345",
+  "available": [
+    "APP-001",
+    "APP-002",
+    "APP-003"
+  ]
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-E3654F14",
+  "review_id": "KYC-7ACA5907",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:07:20.358481+00:00",
-  "completed_at": "2026-06-26T01:07:20.358491+00:00",
+  "started_at": "2026-06-26T01:18:05.610043+00:00",
+  "completed_at": "2026-06-26T01:18:05.610069+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -5279,14 +5428,15 @@ No peers discovered.
 
 #### `governance.list_directory`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_directory': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "limit"
-  `
+- *Result preview:* `🔒 LOCKED | focused_e2e_results.json
+🔒 LOCKED | simple_e2e_test.py
+🔒 LOCKED | comprehensive_e2e_report.md
+🔒 LOCKED | focused_e2e_test.py
+🔒 LOCKED | flutter_e2e_results.json
+🔒 LOCKED | screenshots
+🔒 LOC`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5296,14 +5446,9 @@ No peers discovered.
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_directory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "id",
-    "qu`
+- *Result preview:* `🔒 LOCKED | heartbeat`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5345,13 +5490,9 @@ No peers discovered.
 
 #### `governance.lock`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'lock': register.<locals>.<lambda>() missing 1 required positional argument: 'path'",
-  "expected_params": "(path)",
-  "provided_params": []
-}`
+- *Result preview:* `🔒 LOCKED: test (Immutable flag set)`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5361,15 +5502,9 @@ No peers discovered.
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'lock': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "id",
-    "query",
-    `
+- *Result preview:* `🔒 LOCKED: wrong_type (Immutable flag set)`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5413,11 +5548,7 @@ No peers discovered.
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'pip_install': register.<locals>.<lambda>() missing 1 required positional argument: 'package'",
-  "expected_params": "(package)",
-  "provided_params": []
-}`
+- *Result preview:* `{"success": false, "error": "error: externally-managed-environment\n\n\u00d7 This environment is externally managed\n\u2570\u2500> To install Python packages system-wide, try brew install\n    xyz, wh`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5429,12 +5560,7 @@ No peers discovered.
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'pip_install': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(package)",
-  "provided_params": [
-    "id",
-    "qu`
+- *Result preview:* `{"success": false, "error": "error: externally-managed-environment\n\n\u00d7 This environment is externally managed\n\u2570\u2500> To install Python packages system-wide, try brew install\n    xyz, wh`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5476,13 +5602,9 @@ No peers discovered.
 
 #### `governance.set_mode`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_mode': register.<locals>.<lambda>() missing 1 required positional argument: 'mode'",
-  "expected_params": "(mode)",
-  "provided_params": []
-}`
+- *Result preview:* `❌ Invalid mode. Use 'red', 'blue', or 'reset'.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5492,15 +5614,9 @@ No peers discovered.
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_mode': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(mode)",
-  "provided_params": [
-    "id",
-    "query",
-`
+- *Result preview:* `❌ Invalid mode. Use 'red', 'blue', or 'reset'.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5554,13 +5670,11 @@ No peers discovered.
   "sovereignty_score": 55,
   "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'sovereign_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(brain_path=None)",
-  "provided_params": [
-    `
+  "sovereignty_score": 35,
+  "formatted": "\n  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5616,15 +5730,13 @@ No peers discovered.
 🔒 Protected Paths: 0
 🎨 Injector: Ready`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "l`
+- *Result preview:* `🛡️  NUCLEUS HYPERVISOR v0.8.0 (God Mode)
+📍 Workspace: /private/tmp
+👁️  Watchdog: Inactive
+🔒 Protected Paths: 0
+🎨 Injector: Ready`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5666,17 +5778,10 @@ No peers discovered.
 
 #### `governance.trace_list`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'trace_list': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(trace_type=None, brain_path=None)",
-  "provided_p`
-
-**missing_params** — ✅ pass
-- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "count": 42,
+  "count": 51,
   "traces": [
     {
       "file": "KYC-0D51AC50.json",
@@ -5686,17 +5791,31 @@ No peers discovered.
       "risk_score": 0,
       "`
 
-**wrong_types** — ⚠️ handled
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "count": 51,
+  "traces": [
+    {
+      "file": "KYC-0D51AC50.json",
+      "type": "KYC_REVIEW",
+      "review_id": "KYC-0D51AC50",
+      "recommendation": "APPROVE",
+      "risk_score": 0,
+      "`
+
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'trace_list': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(trace_type=None, brain_path=None)",
-  "provided_para`
+  "count": 0,
+  "traces": [],
+  "status": "no_dsor_directory"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 42,
+  "count": 51,
   "traces": [
     {
       "file": "KYC-0D51AC50.json",
@@ -5740,37 +5859,31 @@ No peers discovered.
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'trace_view': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(trace_id='', brain_path=None)",
-  "provided_params":`
+- *Result preview:* `{"error": "Trace not found: test"}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-ADFD6FFD",
+  "review_id": "KYC-11CD2B7F",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T18:13:17.378178+00:00",
-  "completed_at": "2026-06-25T1`
+  "started_at": "2026-06-26T01:15:05.340475+00:00",
+  "completed_at": "2026-06-26T0`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'trace_view': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(trace_id='', brain_path=None)",
-  "provided_params":`
+- *Result preview:* `{"error": "Trace not found: 12345"}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-ADFD6FFD",
+  "review_id": "KYC-11CD2B7F",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T18:13:17.378178+00:00",
-  "completed_at": "2026-06-25T1`
+  "started_at": "2026-06-26T01:15:05.340475+00:00",
+  "completed_at": "2026-06-26T0`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -5804,13 +5917,9 @@ No peers discovered.
 
 #### `governance.unlock`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'unlock': register.<locals>.<lambda>() missing 1 required positional argument: 'path'",
-  "expected_params": "(path)",
-  "provided_params": []
-}`
+- *Result preview:* `❌ UNLOCK DENIED: IPC token_id required for Tier 3 operation.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5820,15 +5929,9 @@ No peers discovered.
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'unlock': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "id",
-    "query",
-  `
+- *Result preview:* `❌ UNLOCK DENIED: IPC token_id required for Tier 3 operation.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5872,9 +5975,7 @@ No peers discovered.
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'validate_strategic_plan': register.<locals>.<lambda>() missing 1 required positional argument: 'plan_text'",
-  "expected_params": "(plan_text, mode='strategic'`
+- *Result preview:* `{"valid": false, "mode": "strategic", "error": "PROTOCOL VIOLATION: Strategic mode PLAN must reference at least one Big Bang insight [BB##] from docs/reports/nucleus_bigbang_30d.md.", "hint": "Add a '`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5885,9 +5986,9 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'validate_strategic_plan': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(plan_text, mode='strategic')",
-  "provi`
+  "error": "Action 'validate_strategic_plan' failed: 'int' object has no attribute 'lower'",
+  "module": "nucleus_governance"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5927,13 +6028,9 @@ No peers discovered.
 
 #### `governance.watch`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'watch': register.<locals>.<lambda>() missing 1 required positional argument: 'path'",
-  "expected_params": "(path)",
-  "provided_params": []
-}`
+- *Result preview:* `👁️ WATCHING: test (Security Sentinel Active)`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -5943,15 +6040,9 @@ No peers discovered.
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'watch': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "id",
-    "query",
-   `
+- *Result preview:* `👁️ WATCHING: wrong_type (Security Sentinel Active)`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5997,33 +6088,30 @@ No peers discovered.
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `apply_critique` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `critique_code` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `fix_code` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `get_alerts` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `handoff_task` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `ingest_tasks` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `ingestion_stats` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_dashboard_snapshots` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_pending_consents` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `fix_code` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `get_alerts` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `handoff_task` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `ingest_tasks` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `ingestion_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_dashboard_snapshots` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_pending_consents` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `orchestrate_swarm` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `read_memory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `register_session` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `respond_to_consent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `rollback_ingestion` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `search_memory` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `session_briefing` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `set_alert_threshold` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `snapshot_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `spawn_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `register_session` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `respond_to_consent` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `rollback_ingestion` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `search_memory` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `session_briefing` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `set_alert_threshold` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `snapshot_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `spawn_agent` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 
 #### `orchestration.AGENTS_ROUTER.apply_critique`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'apply_critique': register.<locals>._h_apply_critique() missing 1 required positional argument: 'review_path'",
-  "expected_params": "(review_path)",
-  "provide`
+- *Result preview:* `{"error": "Failed: Expecting value: line 1 column 1 (char 0)"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6034,11 +6122,7 @@ No peers discovered.
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'apply_critique': register.<locals>._h_apply_critique() got an unexpected keyword argument 'id'",
-  "expected_params": "(review_path)",
-  "provided_params": [
- `
+- *Result preview:* `{"error": "Error: File not found: wrong_type"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6082,9 +6166,7 @@ No peers discovered.
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'critique_code': register.<locals>._h_critique_code() missing 1 required positional argument: 'file_path'",
-  "expected_params": "(file_path, context='General R`
+- *Result preview:* `{"error": "[Errno 21] Is a directory: 'test'"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6094,10 +6176,7 @@ No peers discovered.
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'critique_code': register.<locals>._h_critique_code() got an unexpected keyword argument 'id'",
-  "expected_params": "(file_path, context='General Review')",
-  `
+- *Result preview:* `{"error": "[Errno 21] Is a directory: 'wrong_type'"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6140,7 +6219,7 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:48:07
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6150,7 +6229,7 @@ No peers discovered.
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:48:07
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6158,15 +6237,13 @@ No peers discovered.
    ├── Active: 0/0 
    ├── Idle:`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(detail_level='standard', format='ascii', include_aler`
+- *Result preview:* `❌ Dashboard error: 'int' object has no attribute 'lower'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:48:07
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6207,11 +6284,9 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.fix_code`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'fix_code': register.<locals>._h_fix_code() missing 2 required positional arguments: 'file_path' and 'issues_context'",
-  "expected_params": "(file_path, issues`
+- *Result preview:* `{"status": "error", "message": "[Errno 21] Is a directory: 'test'"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6219,12 +6294,9 @@ No peers discovered.
   "error": "Invalid params for action 'fix_code': register.<locals>._h_fix_code() missing 2 required positional arguments: 'file_path' and 'issues_context'",
   "expected_params": "(file_path, issues`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'fix_code': register.<locals>._h_fix_code() got an unexpected keyword argument 'id'",
-  "expected_params": "(file_path, issues_context)",
-  "provided_params": [`
+- *Result preview:* `{"status": "error", "message": "[Errno 21] Is a directory: 'wrong_type'"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6265,29 +6337,17 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.get_alerts`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_alerts': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+- *Result preview:* `✅ No active alerts - all systems healthy`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ No active alerts - all systems healthy`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_alerts': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-  `
+- *Result preview:* `✅ No active alerts - all systems healthy`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6326,11 +6386,9 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.handoff_task`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'handoff_task': register.<locals>._h_handoff_task() missing 1 required positional argument: 'task_description'",
-  "expected_params": "(task_description, target`
+- *Result preview:* `✅ Task handed off to shared queue. ID: task-f59710b1`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6338,11 +6396,9 @@ No peers discovered.
   "error": "Invalid params for action 'handoff_task': register.<locals>._h_handoff_task() missing 1 required positional argument: 'task_description'",
   "expected_params": "(task_description, target`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'handoff_task': register.<locals>._h_handoff_task() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_description, target_session_id=None, p`
+- *Result preview:* `✅ Task handed off for session wrong_ty. ID: task-8df60aa4`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6383,11 +6439,9 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.ingest_tasks`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'ingest_tasks': register.<locals>._h_ingest_tasks() missing 1 required positional argument: 'source'",
-  "expected_params": "(source, source_type='auto', sessio`
+- *Result preview:* `❌ Ingestion error: [Errno 21] Is a directory: 'test'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6395,11 +6449,9 @@ No peers discovered.
   "error": "Invalid params for action 'ingest_tasks': register.<locals>._h_ingest_tasks() missing 1 required positional argument: 'source'",
   "expected_params": "(source, source_type='auto', sessio`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'ingest_tasks': register.<locals>._h_ingest_tasks() got an unexpected keyword argument 'id'",
-  "expected_params": "(source, source_type='auto', session_id=None`
+- *Result preview:* `❌ Ingestion error: [Errno 21] Is a directory: 'wrong_type'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6460,14 +6512,15 @@ No peers discovered.
    Batches: 0
    Dedup cache: 0`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'ingestion_stats': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query`
+- *Result preview:* `📊 **Ingestion Statistics**
+========================================
+   Total ingested: 0
+   Total skipped: 0
+   Total failed: 0
+   Batches: 0
+   Dedup cache: 0`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6516,30 +6569,26 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
-   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
+   snap_1782436508_c642af: wrong_type (2026-06-26T01:15:08Z)
+   snap_1782436508_a98b4b: Snapshot 2026-06-26T01:15:08Z (2026-06-26T01:15:0`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
-   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
+   snap_1782436508_c642af: wrong_type (2026-06-26T01:15:08Z)
+   snap_1782436508_a98b4b: Snapshot 2026-06-26T01:15:08Z (2026-06-26T01:15:0`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_dashboard_snapshots': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=10)",
-  "provided_params": [
-   `
+- *Result preview:* `❌ List snapshots error: slice indices must be integers or None or have an __index__ method`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
-   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
+   snap_1782436508_c642af: wrong_type (2026-06-26T01:15:08Z)
+   snap_1782436508_a98b4b: Snapshot 2026-06-26T01:15:08Z (2026-06-26T01:15:0`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -6574,26 +6623,17 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.list_pending_consents`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_pending_consents': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"`
+- *Result preview:* `{"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_pending_consents': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+- *Result preview:* `{"pending": [], "message": "Use nucleus_agents(action='respond_to_consent', params={agent_id, choice}) to authorize respawns."}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6635,8 +6675,10 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'orchestrate_swarm': register.<locals>._h_orchestrate_swarm() missing 1 required positional argument: 'mission'",
-  "expected_params": "(mission, agents=None)",`
+  "success": false,
+  "data": null,
+  "error": "Swarm failed: 'NoneType' object has no attribute 'start_mission'"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6647,9 +6689,10 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'orchestrate_swarm': register.<locals>._h_orchestrate_swarm() got an unexpected keyword argument 'id'",
-  "expected_params": "(mission, agents=None)",
-  "provid`
+  "success": false,
+  "data": null,
+  "error": "Swarm failed: 'NoneType' object has no attribute 'start_mission'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6693,11 +6736,7 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'read_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(category)",
-  "provided_params": [
-    "id"
-  ]
+  "error": "Invalid category. Allowed: ['context', 'patterns', 'learnings', 'decisions']"
 }`
 
 **missing_params** — ⚠️ handled
@@ -6711,11 +6750,8 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'read_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(category)",
-  "provided_params": [
-    "id",
-    "q`
+  "error": "Invalid category. Allowed: ['context', 'patterns', 'learnings', 'decisions']"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6758,11 +6794,9 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.register_session`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'register_session': register.<locals>._h_register_session() missing 2 required positional arguments: 'conversation_id' and 'focus_area'",
-  "expected_params": "`
+- *Result preview:* `Registered session test... focused on: test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6773,8 +6807,9 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'register_session': register.<locals>._h_register_session() got an unexpected keyword argument 'id'",
-  "expected_params": "(conversation_id, focus_area, role=N`
+  "error": "Action 'register_session' failed: Invalid tier 'wrong_type'; must be one of ['haiku', 'opus', 'sonnet']",
+  "module": "nucleus_agents"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6815,12 +6850,9 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.respond_to_consent`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'respond_to_consent': register.<locals>.<lambda>() missing 1 required positional argument: 'agent_id'",
-  "expected_params": "(agent_id, choice='cold')",
-  "pro`
+- *Result preview:* `{"success": true, "agent_id": "test", "choice": "COLD", "message": "Consent recorded. Agent will respawn in COLD mode."}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6832,9 +6864,9 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'respond_to_consent': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id, choice='cold')",
-  "provided_param`
+  "error": "Action 'respond_to_consent' failed: 'int' object has no attribute 'upper'",
+  "module": "nucleus_agents"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6876,11 +6908,9 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.rollback_ingestion`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'rollback_ingestion': register.<locals>._h_rollback_ingestion() missing 1 required positional argument: 'batch_id'",
-  "expected_params": "(batch_id, reason=Non`
+- *Result preview:* `❌ Rollback failed: Batch test not found`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6888,12 +6918,9 @@ No peers discovered.
   "error": "Invalid params for action 'rollback_ingestion': register.<locals>._h_rollback_ingestion() missing 1 required positional argument: 'batch_id'",
   "expected_params": "(batch_id, reason=Non`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'rollback_ingestion': register.<locals>._h_rollback_ingestion() got an unexpected keyword argument 'id'",
-  "expected_params": "(batch_id, reason=None)",
-  "pro`
+- *Result preview:* `❌ Rollback failed: Batch wrong_type not found`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6934,14 +6961,13 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.search_memory`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'search_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(query)",
-  "provided_params": [
-    "query",
- `
+  "query": "test",
+  "count": 0,
+  "results": []
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6954,11 +6980,8 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'search_memory': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(query)",
-  "provided_params": [
-    "id",
-    "qu`
+  "error": "expected str, bytes or os.PathLike object, not int"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7005,29 +7028,57 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 📋 Session Briefing
 
-### 📌 Pending (1)
-- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
+### 👥 Active Sessions (1)
+- `test`: test
+
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 📋 Session Briefing
 
-### 📌 Pending (1)
-- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
+### 👥 Active Sessions (1)
+- `test`: test
 
-**wrong_types** — ⚠️ handled
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
+
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'session_briefing': register.<locals>._h_session_briefing() got an unexpected keyword argument 'id'",
-  "expected_params": "(conversation_id=None)",
-  "provided`
+- *Result preview:* `## 📋 Session Briefing
+
+### 👥 Active Sessions (1)
+- `test`: test
+
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 📋 Session Briefing
 
-### 📌 Pending (1)
-- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
+### 👥 Active Sessions (1)
+- `test`: test
+
+### 📌 Pending (11)
+- 🟡 test
+- 🟡 @wrong_ty: wrong_type
+- 🟡 test
+- 🟡 test
+- 🟡 test`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7062,11 +7113,12 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.set_alert_threshold`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_alert_threshold': register.<locals>._h_set_alert_threshold() missing 3 required positional arguments: 'metric', 'level', and 'value'",
-  "expected_params":`
+- *Result preview:* `✅ Threshold Set
+   Metric: test
+   Level: 5
+   Value: test-value`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7074,12 +7126,12 @@ No peers discovered.
   "error": "Invalid params for action 'set_alert_threshold': register.<locals>._h_set_alert_threshold() missing 3 required positional arguments: 'metric', 'level', and 'value'",
   "expected_params":`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_alert_threshold': register.<locals>._h_set_alert_threshold() got an unexpected keyword argument 'id'",
-  "expected_params": "(metric, level, value)",
-  "pr`
+- *Result preview:* `✅ Threshold Set
+   Metric: wrong_type
+   Level: not_a_number
+   Value: wrong_type`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7123,37 +7175,38 @@ No peers discovered.
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782436045_8e01d2
-   Name: Snapshot 2026-06-26T01:07:25Z
-   Timestamp: 2026-06-26T01:07:25Z
+   ID: snap_1782436694_b6f36d
+   Name: Snapshot 2026-06-26T01:18:14Z
+   Timestamp: 2026-06-26T01:18:14Z
    
-💡 To compare: brain_compare_dashboards('snap_1782436045_8e01d2', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436694_b6f36d', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782436045_316df4
-   Name: Snapshot 2026-06-26T01:07:25Z
-   Timestamp: 2026-06-26T01:07:25Z
+   ID: snap_1782436694_957e24
+   Name: Snapshot 2026-06-26T01:18:14Z
+   Timestamp: 2026-06-26T01:18:14Z
    
-💡 To compare: brain_compare_dashboards('snap_1782436045_316df4', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436694_957e24', 'other_s`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'snapshot_dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(name=None)",
-  "provided_params": [
-    "id"`
+- *Result preview:* `✅ Snapshot Created
+   ID: snap_1782436694_2486e2
+   Name: wrong_type
+   Timestamp: 2026-06-26T01:18:14Z
+   
+💡 To compare: brain_compare_dashboards('snap_1782436694_2486e2', 'other_snapshot_id')`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782436045_2a705e
-   Name: Snapshot 2026-06-26T01:07:25Z
-   Timestamp: 2026-06-26T01:07:25Z
+   ID: snap_1782436694_71a71e
+   Name: Snapshot 2026-06-26T01:18:14Z
+   Timestamp: 2026-06-26T01:18:14Z
    
-💡 To compare: brain_compare_dashboards('snap_1782436045_2a705e', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436694_71a71e', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7188,11 +7241,12 @@ No peers discovered.
 
 #### `orchestration.AGENTS_ROUTER.spawn_agent`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'spawn_agent': register.<locals>._h_spawn_agent() missing 1 required positional argument: 'intent'",
-  "expected_params": "(intent, execute_now=True, persona=No`
+- *Result preview:* `⚠️ HITL GATE: spawn_agent requires confirm=true.
+Intent: test
+Persona: default
+Re-call with confirm=true to proceed. Agent spawning consumes compute resources.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7200,11 +7254,16 @@ No peers discovered.
   "error": "Invalid params for action 'spawn_agent': register.<locals>._h_spawn_agent() missing 1 required positional argument: 'intent'",
   "expected_params": "(intent, execute_now=True, persona=No`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'spawn_agent': register.<locals>._h_spawn_agent() got an unexpected keyword argument 'id'",
-  "expected_params": "(intent, execute_now=True, persona=None, confi`
+- *Result preview:* `## 🏭 NAR Factory Receipt
+**Intent:** wrong_type
+**Persona:** Librarian
+**Job Type:** BACKGROUND
+**Capabilities:** brain_ops, memory_ops, code_ops
+**Tools Mapped:** 14
+**Agent ID:** agent-b7a83a14b90f
+`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7247,17 +7306,17 @@ No peers discovered.
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `capture_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `file_changes` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `capture_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `file_changes` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `gcloud_services` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `gcloud_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `growth_pulse` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_services` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `gcloud_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `growth_pulse` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_services` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `manage_strategy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `optimize_workflow` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `scan_marketing_log` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `status_report` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `synthesize_strategy` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `optimize_workflow` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `scan_marketing_log` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `status_report` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `synthesize_strategy` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `update_roadmap` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `orchestration.INFRA_ROUTER.capture_metrics`
@@ -7271,7 +7330,7 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T01:07:25.420405+00:00"
+    "fetched_at": "2026-06-26T01:18:19.366395+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7285,18 +7344,24 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T01:07:25.439623+00:00"
+    "fetched_at": "2026-06-26T01:18:19.454382+00:00"
   },
   "pypi": {
     "last_mon`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'capture_metrics': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(write_engram=True)",
-  "provided_params": [
-   `
+  "github": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "source": "github_api",
+    "fetched_at": "2026-06-26T01:18:19.540290+00:00"
+  },
+  "pypi": {
+    "last_mon`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7307,7 +7372,7 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T01:07:25.460988+00:00"
+    "fetched_at": "2026-06-26T01:18:19.659013+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7351,14 +7416,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'file_changes': register.<locals>._h_file_changes() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "q`
+- *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7411,9 +7471,7 @@ No peers discovered.
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'gcloud_services': register.<locals>._h_gcloud_services() got an unexpected keyword argument 'id'",
-  "expected_params": "(project=None, region='us-central1')",`
+- *Result preview:* `{"error": "sequence item 7: expected str instance, int found"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7471,14 +7529,14 @@ No peers discovered.
   "account": "operator@example.com"
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'gcloud_status': register.<locals>._h_gcloud_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "gcloud_available": true,
+  "gcloud_path": "/opt/homebrew/bin/gcloud",
+  "project": "gentlequest-prod",
+  "account": "operator@example.com"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7524,10 +7582,10 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T01:07:33.511540+00:00",
+  "timestamp": "2026-06-26T01:18:33.457705+00:00",
   "sections": {
     "brief": {
-      "engram_count": 257,
+      "engram_count": 328,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -7536,30 +7594,34 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T01:07:33.558035+00:00",
+  "timestamp": "2026-06-26T01:18:33.625378+00:00",
   "sections": {
     "brief": {
-      "engram_count": 262,
+      "engram_count": 333,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'growth_pulse': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(write_engrams=True)",
-  "provided_params": [
-    "`
+  "pipeline": "growth_pulse",
+  "timestamp": "2026-06-26T01:18:33.765871+00:00",
+  "sections": {
+    "brief": {
+      "engram_count": 333,
+      "task_count": 0,
+      "recommendation": "BOOTSTRAP"
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T01:07:33.603072+00:00",
+  "timestamp": "2026-06-26T01:18:33.894773+00:00",
   "sections": {
     "brief": {
-      "engram_count": 262,
+      "engram_count": 333,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -7595,13 +7657,17 @@ No peers discovered.
 
 #### `orchestration.INFRA_ROUTER.list_services`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_services': register.<locals>._h_list_services() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"`
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7615,14 +7681,17 @@ No peers discovered.
         "id": "srv-mock-1",
         "name": `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_services': register.<locals>._h_list_services() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7670,9 +7739,8 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'manage_strategy': register.<locals>._h_manage_strategy() missing 1 required positional argument: 'action'",
-  "expected_params": "(action, content=None)",
-  "p`
+  "error": "Unknown action: test"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7684,9 +7752,8 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'manage_strategy': register.<locals>._h_manage_strategy() got an unexpected keyword argument 'id'",
-  "expected_params": "(action, content=None)",
-  "provided_p`
+  "error": "Unknown action: wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7734,13 +7801,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'optimize_workflow': register.<locals>._h_optimize_workflow() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "i`
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7777,13 +7840,13 @@ No peers discovered.
 
 #### `orchestration.INFRA_ROUTER.scan_marketing_log`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'scan_marketing_log': register.<locals>._h_scan_marketing_log() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
- `
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7793,13 +7856,13 @@ No peers discovered.
   "failures": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'scan_marketing_log': register.<locals>._h_scan_marketing_log() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    `
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7848,12 +7911,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status_report': register.<locals>._h_status_report() got an unexpected keyword argument 'id'",
-  "expected_params": "(focus='roadmap')",
-  "provided_params": [`
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7898,12 +7958,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'synthesize_strategy': register.<locals>._h_synthesize_strategy() got an unexpected keyword argument 'id'",
-  "expected_params": "(focus_topic=None)",
-  "provid`
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -7943,9 +8000,8 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'update_roadmap': register.<locals>._h_update_roadmap() got an unexpected keyword argument 'id'",
-  "expected_params": "(action, item=None)",
-  "provided_params`
+  "error": "Unknown action: test. Use 'read', 'add', or 'complete'."
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -7957,9 +8013,8 @@ No peers discovered.
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'update_roadmap': register.<locals>._h_update_roadmap() got an unexpected keyword argument 'id'",
-  "expected_params": "(action, item=None)",
-  "provided_params`
+  "error": "Unknown action: wrong_type. Use 'read', 'add', or 'complete'."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8001,28 +8056,25 @@ No peers discovered.
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `add_loop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `archive_stale` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `close_commitment` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `commitment_health` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `export` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `list_commitments` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `open_loops` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `patterns` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `pr_watch` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `satellite` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `scan_commitments` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `weekly_challenge` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `add_loop` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `archive_stale` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `close_commitment` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `commitment_health` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `export` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_commitments` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `open_loops` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `patterns` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `pr_watch` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `satellite` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `scan_commitments` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `weekly_challenge` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `orchestration.ORCH_ROUTER.add_loop`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'add_loop': register.<locals>._h_add_loop() got an unexpected keyword argument 'name'",
-  "expected_params": "(description, loop_type='task', priority=3)",
-  "p`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -8030,12 +8082,9 @@ No peers discovered.
   "error": "Invalid params for action 'add_loop': register.<locals>._h_add_loop() missing 1 required positional argument: 'description'",
   "expected_params": "(description, loop_type='task', priori`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'add_loop': register.<locals>._h_add_loop() got an unexpected keyword argument 'id'",
-  "expected_params": "(description, loop_type='task', priority=3)",
-  "pro`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8082,14 +8131,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'archive_stale': register.<locals>._h_archive_stale() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8126,11 +8170,9 @@ No peers discovered.
 
 #### `orchestration.ORCH_ROUTER.close_commitment`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'close_commitment': register.<locals>._h_close_commitment() missing 2 required positional arguments: 'commitment_id' and 'method'",
-  "expected_params": "(commi`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -8138,12 +8180,9 @@ No peers discovered.
   "error": "Invalid params for action 'close_commitment': register.<locals>._h_close_commitment() missing 2 required positional arguments: 'commitment_id' and 'method'",
   "expected_params": "(commi`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'close_commitment': register.<locals>._h_close_commitment() got an unexpected keyword argument 'id'",
-  "expected_params": "(commitment_id, method)",
-  "provide`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8190,13 +8229,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'commitment_health': register.<locals>._h_commitment_health() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "i`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8233,29 +8268,17 @@ No peers discovered.
 
 #### `orchestration.ORCH_ROUTER.export`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'export': register.<locals>._h_export() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'export': register.<locals>._h_export() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8292,23 +8315,17 @@ No peers discovered.
 
 #### `orchestration.ORCH_ROUTER.list_commitments`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_commitments': register.<locals>._h_list_commitments() got an unexpected keyword argument 'limit'",
-  "expected_params": "(tier=None)",
-  "provided_params"`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_commitments': register.<locals>._h_list_commitments() got an unexpected keyword argument 'id'",
-  "expected_params": "(tier=None)",
-  "provided_params": [`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8353,15 +8370,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'metrics': register.<locals>._h_metrics() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-   `
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8406,12 +8417,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'open_loops': register.<locals>._h_open_loops() got an unexpected keyword argument 'id'",
-  "expected_params": "(type_filter=None, tier_filter=None)",
-  "provid`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8456,14 +8464,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'patterns': register.<locals>._h_patterns() got an unexpected keyword argument 'id'",
-  "expected_params": "(action='list')",
-  "provided_params": [
-    "id",
- `
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8518,12 +8521,14 @@ No peers discovered.
   "dry_run": false
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pr_watch': register.<locals>._h_pr_watch() got an unexpected keyword argument 'id'",
-  "expected_params": "(threshold_days=None, dry_run=False)",
-  "provided_p`
+  "stale_count": 0,
+  "by_classification": {},
+  "relays_emitted": [],
+  "dry_run": "not_a_bool"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8577,12 +8582,11 @@ No peers discovered.
   "success": true,
   "data": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'satellite': register.<locals>._h_satellite() got an unexpected keyword argument 'id'",
-  "expected_params": "(detail_level='standard')",
-  "provided_params": [`
+  "success": true,
+  "data": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8629,13 +8633,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'scan_commitments': register.<locals>._h_scan_commitments() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id"`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8680,12 +8680,9 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'weekly_challenge': register.<locals>._h_weekly_challenge() got an unexpected keyword argument 'id'",
-  "expected_params": "(action='get', challenge_id=None)",
-`
+- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8725,50 +8722,53 @@ No peers discovered.
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `autopilot_sprint` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `autopilot_sprint_v2` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `autopilot_sprint_v2` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `force_assign` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `halt_sprint` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `mission_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `halt_sprint` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `mission_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `orchestrate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `resume_sprint` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `resume_sprint` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `slot_complete` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `slot_exhaust` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `start_mission` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `status_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `slot_exhaust` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `start_mission` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `status_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `orchestration.SLOTS_ROUTER.autopilot_sprint`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782436055_2e8c",
+  "sprint_id": "sprint_1782436716_109a",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T06:37:35+0530"
+  "timestamp": "2026-06-26T06:48:36+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782436055_4569",
+  "sprint_id": "sprint_1782436716_f983",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T06:37:35+0530"
+  "timestamp": "2026-06-26T06:48:36+0530"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'autopilot_sprint': register.<locals>._h_autopilot_sprint() got an unexpected keyword argument 'id'",
-  "expected_params": "(slots=None, mode='auto', halt_on_bl`
+  "sprint_id": "sprint_1782436716_ba3d",
+  "status": "ERROR",
+  "error": "No active slots found",
+  "timestamp": "2026-06-26T06:48:36+0530"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782436055_e388",
+  "sprint_id": "sprint_1782436716_1445",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T06:37:35+0530"
+  "timestamp": "2026-06-26T06:48:36+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -8804,7 +8804,7 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782436055_df1276
+- *Result preview:* `🚀 Sprint Report: sprint_1782436716_a466b1
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8818,7 +8818,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782436055_054a19
+- *Result preview:* `🚀 Sprint Report: sprint_1782436716_663b54
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8830,15 +8830,13 @@ Duration: 0.0s
    ├── Failed: 0
  `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'autopilot_sprint_v2': register.<locals>._h_autopilot_sprint_v2() got an unexpected keyword argument 'id'",
-  "expected_params": "(slots=None, mode='auto', halt`
+- *Result preview:* `❌ Sprint error: 'int' object has no attribute 'lower'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782436055_73fbaa
+- *Result preview:* `🚀 Sprint Report: sprint_1782436716_9bc301
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8883,9 +8881,7 @@ Duration: 0.0s
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'force_assign': register.<locals>._h_force_assign() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, acknowledge_risk=False)",`
+- *Result preview:* `{"error": "Slot test not found"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -8895,9 +8891,7 @@ Duration: 0.0s
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'force_assign': register.<locals>._h_force_assign() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, acknowledge_risk=False)",`
+- *Result preview:* `{"error": "Slot wrong_type not found"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8939,7 +8933,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782436055_73fbaa
+   Sprint ID: sprint_1782436716_9bc301
    Reason: User requested halt
    Status: halt_requested
    
@@ -8948,23 +8942,25 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782436055_73fbaa
+   Sprint ID: sprint_1782436716_9bc301
    Reason: User requested halt
    Status: halt_requested
    
 💡 Sprint will complete current task then stop gracefully`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'halt_sprint': register.<locals>._h_halt_sprint() got an unexpected keyword argument 'id'",
-  "expected_params": "(reason='User requested halt')",
-  "provided_p`
+- *Result preview:* `⛔ Sprint Halt Requested
+   Sprint ID: sprint_1782436716_9bc301
+   Reason: 12345
+   Status: halt_requested
+   
+💡 Sprint will complete current task then stop gracefully`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782436055_73fbaa
+   Sprint ID: sprint_1782436716_9bc301
    Reason: User requested halt
    Status: halt_requested
    
@@ -9009,13 +9005,9 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ No mission found`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'mission_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(mission_id=None)",
-  "provided_params": [
-    "i`
+- *Result preview:* `❌ No mission found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9069,8 +9061,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'orchestrate': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id=None, model=None, alias=None, mode='auto')"`
+  "error": "Action 'orchestrate' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
+  "module": "nucleus_slots"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9142,13 +9135,19 @@ Duration: 0.0s
 
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'resume_sprint': register.<locals>._h_resume_sprint() got an unexpected keyword argument 'id'",
-  "expected_params": "(sprint_id=None)",
-  "provided_params": [
-`
+- *Result preview:* `🚀 Sprint Report: wrong_type
+══════════════════════════════════════════════════
+Status: FAILED
+Mode: auto
+Duration: 0.0s
+
+📊 TASKS
+   ├── Total: 0
+   ├── Completed: 0
+   ├── Failed: 0
+   └── Remaining: `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9200,8 +9199,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_complete': register.<locals>._h_slot_complete() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, outcome='success', note`
+  "error": "Action 'slot_complete' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
+  "module": "nucleus_slots"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -9212,8 +9212,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_complete': register.<locals>._h_slot_complete() got an unexpected keyword argument 'id'",
-  "expected_params": "(slot_id, task_id, outcome='success', note`
+  "error": "Action 'slot_complete' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
+  "module": "nucleus_slots"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9252,12 +9253,9 @@ Duration: 0.0s
 
 #### `orchestration.SLOTS_ROUTER.slot_exhaust`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'slot_exhaust': register.<locals>._h_slot_exhaust() missing 1 required positional argument: 'slot_id'",
-  "expected_params": "(slot_id, reset_hours=5)",
-  "prov`
+- *Result preview:* `Error: Slot test not found`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -9269,9 +9267,11 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_exhaust': register.<locals>._h_slot_exhaust() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'slot_exhaust': unsupported operand type(s) for +: 'float' and 'str'",
   "expected_params": "(slot_id, reset_hours=5)",
-  "provided_param`
+  "provided_params": [
+    "slot_id",
+  `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9311,11 +9311,17 @@ Duration: 0.0s
 
 #### `orchestration.SLOTS_ROUTER.start_mission`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'start_mission': register.<locals>._h_start_mission() missing 3 required positional arguments: 'name', 'goal', and 'task_ids'",
-  "expected_params": "(name, goa`
+- *Result preview:* `✅ Mission Started
+   ID: mission_1782436716_9f86d0
+   Name: test
+   Goal: test
+   Tasks: 4
+   Budget: $10.00
+   Time Limit: 4.0h
+   
+💡 Use brain_mission_status() to track progress`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -9323,11 +9329,9 @@ Duration: 0.0s
   "error": "Invalid params for action 'start_mission': register.<locals>._h_start_mission() missing 3 required positional arguments: 'name', 'goal', and 'task_ids'",
   "expected_params": "(name, goa`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'start_mission': register.<locals>._h_start_mission() got an unexpected keyword argument 'id'",
-  "expected_params": "(name, goal, task_ids, slot_ids=None, budg`
+- *Result preview:* `❌ Mission error: Unknown format code 'f' for object of type 'str'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9368,31 +9372,19 @@ Duration: 0.0s
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:37 IST      ║
-╠══════════════════════════════════════════════════════════════╣
-║ AGENT SLOTS `
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:37 IST      ║
-╠══════════════════════════════════════════════════════════════╣
-║ AGENT SLOTS `
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status_dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(detail_level='standard')",
-  "provided_params"`
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:37 IST      ║
-╠══════════════════════════════════════════════════════════════╣
-║ AGENT SLOTS `
+- *Result preview:* `Dashboard error: '<' not supported between instances of 'str' and 'int'`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -9427,21 +9419,21 @@ Duration: 0.0s
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `agent_cost_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `check_kill_switch` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `check_protocol` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `dispatch_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `get_handoffs` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `agent_cost_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `check_kill_switch` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `check_protocol` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `dispatch_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `get_handoffs` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `get_llm_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `mark_high_impact` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `pause_notifications` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `rate_limit_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `record_feedback` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `record_interaction` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `request_handoff` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `resume_notifications` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `set_llm_tier` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `value_ratio` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `mark_high_impact` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `pause_notifications` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `rate_limit_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `record_feedback` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `record_interaction` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `request_handoff` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `resume_notifications` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `set_llm_tier` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `value_ratio` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `orchestration.TELEM_ROUTER.agent_cost_dashboard`
 
@@ -9449,51 +9441,49 @@ Duration: 0.0s
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 0,
+    "total_allowed": 2,
     "total_limited": 0,
-    "tokens_available": 10.0,
+    "tokens_available": 8.212104320526123,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {}
-  },
-  "cost_summary": {
-  `
+    "spawns_by_persona": {
+      "wrong_ty`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 0,
+    "total_allowed": 2,
     "total_limited": 0,
-    "tokens_available": 10.0,
+    "tokens_available": 8.212104320526123,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {}
-  },
-  "cost_summary": {
-  `
+    "spawns_by_persona": {
+      "wrong_ty`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'agent_cost_dashboard': register.<locals>._h_agent_cost_dashboard() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-`
+  "spawn_limiter": {
+    "total_allowed": 2,
+    "total_limited": 0,
+    "tokens_available": 8.212104320526123,
+    "capacity": 10.0,
+    "fill_rate": 2.0,
+    "spawns_by_persona": {
+      "wrong_ty`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 0,
+    "total_allowed": 2,
     "total_limited": 0,
-    "tokens_available": 10.0,
+    "tokens_available": 8.212104320526123,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {}
-  },
-  "cost_summary": {
-  `
+    "spawns_by_persona": {
+      "wrong_ty`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -9542,14 +9532,14 @@ Duration: 0.0s
 **Days Inactive:** 0
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'check_kill_switch': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "que`
+- *Result preview:* `## 🛑 Kill Switch Status (MDR_010)
+
+**Action:** continue
+**Message:** N/A
+**Days Inactive:** 0
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9589,12 +9579,14 @@ Duration: 0.0s
 
 #### `orchestration.TELEM_ROUTER.check_protocol`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_protocol': register.<locals>._h_check_protocol() missing 1 required positional argument: 'agent_id'",
-  "expected_params": "(agent_id)",
-  "provided_para`
+  "compliant": true,
+  "warnings": [
+    "Protocol definition not found - assuming compliant"
+  ]
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -9603,13 +9595,14 @@ Duration: 0.0s
   "expected_params": "(agent_id)",
   "provided_para`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_protocol': register.<locals>._h_check_protocol() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id)",
-  "provided_params": [
-    `
+  "compliant": true,
+  "warnings": [
+    "Protocol definition not found - assuming compliant"
+  ]
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9650,50 +9643,58 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "total_dispatches": 1023,
-  "total_errors": 764,
-  "error_rate": 0.7468230694037146,
+  "total_dispatches": 1008,
+  "total_errors": 553,
+  "error_rate": 0.5486111111111112,
   "facades": {
-    "nucleus_governance": {
-      "calls": 134,
-      "errors": 114
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
     },
-    "nucleus_features`
+    "nucleus_route": {
+      `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "total_dispatches": 1024,
-  "total_errors": 764,
-  "error_rate": 0.74609375,
+  "total_dispatches": 1009,
+  "total_errors": 553,
+  "error_rate": 0.5480673934588701,
   "facades": {
-    "nucleus_governance": {
-      "calls": 134,
-      "errors": 114
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
     },
-    "nucleus_features": {
-   `
+    "nucleus_route": {
+      `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'dispatch_metrics': register.<locals>._h_dispatch_metrics() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id"`
+  "total_dispatches": 1010,
+  "total_errors": 553,
+  "error_rate": 0.5475247524752476,
+  "facades": {
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
+    },
+    "nucleus_route": {
+      `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "total_dispatches": 1026,
-  "total_errors": 765,
-  "error_rate": 0.7456140350877193,
+  "total_dispatches": 1011,
+  "total_errors": 553,
+  "error_rate": 0.5469831849653808,
   "facades": {
-    "nucleus_governance": {
-      "calls": 134,
-      "errors": 114
+    "nucleus_audit": {
+      "calls": 28,
+      "errors": 8
     },
-    "nucleus_features`
+    "nucleus_route": {
+      `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -9724,29 +9725,52 @@ Duration: 0.0s
 
 #### `orchestration.TELEM_ROUTER.get_handoffs`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_handoffs': register.<locals>._h_get_handoffs() got an unexpected keyword argument 'limit'",
-  "expected_params": "(agent_id=None)",
-  "provided_params": [
-`
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-9921",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "test",
+      "priority": 3,
+    `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{"handoffs": [], "message": "No handoffs found"}`
+- *Result preview:* `{
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-9921",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "test",
+      "priority": 3,
+    `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_handoffs': register.<locals>._h_get_handoffs() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id=None)",
-  "provided_params": [
-   `
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-96a7",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "wrong_type",
+      "priority": "`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{"handoffs": [], "message": "No handoffs found"}`
+- *Result preview:* `{
+  "handoffs": [
+    {
+      "id": "handoff-1782436363-9921",
+      "timestamp": "2026-06-26T06:42:43+0530",
+      "from_agent": "current_session",
+      "to_agent": "test",
+      "priority": 3,
+    `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -9796,11 +9820,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_llm_status': register.<locals>._h_get_llm_status() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'get_llm_status': unsupported operand type(s) for /: 'str' and 'str'",
   "expected_params": "()",
-  "provided_params": [
-    "id",
-  `
+  "provided_params": []
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9847,14 +9870,9 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Marked as high-impact closure. Value ratio updated.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'mark_high_impact': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "quer`
+- *Result preview:* `✅ Marked as high-impact closure. Value ratio updated.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9897,14 +9915,9 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `🛑 Notifications paused. Use brain_resume_notifications() to restart.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'pause_notifications': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "q`
+- *Result preview:* `🛑 Notifications paused. Use brain_resume_notifications() to restart.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -9957,13 +9970,14 @@ Duration: 0.0s
   "facades": {}
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'rate_limit_status': register.<locals>._h_rate_limit_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "i`
+  "enabled": false,
+  "max_calls": 200,
+  "window_seconds": 60,
+  "facades": {}
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10003,11 +10017,9 @@ Duration: 0.0s
 
 #### `orchestration.TELEM_ROUTER.record_feedback`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'record_feedback': register.<locals>.<lambda>() missing 2 required positional arguments: 'notification_type' and 'score'",
-  "expected_params": "(notification_t`
+- *Result preview:* `Error: '>=' not supported between instances of 'str' and 'int'`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -10015,12 +10027,9 @@ Duration: 0.0s
   "error": "Invalid params for action 'record_feedback': register.<locals>.<lambda>() missing 2 required positional arguments: 'notification_type' and 'score'",
   "expected_params": "(notification_t`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'record_feedback': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(notification_type, score)",
-  "provided_params"`
+- *Result preview:* `Error: '>=' not supported between instances of 'str' and 'int'`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10065,14 +10074,9 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Interaction recorded`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'record_interaction': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "qu`
+- *Result preview:* `✅ Interaction recorded`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10107,11 +10111,19 @@ Duration: 0.0s
 
 #### `orchestration.TELEM_ROUTER.request_handoff`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'request_handoff': register.<locals>._h_request_handoff() missing 3 required positional arguments: 'to_agent', 'context', and 'request'",
-  "expected_params": "`
+- *Result preview:* `
+📬 HANDOFF REQUEST
+━━━━━━━━━━━━━━━━━━
+TO: test
+PRIORITY: P3
+CONTEXT: {}
+REQUEST: test
+ARTIFACTS: None
+━━━━━━━━━━━━━━━━━━
+ID: handoff-1782436716-5da8
+Status: Pending - will appear in target agent's ses`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -10119,11 +10131,18 @@ Duration: 0.0s
   "error": "Invalid params for action 'request_handoff': register.<locals>._h_request_handoff() missing 3 required positional arguments: 'to_agent', 'context', and 'request'",
   "expected_params": "`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'request_handoff': register.<locals>._h_request_handoff() got an unexpected keyword argument 'id'",
-  "expected_params": "(to_agent, context, request, priority=`
+- *Result preview:* `
+📬 HANDOFF REQUEST
+━━━━━━━━━━━━━━━━━━
+TO: wrong_type
+PRIORITY: Pnot_a_number
+CONTEXT: not_a_dict
+REQUEST: wrong_type
+ARTIFACTS: w, r, o, n, g, _, t, y, p, e
+━━━━━━━━━━━━━━━━━━
+ID: handoff-1782436716-2`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10168,14 +10187,9 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Notifications resumed. Interaction recorded.`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'resume_notifications': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "`
+- *Result preview:* `✅ Notifications resumed. Interaction recorded.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10210,13 +10224,9 @@ Duration: 0.0s
 
 #### `orchestration.TELEM_ROUTER.set_llm_tier`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_llm_tier': register.<locals>._h_set_llm_tier() missing 1 required positional argument: 'tier'",
-  "expected_params": "(tier)",
-  "provided_params": []
-}`
+- *Result preview:* `❌ Invalid tier 'test'. Valid tiers: premium, standard, economy, local_paid, local_free`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -10226,14 +10236,9 @@ Duration: 0.0s
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'set_llm_tier': register.<locals>._h_set_llm_tier() got an unexpected keyword argument 'id'",
-  "expected_params": "(tier)",
-  "provided_params": [
-    "id",
-  `
+- *Result preview:* `❌ Invalid tier 'wrong_type'. Valid tiers: premium, standard, economy, local_paid, local_free`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10277,7 +10282,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 36
+**High Impact Closures:** 48
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10287,27 +10292,27 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 36
+**High Impact Closures:** 48
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'value_ratio': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+- *Result preview:* `## 📊 Value Ratio (MDR_010)
+
+**Notifications Sent:** 0
+**High Impact Closures:** 48
+**Ratio:** None
+**Verdict:** No notifications sent yet
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 36
+**High Impact Closures:** 48
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10346,7 +10351,7 @@ Duration: 0.0s
 | `ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 
 #### `relay.ack`
 
@@ -10369,10 +10374,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'ack': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(message_ids=None, role=None)",
-  "provided_params": [
-    "`
+  "error": "Action 'ack' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucleu`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10437,9 +10440,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'inbox': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(role=None, unread_only=True, limit=50)",
-  "provided_para`
+  "error": "Action 'inbox' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucl`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10486,8 +10488,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'post': register.<locals>.<lambda>() got an unexpected keyword argument 'message'",
-  "expected_params": "(to=None, subject='', body=None, sender=None, priority`
+  "sent": false,
+  "error": "missing_to_field"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -10499,8 +10502,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'post': register.<locals>.<lambda>() got an unexpected keyword argument 'query'",
-  "expected_params": "(to=None, subject='', body=None, sender=None, priority='`
+  "error": "Action 'post' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucle`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10561,14 +10564,15 @@ Duration: 0.0s
   "resolved_inbox_dir": "claude_code_main"
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(role=None)",
-  "provided_params": [
-    "id",
-    "query`
+  "is_http_mode": false,
+  "relay_url_set": false,
+  "bearer_set": false,
+  "canonical_role": "wrong_type",
+  "resolved_inbox_dir": "wrong_type"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10614,32 +10618,32 @@ Duration: 0.0s
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `archive_resolved` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `check_recent` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `archive_resolved` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `check_recent` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `checkpoint` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `conversation_stats` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `current` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `detect_splits` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `emit_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `conversation_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `current` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `detect_splits` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `emit_event` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `end` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `garbage_collect` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `garbage_collect` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `get_state` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `handoff_summary` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `heartbeat` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `ingest_conversations` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `list_agents` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_agents` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `list_conversations` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `propose_merges` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `read_events` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `resume` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `propose_merges` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `read_events` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `register` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `resume` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `resume_checkpoint` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `save` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `save` | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `search_conversations` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `start` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `unregister` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `update_state` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `start` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `unregister` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `update_state` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 
 #### `sessions.archive_resolved`
 
@@ -10667,14 +10671,17 @@ Duration: 0.0s
     "moved_files": [],
     "skipped_files": `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'archive_resolved': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "quer`
+  "success": true,
+  "data": {
+    "success": true,
+    "files_moved": 0,
+    "files_skipped": 0,
+    "archive_path": "/tmp/test-brain/archive/resolved",
+    "moved_files": [],
+    "skipped_files": `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10724,7 +10731,9 @@ Duration: 0.0s
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -10734,27 +10743,33 @@ Duration: 0.0s
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
   },
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_recent': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-`
+  "success": true,
+  "data": {
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -10793,8 +10808,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'checkpoint': register.<locals>.<lambda>() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id, step=None, progress_percent=None,`
+  "success": false,
+  "data": null,
+  "error": "\u274c Checkpoint failed: Task test-id not found"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -10805,8 +10822,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'checkpoint': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, step=None, progress_percent=None, context=N`
+  "success": false,
+  "data": null,
+  "error": "\u274c Checkpoint failed: Task 12345 not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10869,14 +10888,17 @@ Duration: 0.0s
     "total_reasoning_chains": 0,
     "corpus_s`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'conversation_stats': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "qu`
+  "success": true,
+  "data": {
+    "total_sessions_raw": 721,
+    "total_sessions_ingested": 721,
+    "total_turns": 7535,
+    "total_preferences": 81,
+    "total_reasoning_chains": 0,
+    "corpus_s`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10926,7 +10948,9 @@ Duration: 0.0s
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -10936,27 +10960,33 @@ Duration: 0.0s
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
   },
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'current': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "`
+  "success": true,
+  "data": {
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_064525",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -11012,12 +11042,15 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'detect_splits': register.<locals>._h_detect_splits() got an unexpected keyword argument 'id'",
-  "expected_params": "(worktree_path=None)",
-  "provided_params"`
+  "success": true,
+  "data": {
+    "splits": []
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11060,11 +11093,15 @@ Duration: 0.0s
 
 #### `sessions.emit_event`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'emit_event': register.<locals>._h_emit() missing 3 required positional arguments: 'event_type', 'emitter', and 'data'",
-  "expected_params": "(event_type, emit`
+  "success": true,
+  "data": {
+    "event_id": null
+  },
+  "error": null
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11072,12 +11109,15 @@ Duration: 0.0s
   "error": "Invalid params for action 'emit_event': register.<locals>._h_emit() missing 3 required positional arguments: 'event_type', 'emitter', and 'data'",
   "expected_params": "(event_type, emit`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'emit_event': register.<locals>._h_emit() got an unexpected keyword argument 'id'",
-  "expected_params": "(event_type, emitter, data, description='')",
-  "provi`
+  "success": true,
+  "data": {
+    "event_id": null
+  },
+  "error": null
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11122,10 +11162,12 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 42 tasks done, 1 tasks created, 1419 total events",
+    "summary": "test",
     "activity": {
-      "total_events": 1419,
-      "`
+      "total_events": 2058,
+      "tasks_completed": 60,
+      "tasks_claimed": 0,
+      "tasks_created":`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11133,17 +11175,18 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 42 tasks done, 1 tasks created, 1426 total events",
+    "summary": "Session ended (neutral): 60 tasks done, 11 tasks created, 2065 total events",
     "activity": {
-      "total_events": 1426,
-      "`
+      "total_events": 2065,
+      `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'end': register.<locals>._h_end() got an unexpected keyword argument 'id'",
-  "expected_params": "(summary='', learnings='', mood='neutral')",
-  "provided_param`
+  "success": false,
+  "data": null,
+  "error": "'int' object is not subscriptable"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11151,10 +11194,10 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 42 tasks done, 1 tasks created, 1432 total events",
+    "summary": "Session ended (neutral): 60 tasks done, 11 tasks created, 2071 total events",
     "activity": {
-      "total_events": 1432,
-      "`
+      "total_events": 2071,
+      `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -11213,12 +11256,18 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'garbage_collect': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(max_age_hours=72, dry_run=False)",
-  "provided_`
+  "success": true,
+  "data": {
+    "success": true,
+    "archived": 0,
+    "kept": 0,
+    "message": "No tasks.json found"
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11267,11 +11316,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_state': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
+  "error": "Invalid params for action 'get_state': make_helpers.<locals>.<lambda>() takes 0 positional arguments but 1 was given",
   "expected_params": "(path=None)",
-  "provided_params": [
-    "limit"
-  `
+  "provided_params": []
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11284,11 +11332,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_state': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'get_state': make_helpers.<locals>.<lambda>() takes 0 positional arguments but 1 was given",
   "expected_params": "(path=None)",
   "provided_params": [
-    "id",
-    "qu`
+    "pat`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11332,8 +11379,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'handoff_summary': register.<locals>.<lambda>() missing 2 required positional arguments: 'task_id' and 'summary'",
-  "expected_params": "(task_id, summary, key_`
+  "success": false,
+  "data": null,
+  "error": "\u274c Summary generation failed: Task test-id not found"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11344,8 +11393,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'handoff_summary': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, summary, key_decisions=None, handoff_n`
+  "success": false,
+  "data": null,
+  "error": "\u274c Summary generation failed: Task 12345 not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11387,9 +11438,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'heartbeat': register.<locals>._h_heartbeat() missing 1 required positional argument: 'session_id'",
-  "expected_params": "(session_id)",
-  "provided_params": [`
+  "success": false,
+  "data": null,
+  "error": "session test not registered"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11401,11 +11453,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'heartbeat': register.<locals>._h_heartbeat() got an unexpected keyword argument 'id'",
-  "expected_params": "(session_id)",
-  "provided_params": [
-    "id",
-  `
+  "success": false,
+  "data": null,
+  "error": "session wrong_type not registered"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11455,7 +11506,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 250
+    "duration_ms": 578
   },
   "error": nu`
 
@@ -11469,15 +11520,15 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 254
+    "duration_ms": 881
   },
   "error": nu`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'ingest_conversations': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(mode='incremental', session_id='', limit=0`
+  "error": "Invalid params for action 'ingest_conversations': '>=' not supported between instances of 'int' and 'str'",
+  "expected_params": "(mode='incremental', session_id='', limit=0, dry_run=Fal`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11489,7 +11540,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 233
+    "duration_ms": 884
   },
   "error": nu`
 
@@ -11524,47 +11575,57 @@ Duration: 0.0s
 
 #### `sessions.list`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+  "success": true,
+  "data": {
+    "sessions": [
+      {
+        "id": "not_a_dict_20260626_064525",
+        "context": "not_a_dict",
+        "created_at": "2026-06-26T06:45:25+0530"
+      },
+      `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [],
-    "total": 0
-  },
-  "error": null
-}`
+    "sessions": [
+      {
+        "id": "not_a_dict_20260626_064525",
+        "context": "not_a_dict",
+        "created_at": "2026-06-26T06:45:25+0530"
+      },
+      `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "lim`
+  "success": true,
+  "data": {
+    "sessions": [
+      {
+        "id": "not_a_dict_20260626_064525",
+        "context": "not_a_dict",
+        "created_at": "2026-06-26T06:45:25+0530"
+      },
+      `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [],
-    "total": 0
-  },
-  "error": null
-}`
+    "sessions": [
+      {
+        "id": "not_a_dict_20260626_064525",
+        "context": "not_a_dict",
+        "created_at": "2026-06-26T06:45:25+0530"
+      },
+      `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -11597,11 +11658,15 @@ Duration: 0.0s
 
 #### `sessions.list_agents`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_agents': register.<locals>._h_list_agents() got an unexpected keyword argument 'limit'",
-  "expected_params": "(worktree_path=None, role=None, alive_only=`
+  "success": true,
+  "data": {
+    "agents": []
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11613,11 +11678,15 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_agents': register.<locals>._h_list_agents() got an unexpected keyword argument 'id'",
-  "expected_params": "(worktree_path=None, role=None, alive_only=Tru`
+  "success": true,
+  "data": {
+    "agents": []
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11685,9 +11754,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_conversations': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'list_conversations': slice indices must be integers or None or have an __index__ method",
   "expected_params": "(limit=50, offset=0, sort='recent')",
-  "prov`
+  "provid`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11749,14 +11818,14 @@ Duration: 0.0s
     "total_proposals": 0,
     "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'propose_merges': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query"`
+  "success": true,
+  "data": {
+    "success": true,
+    "total_proposals": 0,
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11798,14 +11867,14 @@ Duration: 0.0s
 
 #### `sessions.read_events`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'read_events': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=10)",
-  "provided_params": [
-    "id"
-  ]
+  "success": true,
+  "data": {
+    "events": []
+  },
+  "error": null
 }`
 
 **missing_params** — ✅ pass
@@ -11818,14 +11887,15 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'read_events': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(limit=10)",
-  "provided_params": [
-    "id",
-    "q`
+  "success": true,
+  "data": {
+    "events": []
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11868,11 +11938,18 @@ Duration: 0.0s
 
 #### `sessions.register`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'register': register.<locals>._h_register() missing 4 required positional arguments: 'session_id', 'agent', 'role', and 'provider'",
-  "expected_params": "(sess`
+  "success": true,
+  "data": {
+    "session_id": "test",
+    "agent": "test",
+    "role": "test",
+    "worktree_path": null,
+    "pid": 6000,
+    "registered_at": "2026-06-26T01:18:41.568264Z",
+    `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11883,8 +11960,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'register': register.<locals>._h_register() got an unexpected keyword argument 'id'. Did you mean 'pid'?",
-  "expected_params": "(session_id, agent, role, provi`
+  "success": false,
+  "data": null,
+  "error": "invalid literal for int() with base 10: 'not_a_number'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11943,14 +12022,15 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'resume': register.<locals>._h_resume() got an unexpected keyword argument 'id'",
-  "expected_params": "(session_id=None)",
-  "provided_params": [
-    "id",
-   `
+  "success": true,
+  "data": {
+    "error": "Session 'wrong_type' not found"
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11996,10 +12076,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'resume_checkpoint': register.<locals>.<lambda>() missing 1 required positional argument: 'task_id'",
-  "expected_params": "(task_id)",
-  "provided_params": []
-`
+  "success": false,
+  "data": null,
+  "error": "\u274c Resume failed: Task test-id not found"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12012,11 +12092,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'resume_checkpoint': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id)",
-  "provided_params": [
-    "id",
- `
+  "success": false,
+  "data": null,
+  "error": "\u274c Resume failed: Task 12345 not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12060,8 +12139,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'save': register.<locals>._h_save() missing 1 required positional argument: 'context'",
-  "expected_params": "(context, active_task=None, pending_decisions=None`
+  "success": false,
+  "data": null,
+  "error": "'dict' object has no attribute 'lower'"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12069,11 +12150,15 @@ Duration: 0.0s
   "error": "Invalid params for action 'save': register.<locals>._h_save() missing 1 required positional argument: 'context'",
   "expected_params": "(context, active_task=None, pending_decisions=None`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'save': register.<locals>._h_save() got an unexpected keyword argument 'id'",
-  "expected_params": "(context, active_task=None, pending_decisions=None, breadcru`
+  "success": true,
+  "data": {
+    "success": true,
+    "session_id": "not_a_dict_20260626_064841",
+    "context": "not_a_dict",
+    "message": "Session saved. Resume later with: nucleus sessions re`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12117,11 +12202,12 @@ Duration: 0.0s
 - *Result preview:* `{
   "success": true,
   "data": {
-    "results": [
-      {
-        "turn_id": "turn-42490dea55f6",
-        "timestamp": "2026-06-25T17:45:05.961790+00:00",
-        "intent": "Is this the final nudge fr`
+    "results": [],
+    "total_matches": 0,
+    "query": "test"
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12138,8 +12224,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'search_conversations': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(query='', limit=20, session_id='', date_fr`
+  "error": "Action 'search_conversations' failed: 'int' object has no attribute 'lower'",
+  "module": "nucleus_sessions"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12198,15 +12285,12 @@ Duration: 0.0s
   "data": {
     "message": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'start': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-    "li`
+  "success": true,
+  "data": {
+    "message": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12246,12 +12330,16 @@ Duration: 0.0s
 
 #### `sessions.unregister`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'unregister': register.<locals>._h_unregister() missing 1 required positional argument: 'session_id'",
-  "expected_params": "(session_id)",
-  "provided_params":`
+  "success": true,
+  "data": {
+    "session_id": "test",
+    "removed": true
+  },
+  "error": null
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12260,14 +12348,16 @@ Duration: 0.0s
   "expected_params": "(session_id)",
   "provided_params":`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'unregister': register.<locals>._h_unregister() got an unexpected keyword argument 'id'",
-  "expected_params": "(session_id)",
-  "provided_params": [
-    "id",
-`
+  "success": true,
+  "data": {
+    "session_id": "wrong_type",
+    "removed": false
+  },
+  "error": null
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12307,14 +12397,15 @@ Duration: 0.0s
 
 #### `sessions.update_state`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'update_state': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(updates)",
-  "provided_params": [
-    "id",
-    "n`
+  "success": true,
+  "data": {
+    "message": null
+  },
+  "error": null
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12324,14 +12415,15 @@ Duration: 0.0s
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'update_state': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(updates)",
-  "provided_params": [
-    "id",
-    "q`
+  "success": true,
+  "data": {
+    "message": null
+  },
+  "error": null
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12375,77 +12467,76 @@ Duration: 0.0s
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
 | `add_channel` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `audit_pair` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `check_deploy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `complete_deploy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `evaluate_triggers` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `get_triggers` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `identify_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `list_artifacts` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `list_channels` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `audit_pair` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `check_deploy` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `complete_deploy` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `evaluate_triggers` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `get_triggers` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `identify_agent` | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `list_artifacts` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_channels` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `marketplace_alert` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_audit` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_can_call` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_can_call` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_compare` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_dashboard` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `marketplace_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `marketplace_diff` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_export` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_export` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `marketplace_federation_proxy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_federation_register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_federation_sync` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_history` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_promote` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_quarantine` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_recommend` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_search` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_promote` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_quarantine` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_recommend` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `marketplace_search` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `marketplace_subscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_subscriptions` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_trends` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `marketplace_unsubscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_whoami` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `notify` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_whoami` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `notify` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `pair_fire` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `pair_register` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `pair_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `pair_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `read_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `read_artifact` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `relay_ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_classify_skip` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_clear` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `relay_event_stats` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_event_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `relay_listen` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_listen` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `relay_log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_poll_start` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_poll_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_poll_stop` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_post` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_poll_start` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `relay_poll_status` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `relay_poll_stop` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `relay_post` | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `relay_skip_review` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `relay_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `relay_wait` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `saturation_baselines` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `saturation_check` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `shared_list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `shared_read` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `shared_write` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `smoke_test` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `start_deploy_poll` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `relay_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `relay_wait` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `saturation_baselines` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `saturation_check` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `shared_list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `shared_read` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `shared_write` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `smoke_test` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `start_deploy_poll` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `sync_auto` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `sync_now` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `sync_resolve` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `sync_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `sync_resolve` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `sync_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `test_channel` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `trigger_agent` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `write_artifact` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `trigger_agent` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `write_artifact` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 
 #### `sync.add_channel`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'add_channel': register.<locals>.<lambda>() missing 1 required positional argument: 'channel_type'",
-  "expected_params": "(channel_type, **kwargs)",
-  "provide`
+  "error": "Unknown channel type: file"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12457,9 +12548,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'add_channel': register.<locals>.<lambda>() missing 1 required positional argument: 'channel_type'",
-  "expected_params": "(channel_type, **kwargs)",
-  "provide`
+  "error": "Unknown channel type: wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12499,13 +12589,18 @@ Duration: 0.0s
 
 #### `sync.audit_pair`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_pair': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(window_hours=24.0)",
-  "provided_params": [
-    "`
+  "ok": true,
+  "data": {
+    "window_hours": 24.0,
+    "events_in_window": 0,
+    "malformed_lines_skipped": 30,
+    "pair_rollup": [],
+    "utilization": []
+  }
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12523,10 +12618,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'audit_pair': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(window_hours=24.0)",
-  "provided_params": [
-    "id"`
+  "error": "Action 'audit_pair' failed: could not convert string to float: 'wrong_type'",
+  "module": "nucleus_sync"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12572,12 +12666,15 @@ Duration: 0.0s
 
 #### `sync.check_deploy`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_deploy': register.<locals>.<lambda>() missing 1 required positional argument: 'service_id'",
-  "expected_params": "(service_id)",
-  "provided_params": []`
+  "poll_id": "poll-1782436646-68f3cf28",
+  "service_id": "test",
+  "commit_sha": null,
+  "status": "polling",
+  "elapsed_minutes": 1.3,
+  "message": "Polling for 1.3 minutes. Use mcp_render_list_dep`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12586,14 +12683,15 @@ Duration: 0.0s
   "expected_params": "(service_id)",
   "provided_params": []`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'check_deploy': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(service_id)",
-  "provided_params": [
-    "id",
-   `
+  "poll_id": "poll-1782436646-2d00d012",
+  "service_id": "wrong_type",
+  "commit_sha": "wrong_type",
+  "status": "polling",
+  "elapsed_minutes": 1.3,
+  "message": "Polling for 1.3 minutes. Use mcp_r`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12633,11 +12731,15 @@ Duration: 0.0s
 
 #### `sync.complete_deploy`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'complete_deploy': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(service_id, success, deploy_url=None, error=Non`
+  "status": "deploy_success",
+  "message": "\u2705 Deploy complete! URL: None",
+  "deploy_url": null,
+  "smoke_test": null,
+  "service_id": "test"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12645,11 +12747,13 @@ Duration: 0.0s
   "error": "Invalid params for action 'complete_deploy': register.<locals>.<lambda>() missing 2 required positional arguments: 'service_id' and 'success'",
   "expected_params": "(service_id, success`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'complete_deploy': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(service_id, success, deploy_url=None, error=Non`
+  "status": "deploy_success_smoke_failed",
+  "message": "\u26a0\ufe0f Deploy succeeded but smoke test failed: unknown url type: 'wrong_type/api/health'",
+  "deploy_url": "wrong_type",
+  "smoke_test"`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12688,11 +12792,9 @@ Duration: 0.0s
 
 #### `sync.evaluate_triggers`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'evaluate_triggers': register.<locals>.<lambda>() missing 2 required positional arguments: 'event_type' and 'emitter'",
-  "expected_params": "(event_type, emitt`
+- *Result preview:* `[]`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12700,12 +12802,9 @@ Duration: 0.0s
   "error": "Invalid params for action 'evaluate_triggers': register.<locals>.<lambda>() missing 2 required positional arguments: 'event_type' and 'emitter'",
   "expected_params": "(event_type, emitt`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'evaluate_triggers': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(event_type, emitter)",
-  "provided_params": [`
+- *Result preview:* `[]`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12744,29 +12843,17 @@ Duration: 0.0s
 
 #### `sync.get_triggers`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_triggers': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+- *Result preview:* `[]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `[]`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_triggers': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-`
+- *Result preview:* `[]`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12815,11 +12902,17 @@ Duration: 0.0s
   "error": "identify_agent requires either {agent_id, environment} or {role, provider, session_id} per ADR-0005 \u00a7D1."
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'identify_agent': register.<locals>._identify_agent() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent_id=None, environment='unknown', rol`
+  "agent_id": "wrong_type",
+  "environment": 12345,
+  "role": 12345,
+  "provider": "wrong_type",
+  "session_id": "wrong_type",
+  "registered_at": "2026-06-26T06:48:42.464706",
+  "pid": 6000,
+  "stor`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12858,30 +12951,27 @@ Duration: 0.0s
 
 #### `sync.list_artifacts`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_artifacts': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(folder=None)",
-  "provided_params": [
-    "li`
+- *Result preview:* `[
+  "test"
+]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `[]`
+- *Result preview:* `[
+  "test"
+]`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'list_artifacts': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(folder=None)",
-  "provided_params": [
-    "id",
-`
+- *Result preview:* `[]`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `[]`
+- *Result preview:* `[
+  "test"
+]`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -12914,14 +13004,10 @@ Duration: 0.0s
 
 #### `sync.list_channels`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_channels': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
+  "channels": []
 }`
 
 **missing_params** — ✅ pass
@@ -12930,14 +13016,11 @@ Duration: 0.0s
   "channels": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_channels': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",`
+  "channels": []
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -12979,8 +13062,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_alert': register.<locals>.<lambda>() missing 2 required positional arguments: 'subscriber' and 'target'",
-  "expected_params": "(subscriber, target`
+  "error": "Invalid params for action 'marketplace_alert': unsupported operand type(s) for /: 'str' and 'str'",
+  "expected_params": "(subscriber, target, event_types=None)",
+  "provided_params": [
+`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12991,9 +13076,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_alert': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'marketplace_alert': unsupported operand type(s) for /: 'str' and 'str'",
   "expected_params": "(subscriber, target, event_types=None)",
-  "pr`
+  "provided_params": [
+`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13047,8 +13133,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_audit': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(caller=None, target=None, action_type=None, s`
+  "error": "Invalid params for action 'marketplace_audit': unsupported operand type(s) for /: 'str' and 'str'",
+  "expected_params": "(caller=None, target=None, action_type=None, since_timestamp=Non`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13087,12 +13173,14 @@ Duration: 0.0s
 
 #### `sync.marketplace_can_call`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_can_call': register.<locals>.<lambda>() missing 2 required positional arguments: 'caller' and 'target'",
-  "expected_params": "(caller, target)",
- `
+  "allowed": false,
+  "caller": "test",
+  "target": "test",
+  "reason": "unregistered_caller"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13101,13 +13189,14 @@ Duration: 0.0s
   "expected_params": "(caller, target)",
  `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_can_call': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(caller, target)",
-  "provided_params": [
- `
+  "allowed": false,
+  "caller": "wrong_type",
+  "target": "wrong_type",
+  "reason": "unregistered_caller"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13150,9 +13239,8 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_compare': register.<locals>.<lambda>() missing 2 required positional arguments: 'a' and 'b'",
-  "expected_params": "(a, b)",
-  "provided_params": [`
+  "error": "address 'test' not registered"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13164,11 +13252,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_compare': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(a, b)",
-  "provided_params": [
-    "id",
-  `
+  "error": "address 'wrong_type' not registered"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13236,14 +13321,19 @@ Duration: 0.0s
   "top_10_by_reputation": [],
   "tier_flips_recorded": 0`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_dashboard': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "total_registered": 0,
+  "by_tier": {
+    "unverified": 0,
+    "active": 0,
+    "trusted": 0,
+    "verified": 0
+  },
+  "inactive_count": 0,
+  "top_10_by_reputation": [],
+  "tier_flips_recorded": 0`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13293,8 +13383,8 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_diff': register.<locals>.<lambda>() missing 2 required positional arguments: 'snapshot_a' and 'snapshot_b'",
-  "expected_params": "(snapshot_a, sna`
+  "error": "snapshot_a parse error: Expecting value: line 1 column 1 (char 0)"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13305,9 +13395,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_diff': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(snapshot_a, snapshot_b)",
-  "provided_params":`
+  "error": "snapshot_a parse error: Expecting value: line 1 column 1 (char 0)"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13346,14 +13435,12 @@ Duration: 0.0s
 
 #### `sync.marketplace_export`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_export': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  `
+  "snapshot": [],
+  "total": 0
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13362,14 +13449,12 @@ Duration: 0.0s
   "total": 0
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_export': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "qu`
+  "snapshot": [],
+  "total": 0
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13412,8 +13497,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_federation_proxy': register.<locals>.<lambda>() missing 2 required positional arguments: 'target_brain' and 'action'",
-  "expected_params": "(targe`
+  "ok": false,
+  "error": "Unknown peer 'test'. Known peers: ['peer_http://localhost_9999']"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13424,8 +13510,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_federation_proxy': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(target_brain, action, payload=None`
+  "ok": false,
+  "error": "Unknown peer 'wrong_type'. Known peers: ['peer_http://localhost_9999']"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13467,8 +13554,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_federation_register': register.<locals>.<lambda>() missing 1 required positional argument: 'address'",
-  "expected_params": "(address, capabilities`
+  "ok": false,
+  "error": "Invalid address format: test. Must match '^[a-z0-9\\-]+@nucleus$'."
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13479,8 +13567,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_federation_register': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(address, capabilities=None, dis`
+  "ok": false,
+  "error": "Invalid address format: wrong_type. Must match '^[a-z0-9\\-]+@nucleus$'."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13536,10 +13625,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_federation_sync': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id"`
+  "ok": false,
+  "error": "Federation engine not running. Use federation join first."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13582,9 +13670,8 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_history': register.<locals>.<lambda>() missing 1 required positional argument: 'address'",
-  "expected_params": "(address, limit=20)",
-  "provided_`
+  "error": "address 'test' not registered"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13596,9 +13683,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_history': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(address, limit=20)",
-  "provided_params": [`
+  "error": "address 'wrong_type' not registered"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13638,11 +13724,13 @@ Duration: 0.0s
 
 #### `sync.marketplace_promote`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_promote': register.<locals>.<lambda>() missing 2 required positional arguments: 'address' and 'new_tier'",
-  "expected_params": "(address, new_tier`
+  "ok": false,
+  "reason": "caller_not_verified",
+  "detail": "'admin' must be VERIFIED tier to promote"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13650,12 +13738,13 @@ Duration: 0.0s
   "error": "Invalid params for action 'marketplace_promote': register.<locals>.<lambda>() missing 2 required positional arguments: 'address' and 'new_tier'",
   "expected_params": "(address, new_tier`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_promote': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(address, new_tier, caller='admin')",
-  "pro`
+  "ok": false,
+  "reason": "caller_not_verified",
+  "detail": "'12345' must be VERIFIED tier to promote"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13694,11 +13783,13 @@ Duration: 0.0s
 
 #### `sync.marketplace_quarantine`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_quarantine': register.<locals>.<lambda>() missing 1 required positional argument: 'address'",
-  "expected_params": "(address, caller='admin', reaso`
+  "ok": false,
+  "reason": "caller_not_verified",
+  "detail": "'admin' must be VERIFIED tier to quarantine"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13706,12 +13797,13 @@ Duration: 0.0s
   "error": "Invalid params for action 'marketplace_quarantine': register.<locals>.<lambda>() missing 1 required positional argument: 'address'",
   "expected_params": "(address, caller='admin', reaso`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_quarantine': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(address, caller='admin', reason='')",
-  `
+  "ok": false,
+  "reason": "caller_not_verified",
+  "detail": "'12345' must be VERIFIED tier to quarantine"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13750,12 +13842,12 @@ Duration: 0.0s
 
 #### `sync.marketplace_recommend`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_recommend': register.<locals>.<lambda>() missing 1 required positional argument: 'task'",
-  "expected_params": "(task, top_k=5)",
-  "provided_param`
+  "recommendations": [],
+  "task": "test"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13767,10 +13859,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_recommend': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'marketplace_recommend': slice indices must be integers or None or have an __index__ method",
   "expected_params": "(task, top_k=5)",
   "provided_params": [
- `
+   `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13810,12 +13902,12 @@ Duration: 0.0s
 
 #### `sync.marketplace_search`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_search': register.<locals>.<lambda>() got an unexpected keyword argument 'query'",
-  "expected_params": "(tags=None, min_tier=None, limit=10)",
-  "`
+  "cards": [],
+  "count": 0
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13827,9 +13919,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_search': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(tags=None, min_tier=None, limit=10)",
-  "pro`
+  "error": "Unknown min_tier 'wrong_type'. Valid: Unverified, Active, Trusted, Verified"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13872,8 +13963,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscribe': register.<locals>.<lambda>() missing 1 required positional argument: 'subscriber'",
-  "expected_params": "(subscriber, target='*', even`
+  "error": "Invalid params for action 'marketplace_subscribe': unsupported operand type(s) for /: 'str' and 'str'",
+  "expected_params": "(subscriber, target='*', event_types=None)",
+  "provided_par`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -13884,8 +13976,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscribe': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(subscriber, target='*', event_types=None)`
+  "error": "Invalid params for action 'marketplace_subscribe': unsupported operand type(s) for /: 'str' and 'str'",
+  "expected_params": "(subscriber, target='*', event_types=None)",
+  "provided_par`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13943,9 +14036,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscriptions': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'marketplace_subscriptions': unsupported operand type(s) for /: 'str' and 'str'",
   "expected_params": "(subscriber=None)",
-  "provided_params`
+  "provided_params": [
+    "subscrib`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14007,9 +14101,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_trends': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'marketplace_trends': unsupported type for timedelta days component: str",
   "expected_params": "(days=30, brain_path=None)",
-  "provided_para`
+  "provided_params": [
+    "days",`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14054,9 +14149,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_unsubscribe': register.<locals>.<lambda>() missing 1 required positional argument: 'subscriber'",
+  "error": "Invalid params for action 'marketplace_unsubscribe': unsupported operand type(s) for /: 'str' and 'str'",
   "expected_params": "(subscriber, target='*')",
-`
+  "provided_params": [
+    "sub`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14068,9 +14164,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_unsubscribe': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'marketplace_unsubscribe': unsupported operand type(s) for /: 'str' and 'str'",
   "expected_params": "(subscriber, target='*')",
-  "provided_p`
+  "provided_params": [
+    "sub`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14124,13 +14221,12 @@ Duration: 0.0s
   "reason": "CC_SESSION_ROLE not set and no role param"
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_whoami': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(role=None)",
-  "provided_params": [
-    "id"`
+  "registered": false,
+  "address": "wrong-type@nucleus"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14170,12 +14266,12 @@ Duration: 0.0s
 
 #### `sync.notify`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'notify': register.<locals>.<lambda>() missing 2 required positional arguments: 'title' and 'message'",
-  "expected_params": "(title, message, level='info')",
- `
+  "sent": {},
+  "channels_reached": 0
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14184,13 +14280,12 @@ Duration: 0.0s
   "expected_params": "(title, message, level='info')",
  `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'notify': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(title, message, level='info')",
-  "provided_params": [
- `
+  "sent": {},
+  "channels_reached": 0
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14233,8 +14328,12 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_fire': register.<locals>.<lambda>() missing 2 required positional arguments: 'lane' and 'brief'",
-  "expected_params": "(lane, brief, model='sonnet', subj`
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "v0.1 supports lane=peer|main only; got 'test'"
+  }
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14245,8 +14344,12 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_fire': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(lane, brief, model='sonnet', subject=None, parent_ses`
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "v0.1 supports lane=peer|main only; got 'wrong_type'"
+  }
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14288,9 +14391,12 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_register': register.<locals>.<lambda>() missing 1 required positional argument: 'lane'",
-  "expected_params": "(lane, charter_path=None)",
-  "provided_par`
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "v0.1 supports lane=peer|main only; got 'test'"
+  }
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14302,9 +14408,12 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_register': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(lane, charter_path=None)",
-  "provided_params": [`
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "v0.1 supports lane=peer|main only; got 'wrong_type'"
+  }
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14375,11 +14484,12 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(lane=None)",
-  "provided_params": [
-    "id",
-    "`
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "unknown lane 'wrong_type'"
+  }
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14429,9 +14539,11 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_stop': register.<locals>.<lambda>() missing 1 required positional argument: 'lane'",
-  "expected_params": "(lane)",
-  "provided_params": []
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "v0.1 supports lane=peer|main only; got 'test'"
+  }
 }`
 
 **missing_params** — ⚠️ handled
@@ -14445,11 +14557,12 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'pair_stop': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(lane)",
-  "provided_params": [
-    "id",
-    "query",`
+  "ok": false,
+  "error": {
+    "code": "INVALID_LANE",
+    "message": "v0.1 supports lane=peer|main only; got 'wrong_type'"
+  }
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14490,15 +14603,9 @@ Duration: 0.0s
 
 #### `sync.read_artifact`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'read_artifact': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "id"
-  ]
-}`
+- *Result preview:* `test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14508,14 +14615,9 @@ Duration: 0.0s
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'read_artifact': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path)",
-  "provided_params": [
-    "id",
-    "que`
+- *Result preview:* `Error: File not found: wrong_type`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14559,8 +14661,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_ack': register.<locals>.<lambda>() missing 1 required positional argument: 'message_id'",
-  "expected_params": "(message_id, recipient=None, session_id=N`
+  "acknowledged": false,
+  "message_id": "test",
+  "error": "Message not found in claude_code_main inbox"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14571,9 +14675,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_ack': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(message_id, recipient=None, session_id=None)",
-  "pro`
+  "acknowledged": false,
+  "message_id": "wrong_type",
+  "error": "Message not found in wrong_type inbox"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14615,8 +14720,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_classify_skip': register.<locals>.<lambda>() missing 3 required positional arguments: 'ts', 'subject', and 'classification'",
-  "expected_params": "(ts, `
+  "classified": false,
+  "error": "classification must be one of {'should_have_fired', 'rightly_skipped'}"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14627,9 +14733,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_classify_skip': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(ts, subject, classification, note=None)",
- `
+  "classified": false,
+  "error": "classification must be one of {'should_have_fired', 'rightly_skipped'}"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14687,9 +14793,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_clear': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'relay_clear': unsupported operand type(s) for -: 'float' and 'str'",
   "expected_params": "(recipient=None, older_than_hours=168)",
-  "provided`
+  "provided_params": [
+    `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14752,14 +14859,16 @@ Duration: 0.0s
   "skip_rate": 0.0
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_event_stats': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "que`
+  "total_fires": 0,
+  "total_skips": 0,
+  "total_attempts": 0,
+  "override_count": 0,
+  "override_rate": 0.0,
+  "skip_rate": 0.0
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14826,8 +14935,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_inbox': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(unread_only=True, limit=20, recipient=None, session`
+  "error": "Invalid params for action 'relay_inbox': '>=' not supported between instances of 'int' and 'str'",
+  "expected_params": "(unread_only=True, limit=20, recipient=None, session_id=None)",
+ `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14870,11 +14980,17 @@ Duration: 0.0s
 
 #### `sync.relay_listen`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_listen': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(recipient, window_s=60, poll_s=5, in_reply_to=N`
+  "found": false,
+  "call_again": true,
+  "waited_s": 59,
+  "recipient": "test",
+  "known_ids": [],
+  "next_attempt": 2,
+  "next_poll_s": 10,
+  "hint": "No new relay in 60s. Call relay_listen again `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14885,8 +15001,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_listen': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(recipient, window_s=60, poll_s=5, in_reply_to=None`
+  "error": "Action 'relay_listen' failed: invalid literal for int() with base 10: 'not_a_number'",
+  "module": "nucleus_sync"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14928,8 +15045,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_log_event': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "(event, side, subject, tags=None, match_reaso`
+  "logged": false,
+  "error": "event must be one of {'fire', 'skip'}"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14940,8 +15058,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_log_event': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(event, side, subject, tags=None, match_reason='`
+  "logged": false,
+  "error": "event must be one of {'fire', 'skip'}"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14980,11 +15099,15 @@ Duration: 0.0s
 
 #### `sync.relay_poll_start`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_poll_start': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
-  "expected_params": "(recipient, interval_s=10, session_`
+  "status": "started",
+  "recipient": "test",
+  "interval_s": 10,
+  "session_id": null,
+  "signal_file": "/tmp/test-brain/relay/test/POLL_SIGNAL.json"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14995,9 +15118,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_poll_start': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(recipient, interval_s=10, session_id=None)",
- `
+  "error": "Action 'relay_poll_start' failed: invalid literal for int() with base 10: 'not_a_number'",
+  "module": "nucleus_sync"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15036,12 +15159,16 @@ Duration: 0.0s
 
 #### `sync.relay_poll_status`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_poll_status': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
-  "expected_params": "(recipient)",
-  "provided_params":`
+  "running": true,
+  "recipient": "test",
+  "interval_s": 10,
+  "checked_at": "2026-06-26T01:19:43.830738Z",
+  "pending": [],
+  "pending_count": 0
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15050,13 +15177,15 @@ Duration: 0.0s
   "expected_params": "(recipient)",
   "provided_params":`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_poll_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(recipient)",
-  "provided_params": [
-    "id",`
+  "running": false,
+  "recipient": "wrong_type",
+  "pending": [],
+  "pending_count": 0,
+  "checked_at": null,
+  "hint": "Call relay_poll_start(recipient) once per session to begin autonomous polling`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15096,12 +15225,12 @@ Duration: 0.0s
 
 #### `sync.relay_poll_stop`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_poll_stop': register.<locals>.<lambda>() missing 1 required positional argument: 'recipient'",
-  "expected_params": "(recipient)",
-  "provided_params": [`
+  "status": "stopped",
+  "recipient": "test"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15110,14 +15239,12 @@ Duration: 0.0s
   "expected_params": "(recipient)",
   "provided_params": [`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_poll_stop': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(recipient)",
-  "provided_params": [
-    "id",
- `
+  "status": "not_running",
+  "recipient": "wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15160,8 +15287,7 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() got an unexpected keyword argument 'message'",
-  "expected_params": "(to, subject, body, priority='normal', context=N`
+  "error": "Action 'relay_post' failed: relay_post: sender is required. Pass sender= explicitly (e.g. 'coordinator', 'worker', 'cowork', 'primary', 'secondary'). Set NUCLEUS_RELAY_INFER_SENDER=1 to `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15169,11 +15295,16 @@ Duration: 0.0s
   "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() missing 3 required positional arguments: 'to', 'subject', and 'body'",
   "expected_params": "(to, subject, body, prio`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_post': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(to, subject, body, priority='normal', context=None, `
+  "sent": true,
+  "message_id": "relay_20260626_011943_15440f42",
+  "from": "wrong_type",
+  "to": "wrong_type",
+  "subject": "wrong_type",
+  "priority": 12345,
+  "path": "relay/wrong_type/20260626_0`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15233,10 +15364,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_skip_review': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
+  "error": "Invalid params for action 'relay_skip_review': slice indices must be integers or None or have an __index__ method",
   "expected_params": "(limit=20)",
   "provided_params": [
-    "id",
+    "limit"
 `
 
 **empty_params** — ✅ pass
@@ -15305,15 +15436,18 @@ Duration: 0.0s
     "claude_code_main": {
       "total`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-`
+  "current_session_type": "claude_code_main",
+  "mailboxes": {
+    "claude_code": {
+      "total": 0,
+      "unread": 0,
+      "latest_message_at": null
+    },
+    "claude_code_main": {
+      "total`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15359,11 +15493,13 @@ Duration: 0.0s
 
 #### `sync.relay_wait`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_wait': register.<locals>.<lambda>() missing 2 required positional arguments: 'in_reply_to' and 'recipient'",
-  "expected_params": "(in_reply_to, recipien`
+  "found": false,
+  "timed_out": true,
+  "waited_s": 59
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15374,8 +15510,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_wait': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(in_reply_to, recipient, timeout_s=60, poll_interval_`
+  "error": "Action 'relay_wait' failed: invalid literal for int() with base 10: 'not_a_number'",
+  "module": "nucleus_sync"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15438,12 +15575,17 @@ Duration: 0.0s
   "latency_p95_s": null,
   "data_present": `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'saturation_baselines': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(surface='main', window_size=100)",
-  "prov`
+  "surface": 12345,
+  "window_size": "not_a_number",
+  "turn_count": 0,
+  "tokens_baseline_median": null,
+  "tokens_p95": null,
+  "latency_baseline_median_s": null,
+  "latency_p95_s": null,
+  "data_`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15514,11 +15656,17 @@ Duration: 0.0s
     "tokens_baseline_median": null,
     "to`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'saturation_check': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(surface='main', window_size=100, threshold_fac`
+  "surface": 12345,
+  "saturated": false,
+  "threshold_factor": "wrong_type",
+  "baselines": {
+    "surface": 12345,
+    "window_size": "not_a_number",
+    "turn_count": 0,
+    "tokens_baseline_medi`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15564,39 +15712,61 @@ Duration: 0.0s
 
 #### `sync.shared_list`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'shared_list': register.<locals>.<lambda>() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"
-  ]
-}`
+  "keys": [
+    {
+      "key": "test-key",
+      "agent_id": "test",
+      "updated_at": "2026-06-26T01:17:26.202128Z"
+    },
+    {
+      "key": "wrong_type",
+      "agent_id": 12345,
+      "updated`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "keys": [],
-  "count": 0
-}`
+  "keys": [
+    {
+      "key": "test-key",
+      "agent_id": "test",
+      "updated_at": "2026-06-26T01:17:26.202128Z"
+    },
+    {
+      "key": "wrong_type",
+      "agent_id": 12345,
+      "updated`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'shared_list': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+  "keys": [
+    {
+      "key": "test-key",
+      "agent_id": "test",
+      "updated_at": "2026-06-26T01:17:26.202128Z"
+    },
+    {
+      "key": "wrong_type",
+      "agent_id": 12345,
+      "updated`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "keys": [],
-  "count": 0
-}`
+  "keys": [
+    {
+      "key": "test-key",
+      "agent_id": "test",
+      "updated_at": "2026-06-26T01:17:26.202128Z"
+    },
+    {
+      "key": "wrong_type",
+      "agent_id": 12345,
+      "updated`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -15629,14 +15799,14 @@ Duration: 0.0s
 
 #### `sync.shared_read`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'shared_read': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(key)",
-  "provided_params": [
-    "id"
-  ]
+  "found": true,
+  "key": "test-key",
+  "value": "test-value",
+  "agent_id": "test",
+  "updated_at": "2026-06-26T01:17:26.202128Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -15647,14 +15817,15 @@ Duration: 0.0s
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'shared_read': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(key)",
-  "provided_params": [
-    "id",
-    "query"`
+  "found": true,
+  "key": "wrong_type",
+  "value": "wrong_type",
+  "agent_id": 12345,
+  "updated_at": "2026-06-26T01:17:26.202512Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15695,12 +15866,15 @@ Duration: 0.0s
 
 #### `sync.shared_write`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'shared_write': register.<locals>.<lambda>() got an unexpected keyword argument 'content'",
-  "expected_params": "(key, value, agent_id='')",
-  "provided_params`
+  "written": true,
+  "key": "test-key",
+  "value": "test-value",
+  "agent_id": "test",
+  "updated_at": "2026-06-26T01:20:45.441779Z"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15709,13 +15883,15 @@ Duration: 0.0s
   "expected_params": "(key, value, agent_id='')",
   "p`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'shared_write': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(key, value, agent_id='')",
-  "provided_params": [
-`
+  "written": true,
+  "key": "wrong_type",
+  "value": "wrong_type",
+  "agent_id": 12345,
+  "updated_at": "2026-06-26T01:20:45.442488Z"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15755,12 +15931,12 @@ Duration: 0.0s
 
 #### `sync.smoke_test`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'smoke_test': register.<locals>.<lambda>() missing 1 required positional argument: 'url'",
-  "expected_params": "(url, endpoint='/api/health')",
-  "provided_par`
+  "passed": false,
+  "reason": "unknown url type: 'test/api/health'"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15769,12 +15945,12 @@ Duration: 0.0s
   "expected_params": "(url, endpoint='/api/health')",
   "provided_par`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'smoke_test': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(url, endpoint='/api/health')",
-  "provided_params": `
+  "passed": false,
+  "reason": "unknown url type: 'wrong_type12345'"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15814,12 +15990,14 @@ Duration: 0.0s
 
 #### `sync.start_deploy_poll`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'start_deploy_poll': register.<locals>.<lambda>() missing 1 required positional argument: 'service_id'",
-  "expected_params": "(service_id, commit_sha=None)",
- `
+  "poll_id": "poll-1782436845-147bc857",
+  "service_id": "test",
+  "commit_sha": null,
+  "status": "polling_started",
+  "message": "Deploy monitoring started. Use brain_check_deploy('test') to check`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -15828,12 +16006,14 @@ Duration: 0.0s
   "expected_params": "(service_id, commit_sha=None)",
  `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'start_deploy_poll': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(service_id, commit_sha=None)",
-  "provided_pa`
+  "poll_id": "poll-1782436845-c8ca246a",
+  "service_id": "wrong_type",
+  "commit_sha": "wrong_type",
+  "status": "polling_started",
+  "message": "Deploy monitoring started. Use brain_check_deploy('w`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15876,9 +16056,8 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync_auto': register.<locals>._sync_auto() missing 1 required positional argument: 'enable'",
-  "expected_params": "(enable)",
-  "provided_params": []
+  "error": "Sync not enabled",
+  "hint": "Add sync.enabled: true to .brain/config/nucleus.yaml"
 }`
 
 **missing_params** — ⚠️ handled
@@ -15892,11 +16071,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync_auto': register.<locals>._sync_auto() got an unexpected keyword argument 'id'",
-  "expected_params": "(enable)",
-  "provided_params": [
-    "id",
-    "que`
+  "error": "Sync not enabled",
+  "hint": "Add sync.enabled: true to .brain/config/nucleus.yaml"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15954,11 +16131,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync_now': register.<locals>._sync_now() got an unexpected keyword argument 'id'",
-  "expected_params": "(force=False)",
-  "provided_params": [
-    "id",
-    "`
+  "error": "Sync not enabled",
+  "hint": "Create .brain/config/nucleus.yaml with sync.enabled: true"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15998,11 +16173,12 @@ Duration: 0.0s
 
 #### `sync.sync_resolve`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() missing 1 required positional argument: 'file_path'",
-  "expected_params": "(file_path, strategy='last_write_w`
+  "status": "error",
+  "message": "No active conflict."
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16010,12 +16186,12 @@ Duration: 0.0s
   "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() missing 1 required positional argument: 'file_path'",
   "expected_params": "(file_path, strategy='last_write_w`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync_resolve': register.<locals>._sync_resolve() got an unexpected keyword argument 'id'",
-  "expected_params": "(file_path, strategy='last_write_wins')",
-  "p`
+  "status": "error",
+  "message": "No active conflict."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16060,11 +16236,12 @@ Duration: 0.0s
   "sync_enabled": false,
   "mode": "manual",
   "last_sync": null,
-  "current_agent": "unknown_agent",
+  "current_agent": "wrong_type",
   "agent_info": {
-    "agent_id": "unknown_agent",
-    "environment": "unknown",
-    "role": "wo`
+    "agent_id": "wrong_type",
+    "environment": 12345,
+    "role": 12345,
+    "p`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16072,21 +16249,25 @@ Duration: 0.0s
   "sync_enabled": false,
   "mode": "manual",
   "last_sync": null,
-  "current_agent": "unknown_agent",
+  "current_agent": "wrong_type",
   "agent_info": {
-    "agent_id": "unknown_agent",
-    "environment": "unknown",
-    "role": "wo`
+    "agent_id": "wrong_type",
+    "environment": 12345,
+    "role": 12345,
+    "p`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'sync_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+  "sync_enabled": false,
+  "mode": "manual",
+  "last_sync": null,
+  "current_agent": "wrong_type",
+  "agent_info": {
+    "agent_id": "wrong_type",
+    "environment": 12345,
+    "role": 12345,
+    "p`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16094,11 +16275,12 @@ Duration: 0.0s
   "sync_enabled": false,
   "mode": "manual",
   "last_sync": null,
-  "current_agent": "unknown_agent",
+  "current_agent": "wrong_type",
   "agent_info": {
-    "agent_id": "unknown_agent",
-    "environment": "unknown",
-    "role": "wo`
+    "agent_id": "wrong_type",
+    "environment": 12345,
+    "role": 12345,
+    "p`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -16146,10 +16328,8 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'test_channel': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(channel_name=None)",
-  "provided_params": [
-    "i`
+  "error": "Channel 'wrong_type' not found"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16188,11 +16368,9 @@ Duration: 0.0s
 
 #### `sync.trigger_agent`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() missing 2 required positional arguments: 'agent' and 'task_description'",
-  "expected_params": "(agent, task_descr`
+- *Result preview:* `Triggered test with event evt-1782436845-53eb0558`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16200,12 +16378,9 @@ Duration: 0.0s
   "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() missing 2 required positional arguments: 'agent' and 'task_description'",
   "expected_params": "(agent, task_descr`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'trigger_agent': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(agent, task_description, context_files=None)",
-  `
+- *Result preview:* `Triggered wrong_type with event evt-1782436845-d94035d3`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16244,13 +16419,9 @@ Duration: 0.0s
 
 #### `sync.write_artifact`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'write_artifact': register.<locals>.<lambda>() got an unexpected keyword argument 'tags'",
-  "expected_params": "(path, content)",
-  "provided_params": [
-    "c`
+- *Result preview:* `Successfully wrote to test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16259,13 +16430,9 @@ Duration: 0.0s
   "expected_params": "(path, content)",
   "provid`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'write_artifact': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(path, content)",
-  "provided_params": [
-    "id"`
+- *Result preview:* `Error writing artifact: data must be str, not int`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16307,31 +16474,38 @@ Duration: 0.0s
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `add` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `add` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `claim` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `context_switch` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `context_switch_reset` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `context_switch_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `create` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `depth_map` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `depth_pop` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `depth_push` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `depth_reset` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `depth_set_max` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `depth_show` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `context_switch` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `context_switch_reset` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `context_switch_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `create` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `depth_map` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `depth_pop` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `depth_push` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `depth_reset` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `depth_set_max` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `depth_show` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `escalate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `get_next` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `get_next` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `import_jsonl` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `list` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `update` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `tasks.add`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'add': register.<locals>._h_add() got an unexpected keyword argument 'name'",
-  "expected_params": "(description, priority=3, blocked_by=None, required_skills=N`
+  "success": true,
+  "data": {
+    "id": "task-4d08f12a",
+    "description": "test",
+    "status": "PENDING",
+    "priority": 3,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": nu`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16342,8 +16516,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'add': register.<locals>._h_add() got an unexpected keyword argument 'id'",
-  "expected_params": "(description, priority=3, blocked_by=None, required_skills=Non`
+  "success": false,
+  "data": null,
+  "error": "DAG violation: task cannot block itself"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16386,9 +16562,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'claim': register.<locals>._h_claim() missing 2 required positional arguments: 'task_id' and 'agent_id'",
-  "expected_params": "(task_id, agent_id)",
-  "provide`
+  "success": false,
+  "data": null,
+  "error": "Task not found"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16400,11 +16577,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'claim': register.<locals>._h_claim() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, agent_id)",
-  "provided_params": [
-    "id",
-   `
+  "success": false,
+  "data": null,
+  "error": "Task not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16445,12 +16621,20 @@ Duration: 0.0s
 
 #### `tasks.context_switch`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'context_switch': register.<locals>.<lambda>() missing 1 required positional argument: 'new_context'",
-  "expected_params": "(new_context)",
-  "provided_params"`
+  "success": true,
+  "data": {
+    "current_context": "test",
+    "switch_count": 1,
+    "max_switches": 5,
+    "was_switch": true,
+    "recent_contexts": [
+      "test"
+    ],
+    "warning": null,
+`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16459,14 +16643,19 @@ Duration: 0.0s
   "expected_params": "(new_context)",
   "provided_params"`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'context_switch': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(new_context)",
-  "provided_params": [
-    "id",
-`
+  "success": true,
+  "data": {
+    "current_context": "wrong_type",
+    "switch_count": 2,
+    "max_switches": 5,
+    "was_switch": true,
+    "recent_contexts": [
+      "test",
+      "wrong_type"
+  `
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16514,7 +16703,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626063737"
+    "session_id": "session-20260626065045"
   },
   "error": null
 }`
@@ -16526,19 +16715,22 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626063737"
+    "session_id": "session-20260626065045"
   },
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'context_switch_reset': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "`
+  "success": true,
+  "data": {
+    "message": "\u2705 Context switch counter reset. Fresh start!",
+    "switch_count": 0,
+    "session_id": "session-20260626065045"
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16547,7 +16739,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626063737"
+    "session_id": "session-20260626065045"
   },
   "error": null
 }`
@@ -16608,14 +16800,17 @@ Duration: 0.0s
     "recent_contexts": [],
     "session_id": "session-202`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'context_switch_status': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "success": true,
+  "data": {
+    "status": "\ud83d\udfe2 FOCUSED",
+    "switch_count": 0,
+    "max_switches": 5,
+    "unique_contexts": 0,
+    "recent_contexts": [],
+    "session_id": "session-202`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16661,11 +16856,18 @@ Duration: 0.0s
 
 #### `tasks.create`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'create': register.<locals>._h_add() got an unexpected keyword argument 'name'",
-  "expected_params": "(description, priority=3, blocked_by=None, required_skill`
+  "success": true,
+  "data": {
+    "id": "task-fe9c23af",
+    "description": "test",
+    "status": "PENDING",
+    "priority": 3,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": nu`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16676,8 +16878,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'create': register.<locals>._h_add() got an unexpected keyword argument 'id'",
-  "expected_params": "(description, priority=3, blocked_by=None, required_skills=`
+  "success": false,
+  "data": null,
+  "error": "DAG violation: task cannot block itself"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16717,15 +16921,13 @@ Duration: 0.0s
 
 #### `tasks.depth_map`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_map': register.<locals>.<lambda>() got an unexpected keyword argument 'level'",
-  "expected_params": "()",
-  "provided_params": [
-    "level"
-  ]
-}`
+  "success": true,
+  "data": {
+    "mermaid": "```mermaid\ngraph TD\n    ROOT((\ud83c\udfe0 START))\n    style ROOT fill:#ccffcc,stroke:#0a0\n```",
+    "message": "You're at the root level. No explo`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16735,15 +16937,13 @@ Duration: 0.0s
     "mermaid": "```mermaid\ngraph TD\n    ROOT((\ud83c\udfe0 START))\n    style ROOT fill:#ccffcc,stroke:#0a0\n```",
     "message": "You're at the root level. No explo`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_map': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-   `
+  "success": true,
+  "data": {
+    "mermaid": "```mermaid\ngraph TD\n    ROOT((\ud83c\udfe0 START))\n    style ROOT fill:#ccffcc,stroke:#0a0\n```",
+    "message": "You're at the root level. No explo`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16785,14 +16985,16 @@ Duration: 0.0s
 
 #### `tasks.depth_pop`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_pop': register.<locals>.<lambda>() got an unexpected keyword argument 'level'",
-  "expected_params": "()",
-  "provided_params": [
-    "level"
-  ]
+  "success": true,
+  "data": {
+    "current_depth": 0,
+    "message": "Already at root level (depth 0). Nothing to pop.",
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
+  },
+  "error": null
 }`
 
 **missing_params** — ✅ pass
@@ -16807,15 +17009,17 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_pop': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-   `
+  "success": true,
+  "data": {
+    "current_depth": 0,
+    "message": "Already at root level (depth 0). Nothing to pop.",
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16861,15 +17065,18 @@ Duration: 0.0s
 
 #### `tasks.depth_push`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_push': register.<locals>.<lambda>() got an unexpected keyword argument 'level'",
-  "expected_params": "(topic)",
-  "provided_params": [
-    "level"
-  ]
-}`
+  "success": true,
+  "data": {
+    "current_depth": 1,
+    "max_safe_depth": 5,
+    "topic": "test",
+    "breadcrumbs": "test",
+    "warning": null,
+    "warning_level": "safe",
+    "indicator": "[\`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16879,14 +17086,17 @@ Duration: 0.0s
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_push': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(topic)",
-  "provided_params": [
-    "id",
-    "query`
+  "success": true,
+  "data": {
+    "current_depth": 2,
+    "max_safe_depth": 5,
+    "topic": "wrong_type",
+    "breadcrumbs": "test \u2192 wrong_type",
+    "warning": null,
+    "warning_level": "saf`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16952,15 +17162,17 @@ Duration: 0.0s
   "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_reset': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
- `
+  "success": true,
+  "data": {
+    "current_depth": 0,
+    "message": "\u2705 Depth reset to root level.",
+    "indicator": "[\u2591\u2591\u2591\u2591\u2591]"
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17006,13 +17218,15 @@ Duration: 0.0s
 
 #### `tasks.depth_set_max`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_set_max': register.<locals>.<lambda>() got an unexpected keyword argument 'level'",
-  "expected_params": "(max_depth)",
-  "provided_params": [
-    "level`
+  "success": true,
+  "data": {
+    "error": "'<' not supported between instances of 'str' and 'int'"
+  },
+  "error": null
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -17022,14 +17236,15 @@ Duration: 0.0s
   "provided_params": []
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_set_max': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(max_depth)",
-  "provided_params": [
-    "id",
-   `
+  "success": true,
+  "data": {
+    "error": "'<' not supported between instances of 'str' and 'int'"
+  },
+  "error": null
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17095,15 +17310,17 @@ Duration: 0.0s
     "tree": "(At root level)",
     "indicator": "[\u25`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'depth_show': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "query",
-  `
+  "success": true,
+  "data": {
+    "current_depth": 0,
+    "max_safe_depth": 5,
+    "status": "\ud83d\udfe2 SAFE",
+    "breadcrumbs": "(root)",
+    "tree": "(At root level)",
+    "indicator": "[\u25`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17152,9 +17369,9 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'escalate': register.<locals>.<lambda>() missing 2 required positional arguments: 'task_id' and 'reason'",
-  "expected_params": "(task_id, reason)",
-  "provided`
+  "success": false,
+  "error": "Task not found"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -17166,11 +17383,9 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'escalate': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, reason)",
-  "provided_params": [
-    "id",
-  `
+  "success": false,
+  "error": "Task not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17211,14 +17426,18 @@ Duration: 0.0s
 
 #### `tasks.get_next`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_next': register.<locals>._h_get_next() got an unexpected keyword argument 'limit'",
-  "expected_params": "(skills)",
-  "provided_params": [
-    "limit"
-  ]`
+  "success": true,
+  "data": {
+    "id": "task-b8857335",
+    "description": "test",
+    "status": "PENDING",
+    "priority": 3,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": nu`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -17228,14 +17447,18 @@ Duration: 0.0s
   "provided_params": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_next': register.<locals>._h_get_next() got an unexpected keyword argument 'id'",
-  "expected_params": "(skills)",
-  "provided_params": [
-    "id",
-    "que`
+  "success": true,
+  "data": {
+    "id": "task-b8857335",
+    "description": "test",
+    "status": "PENDING",
+    "priority": 3,
+    "blocked_by": [],
+    "required_skills": [],
+    "claimed_by": nu`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17280,8 +17503,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'import_jsonl': register.<locals>._h_import() got an unexpected keyword argument 'data'",
-  "expected_params": "(jsonl_path, clear_existing=False, merge_gtm_met`
+  "success": false,
+  "data": null,
+  "error": "File not found: test"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -17292,8 +17517,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'import_jsonl': register.<locals>._h_import() got an unexpected keyword argument 'id'",
-  "expected_params": "(jsonl_path, clear_existing=False, merge_gtm_metad`
+  "success": false,
+  "data": null,
+  "error": "File not found: wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17333,11 +17560,19 @@ Duration: 0.0s
 
 #### `tasks.list`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list': register.<locals>._h_list() got an unexpected keyword argument 'limit'",
-  "expected_params": "(status=None, priority=None, skill=None, claimed_by=None)`
+  "success": true,
+  "data": [
+    {
+      "id": "task-b8857335",
+      "description": "test",
+      "status": "PENDING",
+      "priority": 3,
+      "blocked_by": [],
+      "required_skills": [],
+  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -17345,17 +17580,21 @@ Duration: 0.0s
   "success": true,
   "data": [
     {
-      "id": "task-10140ad6",
-      "description": "[heartbeat][velocity_drop] Velocity dropped \u2014 0 writes in 48h.",
+      "id": "task-b8857335",
+      "description": "test",
       "status": "PENDING",
-      "priori`
+      "priority": 3,
+      "blocked_by": [],
+      "required_skills": [],
+  `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list': register.<locals>._h_list() got an unexpected keyword argument 'id'",
-  "expected_params": "(status=None, priority=None, skill=None, claimed_by=None)",
-`
+  "success": true,
+  "data": [],
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -17363,10 +17602,13 @@ Duration: 0.0s
   "success": true,
   "data": [
     {
-      "id": "task-10140ad6",
-      "description": "[heartbeat][velocity_drop] Velocity dropped \u2014 0 writes in 48h.",
+      "id": "task-b8857335",
+      "description": "test",
       "status": "PENDING",
-      "priori`
+      "priority": 3,
+      "blocked_by": [],
+      "required_skills": [],
+  `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -17403,11 +17645,10 @@ Duration: 0.0s
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'update': register.<locals>._h_update() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, updates)",
-  "provided_params": [
-    "id",
-  `
+  "success": false,
+  "data": null,
+  "error": "Task not found"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -17419,11 +17660,10 @@ Duration: 0.0s
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'update': register.<locals>._h_update() got an unexpected keyword argument 'id'",
-  "expected_params": "(task_id, updates)",
-  "provided_params": [
-    "id",
-  `
+  "success": false,
+  "data": null,
+  "error": "Task not found"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:38:16
+**Generated:** 2026-06-26T06:51:07
 **Total tests:** 84
 **Actions tested:** 12
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 37 | 44.0% | Tool returned a successful response |
-| ⚠️ handled | 47 | 56.0% | Tool returned a graceful error (no crash) |
+| ✅ pass | 48 | 57.1% | Tool returned a successful response |
+| ⚠️ handled | 36 | 42.9% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 7 | 58.3% |
-| ⚠️ handled | 5 | 41.7% |
+| ✅ pass | 9 | 75.0% |
+| ⚠️ handled | 3 | 25.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 0 | 0.0% |
-| ⚠️ handled | 12 | 100.0% |
+| ✅ pass | 9 | 75.0% |
+| ⚠️ handled | 3 | 25.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -115,17 +115,17 @@
 
 | Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
 |--------|-------|---------|-------------|-------|---------|------------|--------|---------|
-| `capture_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `file_changes` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `capture_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `file_changes` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `gcloud_services` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `gcloud_status` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `growth_pulse` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_services` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `gcloud_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `growth_pulse` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_services` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `manage_strategy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `optimize_workflow` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `scan_marketing_log` | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `status_report` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `synthesize_strategy` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `optimize_workflow` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `scan_marketing_log` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `status_report` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `synthesize_strategy` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `update_roadmap` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 
 #### `orchestration.INFRA_ROUTER.capture_metrics`
@@ -139,7 +139,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T01:07:25.420405+00:00"
+    "fetched_at": "2026-06-26T01:18:19.366395+00:00"
   },
   "pypi": {
     "last_mon`
@@ -153,18 +153,24 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T01:07:25.439623+00:00"
+    "fetched_at": "2026-06-26T01:18:19.454382+00:00"
   },
   "pypi": {
     "last_mon`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'capture_metrics': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(write_engram=True)",
-  "provided_params": [
-   `
+  "github": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "source": "github_api",
+    "fetched_at": "2026-06-26T01:18:19.540290+00:00"
+  },
+  "pypi": {
+    "last_mon`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -175,7 +181,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T01:07:25.460988+00:00"
+    "fetched_at": "2026-06-26T01:18:19.659013+00:00"
   },
   "pypi": {
     "last_mon`
@@ -219,14 +225,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'file_changes': register.<locals>._h_file_changes() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    "q`
+- *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -279,9 +280,7 @@
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'gcloud_services': register.<locals>._h_gcloud_services() got an unexpected keyword argument 'id'",
-  "expected_params": "(project=None, region='us-central1')",`
+- *Result preview:* `{"error": "sequence item 7: expected str instance, int found"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -339,14 +338,14 @@
   "account": "operator@example.com"
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'gcloud_status': register.<locals>._h_gcloud_status() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "gcloud_available": true,
+  "gcloud_path": "/opt/homebrew/bin/gcloud",
+  "project": "gentlequest-prod",
+  "account": "operator@example.com"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -392,10 +391,10 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T01:07:33.511540+00:00",
+  "timestamp": "2026-06-26T01:18:33.457705+00:00",
   "sections": {
     "brief": {
-      "engram_count": 257,
+      "engram_count": 328,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -404,30 +403,34 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T01:07:33.558035+00:00",
+  "timestamp": "2026-06-26T01:18:33.625378+00:00",
   "sections": {
     "brief": {
-      "engram_count": 262,
+      "engram_count": 333,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'growth_pulse': register.<locals>.<lambda>() got an unexpected keyword argument 'id'",
-  "expected_params": "(write_engrams=True)",
-  "provided_params": [
-    "`
+  "pipeline": "growth_pulse",
+  "timestamp": "2026-06-26T01:18:33.765871+00:00",
+  "sections": {
+    "brief": {
+      "engram_count": 333,
+      "task_count": 0,
+      "recommendation": "BOOTSTRAP"
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T01:07:33.603072+00:00",
+  "timestamp": "2026-06-26T01:18:33.894773+00:00",
   "sections": {
     "brief": {
-      "engram_count": 262,
+      "engram_count": 333,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -463,13 +466,17 @@
 
 #### `orchestration.INFRA_ROUTER.list_services`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_services': register.<locals>._h_list_services() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
-    "limit"`
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -483,14 +490,17 @@
         "id": "srv-mock-1",
         "name": `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'list_services': register.<locals>._h_list_services() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "id",
-    `
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -538,9 +548,8 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'manage_strategy': register.<locals>._h_manage_strategy() missing 1 required positional argument: 'action'",
-  "expected_params": "(action, content=None)",
-  "p`
+  "error": "Unknown action: test"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -552,9 +561,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'manage_strategy': register.<locals>._h_manage_strategy() got an unexpected keyword argument 'id'",
-  "expected_params": "(action, content=None)",
-  "provided_p`
+  "error": "Unknown action: wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -602,13 +610,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'optimize_workflow': register.<locals>._h_optimize_workflow() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    "i`
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -645,13 +649,13 @@
 
 #### `orchestration.INFRA_ROUTER.scan_marketing_log`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'scan_marketing_log': register.<locals>._h_scan_marketing_log() got an unexpected keyword argument 'limit'",
-  "expected_params": "()",
-  "provided_params": [
- `
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -661,13 +665,13 @@
   "failures": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'scan_marketing_log': register.<locals>._h_scan_marketing_log() got an unexpected keyword argument 'id'",
-  "expected_params": "()",
-  "provided_params": [
-    `
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -716,12 +720,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'status_report': register.<locals>._h_status_report() got an unexpected keyword argument 'id'",
-  "expected_params": "(focus='roadmap')",
-  "provided_params": [`
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -766,12 +767,9 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'synthesize_strategy': register.<locals>._h_synthesize_strategy() got an unexpected keyword argument 'id'",
-  "expected_params": "(focus_topic=None)",
-  "provid`
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -811,9 +809,8 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'update_roadmap': register.<locals>._h_update_roadmap() got an unexpected keyword argument 'id'",
-  "expected_params": "(action, item=None)",
-  "provided_params`
+  "error": "Unknown action: test. Use 'read', 'add', or 'complete'."
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -825,9 +822,8 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'update_roadmap': register.<locals>._h_update_roadmap() got an unexpected keyword argument 'id'",
-  "expected_params": "(action, item=None)",
-  "provided_params`
+  "error": "Unknown action: wrong_type. Use 'read', 'add', or 'complete'."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
