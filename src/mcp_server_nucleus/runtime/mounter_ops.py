@@ -569,7 +569,24 @@ def _brain_list_mounted_impl() -> str:
         # Access configs directly since list_mounts is async but this tool is sync in definition
         # If we change it to async in __init__.py, we can await. But keeping compatibility.
         # Mounter keeps state in mounter.mount_configs
-        return make_response(True, data=[{"id": k, **v} for k, v in mounter.mount_configs.items()])
+        # Sanitize absolute paths from response to prevent path leakage to LLMs
+        import os
+        home = str(os.path.expanduser("~"))
+        configs = []
+        for k, v in mounter.mount_configs.items():
+            sanitized = {}
+            for ck, cv in v.items():
+                if isinstance(cv, str) and cv.startswith(home):
+                    sanitized[ck] = "~" + cv[len(home):]
+                elif isinstance(cv, list):
+                    sanitized[ck] = [
+                        (item.replace(home, "~") if isinstance(item, str) and item.startswith(home) else item)
+                        for item in cv
+                    ]
+                else:
+                    sanitized[ck] = cv
+            configs.append({"id": k, **sanitized})
+        return make_response(True, data=configs)
     except Exception as e:
         return make_response(False, error=str(e))
 

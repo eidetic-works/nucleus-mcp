@@ -818,7 +818,7 @@ def _heartbeat_status_impl(brain_path: Optional[str] = None) -> Dict:
         installed = plist_path.exists()
         platform_info = {
             "platform": "macOS",
-            "plist_path": str(plist_path),
+            "plist_path": f"~/Library/LaunchAgents/{plist_path.name}",
             "installed": installed,
         }
     elif system == "Linux":
@@ -826,7 +826,7 @@ def _heartbeat_status_impl(brain_path: Optional[str] = None) -> Dict:
         installed = timer_path.exists()
         platform_info = {
             "platform": "Linux",
-            "timer_path": str(timer_path),
+            "timer_path": f"~/.config/systemd/user/{timer_path.name}",
             "installed": installed,
         }
     
