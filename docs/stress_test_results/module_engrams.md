@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:40:38
+**Generated:** 2026-06-26T08:59:30
 **Total tests:** 266
 **Actions tested:** 38
 **Angles per action:** 7
@@ -225,7 +225,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T03:07:47.348343Z",
+        "timestamp": "2026-06-26T03:26:29.907031Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -237,7 +237,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T03:07:47.348343Z",
+        "timestamp": "2026-06-26T03:26:29.907031Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -249,7 +249,7 @@
   "data": null,
   "error": "Error reading audit log: '>' not supported between instances of 'int' and 'str'",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:47.362610Z"
+  "timestamp": "2026-06-26T03:26:29.922517Z"
 }`
 
 **empty_params** — ✅ pass
@@ -259,7 +259,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T03:07:47.348343Z",
+        "timestamp": "2026-06-26T03:26:29.907031Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -301,12 +301,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 791.6,
-    "total_interactions": 7916,
+    "total_cost_units": 879.0,
+    "total_interactions": 8790,
     "breakdown": {
       "unknown": {
-        "cost": 394.6,
-        "count": 3946,
+        "cost": 438.1,
+        "count": 4381,
         "tier": 1
   `
 
@@ -315,12 +315,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 791.6,
-    "total_interactions": 7916,
+    "total_cost_units": 879.0,
+    "total_interactions": 8790,
     "breakdown": {
       "unknown": {
-        "cost": 394.6,
-        "count": 3946,
+        "cost": 438.1,
+        "count": 4381,
         "tier": 1
   `
 
@@ -337,12 +337,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 791.6,
-    "total_interactions": 7916,
+    "total_cost_units": 879.0,
+    "total_interactions": 8790,
     "breakdown": {
       "unknown": {
-        "cost": 394.6,
-        "count": 3946,
+        "cost": 438.1,
+        "count": 4381,
         "tier": 1
   `
 
@@ -445,7 +445,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_43268",
+        "id": "brief_44391",
         "context": "Strategy",
         "intensity": 3
       },
@@ -459,7 +459,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_43268",
+        "id": "brief_44391",
         "context": "Strategy",
         "intensity": 3
       },
@@ -481,7 +481,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_43268",
+        "id": "brief_44391",
         "context": "Strategy",
         "intensity": 3
       },
@@ -527,7 +527,7 @@
   "data": null,
   "error": "Decision ID test-id not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:49.228874Z"
+  "timestamp": "2026-06-26T03:26:32.672463Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -544,7 +544,7 @@
   "data": null,
   "error": "Decision ID 12345 not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:49.229187Z"
+  "timestamp": "2026-06-26T03:26:32.672768Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -593,7 +593,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-39a3fe49fd63",
+        "decision_id": "dec-b407e23d4482",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -604,7 +604,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-39a3fe49fd63",
+        "decision_id": "dec-b407e23d4482",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -613,9 +613,9 @@
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "An internal error occurred. Error ID: 74508855",
+  "error": "An internal error occurred. Error ID: ddb33b13",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:49.230886Z"
+  "timestamp": "2026-06-26T03:26:32.674643Z"
 }`
 
 **empty_params** — ✅ pass
@@ -625,7 +625,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-39a3fe49fd63",
+        "decision_id": "dec-b407e23d4482",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -671,7 +671,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 48
+        "total": 56
       },
       "snapshots`
 
@@ -685,7 +685,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 48
+        "total": 56
       },
       "snapshots`
 
@@ -699,7 +699,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 48
+        "total": 56
       },
       "snapshots`
 
@@ -713,7 +713,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 48
+        "total": 56
       },
       "snapshots`
 
@@ -1057,7 +1057,7 @@
   "data": {
     "pipeline": "fusion_reactor",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T08:37:49.916060",
+    "timestamp": "2026-06-26T08:56:33.456910",
     "observation": "test",
     "sections": {
       "capture": `
@@ -1204,7 +1204,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 3,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
@@ -1215,7 +1215,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 3,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
@@ -1226,7 +1226,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 3,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
@@ -1237,7 +1237,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 3,
+  "uptime_seconds": 4,
   "python_version": "3.14.4"
 }`
 
@@ -1278,11 +1278,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:07:52.587374+00:00",
+    "timestamp": "2026-06-26T03:26:36.084750+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 10.0,
+    "check_duration_ms": 11.0,
     "format`
 
 **missing_params** — ✅ pass
@@ -1290,7 +1290,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:07:52.957931+00:00",
+    "timestamp": "2026-06-26T03:26:36.440298+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
@@ -1302,7 +1302,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:07:54.142053+00:00",
+    "timestamp": "2026-06-26T03:26:37.800697+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
@@ -1314,11 +1314,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:07:54.509540+00:00",
+    "timestamp": "2026-06-26T03:26:38.185042+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 21.3,
+    "check_duration_ms": 19.2,
     "format`
 
 **unknown_action** — ⚠️ handled
@@ -1434,60 +1434,60 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3213,
+    "total_executions": 3556,
     "outcomes": {
-      "ADD": 420,
-      "NOOP": 955,
-      "UNKNOWN": 1194,
-      "UPDATE": 644
+      "ADD": 459,
+      "NOOP": 1050,
+      "UNKNOWN": 1337,
+      "UPDATE": 710
     },
     "by_event_type": {
-      "mo`
+      "m`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3213,
+    "total_executions": 3556,
     "outcomes": {
-      "ADD": 420,
-      "NOOP": 955,
-      "UNKNOWN": 1194,
-      "UPDATE": 644
+      "ADD": 459,
+      "NOOP": 1050,
+      "UNKNOWN": 1337,
+      "UPDATE": 710
     },
     "by_event_type": {
-      "mo`
+      "m`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3213,
+    "total_executions": 3556,
     "outcomes": {
-      "ADD": 420,
-      "NOOP": 955,
-      "UNKNOWN": 1194,
-      "UPDATE": 644
+      "ADD": 459,
+      "NOOP": 1050,
+      "UNKNOWN": 1337,
+      "UPDATE": 710
     },
     "by_event_type": {
-      "mo`
+      "m`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3213,
+    "total_executions": 3556,
     "outcomes": {
-      "ADD": 420,
-      "NOOP": 955,
-      "UNKNOWN": 1194,
-      "UPDATE": 644
+      "ADD": 459,
+      "NOOP": 1050,
+      "UNKNOWN": 1337,
+      "UPDATE": 710
     },
     "by_event_type": {
-      "mo`
+      "m`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1612,7 +1612,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-39a3fe49fd63",
+        "decision_id": "dec-b407e23d4482",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1623,7 +1623,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-39a3fe49fd63",
+        "decision_id": "dec-b407e23d4482",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1642,7 +1642,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-39a3fe49fd63",
+        "decision_id": "dec-b407e23d4482",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1846,13 +1846,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 12,
-    "total_units": 12.0,
+    "total_entries": 14,
+    "total_units": 14.0,
     "by_scope": {
-      "federation_join": 12.0
+      "federation_join": 14.0
     },
     "by_resource_type": {
-      "federation_join": 12.0
+      "federation_join": 14.0
     },`
 
 **missing_params** — ✅ pass
@@ -1860,13 +1860,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 12,
-    "total_units": 12.0,
+    "total_entries": 14,
+    "total_units": 14.0,
     "by_scope": {
-      "federation_join": 12.0
+      "federation_join": 14.0
     },
     "by_resource_type": {
-      "federation_join": 12.0
+      "federation_join": 14.0
     },`
 
 **wrong_types** — ⚠️ handled
@@ -1882,13 +1882,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 12,
-    "total_units": 12.0,
+    "total_entries": 14,
+    "total_units": 14.0,
     "by_scope": {
-      "federation_join": 12.0
+      "federation_join": 14.0
     },
     "by_resource_type": {
-      "federation_join": 12.0
+      "federation_join": 14.0
     },`
 
 **unknown_action** — ⚠️ handled
@@ -1928,28 +1928,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2058,7 +2058,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T03:07:54.648894+00:00
+# Generated at 2026-06-26T03:26:38.327732+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2068,7 +2068,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T03:07:54.649607+00:00
+# Generated at 2026-06-26T03:26:38.328449+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2078,14 +2078,15 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Action 'prometheus_metrics' failed: 'int' object has no attribute 'lower'",
-  "module": "nucleus_engrams"
+  "success": false,
+  "data": null,
+  "error": "format must be str, got int"
 }`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T03:07:54.650203+00:00
+# Generated at 2026-06-26T03:26:38.329092+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2528,7 +2529,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T08:37:55.343900",
+    "timestamp": "2026-06-26T08:56:39.054573",
     "symptom": "test",
     "sections": {
       "search": {
@@ -2548,7 +2549,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T08:37:55.347036",
+    "timestamp": "2026-06-26T08:56:39.058220",
     "symptom": "wrong_type",
     "sections": {
       "search`

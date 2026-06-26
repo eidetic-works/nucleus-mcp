@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:40:38
+**Generated:** 2026-06-26T08:59:30
 **Total tests:** 112
 **Actions tested:** 16
 **Angles per action:** 7
@@ -197,7 +197,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:56.579195Z"
+  "timestamp": "2026-06-26T03:26:41.552393Z"
 }`
 
 **missing_params** — ✅ pass
@@ -207,7 +207,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:56.579305Z"
+  "timestamp": "2026-06-26T03:26:41.552467Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -217,7 +217,7 @@
   "data": null,
   "error": "Server wrong_type not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:56.579376Z"
+  "timestamp": "2026-06-26T03:26:41.552526Z"
 }`
 
 **empty_params** — ✅ pass
@@ -227,7 +227,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:56.579430Z"
+  "timestamp": "2026-06-26T03:26:41.552573Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -384,7 +384,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Proof: test-id
 
-> Generated: 2026-06-26 08:37:56
+> Generated: 2026-06-26 08:56:41
 
 ## Thinking
 None
@@ -937,7 +937,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'test' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:56.601016Z"
+  "timestamp": "2026-06-26T03:26:41.592596Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -954,7 +954,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'wrong_type' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:07:56.601119Z"
+  "timestamp": "2026-06-26T03:26:41.592699Z"
 }`
 
 **empty_params** — ⚠️ handled

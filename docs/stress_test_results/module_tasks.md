@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:40:38
+**Generated:** 2026-06-26T08:59:30
 **Total tests:** 119
 **Actions tested:** 17
 **Angles per action:** 7
@@ -140,7 +140,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-a036cbc6",
+    "id": "task-59e5a6e8",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -344,7 +344,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626084020"
+    "session_id": "session-20260626085911"
   },
   "error": null
 }`
@@ -356,7 +356,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626084020"
+    "session_id": "session-20260626085911"
   },
   "error": null
 }`
@@ -368,7 +368,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626084020"
+    "session_id": "session-20260626085911"
   },
   "error": null
 }`
@@ -380,7 +380,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626084020"
+    "session_id": "session-20260626085911"
   },
   "error": null
 }`
@@ -502,7 +502,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-b84564f2",
+    "id": "task-4daca7a1",
     "description": "test",
     "status": "PENDING",
     "priority": 3,

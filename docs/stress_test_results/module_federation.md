@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:40:38
+**Generated:** 2026-06-26T08:59:30
 **Total tests:** 49
 **Actions tested:** 7
 **Angles per action:** 7
@@ -466,7 +466,7 @@ Local brain now operating in standalone mode.`
    Score: 0.630
 
 ⏱️ ROUTING TIME
-   0.025ms
+   0.029ms
 
 🔄 ALTERNATIVES
    1. pe`
@@ -491,7 +491,7 @@ Local brain now operating in standalone mode.`
    Score: 0.630
 
 ⏱️ ROUTING TIME
-   0.094ms
+   0.074ms
 
 🔄 ALTERNATIVES
    1. peer_h`

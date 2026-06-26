@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:40:38
+**Generated:** 2026-06-26T08:59:30
 **Total tests:** 77
 **Actions tested:** 11
 **Angles per action:** 7
@@ -132,37 +132,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782443297_51e6",
+  "sprint_id": "sprint_1782444427_dff8",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:38:17+0530"
+  "timestamp": "2026-06-26T08:57:07+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782443297_9fde",
+  "sprint_id": "sprint_1782444427_d6f0",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:38:17+0530"
+  "timestamp": "2026-06-26T08:57:07+0530"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "sprint_id": "sprint_1782443297_d76a",
+  "sprint_id": "sprint_1782444427_81b1",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:38:17+0530"
+  "timestamp": "2026-06-26T08:57:07+0530"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782443297_0d4c",
+  "sprint_id": "sprint_1782444427_93e3",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:38:17+0530"
+  "timestamp": "2026-06-26T08:57:07+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -198,7 +198,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782443297_270512
+- *Result preview:* `🚀 Sprint Report: sprint_1782444427_e495e9
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -212,7 +212,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782443297_ec34f2
+- *Result preview:* `🚀 Sprint Report: sprint_1782444427_15b3a8
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -230,7 +230,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782443297_d590c1
+- *Result preview:* `🚀 Sprint Report: sprint_1782444427_3bae8f
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -327,7 +327,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782443297_d590c1
+   Sprint ID: sprint_1782444427_3bae8f
    Reason: User requested halt
    Status: halt_requested
    
@@ -336,7 +336,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782443297_d590c1
+   Sprint ID: sprint_1782444427_3bae8f
    Reason: User requested halt
    Status: halt_requested
    
@@ -345,7 +345,7 @@ Duration: 0.0s
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782443297_d590c1
+   Sprint ID: sprint_1782444427_3bae8f
    Reason: 12345
    Status: halt_requested
    
@@ -354,7 +354,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782443297_d590c1
+   Sprint ID: sprint_1782444427_3bae8f
    Reason: User requested halt
    Status: halt_requested
    
@@ -708,7 +708,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Mission Started
-   ID: mission_1782443297_9f86d0
+   ID: mission_1782444427_9f86d0
    Name: test
    Goal: test
    Tasks: 4

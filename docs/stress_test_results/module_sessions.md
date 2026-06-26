@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:40:38
+**Generated:** 2026-06-26T08:59:30
 **Total tests:** 182
 **Actions tested:** 26
 **Angles per action:** 7
@@ -229,7 +229,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -241,7 +241,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -253,7 +253,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -265,7 +265,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -446,7 +446,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -458,7 +458,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -470,7 +470,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -482,7 +482,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_083329",
+    "session_id": "not_a_dict_20260626_085307",
     "message": "Resumable session found."
   },
   "error": null
@@ -661,8 +661,8 @@
     "success": true,
     "summary": "test",
     "activity": {
-      "total_events": 4150,
-      "tasks_completed": 117,
+      "total_events": 4589,
+      "tasks_completed": 129,
       "tasks_claimed": 1,
       "tasks_created"`
 
@@ -672,7 +672,7 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 117 tasks done, 1 tasks claimed, 51 tasks created, 4157 total events",
+    "summary": "Session ended (neutral): 129 tasks done, 1 tasks claimed, 59 tasks created, 4596 total events",
     "activity": {
       "total_eve`
 
@@ -690,7 +690,7 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 117 tasks done, 1 tasks claimed, 51 tasks created, 4163 total events",
+    "summary": "Session ended (neutral): 129 tasks done, 1 tasks claimed, 59 tasks created, 4602 total events",
     "activity": {
       "total_eve`
 
@@ -1001,7 +1001,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 215
+    "duration_ms": 519
   },
   "error": nu`
 
@@ -1015,7 +1015,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 176
+    "duration_ms": 387
   },
   "error": nu`
 
@@ -1035,7 +1035,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 200
+    "duration_ms": 377
   },
   "error": nu`
 
@@ -1446,8 +1446,8 @@
     "agent": "test",
     "role": "test",
     "worktree_path": null,
-    "pid": 31670,
-    "registered_at": "2026-06-26T03:08:18.969808Z",
+    "pid": 38295,
+    "registered_at": "2026-06-26T03:27:10.021771Z",
    `
 
 **missing_params** — ⚠️ handled
@@ -1641,7 +1641,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "test_20260626_083818",
+    "session_id": "test_20260626_085710",
     "context": "test",
     "message": "Session saved. Resume later with: nucleus sessions resume"
   },
@@ -1659,7 +1659,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "not_a_dict_20260626_083818",
+    "session_id": "not_a_dict_20260626_085710",
     "context": "not_a_dict",
     "message": "Session saved. Resume later with: nucleus sessions re`
 
