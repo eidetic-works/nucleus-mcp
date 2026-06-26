@@ -805,6 +805,9 @@ def list_conversations(
         })
 
     # Sort
+    valid_sorts = ("recent", "size", "turns")
+    if sort not in valid_sorts:
+        sort = "recent"  # Default to recent for invalid values
     if sort == "recent":
         entries.sort(key=lambda e: e["mtime"], reverse=True)
     elif sort == "size":
