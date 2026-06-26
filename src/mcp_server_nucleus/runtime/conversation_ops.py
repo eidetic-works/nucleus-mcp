@@ -493,6 +493,9 @@ def ingest_conversations(
     Returns: {sessions_processed, turns_created, preferences_found,
               chains_extracted, errors, duration_ms}
     """
+    if not isinstance(limit, (int, float)):
+        return {"sessions_processed": 0, "turns_created": 0, "preferences_found": 0,
+                "chains_extracted": 0, "errors": [f"limit must be a number, got {type(limit).__name__}"]}
     from .archive_pipeline import ArchivePipeline
 
     start = time.monotonic()
