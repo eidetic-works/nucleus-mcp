@@ -388,15 +388,24 @@ class SQLiteBackend(StorageBackend):
     def update_task(self, task_id: str, updates: Dict[str, Any]) -> bool:
         if not updates:
             return False
-            
+
+        # SQL injection protection — validate column names against allowlist
+        VALID_COLUMNS = {"status", "priority", "blocked_by", "required_skills",
+                         "assigned_to", "description", "source", "updated_at",
+                         "started_at", "completed_at", "attempts", "last_error",
+                         "fence_token", "metadata", "tags", "due_date"}
+        invalid_keys = set(updates.keys()) - VALID_COLUMNS
+        if invalid_keys:
+            raise ValueError(f"Invalid task columns: {invalid_keys}. Allowed: {VALID_COLUMNS}")
+
         update_cols = []
         params = []
-        
+
         # Format JSON arrays
         for k in ["blocked_by", "required_skills"]:
             if k in updates:
                 updates[k] = json.dumps(updates[k])
-                
+
         for k, v in updates.items():
             update_cols.append(f"{k} = ?")
             params.append(v)
@@ -593,14 +602,23 @@ class PostgresBackend(StorageBackend):
     def update_task(self, task_id: str, updates: Dict[str, Any]) -> bool:
         if not updates:
             return False
-            
+
+        # SQL injection protection — validate column names against allowlist
+        VALID_COLUMNS = {"status", "priority", "blocked_by", "required_skills",
+                         "assigned_to", "description", "source", "updated_at",
+                         "started_at", "completed_at", "attempts", "last_error",
+                         "fence_token", "metadata", "tags", "due_date"}
+        invalid_keys = set(updates.keys()) - VALID_COLUMNS
+        if invalid_keys:
+            raise ValueError(f"Invalid task columns: {invalid_keys}. Allowed: {VALID_COLUMNS}")
+
         update_cols = []
         params = []
-        
+
         for k in ["blocked_by", "required_skills"]:
             if k in updates:
                 updates[k] = self.extras.Json(updates[k])
-                
+
         for k, v in updates.items():
             update_cols.append(f"{k} = %s")
             params.append(v)

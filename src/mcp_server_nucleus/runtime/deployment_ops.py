@@ -40,11 +40,34 @@ def _run_smoke_test(deploy_url: str, endpoint: str = "/api/health") -> Dict:
     """Run a quick health check on deployed service."""
     import urllib.request
     import urllib.error
-    
+    from urllib.parse import urlparse
+
+    # SSRF protection — block internal/private network targets
+    BLOCKED_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1",
+                     "169.254.169.254",  # AWS/GCP metadata endpoint
+                     "metadata.google.internal"}
+    try:
+        parsed = urlparse(deploy_url)
+        host = (parsed.hostname or "").lower()
+        if not host:
+            return {"passed": False, "error": f"Invalid URL: no host in '{deploy_url}'"}
+        if host in BLOCKED_HOSTS:
+            return {"passed": False, "error": f"Blocked host '{host}' — internal/metadata endpoints not allowed for smoke tests"}
+        # Block private IP ranges (10.x, 172.16-31.x, 192.168.x)
+        import ipaddress
+        try:
+            ip = ipaddress.ip_address(host)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                return {"passed": False, "error": f"Blocked private/internal IP '{host}' — only public endpoints allowed for smoke tests"}
+        except ValueError:
+            pass  # hostname is a DNS name, not an IP — allowed
+    except Exception as e:
+        return {"passed": False, "error": f"URL validation failed: {e}"}
+
     try:
         url = f"{deploy_url.rstrip('/')}{endpoint}"
         start = time.time()
-        
+
         request = urllib.request.Request(url, headers={"User-Agent": "Nucleus-Smoke-Test/1.0"})
         with urllib.request.urlopen(request, timeout=10) as response:
             latency_ms = (time.time() - start) * 1000
