@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:51:07
+**Generated:** 2026-06-26T07:23:15
 **Total tests:** 182
 **Actions tested:** 26
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 94 | 51.6% | Tool returned a successful response |
-| ⚠️ handled | 88 | 48.4% | Tool returned a graceful error (no crash) |
+| ✅ pass | 99 | 54.4% | Tool returned a successful response |
+| ⚠️ handled | 83 | 45.6% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 20 | 76.9% |
-| ⚠️ handled | 6 | 23.1% |
+| ✅ pass | 22 | 84.6% |
+| ⚠️ handled | 4 | 15.4% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 16 | 61.5% |
-| ⚠️ handled | 10 | 38.5% |
+| ✅ pass | 17 | 65.4% |
+| ⚠️ handled | 9 | 34.6% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 16 | 61.5% |
-| ⚠️ handled | 10 | 38.5% |
+| ✅ pass | 17 | 65.4% |
+| ⚠️ handled | 9 | 34.6% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 16 | 61.5% |
-| ⚠️ handled | 10 | 38.5% |
+| ✅ pass | 17 | 65.4% |
+| ⚠️ handled | 9 | 34.6% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -124,7 +124,7 @@
 | `emit_event` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `end` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `garbage_collect` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `get_state` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `get_state` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `handoff_summary` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `heartbeat` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `ingest_conversations` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
@@ -136,7 +136,7 @@
 | `register` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `resume` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `resume_checkpoint` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `save` | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `save` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `search_conversations` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `start` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `unregister` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
@@ -229,7 +229,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -241,7 +241,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -253,7 +253,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -265,7 +265,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -446,7 +446,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -458,7 +458,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -470,7 +470,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -482,7 +482,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_064525",
+    "session_id": "not_a_dict_20260626_071626",
     "message": "Resumable session found."
   },
   "error": null
@@ -661,8 +661,8 @@
     "success": true,
     "summary": "test",
     "activity": {
-      "total_events": 2058,
-      "tasks_completed": 60,
+      "total_events": 2929,
+      "tasks_completed": 84,
       "tasks_claimed": 0,
       "tasks_created":`
 
@@ -672,9 +672,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 60 tasks done, 11 tasks created, 2065 total events",
+    "summary": "Session ended (neutral): 84 tasks done, 27 tasks created, 2936 total events",
     "activity": {
-      "total_events": 2065,
+      "total_events": 2936,
       `
 
 **wrong_types** — ⚠️ handled
@@ -691,9 +691,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 60 tasks done, 11 tasks created, 2071 total events",
+    "summary": "Session ended (neutral): 84 tasks done, 27 tasks created, 2942 total events",
     "activity": {
-      "total_events": 2071,
+      "total_events": 2942,
       `
 
 **unknown_action** — ⚠️ handled
@@ -810,36 +810,36 @@
 
 #### `sessions.get_state`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_state': make_helpers.<locals>.<lambda>() takes 0 positional arguments but 1 was given",
-  "expected_params": "(path=None)",
-  "provided_params": []
+  "success": true,
+  "data": {},
+  "error": null
 }`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_state': make_helpers.<locals>.<lambda>() takes 0 positional arguments but 1 was given",
-  "expected_params": "(path=None)",
-  "provided_params": []
+  "success": true,
+  "data": {},
+  "error": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_state': make_helpers.<locals>.<lambda>() takes 0 positional arguments but 1 was given",
-  "expected_params": "(path=None)",
-  "provided_params": [
-    "pat`
+  "success": true,
+  "data": {},
+  "error": null
+}`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'get_state': make_helpers.<locals>.<lambda>() takes 0 positional arguments but 1 was given",
-  "expected_params": "(path=None)",
-  "provided_params": []
+  "success": true,
+  "data": {},
+  "error": null
 }`
 
 **unknown_action** — ⚠️ handled
@@ -1003,7 +1003,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 578
+    "duration_ms": 239
   },
   "error": nu`
 
@@ -1017,7 +1017,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 881
+    "duration_ms": 170
   },
   "error": nu`
 
@@ -1037,7 +1037,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 884
+    "duration_ms": 207
   },
   "error": nu`
 
@@ -1079,11 +1079,12 @@
   "data": {
     "sessions": [
       {
-        "id": "not_a_dict_20260626_064525",
-        "context": "not_a_dict",
-        "created_at": "2026-06-26T06:45:25+0530"
+        "id": "test_20260626_071626",
+        "context": "test",
+        "created_at": "2026-06-26T07:16:26+0530"
       },
-      `
+      {
+        "i`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1092,11 +1093,12 @@
   "data": {
     "sessions": [
       {
-        "id": "not_a_dict_20260626_064525",
-        "context": "not_a_dict",
-        "created_at": "2026-06-26T06:45:25+0530"
+        "id": "test_20260626_071626",
+        "context": "test",
+        "created_at": "2026-06-26T07:16:26+0530"
       },
-      `
+      {
+        "i`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1105,11 +1107,12 @@
   "data": {
     "sessions": [
       {
-        "id": "not_a_dict_20260626_064525",
-        "context": "not_a_dict",
-        "created_at": "2026-06-26T06:45:25+0530"
+        "id": "test_20260626_071626",
+        "context": "test",
+        "created_at": "2026-06-26T07:16:26+0530"
       },
-      `
+      {
+        "i`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1118,11 +1121,12 @@
   "data": {
     "sessions": [
       {
-        "id": "not_a_dict_20260626_064525",
-        "context": "not_a_dict",
-        "created_at": "2026-06-26T06:45:25+0530"
+        "id": "test_20260626_071626",
+        "context": "test",
+        "created_at": "2026-06-26T07:16:26+0530"
       },
-      `
+      {
+        "i`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1444,9 +1448,9 @@
     "agent": "test",
     "role": "test",
     "worktree_path": null,
-    "pid": 6000,
-    "registered_at": "2026-06-26T01:18:41.568264Z",
-    `
+    "pid": 44598,
+    "registered_at": "2026-06-26T01:50:45.794700Z",
+   `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1633,13 +1637,17 @@
 
 #### `sessions.save`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "success": false,
-  "data": null,
-  "error": "'dict' object has no attribute 'lower'"
-}`
+  "success": true,
+  "data": {
+    "success": true,
+    "session_id": "test_20260626_072045",
+    "context": "test",
+    "message": "Session saved. Resume later with: nucleus sessions resume"
+  },
+ `
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1653,7 +1661,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "not_a_dict_20260626_064841",
+    "session_id": "not_a_dict_20260626_072045",
     "context": "not_a_dict",
     "message": "Session saved. Resume later with: nucleus sessions re`
 

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:51:07
+**Generated:** 2026-06-26T07:23:15
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 63 | 60.0% | Tool returned a successful response |
-| ⚠️ handled | 42 | 40.0% | Tool returned a graceful error (no crash) |
+| ✅ pass | 67 | 63.8% | Tool returned a successful response |
+| ⚠️ handled | 38 | 36.2% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 14 | 93.3% |
-| ⚠️ handled | 1 | 6.7% |
+| ✅ pass | 15 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 10 | 66.7% |
-| ⚠️ handled | 5 | 33.3% |
+| ✅ pass | 11 | 73.3% |
+| ⚠️ handled | 4 | 26.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 14 | 93.3% |
-| ⚠️ handled | 1 | 6.7% |
+| ✅ pass | 15 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 10 | 66.7% |
-| ⚠️ handled | 5 | 33.3% |
+| ✅ pass | 11 | 73.3% |
+| ⚠️ handled | 4 | 26.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -120,7 +120,7 @@
 | `check_protocol` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `dispatch_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `get_handoffs` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `get_llm_status` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `get_llm_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `mark_high_impact` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `pause_notifications` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `rate_limit_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
@@ -137,49 +137,57 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 2,
+    "total_allowed": 0,
     "total_limited": 0,
-    "tokens_available": 8.212104320526123,
+    "tokens_available": 10.0,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {
-      "wrong_ty`
+    "spawns_by_persona": {}
+  },
+  "cost_summary": {
+  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 2,
+    "total_allowed": 0,
     "total_limited": 0,
-    "tokens_available": 8.212104320526123,
+    "tokens_available": 10.0,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {
-      "wrong_ty`
+    "spawns_by_persona": {}
+  },
+  "cost_summary": {
+  `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 2,
+    "total_allowed": 0,
     "total_limited": 0,
-    "tokens_available": 8.212104320526123,
+    "tokens_available": 10.0,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {
-      "wrong_ty`
+    "spawns_by_persona": {}
+  },
+  "cost_summary": {
+  `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "spawn_limiter": {
-    "total_allowed": 2,
+    "total_allowed": 0,
     "total_limited": 0,
-    "tokens_available": 8.212104320526123,
+    "tokens_available": 10.0,
     "capacity": 10.0,
     "fill_rate": 2.0,
-    "spawns_by_persona": {
-      "wrong_ty`
+    "spawns_by_persona": {}
+  },
+  "cost_summary": {
+  `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -497,37 +505,45 @@
 
 #### `orchestration.TELEM_ROUTER.get_llm_status`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_llm_status': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "()",
-  "provided_params": []
-}`
+- *Result preview:* `## 🧠 LLM Tier Status
 
-**missing_params** — ⚠️ handled
+**Current Tier:** auto (standard)
+**Vertex Mode:** Disabled
+
+No benchmark data available.
+`
+
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_llm_status': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "()",
-  "provided_params": []
-}`
+- *Result preview:* `## 🧠 LLM Tier Status
 
-**wrong_types** — ⚠️ handled
+**Current Tier:** auto (standard)
+**Vertex Mode:** Disabled
+
+No benchmark data available.
+`
+
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_llm_status': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "()",
-  "provided_params": []
-}`
+- *Result preview:* `## 🧠 LLM Tier Status
 
-**empty_params** — ⚠️ handled
+**Current Tier:** auto (standard)
+**Vertex Mode:** Disabled
+
+No benchmark data available.
+`
+
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `{
-  "error": "Invalid params for action 'get_llm_status': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "()",
-  "provided_params": []
-}`
+- *Result preview:* `## 🧠 LLM Tier Status
+
+**Current Tier:** auto (standard)
+**Vertex Mode:** Disabled
+
+No benchmark data available.
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -814,12 +830,12 @@
 ━━━━━━━━━━━━━━━━━━
 TO: test
 PRIORITY: P3
-CONTEXT: {}
+CONTEXT: test
 REQUEST: test
 ARTIFACTS: None
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782436716-5da8
-Status: Pending - will appear in target agent's ses`
+ID: handoff-1782438644-3eea
+Status: Pending - will appear in target agent's s`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -838,7 +854,7 @@ CONTEXT: not_a_dict
 REQUEST: wrong_type
 ARTIFACTS: w, r, o, n, g, _, t, y, p, e
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782436716-2`
+ID: handoff-1782438644-4`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -978,7 +994,7 @@ ID: handoff-1782436716-2`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 48
+**High Impact Closures:** 64
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -988,7 +1004,7 @@ ID: handoff-1782436716-2`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 48
+**High Impact Closures:** 64
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -998,7 +1014,7 @@ ID: handoff-1782436716-2`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 48
+**High Impact Closures:** 64
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1008,7 +1024,7 @@ ID: handoff-1782436716-2`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 48
+**High Impact Closures:** 64
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `

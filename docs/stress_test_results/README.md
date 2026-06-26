@@ -36,10 +36,10 @@ If you only care about one module, read its individual file:
 
 | # | Angle | What it tests | Pass | Handled | Crash |
 |---|-------|---------------|------|---------|-------|
-| 1 | `happy` | Valid params — the normal call an LLM would make | 198 (74%) | 68 | 0 |
-| 2 | `missing_params` | No params provided — tests required-param validation | 129 (48%) | 137 | 0 |
-| 3 | `wrong_types` | Wrong param types (int where str expected, etc.) | 161 (61%) | 105 | 0 |
-| 4 | `empty_params` | Empty params dict — tests default handling | 129 (48%) | 137 | 0 |
+| 1 | `happy` | Valid params — the normal call an LLM would make | 213 (80%) | 53 | 0 |
+| 2 | `missing_params` | Required params omitted, optional params kept | 140 (53%) | 126 | 0 |
+| 3 | `wrong_types` | Wrong param types (int where str expected, etc.) | 176 (66%) | 90 | 0 |
+| 4 | `empty_params` | Empty params dict — tests default handling | 140 (53%) | 126 | 0 |
 | 5 | `unknown_action` | Action name that doesn't exist — tests typo handling | 0 (0%) | 266 | 0 |
 | 6 | `fire_without_thinking` | 5 confused-LLM scenarios — zero-config calls | 0 (0%) | 266 | 0 |
 | 7 | `cross_agent_compat` | Static analysis for Claude/Cursor/Windsurf compat | 266 (100%) | 0 | 0 |
@@ -68,20 +68,22 @@ If you only care about one module, read its individual file:
 3. **audit_log `int(limit)` crashed on non-integer input (fixed in `f04a1f64`):** `query_audit()` did `int(limit)` with no type guard. When `limit='not_a_number'` was passed, it threw `ValueError`. Fix: try/except with fallback to default (100). Same for `offset`.
 4. **audit_log + cost_router used sync dispatch despite async wrapper (fixed in `f04a1f64`):** Both were `async def` but called `make_response_dispatch` (sync) inside. Converted to `async_dispatch` for consistency with the other 9 facades.
 5. **audit_log + cost_router handlers took single `params` dict (CRITICAL, fixed in `ddb7c861`):** Handlers were `def _h_query(params):` but `async_dispatch` calls `handler(**params)` which unpacks the dict as kwargs. So `_h_query(team_id='default')` failed with "got an unexpected keyword argument 'team_id'". Every call through the MCP tool returned an error — the handlers never actually ran. Fix: changed all 5 handlers from `def _h_x(params)` to `def _h_x(**params)`.
+6. **HITL gates bypassed by truthy non-bool confirm values (SECURITY, fixed in `9bbf6479`):** The HITL gates for `delete_file` and `spawn_agent` used `if not confirm:` (truthiness check). Any truthy non-bool value bypassed the gate: `confirm='yes'`, `confirm='true'`, `confirm=1`, `confirm='not_a_bool'`. An LLM passing `confirm='true'` (string) instead of `confirm=true` (bool) would delete files or spawn agents without the HITL gate firing. Fix: changed to `if confirm is not True:` (strict identity check). Only the actual boolean `True` now passes the gate.
+7. **Engram handlers crashed on wrong types with generic 'internal error' (fixed in `de21ffba`):** `_brain_write_engram_impl`, `_brain_query_engrams_impl`, and `_brain_search_engrams_impl` called string methods (`.strip()`, `.lower()`) on parameters without checking types. When an LLM passed `key=12345` (int), the handler crashed with `AttributeError: int has no attribute strip'` which the error sanitizer wrapped as a generic 'internal error'. Fix: added `isinstance()` type validation at the top of each handler. LLMs now get 'Invalid key: expected str, got int' instead of 'internal error'.
 
-### Happy-path pass rate (74%, expected)
-The happy-path angle passes 198/266 (74%) with introspected handler-signature params. Breakdown by module:
+### Happy-path pass rate (80%, expected)
+The happy-path angle passes 213/266 (80%) with introspected handler-signature params. Breakdown by module:
 
 | Module | Pass | Handled | Pass % | Root cause |
 |--------|------|---------|--------|------------|
 | cost_router | 1 | 0 | 100% | Route works with test prompt |
 | federation | 7 | 0 | 100% | All actions work standalone |
-| orchestration | 59 | 12 | 83% | Most ops work; some need real commitments/slots |
-| sessions | 20 | 6 | 77% | Most ops work; some need real session IDs |
+| engrams | 36 | 2 | 95% | Most read/write work; 2 need specific brain state |
+| sessions | 22 | 4 | 85% | Most ops work; some need real session IDs |
+| orchestration | 60 | 11 | 85% | Most ops work; some need real commitments/slots |
 | tasks | 13 | 4 | 76% | Most ops work; some need real task IDs |
-| engrams | 29 | 9 | 76% | Most read/write work; some need specific brain state |
 | governance | 14 | 5 | 74% | Most ops work; some need real compliance configs |
-| sync | 41 | 22 | 65% | Many ops work; some need real channels/pair configs |
+| sync | 46 | 17 | 73% | Many ops work; some need real channels/pair configs |
 | features | 10 | 6 | 62% | Most ops work; some need real feature IDs + MCP servers |
 | audit_log | 2 | 2 | 50% | admin_query needs token; log_event needs all required fields |
 | relay | 2 | 2 | 50% | Needs real relay state |

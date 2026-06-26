@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:51:07
+**Generated:** 2026-06-26T07:23:15
 **Total tests:** 91
 **Actions tested:** 13
 **Angles per action:** 7
@@ -133,7 +133,13 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Loop created!
+
+**ID:** `comm_20260626_072039_6`
+**Type:** task
+**Description:** test
+**Priority:** 3
+**Suggested:** schedule - Needs focused time`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -143,7 +149,13 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Loop created!
+
+**ID:** `comm_20260626_072039_7`
+**Type:** 12345
+**Description:** wrong_type
+**Priority:** not_a_number
+**Suggested:** schedule - Needs focused time`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -184,19 +196,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Archive complete. Archived 0 stale items.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Archive complete. Archived 0 stale items.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Archive complete. Archived 0 stale items.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Archive complete. Archived 0 stale items.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -231,7 +243,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `Error: Commitment test not found`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -241,7 +253,7 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `Error: Commitment wrong_type not found`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -282,19 +294,67 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 🎯 Commitment Health
+
+**Open loops:** 6
+- 🟢 Green: 6
+- 🟡 Yellow: 0
+- 🔴 Red: 0
+
+**By type:** task: 3, 12345: 3
+
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
+
+**Last scan:** 2026`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 🎯 Commitment Health
+
+**Open loops:** 6
+- 🟢 Green: 6
+- 🟡 Yellow: 0
+- 🔴 Red: 0
+
+**By type:** task: 3, 12345: 3
+
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
+
+**Last scan:** 2026`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 🎯 Commitment Health
+
+**Open loops:** 6
+- 🟢 Green: 6
+- 🟡 Yellow: 0
+- 🔴 Red: 0
+
+**By type:** task: 3, 12345: 3
+
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
+
+**Last scan:** 2026`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 🎯 Commitment Health
+
+**Open loops:** 6
+- 🟢 Green: 6
+- 🟡 Yellow: 0
+- 🔴 Red: 0
+
+**By type:** task: 3, 12345: 3
+
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
+
+**Last scan:** 2026`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -329,19 +389,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072039.zip`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072040.zip`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072041.zip`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072041.zip`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -376,19 +436,46 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `**Open Commitments (8 total)**
+
+🟢 **test**
+   Age: 0 days | Suggested: schedule
+   Reason: Needs focused time
+   ID: `comm_20260626_070211_0`
+
+🟢 **wrong_type**
+   Age: 0 days | Suggested: schedule
+   `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `**Open Commitments (8 total)**
+
+🟢 **test**
+   Age: 0 days | Suggested: schedule
+   Reason: Needs focused time
+   ID: `comm_20260626_070211_0`
+
+🟢 **wrong_type**
+   Age: 0 days | Suggested: schedule
+   `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ No open commitments!`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `**Open Commitments (8 total)**
+
+🟢 **test**
+   Age: 0 days | Suggested: schedule
+   Reason: Needs focused time
+   ID: `comm_20260626_070211_0`
+
+🟢 **wrong_type**
+   Age: 0 days | Suggested: schedule
+   `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -423,19 +510,63 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 📊 Coordination Metrics (Last 7 Days)
+
+**🚀 Velocity:** 0 items closed
+**⏱️ Speed:** 0 days avg
+
+**📈 Closure Rates by Type:**
+(No closed items yet)
+
+**🧠 Current Load:**
+- Total Open: 6
+- Red Tier: 0
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 📊 Coordination Metrics (Last 7 Days)
+
+**🚀 Velocity:** 0 items closed
+**⏱️ Speed:** 0 days avg
+
+**📈 Closure Rates by Type:**
+(No closed items yet)
+
+**🧠 Current Load:**
+- Total Open: 6
+- Red Tier: 0
+`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 📊 Coordination Metrics (Last 7 Days)
+
+**🚀 Velocity:** 0 items closed
+**⏱️ Speed:** 0 days avg
+
+**📈 Closure Rates by Type:**
+(No closed items yet)
+
+**🧠 Current Load:**
+- Total Open: 6
+- Red Tier: 0
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `## 📊 Coordination Metrics (Last 7 Days)
+
+**🚀 Velocity:** 0 items closed
+**⏱️ Speed:** 0 days avg
+
+**📈 Closure Rates by Type:**
+(No closed items yet)
+
+**🧠 Current Load:**
+- Total Open: 6
+- Red Tier: 0
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -470,19 +601,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `Error: 'int' object has no attribute 'upper'`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `Error: 'int' object has no attribute 'upper'`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ No open loops! Guilt-free operation.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `Error: 'int' object has no attribute 'upper'`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -517,19 +648,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No patterns learned yet.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No patterns learned yet.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No patterns learned yet.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No patterns learned yet.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -686,19 +817,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Scan complete. Found 0 new items.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Scan complete. Found 0 new items.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Scan complete. Found 0 new items.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `✅ Scan complete. Found 0 new items.`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -733,19 +864,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No active challenge. Run `nucleus_orchestration(action='weekly_challenge', params={'action': 'list'})` to pick one!`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No active challenge. Run `nucleus_orchestration(action='weekly_challenge', params={'action': 'list'})` to pick one!`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No active challenge. Run `nucleus_orchestration(action='weekly_challenge', params={'action': 'list'})` to pick one!`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `Error: unsupported operand type(s) for /: 'str' and 'str'`
+- *Result preview:* `No active challenge. Run `nucleus_orchestration(action='weekly_challenge', params={'action': 'list'})` to pick one!`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:51:07
+**Generated:** 2026-06-26T07:23:15
 **Total tests:** 441
 **Actions tested:** 63
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 175 | 39.7% | Tool returned a successful response |
-| ⚠️ handled | 266 | 60.3% | Tool returned a graceful error (no crash) |
+| ✅ pass | 189 | 42.9% | Tool returned a successful response |
+| ⚠️ handled | 252 | 57.1% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 41 | 65.1% |
-| ⚠️ handled | 22 | 34.9% |
+| ✅ pass | 46 | 73.0% |
+| ⚠️ handled | 17 | 27.0% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 20 | 31.7% |
-| ⚠️ handled | 43 | 68.3% |
+| ✅ pass | 22 | 34.9% |
+| ⚠️ handled | 41 | 65.1% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 31 | 49.2% |
-| ⚠️ handled | 32 | 50.8% |
+| ✅ pass | 36 | 57.1% |
+| ⚠️ handled | 27 | 42.9% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 20 | 31.7% |
-| ⚠️ handled | 43 | 68.3% |
+| ✅ pass | 22 | 34.9% |
+| ⚠️ handled | 41 | 65.1% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -124,8 +124,8 @@
 | `identify_agent` | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `list_artifacts` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `list_channels` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `marketplace_alert` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_audit` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_alert` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_audit` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `marketplace_can_call` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_compare` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
@@ -139,10 +139,10 @@
 | `marketplace_quarantine` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_recommend` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `marketplace_search` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `marketplace_subscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `marketplace_subscriptions` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_subscribe` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `marketplace_subscriptions` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `marketplace_trends` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `marketplace_unsubscribe` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `marketplace_unsubscribe` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_whoami` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `notify` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `pair_fire` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
@@ -318,12 +318,12 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782436646-68f3cf28",
+  "poll_id": "poll-1782438509-eabecc1e",
   "service_id": "test",
   "commit_sha": null,
   "status": "polling",
-  "elapsed_minutes": 1.3,
-  "message": "Polling for 1.3 minutes. Use mcp_render_list_dep`
+  "elapsed_minutes": 2.3,
+  "message": "Polling for 2.3 minutes. Use mcp_render_list_dep`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -335,12 +335,12 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782436646-2d00d012",
+  "poll_id": "poll-1782438509-de151c33",
   "service_id": "wrong_type",
   "commit_sha": "wrong_type",
   "status": "polling",
-  "elapsed_minutes": 1.3,
-  "message": "Polling for 1.3 minutes. Use mcp_r`
+  "elapsed_minutes": 2.3,
+  "message": "Polling for 2.3 minutes. Use mcp_r`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -559,9 +559,9 @@
   "role": 12345,
   "provider": "wrong_type",
   "session_id": "wrong_type",
-  "registered_at": "2026-06-26T06:48:42.464706",
-  "pid": 6000,
-  "stor`
+  "registered_at": "2026-06-26T07:20:46.014907",
+  "pid": 44598,
+  "sto`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -708,13 +708,17 @@
 
 #### `sync.marketplace_alert`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_alert': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber, target, event_types=None)",
-  "provided_params": [
-`
+  "subscribed": true,
+  "subscriber": "test",
+  "target": "test",
+  "event_types": [
+    "tier_changed",
+    "quarantined"
+  ]
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -722,13 +726,14 @@
   "error": "Invalid params for action 'marketplace_alert': register.<locals>.<lambda>() missing 2 required positional arguments: 'subscriber' and 'target'",
   "expected_params": "(subscriber, target`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_alert': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber, target, event_types=None)",
-  "provided_params": [
-`
+  "subscribed": true,
+  "subscriber": "wrong_type",
+  "target": "wrong_type",
+  "event_types": "wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -767,29 +772,41 @@
 
 #### `sync.marketplace_audit`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_audit': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(caller=None, target=None, action_type=None, since_timestamp=Non`
+  "actions": [],
+  "total": 0,
+  "offset": 0,
+  "limit": 50
+}`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_audit': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(caller=None, target=None, action_type=None, since_timestamp=Non`
+  "actions": [],
+  "total": 0,
+  "offset": 0,
+  "limit": 50
+}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_audit': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(caller=None, target=None, action_type=None, since_timestamp=Non`
+  "actions": [],
+  "total": 0,
+  "offset": "not_a_number",
+  "limit": "not_a_number"
+}`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_audit': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(caller=None, target=None, action_type=None, since_timestamp=Non`
+  "actions": [],
+  "total": 0,
+  "offset": 0,
+  "limit": 50
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1609,12 +1626,17 @@
 
 #### `sync.marketplace_subscribe`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscribe': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber, target='*', event_types=None)",
-  "provided_par`
+  "subscribed": true,
+  "subscriber": "test",
+  "target": "*",
+  "event_types": [
+    "tier_changed",
+    "quarantined"
+  ]
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1622,12 +1644,17 @@
   "error": "Invalid params for action 'marketplace_subscribe': register.<locals>.<lambda>() missing 1 required positional argument: 'subscriber'",
   "expected_params": "(subscriber, target='*', even`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscribe': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber, target='*', event_types=None)",
-  "provided_par`
+  "subscribed": true,
+  "subscriber": "wrong_type",
+  "target": 12345,
+  "event_types": [
+    "tier_changed",
+    "quarantined"
+  ]
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1666,37 +1693,57 @@
 
 #### `sync.marketplace_subscriptions`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscriptions': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber=None)",
-  "provided_params": []
-}`
+  "subscriptions": [
+    {
+      "subscriber": "test",
+      "target": "*",
+      "event_types": [
+        "tier_changed",
+        "quarantined"
+      ],
+      "created_at": "2026-06-26T01:50:46.027`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscriptions': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber=None)",
-  "provided_params": []
-}`
+  "subscriptions": [
+    {
+      "subscriber": "test",
+      "target": "*",
+      "event_types": [
+        "tier_changed",
+        "quarantined"
+      ],
+      "created_at": "2026-06-26T01:50:46.027`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscriptions': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber=None)",
-  "provided_params": [
-    "subscrib`
+  "subscriptions": [
+    {
+      "subscriber": "wrong_type",
+      "target": 12345,
+      "event_types": [
+        "tier_changed",
+        "quarantined"
+      ],
+      "created_at": "2026-06-26T01:5`
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_subscriptions': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber=None)",
-  "provided_params": []
-}`
+  "subscriptions": [
+    {
+      "subscriber": "test",
+      "target": "*",
+      "event_types": [
+        "tier_changed",
+        "quarantined"
+      ],
+      "created_at": "2026-06-26T01:50:46.027`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1795,13 +1842,13 @@
 
 #### `sync.marketplace_unsubscribe`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_unsubscribe': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber, target='*')",
-  "provided_params": [
-    "sub`
+  "removed": 1,
+  "subscriber": "test",
+  "target": "*"
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1810,13 +1857,13 @@
   "expected_params": "(subscriber, target='*')",
 `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_unsubscribe': unsupported operand type(s) for /: 'str' and 'str'",
-  "expected_params": "(subscriber, target='*')",
-  "provided_params": [
-    "sub`
+  "removed": 1,
+  "subscriber": "wrong_type",
+  "target": 12345
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2695,7 +2742,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "logged": false,
-  "error": "event must be one of {'fire', 'skip'}"
+  "error": "event must be one of {'skip', 'fire'}"
 }`
 
 **missing_params** — ⚠️ handled
@@ -2708,7 +2755,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "logged": false,
-  "error": "event must be one of {'fire', 'skip'}"
+  "error": "event must be one of {'skip', 'fire'}"
 }`
 
 **empty_params** — ⚠️ handled
@@ -2814,7 +2861,7 @@
   "running": true,
   "recipient": "test",
   "interval_s": 10,
-  "checked_at": "2026-06-26T01:19:43.830738Z",
+  "checked_at": "2026-06-26T01:51:46.537063Z",
   "pending": [],
   "pending_count": 0
 }`
@@ -2948,7 +2995,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "sent": true,
-  "message_id": "relay_20260626_011943_15440f42",
+  "message_id": "relay_20260626_015146_54f13fee",
   "from": "wrong_type",
   "to": "wrong_type",
   "subject": "wrong_type",
@@ -3368,7 +3415,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T01:17:26.202128Z"
+      "updated_at": "2026-06-26T01:48:29.286567Z"
     },
     {
       "key": "wrong_type",
@@ -3382,7 +3429,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T01:17:26.202128Z"
+      "updated_at": "2026-06-26T01:48:29.286567Z"
     },
     {
       "key": "wrong_type",
@@ -3396,7 +3443,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T01:17:26.202128Z"
+      "updated_at": "2026-06-26T01:48:29.286567Z"
     },
     {
       "key": "wrong_type",
@@ -3410,7 +3457,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T01:17:26.202128Z"
+      "updated_at": "2026-06-26T01:48:29.286567Z"
     },
     {
       "key": "wrong_type",
@@ -3455,7 +3502,7 @@
   "key": "test-key",
   "value": "test-value",
   "agent_id": "test",
-  "updated_at": "2026-06-26T01:17:26.202128Z"
+  "updated_at": "2026-06-26T01:48:29.286567Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3473,7 +3520,7 @@
   "key": "wrong_type",
   "value": "wrong_type",
   "agent_id": 12345,
-  "updated_at": "2026-06-26T01:17:26.202512Z"
+  "updated_at": "2026-06-26T01:48:29.287255Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3522,7 +3569,7 @@
   "key": "test-key",
   "value": "test-value",
   "agent_id": "test",
-  "updated_at": "2026-06-26T01:20:45.441779Z"
+  "updated_at": "2026-06-26T01:52:47.034292Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3539,7 +3586,7 @@
   "key": "wrong_type",
   "value": "wrong_type",
   "agent_id": 12345,
-  "updated_at": "2026-06-26T01:20:45.442488Z"
+  "updated_at": "2026-06-26T01:52:47.034761Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3642,7 +3689,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782436845-147bc857",
+  "poll_id": "poll-1782438767-f0b9e206",
   "service_id": "test",
   "commit_sha": null,
   "status": "polling_started",
@@ -3658,7 +3705,7 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782436845-c8ca246a",
+  "poll_id": "poll-1782438767-8cca7bd9",
   "service_id": "wrong_type",
   "commit_sha": "wrong_type",
   "status": "polling_started",
@@ -4019,7 +4066,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Triggered test with event evt-1782436845-53eb0558`
+- *Result preview:* `Triggered test with event evt-1782438767-da115613`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4029,7 +4076,7 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Triggered wrong_type with event evt-1782436845-d94035d3`
+- *Result preview:* `Triggered wrong_type with event evt-1782438767-64236435`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
