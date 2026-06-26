@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T10:17:51
+**Generated:** 2026-06-26T12:30:27
 **Total tests:** 77
 **Actions tested:** 11
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 34 | 44.2% | Tool returned a successful response |
-| ⚠️ handled | 43 | 55.8% | Tool returned a graceful error (no crash) |
+| ✅ pass | 40 | 51.9% | Tool returned a successful response |
+| ⚠️ handled | 37 | 48.1% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 7 | 63.6% |
-| ⚠️ handled | 4 | 36.4% |
+| ✅ pass | 9 | 81.8% |
+| ⚠️ handled | 2 | 18.2% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 5 | 45.5% |
-| ⚠️ handled | 6 | 54.5% |
+| ✅ pass | 6 | 54.5% |
+| ⚠️ handled | 5 | 45.5% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 6 | 54.5% |
-| ⚠️ handled | 5 | 45.5% |
+| ✅ pass | 8 | 72.7% |
+| ⚠️ handled | 3 | 27.3% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 5 | 45.5% |
-| ⚠️ handled | 6 | 54.5% |
+| ✅ pass | 6 | 54.5% |
+| ⚠️ handled | 5 | 45.5% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -120,9 +120,9 @@
 | `force_assign` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `halt_sprint` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `mission_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `orchestrate` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `orchestrate` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `resume_sprint` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `slot_complete` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `slot_complete` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `slot_exhaust` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `start_mission` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `status_dashboard` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
@@ -132,37 +132,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782449004_4edd",
+  "sprint_id": "sprint_1782457000_01b7",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T10:13:24+0530"
+  "timestamp": "2026-06-26T12:26:40+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782449004_3f7d",
+  "sprint_id": "sprint_1782457000_3aae",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T10:13:24+0530"
+  "timestamp": "2026-06-26T12:26:40+0530"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "sprint_id": "sprint_1782449004_2784",
+  "sprint_id": "sprint_1782457000_2631",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T10:13:24+0530"
+  "timestamp": "2026-06-26T12:26:40+0530"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782449004_d80e",
+  "sprint_id": "sprint_1782457000_aaed",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T10:13:24+0530"
+  "timestamp": "2026-06-26T12:26:40+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -198,7 +198,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782449004_f06ee7
+- *Result preview:* `🚀 Sprint Report: sprint_1782457000_2a4fb7
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -212,7 +212,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782449004_79d76a
+- *Result preview:* `🚀 Sprint Report: sprint_1782457000_b232c2
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -230,7 +230,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782449004_1fd1f5
+- *Result preview:* `🚀 Sprint Report: sprint_1782457000_9662df
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -327,7 +327,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782449004_1fd1f5
+   Sprint ID: sprint_1782457000_9662df
    Reason: User requested halt
    Status: halt_requested
    
@@ -336,7 +336,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782449004_1fd1f5
+   Sprint ID: sprint_1782457000_9662df
    Reason: User requested halt
    Status: halt_requested
    
@@ -345,7 +345,7 @@ Duration: 0.0s
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782449004_1fd1f5
+   Sprint ID: sprint_1782457000_9662df
    Reason: 12345
    Status: halt_requested
    
@@ -354,7 +354,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782449004_1fd1f5
+   Sprint ID: sprint_1782457000_9662df
    Reason: User requested halt
    Status: halt_requested
    
@@ -438,33 +438,61 @@ Duration: 0.0s
 
 #### `orchestration.SLOTS_ROUTER.orchestrate`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "Action 'orchestrate' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
-  "module": "nucleus_slots"
-}`
+  "meta": {
+    "timestamp": "2026-06-26T12:26:40+0530",
+    "protocol_version": "2.0.0",
+    "mode": "auto"
+  },
+  "slot": null,
+  "protocol_status": {
+    "compliant": true,
+    "violations": [],
+`
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Action 'orchestrate' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
-  "module": "nucleus_slots"
-}`
+  "meta": {
+    "timestamp": "2026-06-26T12:26:40+0530",
+    "protocol_version": "2.0.0",
+    "mode": "auto"
+  },
+  "slot": null,
+  "protocol_status": {
+    "compliant": true,
+    "violations": [],
+`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Action 'orchestrate' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
-  "module": "nucleus_slots"
-}`
+  "meta": {
+    "timestamp": "2026-06-26T12:26:40+0530",
+    "protocol_version": "2.0.0",
+    "mode": 12345
+  },
+  "slot": null,
+  "protocol_status": {
+    "compliant": true,
+    "violations": [],
+ `
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Action 'orchestrate' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
-  "module": "nucleus_slots"
-}`
+  "meta": {
+    "timestamp": "2026-06-26T12:26:40+0530",
+    "protocol_version": "2.0.0",
+    "mode": "auto"
+  },
+  "slot": null,
+  "protocol_status": {
+    "compliant": true,
+    "violations": [],
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -590,12 +618,20 @@ Duration: 0.0s
 
 #### `orchestration.SLOTS_ROUTER.slot_complete`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{
-  "error": "Action 'slot_complete' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
-  "module": "nucleus_slots"
-}`
+- *Result preview:* `Error: Slot test not found
+
+Next Task:
+{
+  "meta": {
+    "timestamp": "2026-06-26T12:26:40+0530",
+    "protocol_version": "2.0.0",
+    "mode": "auto"
+  },
+  "slot": null,
+  "protocol_status": {
+    "c`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -603,12 +639,20 @@ Duration: 0.0s
   "error": "Invalid params for action 'slot_complete': register.<locals>._h_slot_complete() missing 2 required positional arguments: 'slot_id' and 'task_id'",
   "expected_params": "(slot_id, task_id`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Action 'slot_complete' failed: module 'mcp_server_nucleus' has no attribute '_get_slot_registry'",
-  "module": "nucleus_slots"
-}`
+- *Result preview:* `Error: Slot wrong_type not found
+
+Next Task:
+{
+  "meta": {
+    "timestamp": "2026-06-26T12:26:40+0530",
+    "protocol_version": "2.0.0",
+    "mode": "auto"
+  },
+  "slot": null,
+  "protocol_status": {
+`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -708,7 +752,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Mission Started
-   ID: mission_1782449004_9f86d0
+   ID: mission_1782457000_9f86d0
    Name: test
    Goal: test
    Tasks: 4

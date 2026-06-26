@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T10:17:51
+**Generated:** 2026-06-26T12:30:27
 **Total tests:** 182
 **Actions tested:** 26
 **Angles per action:** 7
@@ -228,7 +228,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -238,7 +240,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -248,7 +252,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -258,7 +264,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -359,11 +367,11 @@
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 0,
-    "total_turns": 0,
-    "total_preferences": 0,
+    "total_sessions_ingested": 721,
+    "total_turns": 7535,
+    "total_preferences": 81,
     "total_reasoning_chains": 0,
-    "corpus_size_mb`
+    "corpus_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -371,11 +379,11 @@
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 0,
-    "total_turns": 0,
-    "total_preferences": 0,
+    "total_sessions_ingested": 721,
+    "total_turns": 7535,
+    "total_preferences": 81,
     "total_reasoning_chains": 0,
-    "corpus_size_mb`
+    "corpus_s`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -383,11 +391,11 @@
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 0,
-    "total_turns": 0,
-    "total_preferences": 0,
+    "total_sessions_ingested": 721,
+    "total_turns": 7535,
+    "total_preferences": 81,
     "total_reasoning_chains": 0,
-    "corpus_size_mb`
+    "corpus_s`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -395,11 +403,11 @@
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 0,
-    "total_turns": 0,
-    "total_preferences": 0,
+    "total_sessions_ingested": 721,
+    "total_turns": 7535,
+    "total_preferences": 81,
     "total_reasoning_chains": 0,
-    "corpus_size_mb`
+    "corpus_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -437,7 +445,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -447,7 +457,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -457,7 +469,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -467,7 +481,9 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": false
+    "exists": true,
+    "session_id": "not_a_dict_20260626_121940",
+    "message": "Resumable session found."
   },
   "error": null
 }`
@@ -645,10 +661,10 @@
     "success": true,
     "summary": "test",
     "activity": {
-      "total_events": 214,
-      "tasks_completed": 6,
+      "total_events": 1090,
+      "tasks_completed": 30,
       "tasks_claimed": 0,
-      "tasks_created": 3`
+      "tasks_created":`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -656,10 +672,10 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 6 tasks done, 3 tasks created, 221 total events",
+    "summary": "Session ended (neutral): 30 tasks done, 19 tasks created, 1097 total events",
     "activity": {
-      "total_events": 221,
-      "tas`
+      "total_events": 1097,
+      `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -675,10 +691,10 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 6 tasks done, 3 tasks created, 227 total events",
+    "summary": "Session ended (neutral): 30 tasks done, 19 tasks created, 1103 total events",
     "activity": {
-      "total_events": 227,
-      "tas`
+      "total_events": 1103,
+      `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -982,14 +998,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions_processed": 721,
-    "turns_created": 7535,
-    "preferences_found": 81,
+    "sessions_processed": 0,
+    "turns_created": 0,
+    "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 40714
+    "duration_ms": 239
   },
-  "er`
+  "error": nu`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1001,9 +1017,9 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 1994
+    "duration_ms": 183
   },
-  "error": n`
+  "error": nu`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1021,9 +1037,9 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 1600
+    "duration_ms": 193
   },
-  "error": n`
+  "error": nu`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1061,44 +1077,56 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [],
-    "total": 0
-  },
-  "error": null
-}`
+    "sessions": [
+      {
+        "id": "test_20260626_121940",
+        "context": "test",
+        "created_at": "2026-06-26T12:19:40+0530"
+      },
+      {
+        "i`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [],
-    "total": 0
-  },
-  "error": null
-}`
+    "sessions": [
+      {
+        "id": "test_20260626_121940",
+        "context": "test",
+        "created_at": "2026-06-26T12:19:40+0530"
+      },
+      {
+        "i`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [],
-    "total": 0
-  },
-  "error": null
-}`
+    "sessions": [
+      {
+        "id": "test_20260626_121940",
+        "context": "test",
+        "created_at": "2026-06-26T12:19:40+0530"
+      },
+      {
+        "i`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [],
-    "total": 0
-  },
-  "error": null
-}`
+    "sessions": [
+      {
+        "id": "test_20260626_121940",
+        "context": "test",
+        "created_at": "2026-06-26T12:19:40+0530"
+      },
+      {
+        "i`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1424,8 +1452,8 @@
     "agent": "test",
     "role": "test",
     "worktree_path": null,
-    "pid": 93749,
-    "registered_at": "2026-06-26T04:44:11.198749Z",
+    "pid": 23366,
+    "registered_at": "2026-06-26T06:56:41.982433Z",
    `
 
 **missing_params** — ⚠️ handled
@@ -1439,7 +1467,7 @@
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "invalid literal for int() with base 10: 'not_a_number'"
+  "error": "heartbeat_interval_s must be a number, got str"
 }`
 
 **empty_params** — ⚠️ handled
@@ -1619,7 +1647,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "test_20260626_101411",
+    "session_id": "test_20260626_122641",
     "context": "test",
     "message": "Session saved. Resume later with: nucleus sessions resume"
   },
@@ -1637,7 +1665,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "not_a_dict_20260626_101411",
+    "session_id": "not_a_dict_20260626_122641",
     "context": "not_a_dict",
     "message": "Session saved. Resume later with: nucleus sessions re`
 

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T10:17:51
+**Generated:** 2026-06-26T12:30:27
 **Total tests:** 91
 **Actions tested:** 13
 **Angles per action:** 7
@@ -135,7 +135,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Loop created!
 
-**ID:** `comm_20260626_101319_0`
+**ID:** `comm_20260626_122635_8`
 **Type:** task
 **Description:** test
 **Priority:** 3
@@ -151,7 +151,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `✅ Loop created!
 
-**ID:** `comm_20260626_101319_1`
+**ID:** `comm_20260626_122635_9`
 **Type:** 12345
 **Description:** wrong_type
 **Priority:** not_a_number
@@ -296,65 +296,65 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 0
-- 🟢 Green: 0
+**Open loops:** 8
+- 🟢 Green: 8
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** (none)
+**By type:** task: 4, 12345: 4
 
-**Mental load:** ✨ ZERO
-**Advice:** No open loops - guilt-free operation!
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
 
-**Last scan:** Never`
+**Last scan:** 2026`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 0
-- 🟢 Green: 0
+**Open loops:** 8
+- 🟢 Green: 8
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** (none)
+**By type:** task: 4, 12345: 4
 
-**Mental load:** ✨ ZERO
-**Advice:** No open loops - guilt-free operation!
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
 
-**Last scan:** Never`
+**Last scan:** 2026`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 0
-- 🟢 Green: 0
+**Open loops:** 8
+- 🟢 Green: 8
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** (none)
+**By type:** task: 4, 12345: 4
 
-**Mental load:** ✨ ZERO
-**Advice:** No open loops - guilt-free operation!
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
 
-**Last scan:** Never`
+**Last scan:** 2026`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 0
-- 🟢 Green: 0
+**Open loops:** 8
+- 🟢 Green: 8
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** (none)
+**By type:** task: 4, 12345: 4
 
-**Mental load:** ✨ ZERO
-**Advice:** No open loops - guilt-free operation!
+**Mental load:** 🟢 LOW
+**Advice:** Looking good, maintain momentum
 
-**Last scan:** Never`
+**Last scan:** 2026`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -389,19 +389,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
+- *Result preview:* `✅ Exported 112 files to brain_export_20260626_122635.zip`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
+- *Result preview:* `✅ Exported 112 files to brain_export_20260626_122636.zip`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
+- *Result preview:* `✅ Exported 112 files to brain_export_20260626_122636.zip`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
+- *Result preview:* `✅ Exported 112 files to brain_export_20260626_122637.zip`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -436,7 +436,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `**Open Commitments (2 total)**
+- *Result preview:* `**Open Commitments (10 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
@@ -445,11 +445,11 @@
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-   `
+  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `**Open Commitments (2 total)**
+- *Result preview:* `**Open Commitments (10 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
@@ -458,7 +458,7 @@
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-   `
+  `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -466,7 +466,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `**Open Commitments (2 total)**
+- *Result preview:* `**Open Commitments (10 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
@@ -475,7 +475,7 @@
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-   `
+  `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -519,7 +519,7 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 0
+- Total Open: 8
 - Red Tier: 0
 `
 
@@ -534,7 +534,7 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 0
+- Total Open: 8
 - Red Tier: 0
 `
 
@@ -549,7 +549,7 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 0
+- Total Open: 8
 - Red Tier: 0
 `
 
@@ -564,7 +564,7 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 0
+- Total Open: 8
 - Red Tier: 0
 `
 

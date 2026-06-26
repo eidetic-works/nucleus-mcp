@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T10:17:51
+**Generated:** 2026-06-26T12:30:27
 **Total tests:** 133
 **Actions tested:** 19
 **Angles per action:** 7
@@ -140,22 +140,22 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.199087+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.579052+00:00\n  Jurisdiction: N`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.202501+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.590928+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.205026+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.595177+00:00\n  Jurisdiction: N`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.205810+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.595516+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -196,8 +196,8 @@
   "message": "Failed to fix after 3 attempts.",
   "last_output": "\n",
   "logs": [
-    "[10:12:36] Starting Fixer Loop for test",
-    "[10:12:36] Running verification: test",
+    "[12:26:23] Starting Fixer Loop for test",
+    "[12:26:23] Running verification: test",
 `
 
 **missing_params** — ⚠️ handled
@@ -213,7 +213,7 @@
   "message": "Failed to fix after 3 attempts.",
   "last_output": "Verification failed to run: [Errno 2] No such file or directory: 'wrong_type'",
   "logs": [
-    "[10:12:36] S`
+    "[12:26:23] S`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -575,21 +575,21 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-233C9BF8",
+  "review_id": "KYC-906C1BF7",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T04:42:36.387548+00:00",
-  "completed_at": "2026-06-26T04:42:36.387648+00:00",
+  "started_at": "2026-06-26T06:56:23.661055+00:00",
+  "completed_at": "2026-06-26T06:56:23.661075+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-16437F98",
+  "review_id": "KYC-785E3304",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T04:42:36.389178+00:00",
-  "completed_at": "2026-06-26T04:42:36.389211+00:00",
+  "started_at": "2026-06-26T06:56:23.661552+00:00",
+  "completed_at": "2026-06-26T06:56:23.661564+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -606,11 +606,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-BB204639",
+  "review_id": "KYC-BC719D70",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T04:42:36.392510+00:00",
-  "completed_at": "2026-06-26T04:42:36.392546+00:00",
+  "started_at": "2026-06-26T06:56:23.662249+00:00",
+  "completed_at": "2026-06-26T06:56:23.662259+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -992,28 +992,28 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "count": 3,
+  "count": 15,
   "traces": [
     {
-      "file": "KYC-16437F98.json",
+      "file": "KYC-0661F9EE.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-16437F98",
+      "review_id": "KYC-0661F9EE",
       "recommendation": "APPROVE",
       "risk_score": 0,
-      "a`
+      "`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 3,
+  "count": 15,
   "traces": [
     {
-      "file": "KYC-16437F98.json",
+      "file": "KYC-0661F9EE.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-16437F98",
+      "review_id": "KYC-0661F9EE",
       "recommendation": "APPROVE",
       "risk_score": 0,
-      "a`
+      "`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1026,15 +1026,15 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 3,
+  "count": 15,
   "traces": [
     {
-      "file": "KYC-16437F98.json",
+      "file": "KYC-0661F9EE.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-16437F98",
+      "review_id": "KYC-0661F9EE",
       "recommendation": "APPROVE",
       "risk_score": 0,
-      "a`
+      "`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1076,10 +1076,10 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-16437F98",
+  "review_id": "KYC-0661F9EE",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T04:42:36.389178+00:00",
+  "started_at": "2026-06-26T06:49:16.369874+00:00",
   "completed_at": "2026-06-26T0`
 
 **wrong_types** — ⚠️ handled
@@ -1090,10 +1090,10 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-16437F98",
+  "review_id": "KYC-0661F9EE",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T04:42:36.389178+00:00",
+  "started_at": "2026-06-26T06:49:16.369874+00:00",
   "completed_at": "2026-06-26T0`
 
 **unknown_action** — ⚠️ handled

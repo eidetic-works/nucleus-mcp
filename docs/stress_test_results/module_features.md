@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T10:17:51
+**Generated:** 2026-06-26T12:30:27
 **Total tests:** 112
 **Actions tested:** 16
 **Angles per action:** 7
@@ -197,7 +197,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T04:42:34.218225Z"
+  "timestamp": "2026-06-26T06:56:21.762814Z"
 }`
 
 **missing_params** — ✅ pass
@@ -207,7 +207,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T04:42:34.219130Z"
+  "timestamp": "2026-06-26T06:56:21.762881Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -217,7 +217,7 @@
   "data": null,
   "error": "Server wrong_type not found",
   "error_code": null,
-  "timestamp": "2026-06-26T04:42:34.219667Z"
+  "timestamp": "2026-06-26T06:56:21.762933Z"
 }`
 
 **empty_params** — ✅ pass
@@ -227,7 +227,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T04:42:34.220018Z"
+  "timestamp": "2026-06-26T06:56:21.762977Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -384,7 +384,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Proof: test-id
 
-> Generated: 2026-06-26 10:12:34
+> Generated: 2026-06-26 12:26:21
 
 ## Thinking
 None
@@ -601,7 +601,7 @@ None
       "transport": "stdio",
       "command": "/opt/homebrew/opt/python@3.14/bin/python3.14",
       "args": [
-        "/home/operator/ai-`
+        "~/ai-mvp-backend/scri`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -613,7 +613,7 @@ None
       "transport": "stdio",
       "command": "/opt/homebrew/opt/python@3.14/bin/python3.14",
       "args": [
-        "/home/operator/ai-`
+        "~/ai-mvp-backend/scri`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -625,7 +625,7 @@ None
       "transport": "stdio",
       "command": "/opt/homebrew/opt/python@3.14/bin/python3.14",
       "args": [
-        "/home/operator/ai-`
+        "~/ai-mvp-backend/scri`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -637,7 +637,7 @@ None
       "transport": "stdio",
       "command": "/opt/homebrew/opt/python@3.14/bin/python3.14",
       "args": [
-        "/home/operator/ai-`
+        "~/ai-mvp-backend/scri`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -929,7 +929,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'test' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T04:42:34.346103Z"
+  "timestamp": "2026-06-26T06:56:21.786298Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -946,7 +946,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'wrong_type' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T04:42:34.347031Z"
+  "timestamp": "2026-06-26T06:56:21.786419Z"
 }`
 
 **empty_params** — ⚠️ handled

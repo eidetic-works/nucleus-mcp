@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T10:17:51
+**Generated:** 2026-06-26T12:30:27
 **Total tests:** 84
 **Actions tested:** 12
 **Angles per action:** 7
@@ -139,7 +139,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T04:42:48.170100+00:00"
+    "fetched_at": "2026-06-26T06:56:27.211365+00:00"
   },
   "pypi": {
     "last_mon`
@@ -153,7 +153,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T04:42:48.244957+00:00"
+    "fetched_at": "2026-06-26T06:56:27.250783+00:00"
   },
   "pypi": {
     "last_mon`
@@ -167,7 +167,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T04:42:48.294933+00:00"
+    "fetched_at": "2026-06-26T06:56:27.271609+00:00"
   },
   "pypi": {
     "last_mon`
@@ -181,7 +181,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T04:42:48.354226+00:00"
+    "fetched_at": "2026-06-26T06:56:27.288400+00:00"
   },
   "pypi": {
     "last_mon`
@@ -391,49 +391,49 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T04:43:18.391000+00:00",
+  "timestamp": "2026-06-26T06:56:35.760664+00:00",
   "sections": {
     "brief": {
-      "engram_count": 22,
+      "engram_count": 128,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T04:43:18.610733+00:00",
+  "timestamp": "2026-06-26T06:56:35.787161+00:00",
   "sections": {
     "brief": {
-      "engram_count": 27,
+      "engram_count": 133,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T04:43:18.777630+00:00",
+  "timestamp": "2026-06-26T06:56:35.812644+00:00",
   "sections": {
     "brief": {
-      "engram_count": 27,
+      "engram_count": 133,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T04:43:18.947015+00:00",
+  "timestamp": "2026-06-26T06:56:35.838215+00:00",
   "sections": {
     "brief": {
-      "engram_count": 27,
+      "engram_count": 133,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
- `
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
