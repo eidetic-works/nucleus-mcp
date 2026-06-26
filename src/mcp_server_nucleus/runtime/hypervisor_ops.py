@@ -155,7 +155,8 @@ def nucleus_delete_file_impl(path: str, emit_event_fn=None, confirm: bool = Fals
         resolved_path = Path(path).resolve()
 
         # HITL Gate: require explicit confirmation for destructive ops
-        if not confirm:
+        # Use 'is not True' (not 'not confirm') to prevent truthy non-bool bypass
+        if confirm is not True:
             return (
                 f"⚠️ HITL GATE: delete_file requires confirm=true.\n"
                 f"Target: {resolved_path}\n"
