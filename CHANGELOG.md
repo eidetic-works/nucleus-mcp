@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **24 bugs found and fixed via stress-test-audit.** 5 CRITICAL security (3 path traversal,
+  1 SSRF, 1 SQL injection), 1 SECURITY (HITL bypass), 3 CRITICAL dispatch (missing imports,
+  federation coroutines, handler signature), 10 MEDIUM (type validation, file size, sync
+  dispatch, VALID_COLUMNS), 6 LOW (path leakage, mutable defaults, flag injection, log
+  noise, error message). Stress test: 713→956 pass, 0 crashes. Unit tests: 4185→4300 pass,
+  0 failures.
+
 ## [1.13.6] - 2026-06-25 — "README: Hosted Relay Quick Start"
 
 ### Changed
