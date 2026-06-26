@@ -106,6 +106,12 @@ from .runtime.sync_ops import (
     get_sync_status, record_sync_time, start_file_watcher, stop_file_watcher, 
     is_sync_enabled, auto_start_sync_if_configured
 )
+from .runtime.orch_helpers import (
+    _get_slot_registry, _save_slot_registry, _resolve_slot_id,
+    _get_tier_definitions, _get_tier_for_model, _infer_task_tier,
+    _can_slot_run_task, _score_slot_for_task, _compute_dependency_graph,
+    _compute_slot_blockers
+)
 
 # Setup logging
 # logging.basicConfig(level=logging.INFO) # Removing to prevent overriding FastMCP settings
