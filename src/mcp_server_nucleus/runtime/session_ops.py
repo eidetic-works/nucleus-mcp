@@ -524,6 +524,12 @@ def _brain_session_end_impl(summary: str = "", learnings: str = "",
         Dict with session summary and engram creation result.
     """
     try:
+        # Type validation — prevent crashes if LLM passes wrong types
+        if not isinstance(summary, str):
+            return {"success": False, "error": f"summary must be str, got {type(summary).__name__}"}
+        if not isinstance(learnings, str):
+            return {"success": False, "error": f"learnings must be str, got {type(learnings).__name__}"}
+
         brain = get_brain_path()
         now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
 

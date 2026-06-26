@@ -695,6 +695,12 @@ def search_conversations(
     Streams loop_turns.jsonl to avoid loading all into memory.
     Scores by keyword overlap.
     """
+    # Type validation — prevent crashes if LLM passes wrong types
+    if not isinstance(query, str):
+        return {"results": [], "total_matches": 0, "error": f"query must be str, got {type(query).__name__}"}
+    if not isinstance(limit, (int, float)):
+        return {"results": [], "total_matches": 0, "error": f"limit must be number, got {type(limit).__name__}"}
+
     if not query:
         return {"results": [], "total_matches": 0, "query": ""}
 
@@ -777,6 +783,12 @@ def list_conversations(
     sort: str = "recent",
 ) -> Dict[str, Any]:
     """List ingested conversation sessions with metadata from cursor."""
+    # Type validation — prevent crashes if LLM passes wrong types
+    if not isinstance(limit, (int, float)):
+        return {"conversations": [], "error": f"limit must be number, got {type(limit).__name__}"}
+    if not isinstance(offset, (int, float)):
+        return {"conversations": [], "error": f"offset must be number, got {type(offset).__name__}"}
+
     cursor = _load_cursor()
     processed = cursor.get("processed_sessions", {})
 

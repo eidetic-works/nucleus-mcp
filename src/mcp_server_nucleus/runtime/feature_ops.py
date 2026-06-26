@@ -176,6 +176,8 @@ def _mark_validated(feature_id: str, result: str) -> Dict:
 def _search_features(query: str) -> Dict:
     """Search features by name, description, or tags."""
     try:
+        if not isinstance(query, str):
+            return {"error": f"query must be str, got {type(query).__name__}"}
         result = _list_features()
         if "error" in result:
             return result
