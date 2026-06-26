@@ -391,7 +391,8 @@ class SQLiteBackend(StorageBackend):
 
         # SQL injection protection — validate column names against allowlist
         VALID_COLUMNS = {"status", "priority", "blocked_by", "required_skills",
-                         "assigned_to", "description", "source", "updated_at",
+                         "assigned_to", "claimed_by", "escalation_reason",
+                         "description", "source", "updated_at",
                          "started_at", "completed_at", "attempts", "last_error",
                          "fence_token", "metadata", "tags", "due_date"}
         invalid_keys = set(updates.keys()) - VALID_COLUMNS
@@ -605,7 +606,8 @@ class PostgresBackend(StorageBackend):
 
         # SQL injection protection — validate column names against allowlist
         VALID_COLUMNS = {"status", "priority", "blocked_by", "required_skills",
-                         "assigned_to", "description", "source", "updated_at",
+                         "assigned_to", "claimed_by", "escalation_reason",
+                         "description", "source", "updated_at",
                          "started_at", "completed_at", "attempts", "last_error",
                          "fence_token", "metadata", "tags", "due_date"}
         invalid_keys = set(updates.keys()) - VALID_COLUMNS
