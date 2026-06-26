@@ -43,7 +43,8 @@ def _search_memory(query: str) -> Dict:
         # --json: output as json
         
         # V1: Simple Text Search
-        cmd_text = ["rg", "-i", "-n", "--no-heading", query] + search_paths
+        # Use -- to prevent query from being interpreted as ripgrep flags
+        cmd_text = ["rg", "-i", "-n", "--no-heading", "--", query] + search_paths
         try:
             result_text = subprocess.run(cmd_text, capture_output=True, text=True)
             snippets = []
