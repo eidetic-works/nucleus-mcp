@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T06:33:41
+**Generated:** 2026-06-26T06:38:16
 **Total tests:** 140
 **Actions tested:** 20
 **Angles per action:** 7
@@ -260,7 +260,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:33:21
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -270,7 +270,7 @@
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:33:21
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -286,7 +286,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:33:21
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:37:20
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -636,15 +636,15 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435681_ba0a4e: Snapshot 2026-06-26T01:01:21Z (2026-06-26T01:01:21Z)
-   snap_1782435681_7b858e: Snapshot 2026-06-26T01:01:21Z `
+   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
+   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435681_ba0a4e: Snapshot 2026-06-26T01:01:21Z (2026-06-26T01:01:21Z)
-   snap_1782435681_7b858e: Snapshot 2026-06-26T01:01:21Z `
+   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
+   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -658,8 +658,8 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782435681_ba0a4e: Snapshot 2026-06-26T01:01:21Z (2026-06-26T01:01:21Z)
-   snap_1782435681_7b858e: Snapshot 2026-06-26T01:01:21Z `
+   snap_1782435807_ae0549: Snapshot 2026-06-26T01:03:27Z (2026-06-26T01:03:27Z)
+   snap_1782435807_52e5f2: Snapshot 2026-06-26T01:03:27Z `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1243,20 +1243,20 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782435807_ae0549
-   Name: Snapshot 2026-06-26T01:03:27Z
-   Timestamp: 2026-06-26T01:03:27Z
+   ID: snap_1782436045_8e01d2
+   Name: Snapshot 2026-06-26T01:07:25Z
+   Timestamp: 2026-06-26T01:07:25Z
    
-💡 To compare: brain_compare_dashboards('snap_1782435807_ae0549', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436045_8e01d2', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782435807_52e5f2
-   Name: Snapshot 2026-06-26T01:03:27Z
-   Timestamp: 2026-06-26T01:03:27Z
+   ID: snap_1782436045_316df4
+   Name: Snapshot 2026-06-26T01:07:25Z
+   Timestamp: 2026-06-26T01:07:25Z
    
-💡 To compare: brain_compare_dashboards('snap_1782435807_52e5f2', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436045_316df4', 'other_s`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1269,11 +1269,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782435807_284818
-   Name: Snapshot 2026-06-26T01:03:27Z
-   Timestamp: 2026-06-26T01:03:27Z
+   ID: snap_1782436045_2a705e
+   Name: Snapshot 2026-06-26T01:07:25Z
+   Timestamp: 2026-06-26T01:07:25Z
    
-💡 To compare: brain_compare_dashboards('snap_1782435807_284818', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782436045_2a705e', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
