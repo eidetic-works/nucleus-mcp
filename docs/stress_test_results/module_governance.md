@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 133
 **Actions tested:** 19
 **Angles per action:** 7
@@ -140,22 +140,22 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.579052+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T07:20:50.890046+00:00\n  Jurisdiction: N`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.590928+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T07:20:50.908693+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.595177+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T07:20:50.918363+00:00\n  Jurisdiction: N`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T06:56:23.595516+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T07:20:50.919159+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -196,8 +196,8 @@
   "message": "Failed to fix after 3 attempts.",
   "last_output": "\n",
   "logs": [
-    "[12:26:23] Starting Fixer Loop for test",
-    "[12:26:23] Running verification: test",
+    "[12:50:50] Starting Fixer Loop for test",
+    "[12:50:50] Running verification: test",
 `
 
 **missing_params** — ⚠️ handled
@@ -213,7 +213,7 @@
   "message": "Failed to fix after 3 attempts.",
   "last_output": "Verification failed to run: [Errno 2] No such file or directory: 'wrong_type'",
   "logs": [
-    "[12:26:23] S`
+    "[12:50:51] S`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -575,21 +575,21 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-906C1BF7",
+  "review_id": "KYC-6126F0EE",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T06:56:23.661055+00:00",
-  "completed_at": "2026-06-26T06:56:23.661075+00:00",
+  "started_at": "2026-06-26T07:20:51.120764+00:00",
+  "completed_at": "2026-06-26T07:20:51.120828+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-785E3304",
+  "review_id": "KYC-525124A0",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T06:56:23.661552+00:00",
-  "completed_at": "2026-06-26T06:56:23.661564+00:00",
+  "started_at": "2026-06-26T07:20:51.122144+00:00",
+  "completed_at": "2026-06-26T07:20:51.122168+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -606,11 +606,11 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-BC719D70",
+  "review_id": "KYC-F7C0C340",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T06:56:23.662249+00:00",
-  "completed_at": "2026-06-26T06:56:23.662259+00:00",
+  "started_at": "2026-06-26T07:20:51.123900+00:00",
+  "completed_at": "2026-06-26T07:20:51.123924+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -992,7 +992,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "count": 15,
+  "count": 21,
   "traces": [
     {
       "file": "KYC-0661F9EE.json",
@@ -1005,7 +1005,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 15,
+  "count": 21,
   "traces": [
     {
       "file": "KYC-0661F9EE.json",
@@ -1026,7 +1026,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 15,
+  "count": 21,
   "traces": [
     {
       "file": "KYC-0661F9EE.json",
@@ -1076,10 +1076,10 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-0661F9EE",
+  "review_id": "KYC-6126F0EE",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T06:49:16.369874+00:00",
+  "started_at": "2026-06-26T07:20:51.120764+00:00",
   "completed_at": "2026-06-26T0`
 
 **wrong_types** — ⚠️ handled
@@ -1090,10 +1090,10 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-0661F9EE",
+  "review_id": "KYC-6126F0EE",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T06:49:16.369874+00:00",
+  "started_at": "2026-06-26T07:20:51.120764+00:00",
   "completed_at": "2026-06-26T0`
 
 **unknown_action** — ⚠️ handled

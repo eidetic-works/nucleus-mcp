@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 84
 **Actions tested:** 12
 **Angles per action:** 7
@@ -139,7 +139,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T06:56:27.211365+00:00"
+    "fetched_at": "2026-06-26T07:20:59.160642+00:00"
   },
   "pypi": {
     "last_mon`
@@ -153,7 +153,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T06:56:27.250783+00:00"
+    "fetched_at": "2026-06-26T07:20:59.192329+00:00"
   },
   "pypi": {
     "last_mon`
@@ -167,7 +167,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T06:56:27.271609+00:00"
+    "fetched_at": "2026-06-26T07:20:59.211421+00:00"
   },
   "pypi": {
     "last_mon`
@@ -181,7 +181,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T06:56:27.288400+00:00"
+    "fetched_at": "2026-06-26T07:20:59.242125+00:00"
   },
   "pypi": {
     "last_mon`
@@ -280,7 +280,7 @@
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{"error": "sequence item 7: expected str instance, int found"}`
+- *Result preview:* `{"error": "region must be str, got int"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -391,10 +391,10 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T06:56:35.760664+00:00",
+  "timestamp": "2026-06-26T07:21:15.010568+00:00",
   "sections": {
     "brief": {
-      "engram_count": 128,
+      "engram_count": 179,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -403,10 +403,10 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T06:56:35.787161+00:00",
+  "timestamp": "2026-06-26T07:21:15.110461+00:00",
   "sections": {
     "brief": {
-      "engram_count": 133,
+      "engram_count": 184,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -415,10 +415,10 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T06:56:35.812644+00:00",
+  "timestamp": "2026-06-26T07:21:15.196718+00:00",
   "sections": {
     "brief": {
-      "engram_count": 133,
+      "engram_count": 184,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -427,10 +427,10 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T06:56:35.838215+00:00",
+  "timestamp": "2026-06-26T07:21:15.284792+00:00",
   "sections": {
     "brief": {
-      "engram_count": 133,
+      "engram_count": 184,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `

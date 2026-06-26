@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 182
 **Actions tested:** 26
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 101 | 55.5% | Tool returned a successful response |
-| ⚠️ handled | 81 | 44.5% | Tool returned a graceful error (no crash) |
+| ✅ pass | 102 | 56.0% | Tool returned a successful response |
+| ⚠️ handled | 80 | 44.0% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 19 | 73.1% |
-| ⚠️ handled | 7 | 26.9% |
+| ✅ pass | 20 | 76.9% |
+| ⚠️ handled | 6 | 23.1% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -127,7 +127,7 @@
 | `get_state` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `handoff_summary` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `heartbeat` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `ingest_conversations` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `ingest_conversations` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `list_agents` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `list_conversations` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
@@ -229,7 +229,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -241,7 +241,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -253,7 +253,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -265,7 +265,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -446,7 +446,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -458,7 +458,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -470,7 +470,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -482,7 +482,7 @@
   "success": true,
   "data": {
     "exists": true,
-    "session_id": "not_a_dict_20260626_121940",
+    "session_id": "not_a_dict_20260626_124546",
     "message": "Resumable session found."
   },
   "error": null
@@ -661,8 +661,8 @@
     "success": true,
     "summary": "test",
     "activity": {
-      "total_events": 1090,
-      "tasks_completed": 30,
+      "total_events": 1506,
+      "tasks_completed": 42,
       "tasks_claimed": 0,
       "tasks_created":`
 
@@ -672,9 +672,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 30 tasks done, 19 tasks created, 1097 total events",
+    "summary": "Session ended (neutral): 42 tasks done, 27 tasks created, 1513 total events",
     "activity": {
-      "total_events": 1097,
+      "total_events": 1513,
       `
 
 **wrong_types** — ⚠️ handled
@@ -691,9 +691,9 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 30 tasks done, 19 tasks created, 1103 total events",
+    "summary": "Session ended (neutral): 42 tasks done, 27 tasks created, 1519 total events",
     "activity": {
-      "total_events": 1103,
+      "total_events": 1519,
       `
 
 **unknown_action** — ⚠️ handled
@@ -1003,7 +1003,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 239
+    "duration_ms": 580
   },
   "error": nu`
 
@@ -1017,15 +1017,22 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 183
+    "duration_ms": 710
   },
   "error": nu`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'ingest_conversations': '>=' not supported between instances of 'int' and 'str'",
-  "expected_params": "(mode='incremental', session_id='', limit=0, dry_run=Fal`
+  "success": true,
+  "data": {
+    "sessions_processed": 0,
+    "turns_created": 0,
+    "preferences_found": 0,
+    "chains_extracted": 0,
+    "errors": [
+      "limit must be a number, got str"
+   `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1037,9 +1044,9 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 193
+    "duration_ms": 1128
   },
-  "error": nu`
+  "error": n`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1079,9 +1086,9 @@
   "data": {
     "sessions": [
       {
-        "id": "test_20260626_121940",
+        "id": "test_20260626_124546",
         "context": "test",
-        "created_at": "2026-06-26T12:19:40+0530"
+        "created_at": "2026-06-26T12:45:46+0530"
       },
       {
         "i`
@@ -1093,9 +1100,9 @@
   "data": {
     "sessions": [
       {
-        "id": "test_20260626_121940",
+        "id": "test_20260626_124546",
         "context": "test",
-        "created_at": "2026-06-26T12:19:40+0530"
+        "created_at": "2026-06-26T12:45:46+0530"
       },
       {
         "i`
@@ -1107,9 +1114,9 @@
   "data": {
     "sessions": [
       {
-        "id": "test_20260626_121940",
+        "id": "test_20260626_124546",
         "context": "test",
-        "created_at": "2026-06-26T12:19:40+0530"
+        "created_at": "2026-06-26T12:45:46+0530"
       },
       {
         "i`
@@ -1121,9 +1128,9 @@
   "data": {
     "sessions": [
       {
-        "id": "test_20260626_121940",
+        "id": "test_20260626_124546",
         "context": "test",
-        "created_at": "2026-06-26T12:19:40+0530"
+        "created_at": "2026-06-26T12:45:46+0530"
       },
       {
         "i`
@@ -1452,8 +1459,8 @@
     "agent": "test",
     "role": "test",
     "worktree_path": null,
-    "pid": 23366,
-    "registered_at": "2026-06-26T06:56:41.982433Z",
+    "pid": 36024,
+    "registered_at": "2026-06-26T07:21:27.135141Z",
    `
 
 **missing_params** — ⚠️ handled
@@ -1647,7 +1654,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "test_20260626_122641",
+    "session_id": "test_20260626_125127",
     "context": "test",
     "message": "Session saved. Resume later with: nucleus sessions resume"
   },
@@ -1665,7 +1672,7 @@
   "success": true,
   "data": {
     "success": true,
-    "session_id": "not_a_dict_20260626_122641",
+    "session_id": "not_a_dict_20260626_125127",
     "context": "not_a_dict",
     "message": "Session saved. Resume later with: nucleus sessions re`
 

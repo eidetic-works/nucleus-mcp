@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 266
 **Actions tested:** 38
 **Angles per action:** 7
@@ -225,7 +225,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T06:56:14.876946Z",
+        "timestamp": "2026-06-26T07:20:38.831940Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -237,7 +237,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T06:56:14.876946Z",
+        "timestamp": "2026-06-26T07:20:38.831940Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -249,7 +249,7 @@
   "data": null,
   "error": "Error reading audit log: '>' not supported between instances of 'int' and 'str'",
   "error_code": null,
-  "timestamp": "2026-06-26T06:56:14.882094Z"
+  "timestamp": "2026-06-26T07:20:38.843642Z"
 }`
 
 **empty_params** — ✅ pass
@@ -259,7 +259,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T06:56:14.876946Z",
+        "timestamp": "2026-06-26T07:20:38.831940Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -301,50 +301,50 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 181.2,
-    "total_interactions": 1812,
+    "total_cost_units": 266.2,
+    "total_interactions": 2662,
     "breakdown": {
       "unknown": {
-        "cost": 90.2,
-        "count": 902,
+        "cost": 132.5,
+        "count": 1325,
         "tier": 1
-    `
+  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 181.2,
-    "total_interactions": 1812,
+    "total_cost_units": 266.2,
+    "total_interactions": 2662,
     "breakdown": {
       "unknown": {
-        "cost": 90.2,
-        "count": 902,
+        "cost": 132.5,
+        "count": 1325,
         "tier": 1
-    `
+  `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'billing_summary': unsupported type for timedelta hours component: str",
-  "expected_params": "(since_hours=None, group_by='tool')",
-  "provided_params": [
-    `
+  "success": false,
+  "data": null,
+  "error": "since_hours must be a number or None, got str"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 181.2,
-    "total_interactions": 1812,
+    "total_cost_units": 266.2,
+    "total_interactions": 2662,
     "breakdown": {
       "unknown": {
-        "cost": 90.2,
-        "count": 902,
+        "cost": 132.5,
+        "count": 1325,
         "tier": 1
-    `
+  `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -445,12 +445,13 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_56975",
+        "id": "brief_58440",
         "context": "Strategy",
         "intensity": 3
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": "brief_58439",
+        "contex`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -459,20 +460,21 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_56975",
+        "id": "brief_58440",
         "context": "Strategy",
         "intensity": 3
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": "brief_58439",
+        "contex`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'context_graph': '>=' not supported between instances of 'int' and 'str'",
-  "expected_params": "(include_edges=True, min_intensity=1)",
-  "provided_params": [
-`
+  "success": false,
+  "data": null,
+  "error": "min_intensity must be a number, got str"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -481,12 +483,13 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_56975",
+        "id": "brief_58440",
         "context": "Strategy",
         "intensity": 3
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": "brief_58439",
+        "contex`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -527,7 +530,7 @@
   "data": null,
   "error": "Decision ID test-id not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T06:56:15.749392Z"
+  "timestamp": "2026-06-26T07:20:40.656630Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -544,7 +547,7 @@
   "data": null,
   "error": "Decision ID 12345 not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T06:56:15.749577Z"
+  "timestamp": "2026-06-26T07:20:40.657600Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -593,7 +596,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-319af3817f72",
+        "decision_id": "dec-7a2a5b7af496",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -604,7 +607,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-319af3817f72",
+        "decision_id": "dec-7a2a5b7af496",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -615,7 +618,7 @@
   "data": null,
   "error": "limit must be a number, got str",
   "error_code": null,
-  "timestamp": "2026-06-26T06:56:15.750401Z"
+  "timestamp": "2026-06-26T07:20:40.660707Z"
 }`
 
 **empty_params** — ✅ pass
@@ -625,7 +628,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-319af3817f72",
+        "decision_id": "dec-7a2a5b7af496",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -671,7 +674,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 16
+        "total": 24
       },
       "snapshots`
 
@@ -685,7 +688,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 16
+        "total": 24
       },
       "snapshots`
 
@@ -699,7 +702,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 16
+        "total": 24
       },
       "snapshots`
 
@@ -713,7 +716,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 16
+        "total": 24
       },
       "snapshots`
 
@@ -766,23 +769,22 @@
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "Invalid params for action 'end_of_day': register.<locals>.<lambda>() missing 1 required positional argument: 'summary'",
-  "expected_params": "(summary, key_decisions=None, blockers=None`
+  "error": "Invalid params for action 'end_of_day': register.<locals>._h_end_of_day() missing 1 required positional argument: 'summary'",
+  "expected_params": "(summary, key_decisions=None, blockers`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'end_of_day': object of type 'int' has no len()",
-  "expected_params": "(summary, key_decisions=None, blockers=None)",
-  "provided_params": [
-    "summary",
-   `
+  "success": false,
+  "data": null,
+  "error": "summary must be str, got int"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "Invalid params for action 'end_of_day': register.<locals>.<lambda>() missing 1 required positional argument: 'summary'",
-  "expected_params": "(summary, key_decisions=None, blockers=None`
+  "error": "Invalid params for action 'end_of_day': register.<locals>._h_end_of_day() missing 1 required positional argument: 'summary'",
+  "expected_params": "(summary, key_decisions=None, blockers`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -844,7 +846,7 @@
   "success": true,
   "data": {
     "error": "Engram 'wrong_type' not found in graph",
-    "node_count": 122
+    "node_count": 173
   },
   "error": null
 }`
@@ -1059,7 +1061,7 @@
   "data": {
     "pipeline": "fusion_reactor",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T12:26:15.938725",
+    "timestamp": "2026-06-26T12:50:41.144152",
     "observation": "test",
     "sections": {
       "capture": `
@@ -1073,9 +1075,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'fusion_reactor': can only concatenate str (not \"int\") to str",
-  "expected_params": "(observation, context='Decision', intensity=6, write_engrams=True)",
-  "`
+  "success": false,
+  "data": null,
+  "error": "context must be str, got int"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1206,7 +1209,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 5,
   "python_version": "3.14.4"
 }`
 
@@ -1217,7 +1220,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 5,
   "python_version": "3.14.4"
 }`
 
@@ -1228,7 +1231,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 5,
   "python_version": "3.14.4"
 }`
 
@@ -1239,7 +1242,7 @@
   "version": "1.2.1",
   "tools_registered": "unknown",
   "brain_path": "/tmp/test-brain",
-  "uptime_seconds": 2,
+  "uptime_seconds": 5,
   "python_version": "3.14.4"
 }`
 
@@ -1280,11 +1283,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T06:56:18.387641+00:00",
+    "timestamp": "2026-06-26T07:20:44.362274+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.6,
+    "check_duration_ms": 7.4,
     "formatt`
 
 **missing_params** — ✅ pass
@@ -1292,11 +1295,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T06:56:18.729778+00:00",
+    "timestamp": "2026-06-26T07:20:44.695104+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 6.6,
+    "check_duration_ms": 9.8,
     "formatt`
 
 **wrong_types** — ✅ pass
@@ -1304,7 +1307,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T06:56:20.116267+00:00",
+    "timestamp": "2026-06-26T07:20:45.965028+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
@@ -1316,11 +1319,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T06:56:20.491194+00:00",
+    "timestamp": "2026-06-26T07:20:46.313788+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 7.1,
+    "check_duration_ms": 8.8,
     "formatt`
 
 **unknown_action** — ⚠️ handled
@@ -1436,60 +1439,60 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 703,
+    "total_executions": 1045,
     "outcomes": {
-      "ADD": 72,
-      "NOOP": 204,
-      "UNKNOWN": 290,
-      "UPDATE": 137
+      "ADD": 106,
+      "NOOP": 301,
+      "UNKNOWN": 432,
+      "UPDATE": 206
     },
     "by_event_type": {
-      "morni`
+      "mor`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 703,
+    "total_executions": 1045,
     "outcomes": {
-      "ADD": 72,
-      "NOOP": 204,
-      "UNKNOWN": 290,
-      "UPDATE": 137
+      "ADD": 106,
+      "NOOP": 301,
+      "UNKNOWN": 432,
+      "UPDATE": 206
     },
     "by_event_type": {
-      "morni`
+      "mor`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 703,
+    "total_executions": 1045,
     "outcomes": {
-      "ADD": 72,
-      "NOOP": 204,
-      "UNKNOWN": 290,
-      "UPDATE": 137
+      "ADD": 106,
+      "NOOP": 301,
+      "UNKNOWN": 432,
+      "UPDATE": 206
     },
     "by_event_type": {
-      "morni`
+      "mor`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 703,
+    "total_executions": 1045,
     "outcomes": {
-      "ADD": 72,
-      "NOOP": 204,
-      "UNKNOWN": 290,
-      "UPDATE": 137
+      "ADD": 106,
+      "NOOP": 301,
+      "UNKNOWN": 432,
+      "UPDATE": 206
     },
     "by_event_type": {
-      "morni`
+      "mor`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1614,7 +1617,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-319af3817f72",
+        "decision_id": "dec-7a2a5b7af496",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1625,7 +1628,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-319af3817f72",
+        "decision_id": "dec-7a2a5b7af496",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1634,7 +1637,7 @@
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "Error: bad operand type for unary -: 'str'"
+  "error": "limit must be a number, got str"
 }`
 
 **empty_params** — ✅ pass
@@ -1644,7 +1647,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-319af3817f72",
+        "decision_id": "dec-7a2a5b7af496",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1848,13 +1851,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 4,
-    "total_units": 4.0,
+    "total_entries": 6,
+    "total_units": 6.0,
     "by_scope": {
-      "federation_join": 4.0
+      "federation_join": 6.0
     },
     "by_resource_type": {
-      "federation_join": 4.0
+      "federation_join": 6.0
     },
    `
 
@@ -1863,13 +1866,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 4,
-    "total_units": 4.0,
+    "total_entries": 6,
+    "total_units": 6.0,
     "by_scope": {
-      "federation_join": 4.0
+      "federation_join": 6.0
     },
     "by_resource_type": {
-      "federation_join": 4.0
+      "federation_join": 6.0
     },
    `
 
@@ -1878,7 +1881,7 @@
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "Error: unsupported type for timedelta hours component: str"
+  "error": "since_hours must be a number, got str"
 }`
 
 **empty_params** — ✅ pass
@@ -1886,13 +1889,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 4,
-    "total_units": 4.0,
+    "total_entries": 6,
+    "total_units": 6.0,
     "by_scope": {
-      "federation_join": 4.0
+      "federation_join": 6.0
     },
     "by_resource_type": {
-      "federation_join": 4.0
+      "federation_join": 6.0
     },
    `
 
@@ -1933,28 +1936,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:26 PM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:50 PM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:26 PM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:50 PM\n====================`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:26 PM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:50 PM\n====================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:26 PM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 12:50 PM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2063,7 +2066,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T06:56:20.564069+00:00
+# Generated at 2026-06-26T07:20:46.401337+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2073,7 +2076,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T06:56:20.564543+00:00
+# Generated at 2026-06-26T07:20:46.402001+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2091,7 +2094,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T06:56:20.564928+00:00
+# Generated at 2026-06-26T07:20:46.402567+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2298,10 +2301,10 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'render_graph': '>=' not supported between instances of 'int' and 'str'",
-  "expected_params": "(max_nodes=30, min_intensity=1)",
-  "provided_params": [
-    "ma`
+  "success": false,
+  "data": null,
+  "error": "max_nodes must be a number, got str"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2369,7 +2372,7 @@
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "Error: bad operand type for unary -: 'str'"
+  "error": "limit must be a number, got str"
 }`
 
 **empty_params** — ✅ pass
@@ -2540,7 +2543,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T12:26:20.623348",
+    "timestamp": "2026-06-26T12:50:46.570330",
     "symptom": "test",
     "sections": {
       "search": {
@@ -2560,7 +2563,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T12:26:20.624682",
+    "timestamp": "2026-06-26T12:50:46.573248",
     "symptom": "wrong_type",
     "sections": {
       "search`

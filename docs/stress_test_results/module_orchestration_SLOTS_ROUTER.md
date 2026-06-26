@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 77
 **Actions tested:** 11
 **Angles per action:** 7
@@ -132,37 +132,37 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782457000_01b7",
+  "sprint_id": "sprint_1782458483_d8c7",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T12:26:40+0530"
+  "timestamp": "2026-06-26T12:51:23+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782457000_3aae",
+  "sprint_id": "sprint_1782458483_33d6",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T12:26:40+0530"
+  "timestamp": "2026-06-26T12:51:23+0530"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "sprint_id": "sprint_1782457000_2631",
+  "sprint_id": "sprint_1782458483_a23c",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T12:26:40+0530"
+  "timestamp": "2026-06-26T12:51:23+0530"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782457000_aaed",
+  "sprint_id": "sprint_1782458483_7916",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T12:26:40+0530"
+  "timestamp": "2026-06-26T12:51:23+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -198,7 +198,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782457000_2a4fb7
+- *Result preview:* `🚀 Sprint Report: sprint_1782458483_d31cde
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -212,7 +212,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782457000_b232c2
+- *Result preview:* `🚀 Sprint Report: sprint_1782458483_3f01f7
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -230,7 +230,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782457000_9662df
+- *Result preview:* `🚀 Sprint Report: sprint_1782458483_b525d4
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -327,7 +327,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782457000_9662df
+   Sprint ID: sprint_1782458483_b525d4
    Reason: User requested halt
    Status: halt_requested
    
@@ -336,7 +336,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782457000_9662df
+   Sprint ID: sprint_1782458483_b525d4
    Reason: User requested halt
    Status: halt_requested
    
@@ -345,7 +345,7 @@ Duration: 0.0s
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782457000_9662df
+   Sprint ID: sprint_1782458483_b525d4
    Reason: 12345
    Status: halt_requested
    
@@ -354,7 +354,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782457000_9662df
+   Sprint ID: sprint_1782458483_b525d4
    Reason: User requested halt
    Status: halt_requested
    
@@ -442,7 +442,7 @@ Duration: 0.0s
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "meta": {
-    "timestamp": "2026-06-26T12:26:40+0530",
+    "timestamp": "2026-06-26T12:51:23+0530",
     "protocol_version": "2.0.0",
     "mode": "auto"
   },
@@ -456,7 +456,7 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "meta": {
-    "timestamp": "2026-06-26T12:26:40+0530",
+    "timestamp": "2026-06-26T12:51:23+0530",
     "protocol_version": "2.0.0",
     "mode": "auto"
   },
@@ -470,7 +470,7 @@ Duration: 0.0s
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "meta": {
-    "timestamp": "2026-06-26T12:26:40+0530",
+    "timestamp": "2026-06-26T12:51:23+0530",
     "protocol_version": "2.0.0",
     "mode": 12345
   },
@@ -484,7 +484,7 @@ Duration: 0.0s
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "meta": {
-    "timestamp": "2026-06-26T12:26:40+0530",
+    "timestamp": "2026-06-26T12:51:23+0530",
     "protocol_version": "2.0.0",
     "mode": "auto"
   },
@@ -625,7 +625,7 @@ Duration: 0.0s
 Next Task:
 {
   "meta": {
-    "timestamp": "2026-06-26T12:26:40+0530",
+    "timestamp": "2026-06-26T12:51:23+0530",
     "protocol_version": "2.0.0",
     "mode": "auto"
   },
@@ -646,7 +646,7 @@ Next Task:
 Next Task:
 {
   "meta": {
-    "timestamp": "2026-06-26T12:26:40+0530",
+    "timestamp": "2026-06-26T12:51:23+0530",
     "protocol_version": "2.0.0",
     "mode": "auto"
   },
@@ -705,11 +705,10 @@ Next Task:
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'slot_exhaust': unsupported operand type(s) for +: 'float' and 'str'",
-  "expected_params": "(slot_id, reset_hours=5)",
-  "provided_params": [
-    "slot_id",
-  `
+  "success": false,
+  "data": null,
+  "error": "reset_hours must be a number, got str"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -752,7 +751,7 @@ Next Task:
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Mission Started
-   ID: mission_1782457000_9f86d0
+   ID: mission_1782458483_9f86d0
    Name: test
    Goal: test
    Tasks: 4

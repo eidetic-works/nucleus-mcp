@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 441
 **Actions tested:** 63
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 190 | 43.1% | Tool returned a successful response |
-| ⚠️ handled | 251 | 56.9% | Tool returned a graceful error (no crash) |
+| ✅ pass | 195 | 44.2% | Tool returned a successful response |
+| ⚠️ handled | 246 | 55.8% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 38 | 60.3% |
-| ⚠️ handled | 25 | 39.7% |
+| ✅ pass | 43 | 68.3% |
+| ⚠️ handled | 20 | 31.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -137,11 +137,11 @@
 | `marketplace_history` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `marketplace_promote` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_quarantine` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `marketplace_recommend` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `marketplace_recommend` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_search` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `marketplace_subscribe` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_subscriptions` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `marketplace_trends` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `marketplace_trends` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `marketplace_unsubscribe` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `marketplace_whoami` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `notify` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
@@ -152,16 +152,16 @@
 | `read_artifact` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `relay_ack` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_classify_skip` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
-| `relay_clear` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_clear` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_event_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `relay_inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_inbox` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_listen` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `relay_log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_poll_start` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `relay_poll_status` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `relay_poll_stop` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `relay_post` | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
-| `relay_skip_review` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_skip_review` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_wait` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `saturation_baselines` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
@@ -267,8 +267,11 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Action 'audit_pair' failed: could not convert string to float: 'wrong_type'",
-  "module": "nucleus_sync"
+  "ok": false,
+  "error": {
+    "code": "INVALID_WINDOW_HOURS",
+    "message": "window_hours must be a number; got 'wrong_type'"
+  }
 }`
 
 **empty_params** — ✅ pass
@@ -318,12 +321,12 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782456762-068bacd4",
+  "poll_id": "poll-1782458328-abe68e34",
   "service_id": "test",
   "commit_sha": null,
   "status": "polling",
-  "elapsed_minutes": 4.0,
-  "message": "Polling for 4.0 minutes. Use mcp_render_list_dep`
+  "elapsed_minutes": 2.7,
+  "message": "Polling for 2.7 minutes. Use mcp_render_list_dep`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -335,12 +338,12 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782456762-47c13bcd",
+  "poll_id": "poll-1782458328-948b4119",
   "service_id": "wrong_type",
   "commit_sha": "wrong_type",
   "status": "polling",
-  "elapsed_minutes": 4.0,
-  "message": "Polling for 4.0 minutes. Use mcp_r`
+  "elapsed_minutes": 2.7,
+  "message": "Polling for 2.7 minutes. Use mcp_r`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -561,8 +564,8 @@
   "role": 12345,
   "provider": "wrong_type",
   "session_id": "wrong_type",
-  "registered_at": "2026-06-26T12:26:42.191612",
-  "pid": 23366,
+  "registered_at": "2026-06-26T12:51:28.029356",
+  "pid": 36024,
   "sto`
 
 **empty_params** — ⚠️ handled
@@ -1524,13 +1527,12 @@
   "expected_params": "(task, top_k=5)",
   "provided_param`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_recommend': slice indices must be integers or None or have an __index__ method",
-  "expected_params": "(task, top_k=5)",
-  "provided_params": [
-   `
+  "recommendations": [],
+  "task": "wrong_type"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1706,7 +1708,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T06:56:42.202`
+      "created_at": "2026-06-26T07:21:28.085`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1719,7 +1721,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T06:56:42.202`
+      "created_at": "2026-06-26T07:21:28.085`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1732,7 +1734,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T06:5`
+      "created_at": "2026-06-26T07:2`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1745,7 +1747,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T06:56:42.202`
+      "created_at": "2026-06-26T07:21:28.085`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1796,13 +1798,14 @@
   "snapshots": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'marketplace_trends': unsupported type for timedelta days component: str",
-  "expected_params": "(days=30, brain_path=None)",
-  "provided_params": [
-    "days",`
+  "trend": "insufficient_data",
+  "days_analyzed": 30,
+  "total_changes": 0,
+  "snapshots": []
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2488,13 +2491,13 @@
   "older_than_hours": 168
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_clear': unsupported operand type(s) for -: 'float' and 'str'",
-  "expected_params": "(recipient=None, older_than_hours=168)",
-  "provided_params": [
-    `
+  "deleted": 0,
+  "errors": 0,
+  "older_than_hours": 168
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2630,12 +2633,17 @@
   "session_id": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_inbox': '>=' not supported between instances of 'int' and 'str'",
-  "expected_params": "(unread_only=True, limit=20, recipient=None, session_id=None)",
- `
+  "recipient": "wrong_type",
+  "messages": [
+    {
+      "running": false,
+      "recipient": "wrong_type",
+      "interval_s": 10,
+      "checked_at": "2026-06-26T07:17:48.218845Z",
+      "pending"`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2704,16 +2712,16 @@
   "waited_s": 59,
   "recipient": "wrong_type",
   "known_ids": [
-    "t",
-    "o",
-    "n",
-    "p",
-    "g",
-    "w",
     "e",
-    "y",
+    "g",
     "_",
-    "r"
+    "n",
+    "r",
+    "o",
+    "y",
+    "t",
+    "p",
+    "w"
   ],
 `
 
@@ -2880,7 +2888,7 @@
   "running": true,
   "recipient": "test",
   "interval_s": 10,
-  "checked_at": "2026-06-26T06:58:42.816472Z",
+  "checked_at": "2026-06-26T07:23:30.050347Z",
   "pending": [],
   "pending_count": 0
 }`
@@ -2898,7 +2906,7 @@
   "running": true,
   "recipient": "wrong_type",
   "interval_s": 10,
-  "checked_at": "2026-06-26T06:58:42.818358Z",
+  "checked_at": "2026-06-26T07:17:48.218845Z",
   "pending": [
     {
       "relay_id": "relay_20260626_044516_4a270bee",
@@ -3016,7 +3024,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "sent": true,
-  "message_id": "relay_20260626_065842_7eb2cc04",
+  "message_id": "relay_20260626_072330_3534c66e",
   "from": "wrong_type",
   "to": "wrong_type",
   "subject": "wrong_type",
@@ -3078,14 +3086,14 @@
   "unclassified": []
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_skip_review': slice indices must be integers or None or have an __index__ method",
-  "expected_params": "(limit=20)",
-  "provided_params": [
-    "limit"
-`
+  "total_skips": 0,
+  "total_classified": 0,
+  "unclassified_count": 0,
+  "unclassified": []
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3439,7 +3447,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T06:52:42.039324Z"
+      "updated_at": "2026-06-26T07:18:48.777479Z"
     },
     {
       "key": "wrong_type",
@@ -3453,7 +3461,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T06:52:42.039324Z"
+      "updated_at": "2026-06-26T07:18:48.777479Z"
     },
     {
       "key": "wrong_type",
@@ -3467,7 +3475,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T06:52:42.039324Z"
+      "updated_at": "2026-06-26T07:18:48.777479Z"
     },
     {
       "key": "wrong_type",
@@ -3481,7 +3489,7 @@
     {
       "key": "test-key",
       "agent_id": "test",
-      "updated_at": "2026-06-26T06:52:42.039324Z"
+      "updated_at": "2026-06-26T07:18:48.777479Z"
     },
     {
       "key": "wrong_type",
@@ -3526,7 +3534,7 @@
   "key": "test-key",
   "value": "test-value",
   "agent_id": "test",
-  "updated_at": "2026-06-26T06:52:42.039324Z"
+  "updated_at": "2026-06-26T07:18:48.777479Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3544,7 +3552,7 @@
   "key": "wrong_type",
   "value": "wrong_type",
   "agent_id": 12345,
-  "updated_at": "2026-06-26T06:52:42.040401Z"
+  "updated_at": "2026-06-26T07:18:48.778683Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3593,7 +3601,7 @@
   "key": "test-key",
   "value": "test-value",
   "agent_id": "test",
-  "updated_at": "2026-06-26T06:59:43.251410Z"
+  "updated_at": "2026-06-26T07:24:33.945921Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3610,7 +3618,7 @@
   "key": "wrong_type",
   "value": "wrong_type",
   "agent_id": 12345,
-  "updated_at": "2026-06-26T06:59:43.252570Z"
+  "updated_at": "2026-06-26T07:24:33.946382Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3713,7 +3721,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782457183-d7f363e8",
+  "poll_id": "poll-1782458673-3014c475",
   "service_id": "test",
   "commit_sha": null,
   "status": "polling_started",
@@ -3729,7 +3737,7 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782457183-acd253d9",
+  "poll_id": "poll-1782458673-618e9b8b",
   "service_id": "wrong_type",
   "commit_sha": "wrong_type",
   "status": "polling_started",
@@ -4090,7 +4098,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Triggered test with event evt-1782457183-89cf3a30`
+- *Result preview:* `Triggered test with event evt-1782458673-3c2a8a00`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4100,7 +4108,7 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Triggered wrong_type with event evt-1782457183-dcc55fd7`
+- *Result preview:* `Triggered wrong_type with event evt-1782458673-e0b7f333`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

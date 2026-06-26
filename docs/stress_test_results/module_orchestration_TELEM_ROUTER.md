@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T12:30:27
+**Generated:** 2026-06-26T12:55:22
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -348,8 +348,8 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "total_dispatches": 1008,
-  "total_errors": 544,
-  "error_rate": 0.5396825396825397,
+  "total_errors": 538,
+  "error_rate": 0.5337301587301587,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -362,22 +362,22 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "total_dispatches": 1009,
-  "total_errors": 544,
-  "error_rate": 0.5391476709613479,
+  "total_errors": 538,
+  "error_rate": 0.533201189296333,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
       "errors": 8
     },
     "nucleus_route": {
-      `
+      "`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "total_dispatches": 1010,
-  "total_errors": 544,
-  "error_rate": 0.5386138613861386,
+  "total_errors": 538,
+  "error_rate": 0.5326732673267327,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -390,8 +390,8 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "total_dispatches": 1011,
-  "total_errors": 544,
-  "error_rate": 0.5380811078140455,
+  "total_errors": 538,
+  "error_rate": 0.5321463897131553,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -834,7 +834,7 @@ CONTEXT: test
 REQUEST: test
 ARTIFACTS: None
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782457000-d689
+ID: handoff-1782458483-3633
 Status: Pending - will appear in target agent's s`
 
 **missing_params** — ⚠️ handled
@@ -854,7 +854,7 @@ CONTEXT: not_a_dict
 REQUEST: wrong_type
 ARTIFACTS: w, r, o, n, g, _, t, y, p, e
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782457000-7`
+ID: handoff-1782458483-8`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -994,7 +994,7 @@ ID: handoff-1782457000-7`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 20
+**High Impact Closures:** 28
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1004,7 +1004,7 @@ ID: handoff-1782457000-7`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 20
+**High Impact Closures:** 28
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1014,7 +1014,7 @@ ID: handoff-1782457000-7`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 20
+**High Impact Closures:** 28
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1024,7 +1024,7 @@ ID: handoff-1782457000-7`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 20
+**High Impact Closures:** 28
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
