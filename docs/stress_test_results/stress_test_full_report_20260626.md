@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:59:30
+**Generated:** 2026-06-26T10:17:51
 **Total tests:** 1862
 **Actions tested:** 266
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 941 | 50.5% | Tool returned a successful response |
-| ⚠️ handled | 921 | 49.5% | Tool returned a graceful error (no crash) |
+| ✅ pass | 944 | 50.7% | Tool returned a successful response |
+| ⚠️ handled | 918 | 49.3% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 214 | 80.5% |
-| ⚠️ handled | 52 | 19.5% |
+| ✅ pass | 213 | 80.1% |
+| ⚠️ handled | 53 | 19.9% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -50,8 +50,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 179 | 67.3% |
-| ⚠️ handled | 87 | 32.7% |
+| ✅ pass | 183 | 68.8% |
+| ⚠️ handled | 83 | 31.2% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -494,7 +494,7 @@
 | `dsor_query_decisions` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `dsor_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `end_of_day` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
-| `engram_neighbors` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `engram_neighbors` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `export_schema` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `federation_dsor` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `fusion_reactor` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
@@ -504,10 +504,10 @@
 | `heartbeat_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `hook_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `ipc_tokens` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `list_decisions` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
-| `list_snapshots` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `list_decisions` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_snapshots` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `list_tools` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `metering_summary` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `metering_summary` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `morning_brief` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `performance_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `prometheus_metrics` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
@@ -595,7 +595,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T03:26:29.907031Z",
+        "timestamp": "2026-06-26T04:42:26.175838Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -607,7 +607,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T03:26:29.907031Z",
+        "timestamp": "2026-06-26T04:42:26.175838Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -619,7 +619,7 @@
   "data": null,
   "error": "Error reading audit log: '>' not supported between instances of 'int' and 'str'",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:29.922517Z"
+  "timestamp": "2026-06-26T04:42:26.185643Z"
 }`
 
 **empty_params** — ✅ pass
@@ -629,7 +629,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T03:26:29.907031Z",
+        "timestamp": "2026-06-26T04:42:26.175838Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -671,28 +671,30 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 879.0,
-    "total_interactions": 8790,
+    "total_cost_units": 6.6,
+    "total_interactions": 66,
     "breakdown": {
       "unknown": {
-        "cost": 438.1,
-        "count": 4381,
+        "cost": 3.3,
+        "count": 33,
         "tier": 1
-  `
+      },
+ `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 879.0,
-    "total_interactions": 8790,
+    "total_cost_units": 6.6,
+    "total_interactions": 66,
     "breakdown": {
       "unknown": {
-        "cost": 438.1,
-        "count": 4381,
+        "cost": 3.3,
+        "count": 33,
         "tier": 1
-  `
+      },
+ `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -707,14 +709,15 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 879.0,
-    "total_interactions": 8790,
+    "total_cost_units": 6.6,
+    "total_interactions": 66,
     "breakdown": {
       "unknown": {
-        "cost": 438.1,
-        "count": 4381,
+        "cost": 3.3,
+        "count": 33,
         "tier": 1
-  `
+      },
+ `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -753,28 +756,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [DECAYING]\n   Week 26 | Friday\n=================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [DECAYING]\n   Week 26 | Friday\n=================`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [DECAYING]\n   Week 26 | Friday\n=================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [GROWING]\n   Week 26 | Friday\n==================`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [DECAYING]\n   Week 26 | Friday\n=================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -815,12 +818,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_44391",
+        "id": "growth_hook_morning_brief_generated_48946",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -829,12 +832,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_44391",
+        "id": "growth_hook_morning_brief_generated_48946",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -851,12 +854,12 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_44391",
+        "id": "growth_hook_morning_brief_generated_48946",
         "context": "Strategy",
-        "intensity": 3
+        "intensity": 5
       },
       {
-        "id": "growth_hook_morning_brief_gen`
+        "id": `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -897,7 +900,7 @@
   "data": null,
   "error": "Decision ID test-id not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:32.672463Z"
+  "timestamp": "2026-06-26T04:42:26.275107Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -914,7 +917,7 @@
   "data": null,
   "error": "Decision ID 12345 not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:32.672768Z"
+  "timestamp": "2026-06-26T04:42:26.275866Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -961,31 +964,35 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [
-      {
-        "decision_id": "dec-b407e23d4482",
-        "intent": "Route task 12345 to brain_test-brain",
-        "reasoning": "Composite score=0`
+    "decisions": [],
+    "count": 0,
+    "message": "No decisions found. DSoR ledger is empty."
+  },
+  "error": null,
+  "error_code": null,
+  "timestamp": "2026-06-26T`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [
-      {
-        "decision_id": "dec-b407e23d4482",
-        "intent": "Route task 12345 to brain_test-brain",
-        "reasoning": "Composite score=0`
+    "decisions": [],
+    "count": 0,
+    "message": "No decisions found. DSoR ledger is empty."
+  },
+  "error": null,
+  "error_code": null,
+  "timestamp": "2026-06-26T`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "An internal error occurred. Error ID: ddb33b13",
+  "error": "An internal error occurred. Error ID: 68211b45",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:32.674643Z"
+  "timestamp": "2026-06-26T04:42:26.279074Z"
 }`
 
 **empty_params** — ✅ pass
@@ -993,11 +1000,13 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [
-      {
-        "decision_id": "dec-b407e23d4482",
-        "intent": "Route task 12345 to brain_test-brain",
-        "reasoning": "Composite score=0`
+    "decisions": [],
+    "count": 0,
+    "message": "No decisions found. DSoR ledger is empty."
+  },
+  "error": null,
+  "error_code": null,
+  "timestamp": "2026-06-26T`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1040,10 +1049,10 @@
     "feature": "DSoR",
     "components": {
       "decision_ledger": {
-        "status": "ACTIVE",
-        "total": 56
+        "status": "READY",
+        "total": 0
       },
-      "snapshots`
+      "snapshots":`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1054,10 +1063,10 @@
     "feature": "DSoR",
     "components": {
       "decision_ledger": {
-        "status": "ACTIVE",
-        "total": 56
+        "status": "READY",
+        "total": 0
       },
-      "snapshots`
+      "snapshots":`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1068,10 +1077,10 @@
     "feature": "DSoR",
     "components": {
       "decision_ledger": {
-        "status": "ACTIVE",
-        "total": 56
+        "status": "READY",
+        "total": 0
       },
-      "snapshots`
+      "snapshots":`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1082,10 +1091,10 @@
     "feature": "DSoR",
     "components": {
       "decision_ledger": {
-        "status": "ACTIVE",
-        "total": 56
+        "status": "READY",
+        "total": 0
       },
-      "snapshots`
+      "snapshots":`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1198,8 +1207,7 @@
     },
     "neighbors": [
       {
-        "id": "daily_summary_2026-06-26",
- `
+        "id": "growth_hook_morning_brief_ge`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1208,14 +1216,16 @@
   "expected_params": "(key, max_depth=1)",
   "provided_params":`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'engram_neighbors': 'str' object cannot be interpreted as an integer",
-  "expected_params": "(key, max_depth=1)",
-  "provided_params": [
-    "key",
-    "max_dep`
+  "success": true,
+  "data": {
+    "error": "Engram 'wrong_type' not found in graph",
+    "node_count": 10
+  },
+  "error": null
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1427,7 +1437,7 @@
   "data": {
     "pipeline": "fusion_reactor",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T08:56:33.456910",
+    "timestamp": "2026-06-26T10:12:26.332711",
     "observation": "test",
     "sections": {
       "capture": `
@@ -1648,23 +1658,23 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:26:36.084750+00:00",
-    "triggers": [],
-    "trigger_count": 0,
-    "should_notify": false,
-    "check_duration_ms": 11.0,
-    "format`
+    "timestamp": "2026-06-26T04:42:31.325759+00:00",
+    "triggers": [
+      {
+        "signal": "VELOCITY_DROP",
+        "recent_writes": 0,
+        "window_hours": 4`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:26:36.440298+00:00",
+    "timestamp": "2026-06-26T04:42:31.699350+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 17.6,
+    "check_duration_ms": 15.3,
     "format`
 
 **wrong_types** — ✅ pass
@@ -1672,11 +1682,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:26:37.800697+00:00",
+    "timestamp": "2026-06-26T04:42:33.074070+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 0.1,
+    "check_duration_ms": 0.3,
     "formatt`
 
 **empty_params** — ✅ pass
@@ -1684,12 +1694,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T03:26:38.185042+00:00",
+    "timestamp": "2026-06-26T04:42:33.576173+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 19.2,
-    "format`
+    "check_duration_ms": 2.7,
+    "formatt`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1804,60 +1814,60 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3556,
+    "total_executions": 19,
     "outcomes": {
-      "ADD": 459,
-      "NOOP": 1050,
-      "UNKNOWN": 1337,
-      "UPDATE": 710
+      "ADD": 4,
+      "NOOP": 9,
+      "UNKNOWN": 6
     },
     "by_event_type": {
-      "m`
+      "morning_brief_generated": {
+    `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3556,
+    "total_executions": 19,
     "outcomes": {
-      "ADD": 459,
-      "NOOP": 1050,
-      "UNKNOWN": 1337,
-      "UPDATE": 710
+      "ADD": 4,
+      "NOOP": 9,
+      "UNKNOWN": 6
     },
     "by_event_type": {
-      "m`
+      "morning_brief_generated": {
+    `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3556,
+    "total_executions": 19,
     "outcomes": {
-      "ADD": 459,
-      "NOOP": 1050,
-      "UNKNOWN": 1337,
-      "UPDATE": 710
+      "ADD": 4,
+      "NOOP": 9,
+      "UNKNOWN": 6
     },
     "by_event_type": {
-      "m`
+      "morning_brief_generated": {
+    `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 3556,
+    "total_executions": 19,
     "outcomes": {
-      "ADD": 459,
-      "NOOP": 1050,
-      "UNKNOWN": 1337,
-      "UPDATE": 710
+      "ADD": 4,
+      "NOOP": 9,
+      "UNKNOWN": 6
     },
     "by_event_type": {
-      "m`
+      "morning_brief_generated": {
+    `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1896,52 +1906,44 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "tokens": [
-      {
-        "token_id": "ipc-7330bf2a4159c97dcf8f4a33",
-        "events": [
-          {
-            "event": "issued",
-            "token_id": "ipc`
+    "tokens": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "tokens": [
-      {
-        "token_id": "ipc-7330bf2a4159c97dcf8f4a33",
-        "events": [
-          {
-            "event": "issued",
-            "token_id": "ipc`
+    "tokens": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "tokens": [
-      {
-        "token_id": "ipc-7330bf2a4159c97dcf8f4a33",
-        "events": [
-          {
-            "event": "issued",
-            "token_id": "ipc`
+    "tokens": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "tokens": [
-      {
-        "token_id": "ipc-7330bf2a4159c97dcf8f4a33",
-        "events": [
-          {
-            "event": "issued",
-            "token_id": "ipc`
+    "tokens": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1980,29 +1982,32 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [
-      {
-        "decision_id": "dec-b407e23d4482",
-        "intent": "Route task 12345 to brain_test-brain",
-        "reasoning": "Composite score=0`
+    "decisions": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [
-      {
-        "decision_id": "dec-b407e23d4482",
-        "intent": "Route task 12345 to brain_test-brain",
-        "reasoning": "Composite score=0`
+    "decisions": [],
+    "count": 0
+  },
+  "error": null
+}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "success": false,
-  "data": null,
-  "error": "Error: bad operand type for unary -: 'str'"
+  "success": true,
+  "data": {
+    "decisions": [],
+    "count": 0
+  },
+  "error": null
 }`
 
 **empty_params** — ✅ pass
@@ -2010,11 +2015,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "decisions": [
-      {
-        "decision_id": "dec-b407e23d4482",
-        "intent": "Route task 12345 to brain_test-brain",
-        "reasoning": "Composite score=0`
+    "decisions": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2053,31 +2058,32 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "snapshots": [
-      {
-        "snapshot_id": "snap-000004",
-        "timestamp": "2026-06-26T01:38:01.104815+00:00",
-        "state_hash": "ea43129a504e2fff",
-   `
+    "snapshots": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "snapshots": [
-      {
-        "snapshot_id": "snap-000004",
-        "timestamp": "2026-06-26T01:38:01.104815+00:00",
-        "state_hash": "ea43129a504e2fff",
-   `
+    "snapshots": [],
+    "count": 0
+  },
+  "error": null
+}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "success": false,
-  "data": null,
-  "error": "Error: slice indices must be integers or None or have an __index__ method"
+  "success": true,
+  "data": {
+    "snapshots": [],
+    "count": 0
+  },
+  "error": null
 }`
 
 **empty_params** — ✅ pass
@@ -2085,12 +2091,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "snapshots": [
-      {
-        "snapshot_id": "snap-000004",
-        "timestamp": "2026-06-26T01:38:01.104815+00:00",
-        "state_hash": "ea43129a504e2fff",
-   `
+    "snapshots": [],
+    "count": 0
+  },
+  "error": null
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2216,35 +2221,32 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 14,
-    "total_units": 14.0,
-    "by_scope": {
-      "federation_join": 14.0
-    },
-    "by_resource_type": {
-      "federation_join": 14.0
-    },`
+    "total_entries": 0,
+    "total_units": 0
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 14,
-    "total_units": 14.0,
-    "by_scope": {
-      "federation_join": 14.0
-    },
-    "by_resource_type": {
-      "federation_join": 14.0
-    },`
+    "total_entries": 0,
+    "total_units": 0
+  },
+  "error": null
+}`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "success": false,
-  "data": null,
-  "error": "Error: unsupported type for timedelta hours component: str"
+  "success": true,
+  "data": {
+    "total_entries": 0,
+    "total_units": 0
+  },
+  "error": null
 }`
 
 **empty_params** — ✅ pass
@@ -2252,14 +2254,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 14,
-    "total_units": 14.0,
-    "by_scope": {
-      "federation_join": 14.0
-    },
-    "by_resource_type": {
-      "federation_join": 14.0
-    },`
+    "total_entries": 0,
+    "total_units": 0
+  },
+  "error": null
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2298,28 +2297,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 10:12 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 10:12 AM\n====================`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 10:12 AM\n====================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:56 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 10:12 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2428,7 +2427,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T03:26:38.327732+00:00
+# Generated at 2026-06-26T04:42:33.855515+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2438,7 +2437,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T03:26:38.328449+00:00
+# Generated at 2026-06-26T04:42:33.902985+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2456,7 +2455,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T03:26:38.329092+00:00
+# Generated at 2026-06-26T04:42:33.927193+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2578,9 +2577,11 @@
   "data": {
     "engrams": [
       {
-        "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% of target",
-        "conte`
+        "key": "blockers_2026-06-26",
+        "value": "w; r; o; n; g; _; t; y; p; e",
+        "context": "Decision",
+        "intensity": 9,
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2589,9 +2590,11 @@
   "data": {
     "engrams": [
       {
-        "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% of target",
-        "conte`
+        "key": "blockers_2026-06-26",
+        "value": "w; r; o; n; g; _; t; y; p; e",
+        "context": "Decision",
+        "intensity": 9,
+`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2604,9 +2607,11 @@
   "data": {
     "engrams": [
       {
-        "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% of target",
-        "conte`
+        "key": "blockers_2026-06-26",
+        "value": "w; r; o; n; g; _; t; y; p; e",
+        "context": "Decision",
+        "intensity": 9,
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2781,8 +2786,8 @@
   "data": {
     "engrams": [
       {
-        "key": "sre_diagnosis_20260626_0642",
-        "value": "SRE Diagnosis 2026-06-26 06:42: symptom='test' severity=CRITICAL findings=2 ac`
+        "key": "sre_diagnosis_20260626_1012",
+        "value": "SRE Diagnosis 2026-06-26 10:12: symptom='test' severity=CRITICAL findings=2 ac`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2841,8 +2846,8 @@
   "data": {
     "engrams": [
       {
-        "key": "sre_diagnosis_20260626_0642",
-        "value": "SRE Diagnosis 2026-06-26 06:42: symptom='test' severity=CRITICAL findings=2 ac`
+        "key": "sre_diagnosis_20260626_1012",
+        "value": "SRE Diagnosis 2026-06-26 10:12: symptom='test' severity=CRITICAL findings=2 ac`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2899,7 +2904,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T08:56:39.054573",
+    "timestamp": "2026-06-26T10:12:34.067901",
     "symptom": "test",
     "sections": {
       "search": {
@@ -2919,7 +2924,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T08:56:39.058220",
+    "timestamp": "2026-06-26T10:12:34.087982",
     "symptom": "wrong_type",
     "sections": {
       "search`
@@ -2968,28 +2973,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 blockers_2026-06-26: w; r; o; n; g; _; t; y; p; e\n  \u2022 sre_diagnosis_2026062`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 blockers_2026-06-26: w; r; o; n; g; _; t; y; p; e\n  \u2022 sre_diagnosis_2026062`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 blockers_2026-06-26: w; r; o; n; g; _; t; y; p; e\n  \u2022 sre_diagnosis_2026062`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 blockers_2026-06-26: w; r; o; n; g; _; t; y; p; e\n  \u2022 sre_diagnosis_2026062`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -3444,7 +3449,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552393Z"
+  "timestamp": "2026-06-26T04:42:34.218225Z"
 }`
 
 **missing_params** — ✅ pass
@@ -3454,7 +3459,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552467Z"
+  "timestamp": "2026-06-26T04:42:34.219130Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -3464,7 +3469,7 @@
   "data": null,
   "error": "Server wrong_type not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552526Z"
+  "timestamp": "2026-06-26T04:42:34.219667Z"
 }`
 
 **empty_params** — ✅ pass
@@ -3474,7 +3479,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552573Z"
+  "timestamp": "2026-06-26T04:42:34.220018Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -3631,7 +3636,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Proof: test-id
 
-> Generated: 2026-06-26 08:56:41
+> Generated: 2026-06-26 10:12:34
 
 ## Thinking
 None
@@ -3923,32 +3928,24 @@ None
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
@@ -4184,7 +4181,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'test' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.592596Z"
+  "timestamp": "2026-06-26T04:42:34.346103Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -4201,7 +4198,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'wrong_type' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.592699Z"
+  "timestamp": "2026-06-26T04:42:34.347031Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -4772,7 +4769,7 @@ Local brain now operating in standalone mode.`
    Score: 0.630
 
 ⏱️ ROUTING TIME
-   0.029ms
+   0.203ms
 
 🔄 ALTERNATIVES
    1. pe`
@@ -4797,7 +4794,7 @@ Local brain now operating in standalone mode.`
    Score: 0.630
 
 ⏱️ ROUTING TIME
-   0.074ms
+   0.145ms
 
 🔄 ALTERNATIVES
    1. peer_h`
@@ -5034,22 +5031,22 @@ Local brain now operating in standalone mode.`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:26:43.312880+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.199087+00:00\n  Jurisdiction: N`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:26:43.350785+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.202501+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:26:43.370018+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.205026+00:00\n  Jurisdiction: N`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:26:43.370418+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T04:42:36.205810+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -5090,8 +5087,8 @@ Local brain now operating in standalone mode.`
   "message": "Failed to fix after 3 attempts.",
   "last_output": "\n",
   "logs": [
-    "[08:56:43] Starting Fixer Loop for test",
-    "[08:56:43] Running verification: test",
+    "[10:12:36] Starting Fixer Loop for test",
+    "[10:12:36] Running verification: test",
 `
 
 **missing_params** — ⚠️ handled
@@ -5107,7 +5104,7 @@ Local brain now operating in standalone mode.`
   "message": "Failed to fix after 3 attempts.",
   "last_output": "Verification failed to run: [Errno 2] No such file or directory: 'wrong_type'",
   "logs": [
-    "[08:56:43] S`
+    "[10:12:36] S`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -5469,21 +5466,21 @@ Local brain now operating in standalone mode.`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-70B43E55",
+  "review_id": "KYC-233C9BF8",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T03:26:43.458060+00:00",
-  "completed_at": "2026-06-26T03:26:43.458089+00:00",
+  "started_at": "2026-06-26T04:42:36.387548+00:00",
+  "completed_at": "2026-06-26T04:42:36.387648+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-15390D1D",
+  "review_id": "KYC-16437F98",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T03:26:43.458542+00:00",
-  "completed_at": "2026-06-26T03:26:43.458554+00:00",
+  "started_at": "2026-06-26T04:42:36.389178+00:00",
+  "completed_at": "2026-06-26T04:42:36.389211+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -5500,11 +5497,11 @@ Local brain now operating in standalone mode.`
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-5684C6E1",
+  "review_id": "KYC-BB204639",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T03:26:43.459231+00:00",
-  "completed_at": "2026-06-26T03:26:43.459244+00:00",
+  "started_at": "2026-06-26T04:42:36.392510+00:00",
+  "completed_at": "2026-06-26T04:42:36.392546+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -5886,28 +5883,28 @@ Local brain now operating in standalone mode.`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "count": 86,
+  "count": 3,
   "traces": [
     {
-      "file": "KYC-01803DAC.json",
+      "file": "KYC-16437F98.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-01803DAC",
+      "review_id": "KYC-16437F98",
       "recommendation": "APPROVE",
       "risk_score": 0,
-      "`
+      "a`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 86,
+  "count": 3,
   "traces": [
     {
-      "file": "KYC-01803DAC.json",
+      "file": "KYC-16437F98.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-01803DAC",
+      "review_id": "KYC-16437F98",
       "recommendation": "APPROVE",
       "risk_score": 0,
-      "`
+      "a`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -5920,15 +5917,15 @@ Local brain now operating in standalone mode.`
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 86,
+  "count": 3,
   "traces": [
     {
-      "file": "KYC-01803DAC.json",
+      "file": "KYC-16437F98.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-01803DAC",
+      "review_id": "KYC-16437F98",
       "recommendation": "APPROVE",
       "risk_score": 0,
-      "`
+      "a`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -5970,10 +5967,10 @@ Local brain now operating in standalone mode.`
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-CE43E114",
+  "review_id": "KYC-16437F98",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T02:35:00.949672+00:00",
+  "started_at": "2026-06-26T04:42:36.389178+00:00",
   "completed_at": "2026-06-26T0`
 
 **wrong_types** — ⚠️ handled
@@ -5984,10 +5981,10 @@ Local brain now operating in standalone mode.`
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-CE43E114",
+  "review_id": "KYC-16437F98",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T02:35:00.949672+00:00",
+  "started_at": "2026-06-26T04:42:36.389178+00:00",
   "completed_at": "2026-06-26T0`
 
 **unknown_action** — ⚠️ handled
@@ -6213,7 +6210,7 @@ Local brain now operating in standalone mode.`
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{"error": "Failed: Expecting value: line 1 column 1 (char 0)"}`
+- *Result preview:* `{"error": "Error: File not found: test"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6224,7 +6221,7 @@ Local brain now operating in standalone mode.`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{"error": "Failed: Expecting value: line 1 column 1 (char 0)"}`
+- *Result preview:* `{"error": "Error: File not found: wrong_type"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6321,7 +6318,7 @@ Local brain now operating in standalone mode.`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 08:56:44
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 10:12:40
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6331,7 +6328,7 @@ Local brain now operating in standalone mode.`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 08:56:44
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 10:12:40
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6345,7 +6342,7 @@ Local brain now operating in standalone mode.`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 08:56:44
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 10:12:40
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6490,7 +6487,7 @@ Local brain now operating in standalone mode.`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `✅ Task handed off to shared queue. ID: task-2a0f2bf2`
+- *Result preview:* `✅ Task handed off to shared queue. ID: task-de8a692d`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -6500,7 +6497,7 @@ Local brain now operating in standalone mode.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `✅ Task handed off for session wrong_ty. ID: task-6325e76f`
+- *Result preview:* `✅ Task handed off for session wrong_ty. ID: task-f6c5c6f3`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -6669,28 +6666,19 @@ Local brain now operating in standalone mode.`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `📸 Dashboard Snapshots
-========================================
-   snap_1782444170_deebf5: Snapshot 2026-06-26T03:22:50Z (2026-06-26T03:22:50Z)
-   snap_1782444170_aa68ca: wrong_type (2026-06-26T03:22:5`
+- *Result preview:* `📸 No snapshots found`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `📸 Dashboard Snapshots
-========================================
-   snap_1782444170_deebf5: Snapshot 2026-06-26T03:22:50Z (2026-06-26T03:22:50Z)
-   snap_1782444170_aa68ca: wrong_type (2026-06-26T03:22:5`
+- *Result preview:* `📸 No snapshots found`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `❌ List snapshots error: slice indices must be integers or None or have an __index__ method`
+- *Result preview:* `📸 No snapshots found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `📸 Dashboard Snapshots
-========================================
-   snap_1782444170_deebf5: Snapshot 2026-06-26T03:22:50Z (2026-06-26T03:22:50Z)
-   snap_1782444170_aa68ca: wrong_type (2026-06-26T03:22:5`
+- *Result preview:* `📸 No snapshots found`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7125,65 +7113,49 @@ Local brain now operating in standalone mode.`
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7280,38 +7252,38 @@ Local brain now operating in standalone mode.`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_7c8e2d
-   Name: Snapshot 2026-06-26T03:26:51Z
-   Timestamp: 2026-06-26T03:26:51Z
+   ID: snap_1782448968_f83adb
+   Name: Snapshot 2026-06-26T04:42:48Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_7c8e2d', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782448968_f83adb', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_442e6a
-   Name: Snapshot 2026-06-26T03:26:51Z
-   Timestamp: 2026-06-26T03:26:51Z
+   ID: snap_1782448968_07ecb9
+   Name: Snapshot 2026-06-26T04:42:48Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_442e6a', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782448968_07ecb9', 'other_s`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_3d8257
+   ID: snap_1782448968_d210d7
    Name: wrong_type
-   Timestamp: 2026-06-26T03:26:51Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_3d8257', 'other_snapshot_id')`
+💡 To compare: brain_compare_dashboards('snap_1782448968_d210d7', 'other_snapshot_id')`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_09a0fd
-   Name: Snapshot 2026-06-26T03:26:51Z
-   Timestamp: 2026-06-26T03:26:51Z
+   ID: snap_1782448968_005d63
+   Name: Snapshot 2026-06-26T04:42:48Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_09a0fd', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782448968_005d63', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7431,7 +7403,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T03:26:51.186895+00:00"
+    "fetched_at": "2026-06-26T04:42:48.170100+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7445,7 +7417,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T03:26:51.256103+00:00"
+    "fetched_at": "2026-06-26T04:42:48.244957+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7459,7 +7431,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T03:26:51.300642+00:00"
+    "fetched_at": "2026-06-26T04:42:48.294933+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7473,7 +7445,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-26T03:26:51.351699+00:00"
+    "fetched_at": "2026-06-26T04:42:48.354226+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7683,49 +7655,49 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T03:27:00.114235+00:00",
+  "timestamp": "2026-06-26T04:43:18.391000+00:00",
   "sections": {
     "brief": {
-      "engram_count": 706,
+      "engram_count": 22,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
-`
+ `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T03:27:00.206325+00:00",
+  "timestamp": "2026-06-26T04:43:18.610733+00:00",
   "sections": {
     "brief": {
-      "engram_count": 711,
+      "engram_count": 27,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
-`
+ `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T03:27:00.327637+00:00",
+  "timestamp": "2026-06-26T04:43:18.777630+00:00",
   "sections": {
     "brief": {
-      "engram_count": 711,
+      "engram_count": 27,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
-`
+ `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-26T03:27:00.447320+00:00",
+  "timestamp": "2026-06-26T04:43:18.947015+00:00",
   "sections": {
     "brief": {
-      "engram_count": 711,
+      "engram_count": 27,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
-`
+ `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -8177,7 +8149,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Loop created!
 
-**ID:** `comm_20260626_085700_21`
+**ID:** `comm_20260626_101319_0`
 **Type:** task
 **Description:** test
 **Priority:** 3
@@ -8193,7 +8165,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `✅ Loop created!
 
-**ID:** `comm_20260626_085700_22`
+**ID:** `comm_20260626_101319_1`
 **Type:** 12345
 **Description:** wrong_type
 **Priority:** not_a_number
@@ -8338,65 +8310,65 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 21
-- 🟢 Green: 21
+**Open loops:** 0
+- 🟢 Green: 0
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 11, 12345: 10
+**By type:** (none)
 
-**Mental load:** 🟢 LOW
-**Advice:** Looking good, maintain momentum
+**Mental load:** ✨ ZERO
+**Advice:** No open loops - guilt-free operation!
 
-**Last scan:** `
+**Last scan:** Never`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 21
-- 🟢 Green: 21
+**Open loops:** 0
+- 🟢 Green: 0
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 11, 12345: 10
+**By type:** (none)
 
-**Mental load:** 🟢 LOW
-**Advice:** Looking good, maintain momentum
+**Mental load:** ✨ ZERO
+**Advice:** No open loops - guilt-free operation!
 
-**Last scan:** `
+**Last scan:** Never`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 21
-- 🟢 Green: 21
+**Open loops:** 0
+- 🟢 Green: 0
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 11, 12345: 10
+**By type:** (none)
 
-**Mental load:** 🟢 LOW
-**Advice:** Looking good, maintain momentum
+**Mental load:** ✨ ZERO
+**Advice:** No open loops - guilt-free operation!
 
-**Last scan:** `
+**Last scan:** Never`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 21
-- 🟢 Green: 21
+**Open loops:** 0
+- 🟢 Green: 0
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 11, 12345: 10
+**By type:** (none)
 
-**Mental load:** 🟢 LOW
-**Advice:** Looking good, maintain momentum
+**Mental load:** ✨ ZERO
+**Advice:** No open loops - guilt-free operation!
 
-**Last scan:** `
+**Last scan:** Never`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -8431,19 +8403,19 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `✅ Exported 300 files to brain_export_20260626_085700.zip`
+- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `✅ Exported 300 files to brain_export_20260626_085701.zip`
+- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `✅ Exported 300 files to brain_export_20260626_085702.zip`
+- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `✅ Exported 300 files to brain_export_20260626_085703.zip`
+- *Result preview:* `✅ Exported 44 files to brain_export_20260626_101319.zip`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -8478,29 +8450,29 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `**Open Commitments (23 total)**
+- *Result preview:* `**Open Commitments (2 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
    Reason: Needs focused time
-   ID: `comm_20260626_070211_0`
+   ID: `comm_20260626_101319_0`
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-  `
+   `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `**Open Commitments (23 total)**
+- *Result preview:* `**Open Commitments (2 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
    Reason: Needs focused time
-   ID: `comm_20260626_070211_0`
+   ID: `comm_20260626_101319_0`
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-  `
+   `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -8508,16 +8480,16 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `**Open Commitments (23 total)**
+- *Result preview:* `**Open Commitments (2 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
    Reason: Needs focused time
-   ID: `comm_20260626_070211_0`
+   ID: `comm_20260626_101319_0`
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-  `
+   `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -8561,8 +8533,9 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 21
-- Red Tier: 0`
+- Total Open: 0
+- Red Tier: 0
+`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -8575,8 +8548,9 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 21
-- Red Tier: 0`
+- Total Open: 0
+- Red Tier: 0
+`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -8589,8 +8563,9 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 21
-- Red Tier: 0`
+- Total Open: 0
+- Red Tier: 0
+`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -8603,8 +8578,9 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 21
-- Red Tier: 0`
+- Total Open: 0
+- Red Tier: 0
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -8966,37 +8942,37 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782444427_dff8",
+  "sprint_id": "sprint_1782449004_4edd",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:57:07+0530"
+  "timestamp": "2026-06-26T10:13:24+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782444427_d6f0",
+  "sprint_id": "sprint_1782449004_3f7d",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:57:07+0530"
+  "timestamp": "2026-06-26T10:13:24+0530"
 }`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "sprint_id": "sprint_1782444427_81b1",
+  "sprint_id": "sprint_1782449004_2784",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:57:07+0530"
+  "timestamp": "2026-06-26T10:13:24+0530"
 }`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782444427_93e3",
+  "sprint_id": "sprint_1782449004_d80e",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-26T08:57:07+0530"
+  "timestamp": "2026-06-26T10:13:24+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -9032,7 +9008,7 @@ Re-call with confirm=true to proceed. Agent spawning consumes compute resources.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782444427_e495e9
+- *Result preview:* `🚀 Sprint Report: sprint_1782449004_f06ee7
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -9046,7 +9022,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782444427_15b3a8
+- *Result preview:* `🚀 Sprint Report: sprint_1782449004_79d76a
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -9064,7 +9040,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782444427_3bae8f
+- *Result preview:* `🚀 Sprint Report: sprint_1782449004_1fd1f5
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -9161,7 +9137,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782444427_3bae8f
+   Sprint ID: sprint_1782449004_1fd1f5
    Reason: User requested halt
    Status: halt_requested
    
@@ -9170,7 +9146,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782444427_3bae8f
+   Sprint ID: sprint_1782449004_1fd1f5
    Reason: User requested halt
    Status: halt_requested
    
@@ -9179,7 +9155,7 @@ Duration: 0.0s
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782444427_3bae8f
+   Sprint ID: sprint_1782449004_1fd1f5
    Reason: 12345
    Status: halt_requested
    
@@ -9188,7 +9164,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782444427_3bae8f
+   Sprint ID: sprint_1782449004_1fd1f5
    Reason: User requested halt
    Status: halt_requested
    
@@ -9542,7 +9518,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Mission Started
-   ID: mission_1782444427_9f86d0
+   ID: mission_1782449004_9f86d0
    Name: test
    Goal: test
    Tasks: 4
@@ -9756,7 +9732,7 @@ Duration: 0.0s
 
 **Action:** continue
 **Message:** N/A
-**Days Inactive:** 0
+**Days Inactive:** -1
 `
 
 **missing_params** — ✅ pass
@@ -9765,7 +9741,7 @@ Duration: 0.0s
 
 **Action:** continue
 **Message:** N/A
-**Days Inactive:** 0
+**Days Inactive:** -1
 `
 
 **wrong_types** — ✅ pass
@@ -9774,7 +9750,7 @@ Duration: 0.0s
 
 **Action:** continue
 **Message:** N/A
-**Days Inactive:** 0
+**Days Inactive:** -1
 `
 
 **empty_params** — ✅ pass
@@ -9783,7 +9759,7 @@ Duration: 0.0s
 
 **Action:** continue
 **Message:** N/A
-**Days Inactive:** 0
+**Days Inactive:** -1
 `
 
 **unknown_action** — ⚠️ handled
@@ -9880,8 +9856,8 @@ Duration: 0.0s
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "total_dispatches": 1008,
-  "total_errors": 551,
-  "error_rate": 0.5466269841269841,
+  "total_errors": 550,
+  "error_rate": 0.5456349206349206,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -9894,8 +9870,8 @@ Duration: 0.0s
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "total_dispatches": 1009,
-  "total_errors": 551,
-  "error_rate": 0.5460852329038652,
+  "total_errors": 550,
+  "error_rate": 0.5450941526263627,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -9908,8 +9884,8 @@ Duration: 0.0s
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "total_dispatches": 1010,
-  "total_errors": 551,
-  "error_rate": 0.5455445544554456,
+  "total_errors": 550,
+  "error_rate": 0.5445544554455446,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -9922,8 +9898,8 @@ Duration: 0.0s
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "total_dispatches": 1011,
-  "total_errors": 551,
-  "error_rate": 0.5450049455984174,
+  "total_errors": 550,
+  "error_rate": 0.5440158259149357,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -9964,49 +9940,34 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "handoffs": [
-    {
-      "id": "handoff-1782436363-9921",
-      "timestamp": "2026-06-26T06:42:43+0530",
-      "from_agent": "current_session",
-      "to_agent": "test",
-      "priority": 3,
-    `
+  "handoffs": [],
+  "count": 0,
+  "message": "Found 0 pending handoff(s)"
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "handoffs": [
-    {
-      "id": "handoff-1782436363-9921",
-      "timestamp": "2026-06-26T06:42:43+0530",
-      "from_agent": "current_session",
-      "to_agent": "test",
-      "priority": 3,
-    `
+  "handoffs": [],
+  "count": 0,
+  "message": "Found 0 pending handoff(s)"
+}`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "handoffs": [
-    {
-      "id": "handoff-1782436363-96a7",
-      "timestamp": "2026-06-26T06:42:43+0530",
-      "from_agent": "current_session",
-      "to_agent": "wrong_type",
-      "priority": "`
+  "handoffs": [],
+  "count": 0,
+  "message": "Found 0 pending handoff(s)"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "handoffs": [
-    {
-      "id": "handoff-1782436363-9921",
-      "timestamp": "2026-06-26T06:42:43+0530",
-      "from_agent": "current_session",
-      "to_agent": "test",
-      "priority": 3,
-    `
+  "handoffs": [],
+  "count": 0,
+  "message": "Found 0 pending handoff(s)"
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -10366,7 +10327,7 @@ CONTEXT: test
 REQUEST: test
 ARTIFACTS: None
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782444427-722b
+ID: handoff-1782449004-07db
 Status: Pending - will appear in target agent's s`
 
 **missing_params** — ⚠️ handled
@@ -10386,7 +10347,7 @@ CONTEXT: not_a_dict
 REQUEST: wrong_type
 ARTIFACTS: w, r, o, n, g, _, t, y, p, e
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782444427-a`
+ID: handoff-1782449004-1`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -10526,7 +10487,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 94
+**High Impact Closures:** 4
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10536,7 +10497,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 94
+**High Impact Closures:** 4
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10546,7 +10507,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 94
+**High Impact Closures:** 4
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10556,7 +10517,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 94
+**High Impact Closures:** 4
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10978,9 +10939,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -10990,9 +10949,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11002,9 +10959,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11014,9 +10969,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11117,11 +11070,11 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 721,
-    "total_turns": 7535,
-    "total_preferences": 81,
+    "total_sessions_ingested": 0,
+    "total_turns": 0,
+    "total_preferences": 0,
     "total_reasoning_chains": 0,
-    "corpus_s`
+    "corpus_size_mb`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11129,11 +11082,11 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 721,
-    "total_turns": 7535,
-    "total_preferences": 81,
+    "total_sessions_ingested": 0,
+    "total_turns": 0,
+    "total_preferences": 0,
     "total_reasoning_chains": 0,
-    "corpus_s`
+    "corpus_size_mb`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -11141,11 +11094,11 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 721,
-    "total_turns": 7535,
-    "total_preferences": 81,
+    "total_sessions_ingested": 0,
+    "total_turns": 0,
+    "total_preferences": 0,
     "total_reasoning_chains": 0,
-    "corpus_s`
+    "corpus_size_mb`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -11153,11 +11106,11 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "total_sessions_raw": 721,
-    "total_sessions_ingested": 721,
-    "total_turns": 7535,
-    "total_preferences": 81,
+    "total_sessions_ingested": 0,
+    "total_turns": 0,
+    "total_preferences": 0,
     "total_reasoning_chains": 0,
-    "corpus_s`
+    "corpus_size_mb`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -11195,9 +11148,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11207,9 +11158,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11219,9 +11168,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11231,9 +11178,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "exists": true,
-    "session_id": "not_a_dict_20260626_085307",
-    "message": "Resumable session found."
+    "exists": false
   },
   "error": null
 }`
@@ -11411,10 +11356,10 @@ ID: handoff-1782444427-a`
     "success": true,
     "summary": "test",
     "activity": {
-      "total_events": 4589,
-      "tasks_completed": 129,
-      "tasks_claimed": 1,
-      "tasks_created"`
+      "total_events": 214,
+      "tasks_completed": 6,
+      "tasks_claimed": 0,
+      "tasks_created": 3`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11422,9 +11367,10 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 129 tasks done, 1 tasks claimed, 59 tasks created, 4596 total events",
+    "summary": "Session ended (neutral): 6 tasks done, 3 tasks created, 221 total events",
     "activity": {
-      "total_eve`
+      "total_events": 221,
+      "tas`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -11440,9 +11386,10 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 129 tasks done, 1 tasks claimed, 59 tasks created, 4602 total events",
+    "summary": "Session ended (neutral): 6 tasks done, 3 tasks created, 227 total events",
     "activity": {
-      "total_eve`
+      "total_events": 227,
+      "tas`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -11746,14 +11693,14 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions_processed": 0,
-    "turns_created": 0,
-    "preferences_found": 0,
+    "sessions_processed": 721,
+    "turns_created": 7535,
+    "preferences_found": 81,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 519
+    "duration_ms": 40714
   },
-  "error": nu`
+  "er`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11765,9 +11712,9 @@ ID: handoff-1782444427-a`
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 387
+    "duration_ms": 1994
   },
-  "error": nu`
+  "error": n`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -11785,9 +11732,9 @@ ID: handoff-1782444427-a`
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 377
+    "duration_ms": 1600
   },
-  "error": nu`
+  "error": n`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -11825,52 +11772,44 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [
-      {
-        "id": "wrong_type_20260626_083015",
-        "context": "wrong_type",
-        "created_at": "2026-06-26T08:30:15+0530"
-      },
-      `
+    "sessions": [],
+    "total": 0
+  },
+  "error": null
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [
-      {
-        "id": "wrong_type_20260626_083015",
-        "context": "wrong_type",
-        "created_at": "2026-06-26T08:30:15+0530"
-      },
-      `
+    "sessions": [],
+    "total": 0
+  },
+  "error": null
+}`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [
-      {
-        "id": "wrong_type_20260626_083015",
-        "context": "wrong_type",
-        "created_at": "2026-06-26T08:30:15+0530"
-      },
-      `
+    "sessions": [],
+    "total": 0
+  },
+  "error": null
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "sessions": [
-      {
-        "id": "wrong_type_20260626_083015",
-        "context": "wrong_type",
-        "created_at": "2026-06-26T08:30:15+0530"
-      },
-      `
+    "sessions": [],
+    "total": 0
+  },
+  "error": null
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -12196,8 +12135,8 @@ ID: handoff-1782444427-a`
     "agent": "test",
     "role": "test",
     "worktree_path": null,
-    "pid": 38295,
-    "registered_at": "2026-06-26T03:27:10.021771Z",
+    "pid": 93749,
+    "registered_at": "2026-06-26T04:44:11.198749Z",
    `
 
 **missing_params** — ⚠️ handled
@@ -12391,7 +12330,7 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "success": true,
-    "session_id": "test_20260626_085710",
+    "session_id": "test_20260626_101411",
     "context": "test",
     "message": "Session saved. Resume later with: nucleus sessions resume"
   },
@@ -12409,7 +12348,7 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": {
     "success": true,
-    "session_id": "not_a_dict_20260626_085710",
+    "session_id": "not_a_dict_20260626_101411",
     "context": "not_a_dict",
     "message": "Session saved. Resume later with: nucleus sessions re`
 
@@ -12763,7 +12702,7 @@ ID: handoff-1782444427-a`
 | `relay_classify_skip` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_clear` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `relay_event_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `relay_inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_inbox` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_listen` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `relay_log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_poll_start` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
@@ -12778,7 +12717,7 @@ ID: handoff-1782444427-a`
 | `shared_list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `shared_read` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `shared_write` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `smoke_test` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `smoke_test` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `start_deploy_poll` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `sync_auto` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `sync_now` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
@@ -12927,12 +12866,9 @@ ID: handoff-1782444427-a`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782444308-760378a8",
-  "service_id": "test",
-  "commit_sha": null,
-  "status": "polling",
-  "elapsed_minutes": 2.0,
-  "message": "Polling for 2.0 minutes. Use mcp_render_list_dep`
+  "status": "no_active_poll",
+  "message": "No active polling for this service. Start one with brain_start_deploy_poll()."
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -12944,12 +12880,9 @@ ID: handoff-1782444427-a`
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782444308-76e54210",
-  "service_id": "wrong_type",
-  "commit_sha": "wrong_type",
-  "status": "polling",
-  "elapsed_minutes": 2.0,
-  "message": "Polling for 2.0 minutes. Use mcp_r`
+  "status": "no_active_poll",
+  "message": "No active polling for this service. Start one with brain_start_deploy_poll()."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13009,9 +12942,11 @@ ID: handoff-1782444427-a`
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "status": "deploy_success_smoke_failed",
-  "message": "\u26a0\ufe0f Deploy succeeded but smoke test failed: unknown url type: 'wrong_type/api/health'",
+  "message": "\u26a0\ufe0f Deploy succeeded but smoke test failed: None",
   "deploy_url": "wrong_type",
-  "smoke_test"`
+  "smoke_test": {
+    "passed": false,
+    "error":`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -13168,8 +13103,8 @@ ID: handoff-1782444427-a`
   "role": 12345,
   "provider": "wrong_type",
   "session_id": "wrong_type",
-  "registered_at": "2026-06-26T08:57:10.394861",
-  "pid": 38295,
+  "registered_at": "2026-06-26T10:14:13.260310",
+  "pid": 93749,
   "sto`
 
 **empty_params** — ⚠️ handled
@@ -13211,17 +13146,11 @@ ID: handoff-1782444427-a`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `[
-  "test",
-  "wrong_type"
-]`
+- *Result preview:* `[]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `[
-  "test",
-  "wrong_type"
-]`
+- *Result preview:* `[]`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -13229,10 +13158,7 @@ ID: handoff-1782444427-a`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `[
-  "test",
-  "wrong_type"
-]`
+- *Result preview:* `[]`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -14316,7 +14242,7 @@ ID: handoff-1782444427-a`
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:27:10.406`
+      "created_at": "2026-06-26T04:44:13.439`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14329,7 +14255,7 @@ ID: handoff-1782444427-a`
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:27:10.406`
+      "created_at": "2026-06-26T04:44:13.439`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -14342,7 +14268,7 @@ ID: handoff-1782444427-a`
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:2`
+      "created_at": "2026-06-26T04:4`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -14355,7 +14281,7 @@ ID: handoff-1782444427-a`
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:27:10.406`
+      "created_at": "2026-06-26T04:44:13.439`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -14913,7 +14839,7 @@ ID: handoff-1782444427-a`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `test`
+- *Result preview:* `Error: File not found: test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -14925,7 +14851,7 @@ ID: handoff-1782444427-a`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `wrong_type`
+- *Result preview:* `Error: File not found: wrong_type`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15029,7 +14955,7 @@ ID: handoff-1782444427-a`
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "classified": false,
-  "error": "classification must be one of {'rightly_skipped', 'should_have_fired'}"
+  "error": "classification must be one of {'should_have_fired', 'rightly_skipped'}"
 }`
 
 **missing_params** — ⚠️ handled
@@ -15042,7 +14968,7 @@ ID: handoff-1782444427-a`
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "classified": false,
-  "error": "classification must be one of {'rightly_skipped', 'should_have_fired'}"
+  "error": "classification must be one of {'should_have_fired', 'rightly_skipped'}"
 }`
 
 **empty_params** — ⚠️ handled
@@ -15240,12 +15166,15 @@ ID: handoff-1782444427-a`
   "session_id": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_inbox': '>=' not supported between instances of 'int' and 'str'",
-  "expected_params": "(unread_only=True, limit=20, recipient=None, session_id=None)",
- `
+  "recipient": "wrong_type",
+  "messages": [],
+  "count": 0,
+  "unread_only": "not_a_bool",
+  "session_id": "wrong_type"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15473,7 +15402,7 @@ ID: handoff-1782444427-a`
   "running": true,
   "recipient": "test",
   "interval_s": 10,
-  "checked_at": "2026-06-26T03:28:11.010654Z",
+  "checked_at": "2026-06-26T04:45:16.796131Z",
   "pending": [],
   "pending_count": 0
 }`
@@ -15490,12 +15419,10 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "running": false,
   "recipient": "wrong_type",
-  "interval_s": 10,
-  "checked_at": "2026-06-26T03:01:15.722529Z",
-  "pending": [
-    {
-      "relay_id": "relay_20260626_011345_8271bc94",
-      "su`
+  "pending": [],
+  "pending_count": 0,
+  "checked_at": null,
+  "hint": "Call relay_poll_start(recipient) once per session to begin autonomous polling`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -15609,7 +15536,7 @@ ID: handoff-1782444427-a`
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "sent": true,
-  "message_id": "relay_20260626_032811_2fda1eb9",
+  "message_id": "relay_20260626_044516_4a270bee",
   "from": "wrong_type",
   "to": "wrong_type",
   "subject": "wrong_type",
@@ -16025,58 +15952,30 @@ ID: handoff-1782444427-a`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -16112,11 +16011,8 @@ ID: handoff-1782444427-a`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "found": true,
-  "key": "test-key",
-  "value": "test-value",
-  "agent_id": "test",
-  "updated_at": "2026-06-26T03:25:08.291841Z"
+  "found": false,
+  "key": "test-key"
 }`
 
 **missing_params** — ⚠️ handled
@@ -16130,11 +16026,8 @@ ID: handoff-1782444427-a`
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "found": true,
-  "key": "wrong_type",
-  "value": "wrong_type",
-  "agent_id": 12345,
-  "updated_at": "2026-06-26T03:25:08.292457Z"
+  "found": false,
+  "key": "wrong_type"
 }`
 
 **empty_params** — ⚠️ handled
@@ -16183,7 +16076,7 @@ ID: handoff-1782444427-a`
   "key": "test-key",
   "value": "test-value",
   "agent_id": "test",
-  "updated_at": "2026-06-26T03:29:11.577174Z"
+  "updated_at": "2026-06-26T04:46:21.077129Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -16200,7 +16093,7 @@ ID: handoff-1782444427-a`
   "key": "wrong_type",
   "value": "wrong_type",
   "agent_id": 12345,
-  "updated_at": "2026-06-26T03:29:11.578541Z"
+  "updated_at": "2026-06-26T04:46:21.077566Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -16241,11 +16134,11 @@ ID: handoff-1782444427-a`
 
 #### `sync.smoke_test`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "passed": false,
-  "reason": "unknown url type: 'test/api/health'"
+  "error": "Invalid URL: no host in 'test'"
 }`
 
 **missing_params** — ⚠️ handled
@@ -16255,11 +16148,11 @@ ID: handoff-1782444427-a`
   "expected_params": "(url, endpoint='/api/health')",
   "provided_par`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "passed": false,
-  "reason": "unknown url type: 'wrong_type12345'"
+  "error": "Invalid URL: no host in 'wrong_type'"
 }`
 
 **empty_params** — ⚠️ handled
@@ -16303,7 +16196,7 @@ ID: handoff-1782444427-a`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782444551-af9a8f73",
+  "poll_id": "poll-1782449181-434187b9",
   "service_id": "test",
   "commit_sha": null,
   "status": "polling_started",
@@ -16319,7 +16212,7 @@ ID: handoff-1782444427-a`
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782444551-b4693e4a",
+  "poll_id": "poll-1782449181-7a646538",
   "service_id": "wrong_type",
   "commit_sha": "wrong_type",
   "status": "polling_started",
@@ -16680,7 +16573,7 @@ ID: handoff-1782444427-a`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Triggered test with event evt-1782444551-db8cfc3f`
+- *Result preview:* `Triggered test with event evt-1782449181-91b1d0e0`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -16690,7 +16583,7 @@ ID: handoff-1782444427-a`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Triggered wrong_type with event evt-1782444551-5d8aa4b9`
+- *Result preview:* `Triggered wrong_type with event evt-1782449181-bb309ce0`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -16809,7 +16702,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-59e5a6e8",
+    "id": "task-bbb85f1f",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -17013,7 +16906,7 @@ ID: handoff-1782444427-a`
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -17025,7 +16918,7 @@ ID: handoff-1782444427-a`
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -17037,7 +16930,7 @@ ID: handoff-1782444427-a`
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -17049,7 +16942,7 @@ ID: handoff-1782444427-a`
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -17171,7 +17064,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-4daca7a1",
+    "id": "task-ab9a2953",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -17741,7 +17634,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-b8857335",
+    "id": "task-de8a692d",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -17762,7 +17655,7 @@ ID: handoff-1782444427-a`
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-b8857335",
+    "id": "task-de8a692d",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -17876,7 +17769,7 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": [
     {
-      "id": "task-b8857335",
+      "id": "task-de8a692d",
       "description": "test",
       "status": "PENDING",
       "priority": 3,
@@ -17890,7 +17783,7 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": [
     {
-      "id": "task-b8857335",
+      "id": "task-de8a692d",
       "description": "test",
       "status": "PENDING",
       "priority": 3,
@@ -17912,7 +17805,7 @@ ID: handoff-1782444427-a`
   "success": true,
   "data": [
     {
-      "id": "task-b8857335",
+      "id": "task-de8a692d",
       "description": "test",
       "status": "PENDING",
       "priority": 3,

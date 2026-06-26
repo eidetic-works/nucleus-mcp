@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:59:30
+**Generated:** 2026-06-26T10:17:51
 **Total tests:** 119
 **Actions tested:** 17
 **Angles per action:** 7
@@ -140,7 +140,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-59e5a6e8",
+    "id": "task-bbb85f1f",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -344,7 +344,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -356,7 +356,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -368,7 +368,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -380,7 +380,7 @@
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260626085911"
+    "session_id": "session-20260626101621"
   },
   "error": null
 }`
@@ -502,7 +502,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-4daca7a1",
+    "id": "task-ab9a2953",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -1072,7 +1072,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-b8857335",
+    "id": "task-de8a692d",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -1093,7 +1093,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "id": "task-b8857335",
+    "id": "task-de8a692d",
     "description": "test",
     "status": "PENDING",
     "priority": 3,
@@ -1207,7 +1207,7 @@
   "success": true,
   "data": [
     {
-      "id": "task-b8857335",
+      "id": "task-de8a692d",
       "description": "test",
       "status": "PENDING",
       "priority": 3,
@@ -1221,7 +1221,7 @@
   "success": true,
   "data": [
     {
-      "id": "task-b8857335",
+      "id": "task-de8a692d",
       "description": "test",
       "status": "PENDING",
       "priority": 3,
@@ -1243,7 +1243,7 @@
   "success": true,
   "data": [
     {
-      "id": "task-b8857335",
+      "id": "task-de8a692d",
       "description": "test",
       "status": "PENDING",
       "priority": 3,

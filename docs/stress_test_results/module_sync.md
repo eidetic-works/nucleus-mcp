@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:59:30
+**Generated:** 2026-06-26T10:17:51
 **Total tests:** 441
 **Actions tested:** 63
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 189 | 42.9% | Tool returned a successful response |
-| ⚠️ handled | 252 | 57.1% | Tool returned a graceful error (no crash) |
+| ✅ pass | 188 | 42.6% | Tool returned a successful response |
+| ⚠️ handled | 253 | 57.4% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 46 | 73.0% |
-| ⚠️ handled | 17 | 27.0% |
+| ✅ pass | 45 | 71.4% |
+| ⚠️ handled | 18 | 28.6% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -154,7 +154,7 @@
 | `relay_classify_skip` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_clear` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `relay_event_stats` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
-| `relay_inbox` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
+| `relay_inbox` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `relay_listen` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `relay_log_event` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `relay_poll_start` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
@@ -169,7 +169,7 @@
 | `shared_list` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `shared_read` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `shared_write` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `smoke_test` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
+| `smoke_test` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `start_deploy_poll` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
 | `sync_auto` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
 | `sync_now` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
@@ -318,12 +318,9 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782444308-760378a8",
-  "service_id": "test",
-  "commit_sha": null,
-  "status": "polling",
-  "elapsed_minutes": 2.0,
-  "message": "Polling for 2.0 minutes. Use mcp_render_list_dep`
+  "status": "no_active_poll",
+  "message": "No active polling for this service. Start one with brain_start_deploy_poll()."
+}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -335,12 +332,9 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782444308-76e54210",
-  "service_id": "wrong_type",
-  "commit_sha": "wrong_type",
-  "status": "polling",
-  "elapsed_minutes": 2.0,
-  "message": "Polling for 2.0 minutes. Use mcp_r`
+  "status": "no_active_poll",
+  "message": "No active polling for this service. Start one with brain_start_deploy_poll()."
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -400,9 +394,11 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "status": "deploy_success_smoke_failed",
-  "message": "\u26a0\ufe0f Deploy succeeded but smoke test failed: unknown url type: 'wrong_type/api/health'",
+  "message": "\u26a0\ufe0f Deploy succeeded but smoke test failed: None",
   "deploy_url": "wrong_type",
-  "smoke_test"`
+  "smoke_test": {
+    "passed": false,
+    "error":`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -559,8 +555,8 @@
   "role": 12345,
   "provider": "wrong_type",
   "session_id": "wrong_type",
-  "registered_at": "2026-06-26T08:57:10.394861",
-  "pid": 38295,
+  "registered_at": "2026-06-26T10:14:13.260310",
+  "pid": 93749,
   "sto`
 
 **empty_params** — ⚠️ handled
@@ -602,17 +598,11 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `[
-  "test",
-  "wrong_type"
-]`
+- *Result preview:* `[]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `[
-  "test",
-  "wrong_type"
-]`
+- *Result preview:* `[]`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -620,10 +610,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `[
-  "test",
-  "wrong_type"
-]`
+- *Result preview:* `[]`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1707,7 +1694,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:27:10.406`
+      "created_at": "2026-06-26T04:44:13.439`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1720,7 +1707,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:27:10.406`
+      "created_at": "2026-06-26T04:44:13.439`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1733,7 +1720,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:2`
+      "created_at": "2026-06-26T04:4`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1746,7 +1733,7 @@
         "tier_changed",
         "quarantined"
       ],
-      "created_at": "2026-06-26T03:27:10.406`
+      "created_at": "2026-06-26T04:44:13.439`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2304,7 +2291,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `test`
+- *Result preview:* `Error: File not found: test`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -2316,7 +2303,7 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `wrong_type`
+- *Result preview:* `Error: File not found: wrong_type`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2420,7 +2407,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "classified": false,
-  "error": "classification must be one of {'rightly_skipped', 'should_have_fired'}"
+  "error": "classification must be one of {'should_have_fired', 'rightly_skipped'}"
 }`
 
 **missing_params** — ⚠️ handled
@@ -2433,7 +2420,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "classified": false,
-  "error": "classification must be one of {'rightly_skipped', 'should_have_fired'}"
+  "error": "classification must be one of {'should_have_fired', 'rightly_skipped'}"
 }`
 
 **empty_params** — ⚠️ handled
@@ -2631,12 +2618,15 @@
   "session_id": null
 }`
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Invalid params for action 'relay_inbox': '>=' not supported between instances of 'int' and 'str'",
-  "expected_params": "(unread_only=True, limit=20, recipient=None, session_id=None)",
- `
+  "recipient": "wrong_type",
+  "messages": [],
+  "count": 0,
+  "unread_only": "not_a_bool",
+  "session_id": "wrong_type"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -2864,7 +2854,7 @@
   "running": true,
   "recipient": "test",
   "interval_s": 10,
-  "checked_at": "2026-06-26T03:28:11.010654Z",
+  "checked_at": "2026-06-26T04:45:16.796131Z",
   "pending": [],
   "pending_count": 0
 }`
@@ -2881,12 +2871,10 @@
 - *Result preview:* `{
   "running": false,
   "recipient": "wrong_type",
-  "interval_s": 10,
-  "checked_at": "2026-06-26T03:01:15.722529Z",
-  "pending": [
-    {
-      "relay_id": "relay_20260626_011345_8271bc94",
-      "su`
+  "pending": [],
+  "pending_count": 0,
+  "checked_at": null,
+  "hint": "Call relay_poll_start(recipient) once per session to begin autonomous polling`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -3000,7 +2988,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "sent": true,
-  "message_id": "relay_20260626_032811_2fda1eb9",
+  "message_id": "relay_20260626_044516_4a270bee",
   "from": "wrong_type",
   "to": "wrong_type",
   "subject": "wrong_type",
@@ -3416,58 +3404,30 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "keys": [
-    {
-      "key": "test-key",
-      "agent_id": "test",
-      "updated_at": "2026-06-26T03:25:08.291841Z"
-    },
-    {
-      "key": "wrong_type",
-      "agent_id": 12345,
-      "updated`
+  "keys": [],
+  "count": 0
+}`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -3503,11 +3463,8 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "found": true,
-  "key": "test-key",
-  "value": "test-value",
-  "agent_id": "test",
-  "updated_at": "2026-06-26T03:25:08.291841Z"
+  "found": false,
+  "key": "test-key"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3521,11 +3478,8 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "found": true,
-  "key": "wrong_type",
-  "value": "wrong_type",
-  "agent_id": 12345,
-  "updated_at": "2026-06-26T03:25:08.292457Z"
+  "found": false,
+  "key": "wrong_type"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3574,7 +3528,7 @@
   "key": "test-key",
   "value": "test-value",
   "agent_id": "test",
-  "updated_at": "2026-06-26T03:29:11.577174Z"
+  "updated_at": "2026-06-26T04:46:21.077129Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3591,7 +3545,7 @@
   "key": "wrong_type",
   "value": "wrong_type",
   "agent_id": 12345,
-  "updated_at": "2026-06-26T03:29:11.578541Z"
+  "updated_at": "2026-06-26T04:46:21.077566Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3632,11 +3586,11 @@
 
 #### `sync.smoke_test`
 
-**happy** — ✅ pass
+**happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "passed": false,
-  "reason": "unknown url type: 'test/api/health'"
+  "error": "Invalid URL: no host in 'test'"
 }`
 
 **missing_params** — ⚠️ handled
@@ -3646,11 +3600,11 @@
   "expected_params": "(url, endpoint='/api/health')",
   "provided_par`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "passed": false,
-  "reason": "unknown url type: 'wrong_type12345'"
+  "error": "Invalid URL: no host in 'wrong_type'"
 }`
 
 **empty_params** — ⚠️ handled
@@ -3694,7 +3648,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "poll_id": "poll-1782444551-af9a8f73",
+  "poll_id": "poll-1782449181-434187b9",
   "service_id": "test",
   "commit_sha": null,
   "status": "polling_started",
@@ -3710,7 +3664,7 @@
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "poll_id": "poll-1782444551-b4693e4a",
+  "poll_id": "poll-1782449181-7a646538",
   "service_id": "wrong_type",
   "commit_sha": "wrong_type",
   "status": "polling_started",
@@ -4071,7 +4025,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `Triggered test with event evt-1782444551-db8cfc3f`
+- *Result preview:* `Triggered test with event evt-1782449181-91b1d0e0`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -4081,7 +4035,7 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `Triggered wrong_type with event evt-1782444551-5d8aa4b9`
+- *Result preview:* `Triggered wrong_type with event evt-1782449181-bb309ce0`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

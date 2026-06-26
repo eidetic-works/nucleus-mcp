@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:59:30
+**Generated:** 2026-06-26T10:17:51
 **Total tests:** 112
 **Actions tested:** 16
 **Angles per action:** 7
@@ -197,7 +197,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552393Z"
+  "timestamp": "2026-06-26T04:42:34.218225Z"
 }`
 
 **missing_params** — ✅ pass
@@ -207,7 +207,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552467Z"
+  "timestamp": "2026-06-26T04:42:34.219130Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -217,7 +217,7 @@
   "data": null,
   "error": "Server wrong_type not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552526Z"
+  "timestamp": "2026-06-26T04:42:34.219667Z"
 }`
 
 **empty_params** — ✅ pass
@@ -227,7 +227,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.552573Z"
+  "timestamp": "2026-06-26T04:42:34.220018Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -384,7 +384,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Proof: test-id
 
-> Generated: 2026-06-26 08:56:41
+> Generated: 2026-06-26 10:12:34
 
 ## Thinking
 None
@@ -676,32 +676,24 @@ None
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `[
-  "wrong_type.md",
-  "None.md",
   "test-id.md"
 ]`
 
@@ -937,7 +929,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'test' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.592596Z"
+  "timestamp": "2026-06-26T04:42:34.346103Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -954,7 +946,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'wrong_type' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T03:26:41.592699Z"
+  "timestamp": "2026-06-26T04:42:34.347031Z"
 }`
 
 **empty_params** — ⚠️ handled

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T08:59:30
+**Generated:** 2026-06-26T10:17:51
 **Total tests:** 140
 **Actions tested:** 20
 **Angles per action:** 7
@@ -140,7 +140,7 @@
 
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `{"error": "Failed: Expecting value: line 1 column 1 (char 0)"}`
+- *Result preview:* `{"error": "Error: File not found: test"}`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -151,7 +151,7 @@
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{"error": "Failed: Expecting value: line 1 column 1 (char 0)"}`
+- *Result preview:* `{"error": "Error: File not found: wrong_type"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -248,7 +248,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 08:56:44
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 10:12:40
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -258,7 +258,7 @@
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 08:56:44
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 10:12:40
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -272,7 +272,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 08:56:44
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 10:12:40
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -417,7 +417,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `✅ Task handed off to shared queue. ID: task-2a0f2bf2`
+- *Result preview:* `✅ Task handed off to shared queue. ID: task-de8a692d`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -427,7 +427,7 @@
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `✅ Task handed off for session wrong_ty. ID: task-6325e76f`
+- *Result preview:* `✅ Task handed off for session wrong_ty. ID: task-f6c5c6f3`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -596,28 +596,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `📸 Dashboard Snapshots
-========================================
-   snap_1782444170_deebf5: Snapshot 2026-06-26T03:22:50Z (2026-06-26T03:22:50Z)
-   snap_1782444170_aa68ca: wrong_type (2026-06-26T03:22:5`
+- *Result preview:* `📸 No snapshots found`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `📸 Dashboard Snapshots
-========================================
-   snap_1782444170_deebf5: Snapshot 2026-06-26T03:22:50Z (2026-06-26T03:22:50Z)
-   snap_1782444170_aa68ca: wrong_type (2026-06-26T03:22:5`
+- *Result preview:* `📸 No snapshots found`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `❌ List snapshots error: slice indices must be integers or None or have an __index__ method`
+- *Result preview:* `📸 No snapshots found`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `📸 Dashboard Snapshots
-========================================
-   snap_1782444170_deebf5: Snapshot 2026-06-26T03:22:50Z (2026-06-26T03:22:50Z)
-   snap_1782444170_aa68ca: wrong_type (2026-06-26T03:22:5`
+- *Result preview:* `📸 No snapshots found`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1052,65 +1043,49 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 📋 Session Briefing
 
-### 👥 Active Sessions (3)
+### 👥 Active Sessions (1)
 - `test`: test
-- `null`: None
-- `wrong_ty`: wrong_type
 
-### 📌 Pending (79)
+### 📌 Pending (3)
 - 🟡 test
 - 🟡 @wrong_ty: wrong_type
-- 🟡 test
-- 🟡 test
-- 🟡 test`
+- ⚪ [heartbeat][velocity_drop] Velocity dropped — 0 writes in 48`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1207,38 +1182,38 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_7c8e2d
-   Name: Snapshot 2026-06-26T03:26:51Z
-   Timestamp: 2026-06-26T03:26:51Z
+   ID: snap_1782448968_f83adb
+   Name: Snapshot 2026-06-26T04:42:48Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_7c8e2d', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782448968_f83adb', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_442e6a
-   Name: Snapshot 2026-06-26T03:26:51Z
-   Timestamp: 2026-06-26T03:26:51Z
+   ID: snap_1782448968_07ecb9
+   Name: Snapshot 2026-06-26T04:42:48Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_442e6a', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782448968_07ecb9', 'other_s`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_3d8257
+   ID: snap_1782448968_d210d7
    Name: wrong_type
-   Timestamp: 2026-06-26T03:26:51Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_3d8257', 'other_snapshot_id')`
+💡 To compare: brain_compare_dashboards('snap_1782448968_d210d7', 'other_snapshot_id')`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782444411_09a0fd
-   Name: Snapshot 2026-06-26T03:26:51Z
-   Timestamp: 2026-06-26T03:26:51Z
+   ID: snap_1782448968_005d63
+   Name: Snapshot 2026-06-26T04:42:48Z
+   Timestamp: 2026-06-26T04:42:48Z
    
-💡 To compare: brain_compare_dashboards('snap_1782444411_09a0fd', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782448968_005d63', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
