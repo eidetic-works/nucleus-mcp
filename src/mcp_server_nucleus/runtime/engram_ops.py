@@ -275,6 +275,8 @@ def _brain_governance_status_impl() -> str:
 def _dsor_query_decisions_impl(limit: int = 50) -> str:
     """Implementation for querying the DSoR decision ledger."""
     try:
+        if not isinstance(limit, (int, float)):
+            return make_response(False, error=f"limit must be a number, got {type(limit).__name__}")
         limit = max(1, min(int(limit), 500))
         brain = get_brain_path()
         decisions_path = brain / "ledger" / "decisions" / "decisions.jsonl"

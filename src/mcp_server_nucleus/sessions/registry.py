@@ -86,6 +86,10 @@ def register_session(
     """Register a session envelope. Idempotent on ``session_id``."""
     if not session_id:
         raise ValueError("session_id is required")
+    try:
+        heartbeat_interval_s = int(heartbeat_interval_s)
+    except (TypeError, ValueError):
+        raise ValueError(f"heartbeat_interval_s must be a number, got {type(heartbeat_interval_s).__name__}")
     now = _utcnow_iso()
     payload = {
         "session_id": session_id,
@@ -95,7 +99,7 @@ def register_session(
         "pid": pid if pid is not None else os.getpid(),
         "registered_at": now,
         "last_heartbeat": now,
-        "heartbeat_interval_s": int(heartbeat_interval_s),
+        "heartbeat_interval_s": heartbeat_interval_s,
         "provider": provider,
         "primitive_version": PRIMITIVE_VERSION,
     }
