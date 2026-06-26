@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 182
 **Actions tested:** 26
 **Angles per action:** 7
@@ -623,10 +623,10 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 27 tasks done, 1 tasks created, 829 total events",
+    "summary": "Session ended (neutral): 33 tasks done, 1 tasks created, 1065 total events",
     "activity": {
-      "total_events": 829,
-      "ta`
+      "total_events": 1065,
+      "`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -634,10 +634,10 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 27 tasks done, 1 tasks created, 836 total events",
+    "summary": "Session ended (neutral): 33 tasks done, 1 tasks created, 1072 total events",
     "activity": {
-      "total_events": 836,
-      "ta`
+      "total_events": 1072,
+      "`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -652,10 +652,10 @@
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 27 tasks done, 1 tasks created, 842 total events",
+    "summary": "Session ended (neutral): 33 tasks done, 1 tasks created, 1078 total events",
     "activity": {
-      "total_events": 842,
-      "ta`
+      "total_events": 1078,
+      "`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -956,7 +956,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 234
+    "duration_ms": 241
   },
   "error": nu`
 
@@ -990,7 +990,7 @@
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 180
+    "duration_ms": 200
   },
   "error": nu`
 
@@ -1239,7 +1239,7 @@
   "data": {
     "success": true,
     "total_proposals": 0,
-    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-25  \n> **Status:** Awaiting human rev`
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1248,7 +1248,7 @@
   "data": {
     "success": true,
     "total_proposals": 0,
-    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-25  \n> **Status:** Awaiting human rev`
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1266,7 +1266,7 @@
   "data": {
     "success": true,
     "total_proposals": 0,
-    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-25  \n> **Status:** Awaiting human rev`
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

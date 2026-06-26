@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -965,7 +965,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 21
+**High Impact Closures:** 27
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -975,7 +975,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 21
+**High Impact Closures:** 27
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -995,7 +995,7 @@
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 21
+**High Impact Closures:** 27
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `

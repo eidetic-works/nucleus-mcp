@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 84
 **Actions tested:** 12
 **Angles per action:** 7
@@ -139,7 +139,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T18:13:22.152162+00:00"
+    "fetched_at": "2026-06-26T00:34:13.130723+00:00"
   },
   "pypi": {
     "last_mon`
@@ -153,7 +153,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T18:13:22.168828+00:00"
+    "fetched_at": "2026-06-26T00:34:13.166852+00:00"
   },
   "pypi": {
     "last_mon`
@@ -175,7 +175,7 @@
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T18:13:22.186082+00:00"
+    "fetched_at": "2026-06-26T00:34:13.191391+00:00"
   },
   "pypi": {
     "last_mon`
@@ -392,10 +392,10 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:13:30.209445+00:00",
+  "timestamp": "2026-06-26T00:34:21.063280+00:00",
   "sections": {
     "brief": {
-      "engram_count": 166,
+      "engram_count": 204,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -404,10 +404,10 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:13:30.241702+00:00",
+  "timestamp": "2026-06-26T00:34:21.096583+00:00",
   "sections": {
     "brief": {
-      "engram_count": 171,
+      "engram_count": 209,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -424,10 +424,10 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:13:30.270224+00:00",
+  "timestamp": "2026-06-26T00:34:21.129147+00:00",
   "sections": {
     "brief": {
-      "engram_count": 171,
+      "engram_count": 209,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `

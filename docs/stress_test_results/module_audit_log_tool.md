@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7

@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 1862
 **Actions tested:** 266
 **Angles per action:** 7
@@ -560,7 +560,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:12:25.314509Z",
+        "timestamp": "2026-06-25T18:47:16.577085Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -572,7 +572,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:12:25.314509Z",
+        "timestamp": "2026-06-25T18:47:16.577085Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -593,7 +593,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:12:25.314509Z",
+        "timestamp": "2026-06-25T18:47:16.577085Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -635,12 +635,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 146.6,
-    "total_interactions": 1466,
+    "total_cost_units": 193.8,
+    "total_interactions": 1938,
     "breakdown": {
       "unknown": {
-        "cost": 73.3,
-        "count": 733,
+        "cost": 96.9,
+        "count": 969,
         "tier": 1
     `
 
@@ -649,12 +649,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 146.6,
-    "total_interactions": 1466,
+    "total_cost_units": 193.8,
+    "total_interactions": 1938,
     "breakdown": {
       "unknown": {
-        "cost": 73.3,
-        "count": 733,
+        "cost": 96.9,
+        "count": 969,
         "tier": 1
     `
 
@@ -670,12 +670,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 146.6,
-    "total_interactions": 1466,
+    "total_cost_units": 193.8,
+    "total_interactions": 1938,
     "breakdown": {
       "unknown": {
-        "cost": 73.3,
-        "count": 733,
+        "cost": 96.9,
+        "count": 969,
         "tier": 1
     `
 
@@ -716,14 +716,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Thursday\n===============`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Thursday\n===============`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -738,7 +738,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Thursday\n===============`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -779,7 +779,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_11192",
+        "id": "brief_34043",
         "context": "Strategy",
         "intensity": 3
       },
@@ -793,7 +793,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_11192",
+        "id": "brief_34043",
         "context": "Strategy",
         "intensity": 3
       },
@@ -814,7 +814,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_11192",
+        "id": "brief_34043",
         "context": "Strategy",
         "intensity": 3
       },
@@ -935,7 +935,7 @@
   },
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T`
+  "timestamp": "2026-06-26T`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -956,7 +956,7 @@
   },
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T`
+  "timestamp": "2026-06-26T`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1515,11 +1515,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T18:13:14.790195+00:00",
+    "timestamp": "2026-06-26T00:34:06.492030+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.5,
+    "check_duration_ms": 2.8,
     "formatt`
 
 **missing_params** — ✅ pass
@@ -1527,11 +1527,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T18:13:15.081428+00:00",
+    "timestamp": "2026-06-26T00:34:06.841998+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.5,
+    "check_duration_ms": 8.8,
     "formatt`
 
 **wrong_types** — ⚠️ handled
@@ -1546,11 +1546,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T18:13:16.357238+00:00",
+    "timestamp": "2026-06-26T00:34:08.364130+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.4,
+    "check_duration_ms": 8.3,
     "formatt`
 
 **unknown_action** — ⚠️ handled
@@ -1663,12 +1663,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 632,
+    "total_executions": 834,
     "outcomes": {
-      "ADD": 106,
-      "NOOP": 198,
-      "UNKNOWN": 202,
-      "UPDATE": 126
+      "ADD": 129,
+      "NOOP": 272,
+      "UNKNOWN": 260,
+      "UPDATE": 173
     },
     "by_event_type": {
       "morn`
@@ -1678,12 +1678,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 632,
+    "total_executions": 834,
     "outcomes": {
-      "ADD": 106,
-      "NOOP": 198,
-      "UNKNOWN": 202,
-      "UPDATE": 126
+      "ADD": 129,
+      "NOOP": 272,
+      "UNKNOWN": 260,
+      "UPDATE": 173
     },
     "by_event_type": {
       "morn`
@@ -1703,12 +1703,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 632,
+    "total_executions": 834,
     "outcomes": {
-      "ADD": 106,
-      "NOOP": 198,
-      "UNKNOWN": 202,
-      "UPDATE": 126
+      "ADD": 129,
+      "NOOP": 272,
+      "UNKNOWN": 260,
+      "UPDATE": 173
     },
     "by_event_type": {
       "morn`
@@ -2082,14 +2082,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:43 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:43 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2105,7 +2105,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:43 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2211,7 +2211,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T18:13:16.383782+00:00
+# Generated at 2026-06-26T00:34:08.411249+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2221,7 +2221,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T18:13:16.384090+00:00
+# Generated at 2026-06-26T00:34:08.411623+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2238,7 +2238,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T18:13:16.384382+00:00
+# Generated at 2026-06-26T00:34:08.411959+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2365,7 +2365,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% of target",
         "contex`
 
 **wrong_types** — ⚠️ handled
@@ -2383,7 +2383,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% of target",
         "contex`
 
 **unknown_action** — ⚠️ handled
@@ -2740,14 +2740,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2763,7 +2763,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -3195,7 +3195,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T18:13:17.342508Z"
+  "timestamp": "2026-06-26T00:34:09.304953Z"
 }`
 
 **missing_params** — ✅ pass
@@ -3205,7 +3205,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T18:13:17.342613Z"
+  "timestamp": "2026-06-26T00:34:09.305014Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -3223,7 +3223,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T18:13:17.342755Z"
+  "timestamp": "2026-06-26T00:34:09.305108Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -4743,7 +4743,7 @@ No peers discovered.
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T18:13:17.361460+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T00:34:09.321833+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -4754,7 +4754,7 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-25T18:13:17.369694+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T00:34:09.330940+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -5182,21 +5182,21 @@ No peers discovered.
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-E861C33C",
+  "review_id": "KYC-0D51AC50",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T18:13:17.377716+00:00",
-  "completed_at": "2026-06-25T18:13:17.377732+00:00",
+  "started_at": "2026-06-26T00:34:09.339048+00:00",
+  "completed_at": "2026-06-26T00:34:09.339064+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-ADFD6FFD",
+  "review_id": "KYC-E6736B5F",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T18:13:17.378178+00:00",
-  "completed_at": "2026-06-25T18:13:17.378190+00:00",
+  "started_at": "2026-06-26T00:34:09.339506+00:00",
+  "completed_at": "2026-06-26T00:34:09.339519+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -5209,11 +5209,11 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-DD196DD2",
+  "review_id": "KYC-B8022C1A",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-25T18:13:17.378635+00:00",
-  "completed_at": "2026-06-25T18:13:17.378646+00:00",
+  "started_at": "2026-06-26T00:34:09.339930+00:00",
+  "completed_at": "2026-06-26T00:34:09.339939+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -5645,12 +5645,12 @@ No peers discovered.
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 27,
+  "count": 33,
   "traces": [
     {
-      "file": "KYC-11934284.json",
+      "file": "KYC-0D51AC50.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-11934284",
+      "review_id": "KYC-0D51AC50",
       "recommendation": "APPROVE",
       "risk_score": 0,
       "`
@@ -5665,12 +5665,12 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 27,
+  "count": 33,
   "traces": [
     {
-      "file": "KYC-11934284.json",
+      "file": "KYC-0D51AC50.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-11934284",
+      "review_id": "KYC-0D51AC50",
       "recommendation": "APPROVE",
       "risk_score": 0,
       "`
@@ -6109,7 +6109,7 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:43:17
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:04:09
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6119,7 +6119,7 @@ No peers discovered.
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:43:17
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:04:09
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6135,7 +6135,7 @@ No peers discovered.
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-25 23:43:17
+- *Result preview:* `🚀 NOP Status Dashboard - 2026-06-26 06:04:09
 ════════════════════════════════════════════════════════════
 
 📊 AGENT POOL HEALTH
@@ -6485,15 +6485,15 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782411133_e53350: Snapshot 2026-06-25T18:12:13Z (2026-06-25T18:12:13Z)
-   snap_1782411133_6e871e: Snapshot 2026-06-25T18:12:13Z `
+   snap_1782413222_d044cc: Snapshot 2026-06-25T18:47:02Z (2026-06-25T18:47:02Z)
+   snap_1782413222_64af5c: Snapshot 2026-06-25T18:47:02Z `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782411133_e53350: Snapshot 2026-06-25T18:12:13Z (2026-06-25T18:12:13Z)
-   snap_1782411133_6e871e: Snapshot 2026-06-25T18:12:13Z `
+   snap_1782413222_d044cc: Snapshot 2026-06-25T18:47:02Z (2026-06-25T18:47:02Z)
+   snap_1782413222_64af5c: Snapshot 2026-06-25T18:47:02Z `
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -6507,8 +6507,8 @@ No peers discovered.
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `📸 Dashboard Snapshots
 ========================================
-   snap_1782411133_e53350: Snapshot 2026-06-25T18:12:13Z (2026-06-25T18:12:13Z)
-   snap_1782411133_6e871e: Snapshot 2026-06-25T18:12:13Z `
+   snap_1782413222_d044cc: Snapshot 2026-06-25T18:47:02Z (2026-06-25T18:47:02Z)
+   snap_1782413222_64af5c: Snapshot 2026-06-25T18:47:02Z `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7092,20 +7092,20 @@ No peers discovered.
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782411202_576060
-   Name: Snapshot 2026-06-25T18:13:22Z
-   Timestamp: 2026-06-25T18:13:22Z
+   ID: snap_1782434053_c3aaf0
+   Name: Snapshot 2026-06-26T00:34:13Z
+   Timestamp: 2026-06-26T00:34:13Z
    
-💡 To compare: brain_compare_dashboards('snap_1782411202_576060', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782434053_c3aaf0', 'other_s`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782411202_4cda35
-   Name: Snapshot 2026-06-25T18:13:22Z
-   Timestamp: 2026-06-25T18:13:22Z
+   ID: snap_1782434053_351c2f
+   Name: Snapshot 2026-06-26T00:34:13Z
+   Timestamp: 2026-06-26T00:34:13Z
    
-💡 To compare: brain_compare_dashboards('snap_1782411202_4cda35', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782434053_351c2f', 'other_s`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -7118,11 +7118,11 @@ No peers discovered.
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `✅ Snapshot Created
-   ID: snap_1782411202_20e9b0
-   Name: Snapshot 2026-06-25T18:13:22Z
-   Timestamp: 2026-06-25T18:13:22Z
+   ID: snap_1782434053_764915
+   Name: Snapshot 2026-06-26T00:34:13Z
+   Timestamp: 2026-06-26T00:34:13Z
    
-💡 To compare: brain_compare_dashboards('snap_1782411202_20e9b0', 'other_s`
+💡 To compare: brain_compare_dashboards('snap_1782434053_764915', 'other_s`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -7240,7 +7240,7 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T18:13:22.152162+00:00"
+    "fetched_at": "2026-06-26T00:34:13.130723+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7254,7 +7254,7 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T18:13:22.168828+00:00"
+    "fetched_at": "2026-06-26T00:34:13.166852+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7276,7 +7276,7 @@ No peers discovered.
     "open_issues": 0,
     "watchers": 0,
     "source": "github_api",
-    "fetched_at": "2026-06-25T18:13:22.186082+00:00"
+    "fetched_at": "2026-06-26T00:34:13.191391+00:00"
   },
   "pypi": {
     "last_mon`
@@ -7493,10 +7493,10 @@ No peers discovered.
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:13:30.209445+00:00",
+  "timestamp": "2026-06-26T00:34:21.063280+00:00",
   "sections": {
     "brief": {
-      "engram_count": 166,
+      "engram_count": 204,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -7505,10 +7505,10 @@ No peers discovered.
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:13:30.241702+00:00",
+  "timestamp": "2026-06-26T00:34:21.096583+00:00",
   "sections": {
     "brief": {
-      "engram_count": 171,
+      "engram_count": 209,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -7525,10 +7525,10 @@ No peers discovered.
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "pipeline": "growth_pulse",
-  "timestamp": "2026-06-25T18:13:30.270224+00:00",
+  "timestamp": "2026-06-26T00:34:21.129147+00:00",
   "sections": {
     "brief": {
-      "engram_count": 171,
+      "engram_count": 209,
       "task_count": 0,
       "recommendation": "BOOTSTRAP"
 `
@@ -8710,19 +8710,19 @@ No peers discovered.
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782411212_c087",
+  "sprint_id": "sprint_1782434062_61e3",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:43:32+0530"
+  "timestamp": "2026-06-26T06:04:22+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782411212_e0f9",
+  "sprint_id": "sprint_1782434062_3b4d",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:43:32+0530"
+  "timestamp": "2026-06-26T06:04:22+0530"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -8734,10 +8734,10 @@ No peers discovered.
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782411212_1a05",
+  "sprint_id": "sprint_1782434062_1f5f",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:43:32+0530"
+  "timestamp": "2026-06-26T06:04:22+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -8773,7 +8773,7 @@ No peers discovered.
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782411212_9a6fb8
+- *Result preview:* `🚀 Sprint Report: sprint_1782434062_1bcb8e
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8787,7 +8787,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782411212_4b41f9
+- *Result preview:* `🚀 Sprint Report: sprint_1782434062_ca9906
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8807,7 +8807,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782411212_8ebbb0
+- *Result preview:* `🚀 Sprint Report: sprint_1782434062_01eb0a
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -8908,7 +8908,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782411212_8ebbb0
+   Sprint ID: sprint_1782434062_01eb0a
    Reason: User requested halt
    Status: halt_requested
    
@@ -8917,7 +8917,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782411212_8ebbb0
+   Sprint ID: sprint_1782434062_01eb0a
    Reason: User requested halt
    Status: halt_requested
    
@@ -8933,7 +8933,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782411212_8ebbb0
+   Sprint ID: sprint_1782434062_01eb0a
    Reason: User requested halt
    Status: halt_requested
    
@@ -9338,14 +9338,14 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:43 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:04 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:43 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:04 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
@@ -9359,7 +9359,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:43 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:04 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
@@ -10246,7 +10246,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 21
+**High Impact Closures:** 27
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10256,7 +10256,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 21
+**High Impact Closures:** 27
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -10276,7 +10276,7 @@ Duration: 0.0s
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 21
+**High Impact Closures:** 27
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -11091,10 +11091,10 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 27 tasks done, 1 tasks created, 829 total events",
+    "summary": "Session ended (neutral): 33 tasks done, 1 tasks created, 1065 total events",
     "activity": {
-      "total_events": 829,
-      "ta`
+      "total_events": 1065,
+      "`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11102,10 +11102,10 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 27 tasks done, 1 tasks created, 836 total events",
+    "summary": "Session ended (neutral): 33 tasks done, 1 tasks created, 1072 total events",
     "activity": {
-      "total_events": 836,
-      "ta`
+      "total_events": 1072,
+      "`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -11120,10 +11120,10 @@ Duration: 0.0s
   "success": true,
   "data": {
     "success": true,
-    "summary": "Session ended (neutral): 27 tasks done, 1 tasks created, 842 total events",
+    "summary": "Session ended (neutral): 33 tasks done, 1 tasks created, 1078 total events",
     "activity": {
-      "total_events": 842,
-      "ta`
+      "total_events": 1078,
+      "`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -11424,7 +11424,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 234
+    "duration_ms": 241
   },
   "error": nu`
 
@@ -11458,7 +11458,7 @@ Duration: 0.0s
     "preferences_found": 0,
     "chains_extracted": 0,
     "errors": [],
-    "duration_ms": 180
+    "duration_ms": 200
   },
   "error": nu`
 
@@ -11707,7 +11707,7 @@ Duration: 0.0s
   "data": {
     "success": true,
     "total_proposals": 0,
-    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-25  \n> **Status:** Awaiting human rev`
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -11716,7 +11716,7 @@ Duration: 0.0s
   "data": {
     "success": true,
     "total_proposals": 0,
-    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-25  \n> **Status:** Awaiting human rev`
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -11734,7 +11734,7 @@ Duration: 0.0s
   "data": {
     "success": true,
     "total_proposals": 0,
-    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-25  \n> **Status:** Awaiting human rev`
+    "proposal_text": "# Brain Consolidation Proposals\n\n> **Generated:** 2026-06-26  \n> **Status:** Awaiting human rev`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -16483,7 +16483,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625234334"
+    "session_id": "session-20260626060425"
   },
   "error": null
 }`
@@ -16495,7 +16495,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625234334"
+    "session_id": "session-20260626060425"
   },
   "error": null
 }`
@@ -16516,7 +16516,7 @@ Duration: 0.0s
   "data": {
     "message": "\u2705 Context switch counter reset. Fresh start!",
     "switch_count": 0,
-    "session_id": "session-20260625234334"
+    "session_id": "session-20260626060425"
   },
   "error": null
 }`

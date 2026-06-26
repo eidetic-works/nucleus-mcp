@@ -68,8 +68,8 @@ If you only care about one module, read its individual file:
 3. **audit_log `int(limit)` crashed on non-integer input (fixed in `f04a1f64`):** `query_audit()` did `int(limit)` with no type guard. When `limit='not_a_number'` was passed, it threw `ValueError`. Fix: try/except with fallback to default (100). Same for `offset`.
 4. **audit_log + cost_router used sync dispatch despite async wrapper (fixed in `f04a1f64`):** Both were `async def` but called `make_response_dispatch` (sync) inside. Converted to `async_dispatch` for consistency with the other 9 facades.
 
-### Low happy-path pass rate (35%, expected)
-The happy-path angle passes only 92/266 (35%) because the harness uses generic params that don't match real brain state. Breakdown by module:
+### Low happy-path pass rate (37%, expected)
+The happy-path angle passes 98/266 (37%) because the harness uses generic params that don't match real brain state. Breakdown by module:
 
 | Module | Pass | Handled | Pass % | Root cause |
 |--------|------|---------|--------|------------|
@@ -78,10 +78,10 @@ The happy-path angle passes only 92/266 (35%) because the harness uses generic p
 | relay | 2 | 2 | 50% | Needs real relay state |
 | sessions | 13 | 13 | 50% | Needs real session IDs |
 | orchestration | 35 | 36 | 49% | Many ops work; some need real commitments/slots |
+| sync | 13 | 50 | 21% | Needs real channels, pair configs, relay endpoints (network mocking improved some) |
 | tasks | 4 | 13 | 24% | Needs real task IDs |
 | governance | 4 | 15 | 21% | Needs real compliance configs |
 | features | 2 | 14 | 12% | Needs real feature IDs + MCP servers |
-| sync | 7 | 56 | 11% | Needs real channels, pair configs, relay endpoints |
 | audit_log | 0 | 4 | 0% | admin_query needs token; query returns empty; log_event/verify need specific params |
 | cost_router | 0 | 1 | 0% | route action needs a real prompt (generic test prompt is too short) |
 

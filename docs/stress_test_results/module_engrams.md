@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 266
 **Actions tested:** 38
 **Angles per action:** 7
@@ -221,7 +221,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:12:25.314509Z",
+        "timestamp": "2026-06-25T18:47:16.577085Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -233,7 +233,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:12:25.314509Z",
+        "timestamp": "2026-06-25T18:47:16.577085Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -254,7 +254,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-25T18:12:25.314509Z",
+        "timestamp": "2026-06-25T18:47:16.577085Z",
         "emitter": "brain",
         "type": "session_started",
         "hash": "ef84ee3d70`
@@ -296,12 +296,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 146.6,
-    "total_interactions": 1466,
+    "total_cost_units": 193.8,
+    "total_interactions": 1938,
     "breakdown": {
       "unknown": {
-        "cost": 73.3,
-        "count": 733,
+        "cost": 96.9,
+        "count": 969,
         "tier": 1
     `
 
@@ -310,12 +310,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 146.6,
-    "total_interactions": 1466,
+    "total_cost_units": 193.8,
+    "total_interactions": 1938,
     "breakdown": {
       "unknown": {
-        "cost": 73.3,
-        "count": 733,
+        "cost": 96.9,
+        "count": 969,
         "tier": 1
     `
 
@@ -331,12 +331,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 146.6,
-    "total_interactions": 1466,
+    "total_cost_units": 193.8,
+    "total_interactions": 1938,
     "breakdown": {
       "unknown": {
-        "cost": 73.3,
-        "count": 733,
+        "cost": 96.9,
+        "count": 969,
         "tier": 1
     `
 
@@ -377,14 +377,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Thursday\n===============`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Thursday\n===============`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -399,7 +399,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Thursday\n===============`
+    "formatted": "============================================================\n\ud83d\udd04 COMPOUNDING LOOP STATUS [STALLING]\n   Week 26 | Friday\n=================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -440,7 +440,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_11192",
+        "id": "brief_34043",
         "context": "Strategy",
         "intensity": 3
       },
@@ -454,7 +454,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_11192",
+        "id": "brief_34043",
         "context": "Strategy",
         "intensity": 3
       },
@@ -475,7 +475,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_11192",
+        "id": "brief_34043",
         "context": "Strategy",
         "intensity": 3
       },
@@ -596,7 +596,7 @@
   },
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T`
+  "timestamp": "2026-06-26T`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -617,7 +617,7 @@
   },
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-25T`
+  "timestamp": "2026-06-26T`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1176,11 +1176,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T18:13:14.790195+00:00",
+    "timestamp": "2026-06-26T00:34:06.492030+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.5,
+    "check_duration_ms": 2.8,
     "formatt`
 
 **missing_params** — ✅ pass
@@ -1188,11 +1188,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T18:13:15.081428+00:00",
+    "timestamp": "2026-06-26T00:34:06.841998+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.5,
+    "check_duration_ms": 8.8,
     "formatt`
 
 **wrong_types** — ⚠️ handled
@@ -1207,11 +1207,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-25T18:13:16.357238+00:00",
+    "timestamp": "2026-06-26T00:34:08.364130+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 2.4,
+    "check_duration_ms": 8.3,
     "formatt`
 
 **unknown_action** — ⚠️ handled
@@ -1324,12 +1324,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 632,
+    "total_executions": 834,
     "outcomes": {
-      "ADD": 106,
-      "NOOP": 198,
-      "UNKNOWN": 202,
-      "UPDATE": 126
+      "ADD": 129,
+      "NOOP": 272,
+      "UNKNOWN": 260,
+      "UPDATE": 173
     },
     "by_event_type": {
       "morn`
@@ -1339,12 +1339,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 632,
+    "total_executions": 834,
     "outcomes": {
-      "ADD": 106,
-      "NOOP": 198,
-      "UNKNOWN": 202,
-      "UPDATE": 126
+      "ADD": 129,
+      "NOOP": 272,
+      "UNKNOWN": 260,
+      "UPDATE": 173
     },
     "by_event_type": {
       "morn`
@@ -1364,12 +1364,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 632,
+    "total_executions": 834,
     "outcomes": {
-      "ADD": 106,
-      "NOOP": 198,
-      "UNKNOWN": 202,
-      "UPDATE": 126
+      "ADD": 129,
+      "NOOP": 272,
+      "UNKNOWN": 260,
+      "UPDATE": 173
     },
     "by_event_type": {
       "morn`
@@ -1743,14 +1743,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:43 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:43 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1766,7 +1766,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Thursday, June 25, 2026 11:43 PM\n==================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 06:04 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1872,7 +1872,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T18:13:16.383782+00:00
+# Generated at 2026-06-26T00:34:08.411249+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -1882,7 +1882,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T18:13:16.384090+00:00
+# Generated at 2026-06-26T00:34:08.411623+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -1899,7 +1899,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-25T18:13:16.384382+00:00
+# Generated at 2026-06-26T00:34:08.411959+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2026,7 +2026,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% of target",
         "contex`
 
 **wrong_types** — ⚠️ handled
@@ -2044,7 +2044,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% of target",
         "contex`
 
 **unknown_action** — ⚠️ handled
@@ -2401,14 +2401,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -2424,7 +2424,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (60x): Behind pace: github_issues at 0.0% o`
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (86x): Behind pace: github_issues at 0.0% o`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

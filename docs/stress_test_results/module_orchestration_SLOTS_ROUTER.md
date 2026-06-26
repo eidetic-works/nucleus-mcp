@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-25T23:43:52
+**Generated:** 2026-06-26T06:05:36
 **Total tests:** 77
 **Actions tested:** 11
 **Angles per action:** 7
@@ -132,19 +132,19 @@
 **happy** — ⚠️ handled
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "sprint_id": "sprint_1782411212_c087",
+  "sprint_id": "sprint_1782434062_61e3",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:43:32+0530"
+  "timestamp": "2026-06-26T06:04:22+0530"
 }`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "sprint_id": "sprint_1782411212_e0f9",
+  "sprint_id": "sprint_1782434062_3b4d",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:43:32+0530"
+  "timestamp": "2026-06-26T06:04:22+0530"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -156,10 +156,10 @@
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "sprint_id": "sprint_1782411212_1a05",
+  "sprint_id": "sprint_1782434062_1f5f",
   "status": "ERROR",
   "error": "No active slots found",
-  "timestamp": "2026-06-25T23:43:32+0530"
+  "timestamp": "2026-06-26T06:04:22+0530"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -195,7 +195,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🚀 Sprint Report: sprint_1782411212_9a6fb8
+- *Result preview:* `🚀 Sprint Report: sprint_1782434062_1bcb8e
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -209,7 +209,7 @@ Duration: 0.0s
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `🚀 Sprint Report: sprint_1782411212_4b41f9
+- *Result preview:* `🚀 Sprint Report: sprint_1782434062_ca9906
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -229,7 +229,7 @@ Duration: 0.0s
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `🚀 Sprint Report: sprint_1782411212_8ebbb0
+- *Result preview:* `🚀 Sprint Report: sprint_1782434062_01eb0a
 ══════════════════════════════════════════════════
 Status: COMPLETED
 Mode: auto
@@ -330,7 +330,7 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782411212_8ebbb0
+   Sprint ID: sprint_1782434062_01eb0a
    Reason: User requested halt
    Status: halt_requested
    
@@ -339,7 +339,7 @@ Duration: 0.0s
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782411212_8ebbb0
+   Sprint ID: sprint_1782434062_01eb0a
    Reason: User requested halt
    Status: halt_requested
    
@@ -355,7 +355,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `⛔ Sprint Halt Requested
-   Sprint ID: sprint_1782411212_8ebbb0
+   Sprint ID: sprint_1782434062_01eb0a
    Reason: User requested halt
    Status: halt_requested
    
@@ -760,14 +760,14 @@ Duration: 0.0s
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:43 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:04 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:43 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:04 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
@@ -781,7 +781,7 @@ Duration: 0.0s
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `╔══════════════════════════════════════════════════════════════╗
-║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-25 23:43 IST      ║
+║ 🧠 NUCLEUS CONTROL PLANE - 2026-06-26 06:04 IST      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ AGENT SLOTS `
 
