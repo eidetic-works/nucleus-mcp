@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T07:23:15
+**Generated:** 2026-06-26T08:40:38
 **Total tests:** 91
 **Actions tested:** 13
 **Angles per action:** 7
@@ -135,7 +135,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `✅ Loop created!
 
-**ID:** `comm_20260626_072039_6`
+**ID:** `comm_20260626_083813_17`
 **Type:** task
 **Description:** test
 **Priority:** 3
@@ -151,7 +151,7 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `✅ Loop created!
 
-**ID:** `comm_20260626_072039_7`
+**ID:** `comm_20260626_083813_18`
 **Type:** 12345
 **Description:** wrong_type
 **Priority:** not_a_number
@@ -296,65 +296,65 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 6
-- 🟢 Green: 6
+**Open loops:** 17
+- 🟢 Green: 17
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 3, 12345: 3
+**By type:** task: 9, 12345: 8
 
 **Mental load:** 🟢 LOW
 **Advice:** Looking good, maintain momentum
 
-**Last scan:** 2026`
+**Last scan:** 20`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 6
-- 🟢 Green: 6
+**Open loops:** 17
+- 🟢 Green: 17
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 3, 12345: 3
+**By type:** task: 9, 12345: 8
 
 **Mental load:** 🟢 LOW
 **Advice:** Looking good, maintain momentum
 
-**Last scan:** 2026`
+**Last scan:** 20`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 6
-- 🟢 Green: 6
+**Open loops:** 17
+- 🟢 Green: 17
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 3, 12345: 3
+**By type:** task: 9, 12345: 8
 
 **Mental load:** 🟢 LOW
 **Advice:** Looking good, maintain momentum
 
-**Last scan:** 2026`
+**Last scan:** 20`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `## 🎯 Commitment Health
 
-**Open loops:** 6
-- 🟢 Green: 6
+**Open loops:** 17
+- 🟢 Green: 17
 - 🟡 Yellow: 0
 - 🔴 Red: 0
 
-**By type:** task: 3, 12345: 3
+**By type:** task: 9, 12345: 8
 
 **Mental load:** 🟢 LOW
 **Advice:** Looking good, maintain momentum
 
-**Last scan:** 2026`
+**Last scan:** 20`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -389,19 +389,19 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072039.zip`
+- *Result preview:* `✅ Exported 274 files to brain_export_20260626_083813.zip`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072040.zip`
+- *Result preview:* `✅ Exported 274 files to brain_export_20260626_083813.zip`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072041.zip`
+- *Result preview:* `✅ Exported 274 files to brain_export_20260626_083814.zip`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `✅ Exported 212 files to brain_export_20260626_072041.zip`
+- *Result preview:* `✅ Exported 274 files to brain_export_20260626_083814.zip`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -436,7 +436,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `**Open Commitments (8 total)**
+- *Result preview:* `**Open Commitments (19 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
@@ -445,11 +445,11 @@
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-   `
+  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
-- *Result preview:* `**Open Commitments (8 total)**
+- *Result preview:* `**Open Commitments (19 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
@@ -458,7 +458,7 @@
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-   `
+  `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -466,7 +466,7 @@
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
-- *Result preview:* `**Open Commitments (8 total)**
+- *Result preview:* `**Open Commitments (19 total)**
 
 🟢 **test**
    Age: 0 days | Suggested: schedule
@@ -475,7 +475,7 @@
 
 🟢 **wrong_type**
    Age: 0 days | Suggested: schedule
-   `
+  `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -519,9 +519,8 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 6
-- Red Tier: 0
-`
+- Total Open: 17
+- Red Tier: 0`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -534,9 +533,8 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 6
-- Red Tier: 0
-`
+- Total Open: 17
+- Red Tier: 0`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -549,9 +547,8 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 6
-- Red Tier: 0
-`
+- Total Open: 17
+- Red Tier: 0`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -564,9 +561,8 @@
 (No closed items yet)
 
 **🧠 Current Load:**
-- Total Open: 6
-- Red Tier: 0
-`
+- Total Open: 17
+- Red Tier: 0`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

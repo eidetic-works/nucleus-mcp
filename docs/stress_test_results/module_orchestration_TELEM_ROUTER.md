@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T07:23:15
+**Generated:** 2026-06-26T08:40:38
 **Total tests:** 105
 **Actions tested:** 15
 **Angles per action:** 7
@@ -348,8 +348,8 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
   "total_dispatches": 1008,
-  "total_errors": 553,
-  "error_rate": 0.5486111111111112,
+  "total_errors": 552,
+  "error_rate": 0.5476190476190477,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -362,8 +362,8 @@
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "total_dispatches": 1009,
-  "total_errors": 553,
-  "error_rate": 0.5480673934588701,
+  "total_errors": 552,
+  "error_rate": 0.5470763131813677,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -376,8 +376,8 @@
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "total_dispatches": 1010,
-  "total_errors": 553,
-  "error_rate": 0.5475247524752476,
+  "total_errors": 552,
+  "error_rate": 0.5465346534653466,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -390,8 +390,8 @@
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "total_dispatches": 1011,
-  "total_errors": 553,
-  "error_rate": 0.5469831849653808,
+  "total_errors": 552,
+  "error_rate": 0.5459940652818991,
   "facades": {
     "nucleus_audit": {
       "calls": 28,
@@ -834,7 +834,7 @@ CONTEXT: test
 REQUEST: test
 ARTIFACTS: None
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782438644-3eea
+ID: handoff-1782443297-d38d
 Status: Pending - will appear in target agent's s`
 
 **missing_params** — ⚠️ handled
@@ -854,7 +854,7 @@ CONTEXT: not_a_dict
 REQUEST: wrong_type
 ARTIFACTS: w, r, o, n, g, _, t, y, p, e
 ━━━━━━━━━━━━━━━━━━
-ID: handoff-1782438644-4`
+ID: handoff-1782443297-d`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -994,7 +994,7 @@ ID: handoff-1782438644-4`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 64
+**High Impact Closures:** 86
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1004,7 +1004,7 @@ ID: handoff-1782438644-4`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 64
+**High Impact Closures:** 86
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1014,7 +1014,7 @@ ID: handoff-1782438644-4`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 64
+**High Impact Closures:** 86
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `
@@ -1024,7 +1024,7 @@ ID: handoff-1782438644-4`
 - *Result preview:* `## 📊 Value Ratio (MDR_010)
 
 **Notifications Sent:** 0
-**High Impact Closures:** 64
+**High Impact Closures:** 86
 **Ratio:** None
 **Verdict:** No notifications sent yet
 `

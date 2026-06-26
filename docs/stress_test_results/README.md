@@ -36,10 +36,10 @@ If you only care about one module, read its individual file:
 
 | # | Angle | What it tests | Pass | Handled | Crash |
 |---|-------|---------------|------|---------|-------|
-| 1 | `happy` | Valid params — the normal call an LLM would make | 213 (80%) | 53 | 0 |
-| 2 | `missing_params` | Required params omitted, optional params kept | 140 (53%) | 126 | 0 |
-| 3 | `wrong_types` | Wrong param types (int where str expected, etc.) | 176 (66%) | 90 | 0 |
-| 4 | `empty_params` | Empty params dict — tests default handling | 140 (53%) | 126 | 0 |
+| 1 | `happy` | Valid params — the normal call an LLM would make | 214 (80%) | 52 | 0 |
+| 2 | `missing_params` | Required params omitted, optional params kept | 141 (53%) | 125 | 0 |
+| 3 | `wrong_types` | Wrong param types (int where str expected, etc.) | 180 (68%) | 86 | 0 |
+| 4 | `empty_params` | Empty params dict — tests default handling | 141 (53%) | 125 | 0 |
 | 5 | `unknown_action` | Action name that doesn't exist — tests typo handling | 0 (0%) | 266 | 0 |
 | 6 | `fire_without_thinking` | 5 confused-LLM scenarios — zero-config calls | 0 (0%) | 266 | 0 |
 | 7 | `cross_agent_compat` | Static analysis for Claude/Cursor/Windsurf compat | 266 (100%) | 0 | 0 |
@@ -70,15 +70,21 @@ If you only care about one module, read its individual file:
 5. **audit_log + cost_router handlers took single `params` dict (CRITICAL, fixed in `ddb7c861`):** Handlers were `def _h_query(params):` but `async_dispatch` calls `handler(**params)` which unpacks the dict as kwargs. So `_h_query(team_id='default')` failed with "got an unexpected keyword argument 'team_id'". Every call through the MCP tool returned an error — the handlers never actually ran. Fix: changed all 5 handlers from `def _h_x(params)` to `def _h_x(**params)`.
 6. **HITL gates bypassed by truthy non-bool confirm values (SECURITY, fixed in `9bbf6479`):** The HITL gates for `delete_file` and `spawn_agent` used `if not confirm:` (truthiness check). Any truthy non-bool value bypassed the gate: `confirm='yes'`, `confirm='true'`, `confirm=1`, `confirm='not_a_bool'`. An LLM passing `confirm='true'` (string) instead of `confirm=true` (bool) would delete files or spawn agents without the HITL gate firing. Fix: changed to `if confirm is not True:` (strict identity check). Only the actual boolean `True` now passes the gate.
 7. **Engram handlers crashed on wrong types with generic 'internal error' (fixed in `de21ffba`):** `_brain_write_engram_impl`, `_brain_query_engrams_impl`, and `_brain_search_engrams_impl` called string methods (`.strip()`, `.lower()`) on parameters without checking types. When an LLM passed `key=12345` (int), the handler crashed with `AttributeError: int has no attribute strip'` which the error sanitizer wrapped as a generic 'internal error'. Fix: added `isinstance()` type validation at the top of each handler. LLMs now get 'Invalid key: expected str, got int' instead of 'internal error'.
+8. **6 more handlers with type validation gaps (fixed in `e193fa80`):** Same pattern as #7 in conversation_ops (search_conversations, list_conversations), session_ops (_brain_session_end_impl), feature_ops (_search_features), governance (_validate_strategic_plan), and orchestration (search_memory, read_memory, respond_to_consent). All called string methods on parameters without type checking.
+9. **Mutable default arguments (fixed in `6737612d`):** `features._h_mount` had `args=[]` and `features._h_invoke` had `arguments={}`. Mutable defaults are shared across calls and can cause state leakage. Fix: changed to `args=None` / `arguments=None` with `if None: args = []` inside.
+10. **Path leakage in relay error messages (fixed in `6737612d`):** Relay error showed full `/home/operator/.tb/relay/` path to LLMs. Fix: show `~/.tb/relay/<role>_bearer` instead.
+11. **Ripgrep flag injection in memory search (fixed in `6737612d`):** `_search_memory` passed `query` directly to `rg` without `--` separator. An LLM could pass `query="--files"` to list files. Fix: added `--` before query to treat it as a pattern, not flags.
+12. **Path traversal in delete_file, list_directory, watch (SECURITY, fixed in `4e8af4f8`):** Three hypervisor handlers accepted arbitrary paths without checking if they resolved within the workspace root. An LLM could pass `path='/etc/passwd'` or `path='../../etc/passwd'` to delete, list, or watch any file on the system. Fix: all three handlers now resolve the path and check if it's within the workspace root before any action.
+13. **Path traversal in critique_code and fix_code (SECURITY, fixed in `52eca474`):** `critique_code` could read any file on the system (sensitive data exposure) and `fix_code` could read AND write any file (could corrupt system files). An LLM could pass `file_path='/etc/passwd'` to either handler. Fix: both handlers now check if the path resolves within the workspace root before any file operation.
 
 ### Happy-path pass rate (80%, expected)
-The happy-path angle passes 213/266 (80%) with introspected handler-signature params. Breakdown by module:
+The happy-path angle passes 214/266 (80%) with introspected handler-signature params. Breakdown by module:
 
 | Module | Pass | Handled | Pass % | Root cause |
 |--------|------|---------|--------|------------|
 | cost_router | 1 | 0 | 100% | Route works with test prompt |
 | federation | 7 | 0 | 100% | All actions work standalone |
-| engrams | 36 | 2 | 95% | Most read/write work; 2 need specific brain state |
+| engrams | 37 | 1 | 97% | Most read/write work; 1 needs specific brain state |
 | sessions | 22 | 4 | 85% | Most ops work; some need real session IDs |
 | orchestration | 60 | 11 | 85% | Most ops work; some need real commitments/slots |
 | tasks | 13 | 4 | 76% | Most ops work; some need real task IDs |

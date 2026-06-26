@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T07:23:15
+**Generated:** 2026-06-26T08:40:38
 **Total tests:** 112
 **Actions tested:** 16
 **Angles per action:** 7
@@ -197,7 +197,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:21.758471Z"
+  "timestamp": "2026-06-26T03:07:56.579195Z"
 }`
 
 **missing_params** — ✅ pass
@@ -207,7 +207,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:21.758574Z"
+  "timestamp": "2026-06-26T03:07:56.579305Z"
 }`
 
 **wrong_types** — ⚠️ handled
@@ -217,7 +217,7 @@
   "data": null,
   "error": "Server wrong_type not found",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:21.758643Z"
+  "timestamp": "2026-06-26T03:07:56.579376Z"
 }`
 
 **empty_params** — ✅ pass
@@ -227,7 +227,7 @@
   "data": {},
   "error": null,
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:21.758694Z"
+  "timestamp": "2026-06-26T03:07:56.579430Z"
 }`
 
 **unknown_action** — ⚠️ handled
@@ -384,7 +384,7 @@
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Proof: test-id
 
-> Generated: 2026-06-26 07:20:21
+> Generated: 2026-06-26 08:37:56
 
 ## Thinking
 None
@@ -676,24 +676,32 @@ None
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `[
+  "wrong_type.md",
+  "None.md",
   "test-id.md"
 ]`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `[
+  "wrong_type.md",
+  "None.md",
   "test-id.md"
 ]`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `[
+  "wrong_type.md",
+  "None.md",
   "test-id.md"
 ]`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `[
+  "wrong_type.md",
+  "None.md",
   "test-id.md"
 ]`
 
@@ -739,22 +747,22 @@ None
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "error": "Invalid params for action 'mount_server': register.<locals>._h_mount() missing 2 required positional arguments: 'name' and 'command'",
-  "expected_params": "(name, command, args=[])",
-  `
+  "expected_params": "(name, command, args=None)",
+`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `Error: 1 validation error for StdioServerParameters
 args
-  Input should be a valid list [type=list_type, input_value='not_a_list', input_type=str]
+  Input should be a valid list [type=list_type, input_value='wrong_type', input_type=str]
     For further information visit https://errors.pyda`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "error": "Invalid params for action 'mount_server': register.<locals>._h_mount() missing 2 required positional arguments: 'name' and 'command'",
-  "expected_params": "(name, command, args=[])",
-  `
+  "expected_params": "(name, command, args=None)",
+`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -815,7 +823,7 @@ args
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "'int' object has no attribute 'lower'"
+  "error": "query must be str, got int"
 }`
 
 **empty_params** — ⚠️ handled
@@ -929,7 +937,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'test' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:21.784698Z"
+  "timestamp": "2026-06-26T03:07:56.601016Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -946,7 +954,7 @@ Search: Connected ✅`
   "data": null,
   "error": "Root mount 'wrong_type' not found",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:21.784831Z"
+  "timestamp": "2026-06-26T03:07:56.601119Z"
 }`
 
 **empty_params** — ⚠️ handled

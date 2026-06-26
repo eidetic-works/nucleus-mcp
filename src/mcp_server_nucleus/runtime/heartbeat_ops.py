@@ -50,7 +50,7 @@ def _load_heartbeat_state(brain: Path) -> Dict:
         try:
             with open(state_file, "r") as f:
                 return json.load(f)
-        except:
+        except (json.JSONDecodeError, OSError):
             pass
     return {"last_alerted": {}}
 

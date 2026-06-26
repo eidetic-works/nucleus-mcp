@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T07:23:15
+**Generated:** 2026-06-26T08:40:38
 **Total tests:** 266
 **Actions tested:** 38
 **Angles per action:** 7
@@ -9,8 +9,8 @@
 
 | Status | Count | Percentage | Meaning |
 |--------|-------|-----------|---------|
-| ✅ pass | 154 | 57.9% | Tool returned a successful response |
-| ⚠️ handled | 112 | 42.1% | Tool returned a graceful error (no crash) |
+| ✅ pass | 157 | 59.0% | Tool returned a successful response |
+| ⚠️ handled | 109 | 41.0% | Tool returned a graceful error (no crash) |
 | 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
 | ❌ fail | 0 | 0.0% | Tool failed without structured response |
 | 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
@@ -24,8 +24,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 36 | 94.7% |
-| ⚠️ handled | 2 | 5.3% |
+| ✅ pass | 37 | 97.4% |
+| ⚠️ handled | 1 | 2.6% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -37,8 +37,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 28 | 73.7% |
-| ⚠️ handled | 10 | 26.3% |
+| ✅ pass | 29 | 76.3% |
+| ⚠️ handled | 9 | 23.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -63,8 +63,8 @@
 
 | Status | Count | % |
 |--------|-------|---|
-| ✅ pass | 28 | 73.7% |
-| ⚠️ handled | 10 | 26.3% |
+| ✅ pass | 29 | 76.3% |
+| ⚠️ handled | 9 | 23.7% |
 | 🔶 warn | 0 | 0.0% |
 | ❌ fail | 0 | 0.0% |
 | 💥 crash | 0 | 0.0% |
@@ -124,8 +124,8 @@
 | `dsor_query_decisions` | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 4 pass |
 | `dsor_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `end_of_day` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
-| `engram_neighbors` | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 3 pass |
-| `export_schema` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `engram_neighbors` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
+| `export_schema` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `federation_dsor` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
 | `fusion_reactor` | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 2 pass |
 | `governance_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
@@ -225,7 +225,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T01:50:12.843767Z",
+        "timestamp": "2026-06-26T03:07:47.348343Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -237,7 +237,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T01:50:12.843767Z",
+        "timestamp": "2026-06-26T03:07:47.348343Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -249,7 +249,7 @@
   "data": null,
   "error": "Error reading audit log: '>' not supported between instances of 'int' and 'str'",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:12.854739Z"
+  "timestamp": "2026-06-26T03:07:47.362610Z"
 }`
 
 **empty_params** — ✅ pass
@@ -259,7 +259,7 @@
   "data": {
     "entries": [
       {
-        "timestamp": "2026-06-26T01:50:12.843767Z",
+        "timestamp": "2026-06-26T03:07:47.348343Z",
         "emitter": "brain_write_engram",
         "type": "engram_written",
         "hash":`
@@ -301,12 +301,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 549.0,
-    "total_interactions": 5490,
+    "total_cost_units": 791.6,
+    "total_interactions": 7916,
     "breakdown": {
       "unknown": {
-        "cost": 273.9,
-        "count": 2739,
+        "cost": 394.6,
+        "count": 3946,
         "tier": 1
   `
 
@@ -315,12 +315,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 549.0,
-    "total_interactions": 5490,
+    "total_cost_units": 791.6,
+    "total_interactions": 7916,
     "breakdown": {
       "unknown": {
-        "cost": 273.9,
-        "count": 2739,
+        "cost": 394.6,
+        "count": 3946,
         "tier": 1
   `
 
@@ -337,12 +337,12 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_cost_units": 549.0,
-    "total_interactions": 5490,
+    "total_cost_units": 791.6,
+    "total_interactions": 7916,
     "breakdown": {
       "unknown": {
-        "cost": 273.9,
-        "count": 2739,
+        "cost": 394.6,
+        "count": 3946,
         "tier": 1
   `
 
@@ -445,7 +445,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_38613",
+        "id": "brief_43268",
         "context": "Strategy",
         "intensity": 3
       },
@@ -459,7 +459,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_38613",
+        "id": "brief_43268",
         "context": "Strategy",
         "intensity": 3
       },
@@ -481,7 +481,7 @@
   "data": {
     "nodes": [
       {
-        "id": "brief_38613",
+        "id": "brief_43268",
         "context": "Strategy",
         "intensity": 3
       },
@@ -527,7 +527,7 @@
   "data": null,
   "error": "Decision ID test-id not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:14.734038Z"
+  "timestamp": "2026-06-26T03:07:49.228874Z"
 }`
 
 **missing_params** — ⚠️ handled
@@ -544,7 +544,7 @@
   "data": null,
   "error": "Decision ID 12345 not found in ledger.",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:14.734475Z"
+  "timestamp": "2026-06-26T03:07:49.229187Z"
 }`
 
 **empty_params** — ⚠️ handled
@@ -593,7 +593,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-2a47de47087b",
+        "decision_id": "dec-39a3fe49fd63",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -604,7 +604,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-2a47de47087b",
+        "decision_id": "dec-39a3fe49fd63",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -613,9 +613,9 @@
 - *Result preview:* `{
   "success": false,
   "data": null,
-  "error": "An internal error occurred. Error ID: acdbd6b2",
+  "error": "An internal error occurred. Error ID: 74508855",
   "error_code": null,
-  "timestamp": "2026-06-26T01:50:14.735930Z"
+  "timestamp": "2026-06-26T03:07:49.230886Z"
 }`
 
 **empty_params** — ✅ pass
@@ -625,7 +625,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-2a47de47087b",
+        "decision_id": "dec-39a3fe49fd63",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -671,7 +671,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 24
+        "total": 48
       },
       "snapshots`
 
@@ -685,7 +685,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 24
+        "total": 48
       },
       "snapshots`
 
@@ -699,7 +699,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 24
+        "total": 48
       },
       "snapshots`
 
@@ -713,7 +713,7 @@
     "components": {
       "decision_ledger": {
         "status": "ACTIVE",
-        "total": 24
+        "total": 48
       },
       "snapshots`
 
@@ -838,16 +838,14 @@
   "expected_params": "(key, max_depth=1)",
   "provided_params":`
 
-**wrong_types** — ✅ pass
+**wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "success": true,
-  "data": {
-    "error": "Engram 'wrong_type' not found in graph",
-    "node_count": 466
-  },
-  "error": null
-}`
+  "error": "Invalid params for action 'engram_neighbors': 'str' object cannot be interpreted as an integer",
+  "expected_params": "(key, max_depth=1)",
+  "provided_params": [
+    "key",
+    "max_dep`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -888,29 +886,53 @@
 
 #### `engrams.export_schema`
 
-**happy** — ⚠️ handled
+**happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "error": "'str' object has no attribute 'name'"
-}`
+  "openapi": "3.0.0",
+  "info": {
+    "title": "mock-mcp API",
+    "version": "0.5.0",
+    "description": "Auto-generated schema for Nucleus MCP Tools, Prompts, and Resources"
+  },
+  "paths": {
+    `
 
-**missing_params** — ⚠️ handled
+**missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "error": "'str' object has no attribute 'name'"
-}`
+  "openapi": "3.0.0",
+  "info": {
+    "title": "mock-mcp API",
+    "version": "0.5.0",
+    "description": "Auto-generated schema for Nucleus MCP Tools, Prompts, and Resources"
+  },
+  "paths": {
+    `
 
-**wrong_types** — ⚠️ handled
+**wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "'str' object has no attribute 'name'"
-}`
+  "openapi": "3.0.0",
+  "info": {
+    "title": "mock-mcp API",
+    "version": "0.5.0",
+    "description": "Auto-generated schema for Nucleus MCP Tools, Prompts, and Resources"
+  },
+  "paths": {
+    `
 
-**empty_params** — ⚠️ handled
+**empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "error": "'str' object has no attribute 'name'"
-}`
+  "openapi": "3.0.0",
+  "info": {
+    "title": "mock-mcp API",
+    "version": "0.5.0",
+    "description": "Auto-generated schema for Nucleus MCP Tools, Prompts, and Resources"
+  },
+  "paths": {
+    `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1035,7 +1057,7 @@
   "data": {
     "pipeline": "fusion_reactor",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T07:20:15.350101",
+    "timestamp": "2026-06-26T08:37:49.916060",
     "observation": "test",
     "sections": {
       "capture": `
@@ -1256,23 +1278,23 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:50:17.779500+00:00",
+    "timestamp": "2026-06-26T03:07:52.587374+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 7.4,
-    "formatt`
+    "check_duration_ms": 10.0,
+    "format`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:50:18.119786+00:00",
+    "timestamp": "2026-06-26T03:07:52.957931+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 13.6,
+    "check_duration_ms": 17.6,
     "format`
 
 **wrong_types** — ✅ pass
@@ -1280,7 +1302,7 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:50:19.379128+00:00",
+    "timestamp": "2026-06-26T03:07:54.142053+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
@@ -1292,11 +1314,11 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "timestamp": "2026-06-26T01:50:19.733340+00:00",
+    "timestamp": "2026-06-26T03:07:54.509540+00:00",
     "triggers": [],
     "trigger_count": 0,
     "should_notify": false,
-    "check_duration_ms": 12.9,
+    "check_duration_ms": 21.3,
     "format`
 
 **unknown_action** — ⚠️ handled
@@ -1412,60 +1434,60 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 2264,
+    "total_executions": 3213,
     "outcomes": {
-      "ADD": 305,
-      "NOOP": 696,
-      "UNKNOWN": 801,
-      "UPDATE": 462
+      "ADD": 420,
+      "NOOP": 955,
+      "UNKNOWN": 1194,
+      "UPDATE": 644
     },
     "by_event_type": {
-      "mor`
+      "mo`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 2264,
+    "total_executions": 3213,
     "outcomes": {
-      "ADD": 305,
-      "NOOP": 696,
-      "UNKNOWN": 801,
-      "UPDATE": 462
+      "ADD": 420,
+      "NOOP": 955,
+      "UNKNOWN": 1194,
+      "UPDATE": 644
     },
     "by_event_type": {
-      "mor`
+      "mo`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 2264,
+    "total_executions": 3213,
     "outcomes": {
-      "ADD": 305,
-      "NOOP": 696,
-      "UNKNOWN": 801,
-      "UPDATE": 462
+      "ADD": 420,
+      "NOOP": 955,
+      "UNKNOWN": 1194,
+      "UPDATE": 644
     },
     "by_event_type": {
-      "mor`
+      "mo`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_executions": 2264,
+    "total_executions": 3213,
     "outcomes": {
-      "ADD": 305,
-      "NOOP": 696,
-      "UNKNOWN": 801,
-      "UPDATE": 462
+      "ADD": 420,
+      "NOOP": 955,
+      "UNKNOWN": 1194,
+      "UPDATE": 644
     },
     "by_event_type": {
-      "mor`
+      "mo`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1590,7 +1612,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-2a47de47087b",
+        "decision_id": "dec-39a3fe49fd63",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1601,7 +1623,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-2a47de47087b",
+        "decision_id": "dec-39a3fe49fd63",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1620,7 +1642,7 @@
   "data": {
     "decisions": [
       {
-        "decision_id": "dec-2a47de47087b",
+        "decision_id": "dec-39a3fe49fd63",
         "intent": "Route task 12345 to brain_test-brain",
         "reasoning": "Composite score=0`
 
@@ -1824,30 +1846,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 6,
-    "total_units": 6.0,
+    "total_entries": 12,
+    "total_units": 12.0,
     "by_scope": {
-      "federation_join": 6.0
+      "federation_join": 12.0
     },
     "by_resource_type": {
-      "federation_join": 6.0
-    },
-   `
+      "federation_join": 12.0
+    },`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 6,
-    "total_units": 6.0,
+    "total_entries": 12,
+    "total_units": 12.0,
     "by_scope": {
-      "federation_join": 6.0
+      "federation_join": 12.0
     },
     "by_resource_type": {
-      "federation_join": 6.0
-    },
-   `
+      "federation_join": 12.0
+    },`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
@@ -1862,15 +1882,14 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "total_entries": 6,
-    "total_units": 6.0,
+    "total_entries": 12,
+    "total_units": 12.0,
     "by_scope": {
-      "federation_join": 6.0
+      "federation_join": 12.0
     },
     "by_resource_type": {
-      "federation_join": 6.0
-    },
-   `
+      "federation_join": 12.0
+    },`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -1909,28 +1928,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 07:20 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 07:20 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 07:20 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 07:20 AM\n====================`
+    "brief": "============================================================\n\ud83e\udde0 NUCLEUS MORNING BRIEF\n   Friday, June 26, 2026 08:37 AM\n====================`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -2039,7 +2058,7 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T01:50:19.864778+00:00
+# Generated at 2026-06-26T03:07:54.648894+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2049,7 +2068,7 @@
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T01:50:19.865295+00:00
+# Generated at 2026-06-26T03:07:54.649607+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2066,7 +2085,7 @@
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `# Nucleus MCP Server Metrics
-# Generated at 2026-06-26T01:50:19.865759+00:00
+# Generated at 2026-06-26T03:07:54.650203+00:00
 
 # HELP nucleus_tool_calls_total Total number of tool calls
 # TYPE nucleus_tool_calls_total counter
@@ -2189,7 +2208,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% of target",
         "conte`
 
 **missing_params** — ✅ pass
@@ -2200,7 +2219,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% of target",
         "conte`
 
 **wrong_types** — ✅ pass
@@ -2215,7 +2234,7 @@
     "engrams": [
       {
         "key": "recurring_38a2326e",
-        "value": "RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% of target",
+        "value": "RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% of target",
         "conte`
 
 **unknown_action** — ⚠️ handled
@@ -2509,7 +2528,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T07:20:20.525209",
+    "timestamp": "2026-06-26T08:37:55.343900",
     "symptom": "test",
     "sections": {
       "search": {
@@ -2529,7 +2548,7 @@
   "data": {
     "pipeline": "self_healing_sre",
     "version": "1.0.0",
-    "timestamp": "2026-06-26T07:20:20.527819",
+    "timestamp": "2026-06-26T08:37:55.347036",
     "symptom": "wrong_type",
     "sections": {
       "search`
@@ -2578,28 +2597,28 @@
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "success": true,
   "data": {
-    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (119x): Behind pace: github_issues at 0.0% `
+    "context": "=== SESSION START CONTEXT ===\n\n\ud83d\udcdd KEY MEMORIES:\n  \u2022 recurring_38a2326e: RECURRING PATTERN (120x): Behind pace: github_issues at 0.0% `
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos

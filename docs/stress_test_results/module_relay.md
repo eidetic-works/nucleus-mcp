@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T07:23:15
+**Generated:** 2026-06-26T08:40:38
 **Total tests:** 28
 **Actions tested:** 4
 **Angles per action:** 7
@@ -141,8 +141,9 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Action 'ack' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
-  "module": "nucleu`
+  "error": "Action 'ack' failed: No bearer for role='wrong_type'. Expected per-role file at ~/.tb/relay/<role>_bearer (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucleus_relay"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -207,8 +208,9 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Action 'inbox' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
-  "module": "nucl`
+  "error": "Action 'inbox' failed: No bearer for role='wrong_type'. Expected per-role file at ~/.tb/relay/<role>_bearer (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucleus_relay"
+}`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -269,8 +271,9 @@
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "error": "Action 'post' failed: No bearer for role='wrong_type'. Expected per-role file at /home/operator/.tb/relay_token_wrong_type (mode 600) or NUCLEUS_RELAY_BEARER env.",
-  "module": "nucle`
+  "error": "Action 'post' failed: No bearer for role='wrong_type'. Expected per-role file at ~/.tb/relay/<role>_bearer (mode 600) or NUCLEUS_RELAY_BEARER env.",
+  "module": "nucleus_relay"
+}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling

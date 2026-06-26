@@ -527,7 +527,7 @@ def _format_html(report: Dict) -> str:
     # Re-sort by timestamp descending
     try:
         combined_events.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-    except:
+    except (TypeError, AttributeError):
         pass
 
     for e in combined_events[:25]:

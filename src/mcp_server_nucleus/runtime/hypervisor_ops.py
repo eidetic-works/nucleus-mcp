@@ -126,6 +126,14 @@ def nucleus_list_directory_impl(path: str) -> str:
     """List files in a directory with lock status."""
     try:
         resolved_path = Path(path).resolve()
+
+        # Path traversal protection — prevent listing outside workspace
+        workspace_root = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve().parent
+        try:
+            resolved_path.relative_to(workspace_root)
+        except ValueError:
+            return f"❌ BLOCKED: Path '{path}' resolves outside workspace root. Listing denied."
+
         if not resolved_path.exists():
             return f"❌ ERROR: Path not found: {path}"
 
@@ -153,6 +161,21 @@ def nucleus_delete_file_impl(path: str, emit_event_fn=None, confirm: bool = Fals
     """
     try:
         resolved_path = Path(path).resolve()
+
+        # Path traversal protection — prevent deletion outside workspace
+        # An LLM could pass path="/etc/passwd" or path="../../etc/passwd"
+        # This check ensures the resolved path is within the workspace root
+        workspace_root = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve().parent
+        try:
+            resolved_path.relative_to(workspace_root)
+        except ValueError:
+            if emit_event_fn:
+                emit_event_fn("access_denied", "hypervisor_l4", {
+                    "path": str(resolved_path),
+                    "action": "delete",
+                    "reason": f"Path outside workspace root ({workspace_root})"
+                })
+            return f"❌ BLOCKED: Path '{path}' resolves outside workspace root. Delete denied."
 
         # HITL Gate: require explicit confirmation for destructive ops
         # Use 'is not True' (not 'not confirm') to prevent truthy non-bool bypass
@@ -190,6 +213,13 @@ def nucleus_delete_file_impl(path: str, emit_event_fn=None, confirm: bool = Fals
 
 def watch_resource_impl(path: str) -> str:
     """Register a file/folder with the Hypervisor watchdog."""
+    resolved_path = Path(path).resolve()
+    # Path traversal protection — prevent watching outside workspace
+    workspace_root = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve().parent
+    try:
+        resolved_path.relative_to(workspace_root)
+    except ValueError:
+        return f"❌ BLOCKED: Path '{path}' resolves outside workspace root. Watch denied."
     get_watchdog().protect(path)
     return f"👁️ WATCHING: {path} (Security Sentinel Active)"
 

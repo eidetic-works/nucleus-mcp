@@ -1,6 +1,6 @@
 # Nucleus Tool Facade Stress Test — Full Report
 
-**Generated:** 2026-06-26T07:23:15
+**Generated:** 2026-06-26T08:40:38
 **Total tests:** 133
 **Actions tested:** 19
 **Angles per action:** 7
@@ -140,22 +140,22 @@
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:50:23.473368+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:07:58.208060+00:00\n  Jurisdiction: N`
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:50:23.499369+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:07:58.246911+00:00\n  Jurisdiction: N`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:50:23.513282+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:07:58.264681+00:00\n  Jurisdiction: N`
 
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T01:50:23.513679+00:00\n  Jurisdiction: N`
+  "formatted": "======================================================================\n  NUCLEUS AGENT OS \u2014 AUDIT TRAIL REPORT\n  Generated: 2026-06-26T03:07:58.265075+00:00\n  Jurisdiction: N`
 
 **unknown_action** — ⚠️ handled
 - *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
@@ -196,8 +196,8 @@
   "message": "Failed to fix after 3 attempts.",
   "last_output": "\n",
   "logs": [
-    "[07:20:23] Starting Fixer Loop for test",
-    "[07:20:23] Running verification: test",
+    "[08:37:58] Starting Fixer Loop for test",
+    "[08:37:58] Running verification: test",
 `
 
 **missing_params** — ⚠️ handled
@@ -213,7 +213,7 @@
   "message": "Failed to fix after 3 attempts.",
   "last_output": "Verification failed to run: [Errno 2] No such file or directory: 'wrong_type'",
   "logs": [
-    "[07:20:23] S`
+    "[08:37:58] S`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -520,9 +520,7 @@
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `⚠️ HITL GATE: delete_file requires confirm=true.
-Target: /home/operator/ai-mvp-backend/test
-Re-call with confirm=true to proceed. This is a destructive operation.`
+- *Result preview:* `❌ BLOCKED: Path 'test' resolves outside workspace root. Delete denied.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -533,9 +531,7 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `⚠️ HITL GATE: delete_file requires confirm=true.
-Target: /home/operator/ai-mvp-backend/wrong_type
-Re-call with confirm=true to proceed. This is a destructive operation.`
+- *Result preview:* `❌ BLOCKED: Path 'wrong_type' resolves outside workspace root. Delete denied.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -579,21 +575,21 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "review_id": "KYC-2C3D499F",
+  "review_id": "KYC-F3A9B0D1",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:50:23.595844+00:00",
-  "completed_at": "2026-06-26T01:50:23.595867+00:00",
+  "started_at": "2026-06-26T03:07:58.380989+00:00",
+  "completed_at": "2026-06-26T03:07:58.381010+00:00",
  `
 
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "review_id": "KYC-4700E7CB",
+  "review_id": "KYC-9D1795E5",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:50:23.596357+00:00",
-  "completed_at": "2026-06-26T01:50:23.596370+00:00",
+  "started_at": "2026-06-26T03:07:58.381466+00:00",
+  "completed_at": "2026-06-26T03:07:58.381479+00:00",
  `
 
 **wrong_types** — ⚠️ handled
@@ -610,11 +606,11 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "review_id": "KYC-C8409B2E",
+  "review_id": "KYC-6CC350A0",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:50:23.597054+00:00",
-  "completed_at": "2026-06-26T01:50:23.597065+00:00",
+  "started_at": "2026-06-26T03:07:58.382145+00:00",
+  "completed_at": "2026-06-26T03:07:58.382155+00:00",
  `
 
 **unknown_action** — ⚠️ handled
@@ -651,13 +647,7 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `🔒 LOCKED | focused_e2e_results.json
-🔒 LOCKED | simple_e2e_test.py
-🔒 LOCKED | comprehensive_e2e_report.md
-🔒 LOCKED | focused_e2e_test.py
-🔒 LOCKED | flutter_e2e_results.json
-🔒 LOCKED | screenshots
-🔒 LOC`
+- *Result preview:* `❌ BLOCKED: Path 'test' resolves outside workspace root. Listing denied.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -669,7 +659,7 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `🔒 LOCKED | heartbeat`
+- *Result preview:* `❌ BLOCKED: Path 'wrong_type' resolves outside workspace root. Listing denied.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1002,12 +992,12 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
 - *Result preview:* `{
-  "count": 63,
+  "count": 80,
   "traces": [
     {
-      "file": "KYC-0A5378AD.json",
+      "file": "KYC-01803DAC.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-0A5378AD",
+      "review_id": "KYC-01803DAC",
       "recommendation": "APPROVE",
       "risk_score": 0,
       "`
@@ -1015,12 +1005,12 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 **missing_params** — ✅ pass
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
-  "count": 63,
+  "count": 80,
   "traces": [
     {
-      "file": "KYC-0A5378AD.json",
+      "file": "KYC-01803DAC.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-0A5378AD",
+      "review_id": "KYC-01803DAC",
       "recommendation": "APPROVE",
       "risk_score": 0,
       "`
@@ -1036,12 +1026,12 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 **empty_params** — ✅ pass
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
-  "count": 63,
+  "count": 80,
   "traces": [
     {
-      "file": "KYC-0A5378AD.json",
+      "file": "KYC-01803DAC.json",
       "type": "KYC_REVIEW",
-      "review_id": "KYC-0A5378AD",
+      "review_id": "KYC-01803DAC",
       "recommendation": "APPROVE",
       "risk_score": 0,
       "`
@@ -1086,10 +1076,10 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-11CD2B7F",
+  "review_id": "KYC-CE43E114",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:15:05.340475+00:00",
+  "started_at": "2026-06-26T02:35:00.949672+00:00",
   "completed_at": "2026-06-26T0`
 
 **wrong_types** — ⚠️ handled
@@ -1100,10 +1090,10 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
 - *Result preview:* `{
   "type": "KYC_REVIEW",
-  "review_id": "KYC-11CD2B7F",
+  "review_id": "KYC-CE43E114",
   "application_id": "APP-001",
   "applicant": "John Smith",
-  "started_at": "2026-06-26T01:15:05.340475+00:00",
+  "started_at": "2026-06-26T02:35:00.949672+00:00",
   "completed_at": "2026-06-26T0`
 
 **unknown_action** — ⚠️ handled
@@ -1206,10 +1196,7 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **wrong_types** — ⚠️ handled
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `{
-  "error": "Action 'validate_strategic_plan' failed: 'int' object has no attribute 'lower'",
-  "module": "nucleus_governance"
-}`
+- *Result preview:* `{"valid": false, "error": "mode must be str, got int"}`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
@@ -1251,7 +1238,7 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **happy** — ✅ pass
 - *Tests:* Valid params provided — the "normal" call an LLM would make
-- *Result preview:* `👁️ WATCHING: test (Security Sentinel Active)`
+- *Result preview:* `❌ BLOCKED: Path 'test' resolves outside workspace root. Watch denied.`
 
 **missing_params** — ⚠️ handled
 - *Tests:* No params provided at all (empty dict {}) — tests required-param validation
@@ -1263,7 +1250,7 @@ Re-call with confirm=true to proceed. This is a destructive operation.`
 
 **wrong_types** — ✅ pass
 - *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
-- *Result preview:* `👁️ WATCHING: wrong_type (Security Sentinel Active)`
+- *Result preview:* `❌ BLOCKED: Path 'wrong_type' resolves outside workspace root. Watch denied.`
 
 **empty_params** — ⚠️ handled
 - *Tests:* Empty params dict {} — same as missing_params, tests default handling
