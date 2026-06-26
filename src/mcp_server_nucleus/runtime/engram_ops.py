@@ -28,6 +28,16 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
         intensity: 1-10 scale (10 = highest importance)
     """
     try:
+        # Type validation — prevent AttributeError on .strip() if LLM passes non-str
+        if not isinstance(key, str):
+            return f"❌ Invalid key: expected str, got {type(key).__name__}"
+        if not isinstance(value, str):
+            return f"❌ Invalid value: expected str, got {type(value).__name__}"
+        if not isinstance(context, str):
+            return f"❌ Invalid context: expected str, got {type(context).__name__}"
+        if not isinstance(intensity, (int, float)):
+            return f"❌ Invalid intensity: expected number, got {type(intensity).__name__}"
+
         # V9.1 Security Hardening: Key Validation
         if not key or len(key.strip()) < 2:
             import sys
@@ -103,6 +113,14 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
         limit: Max engrams to return (default 50, max 500). Prevents context exhaustion.
     """
     try:
+        # Type validation — prevent crashes if LLM passes wrong types
+        if context is not None and not isinstance(context, str):
+            return f"❌ Invalid context: expected str or None, got {type(context).__name__}"
+        if not isinstance(min_intensity, (int, float)):
+            return f"❌ Invalid min_intensity: expected number, got {type(min_intensity).__name__}"
+        if not isinstance(limit, (int, float)):
+            return f"❌ Invalid limit: expected number, got {type(limit).__name__}"
+
         # Clamp limit to safe range
         limit = max(1, min(int(limit), 500))
 
@@ -154,6 +172,12 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
         limit: Max engrams to return (default 50, max 500). Prevents context exhaustion.
     """
     try:
+        # Type validation — prevent crashes if LLM passes wrong types
+        if not isinstance(query, str):
+            return f"❌ Invalid query: expected str, got {type(query).__name__}"
+        if not isinstance(limit, (int, float)):
+            return f"❌ Invalid limit: expected number, got {type(limit).__name__}"
+
         limit = max(1, min(int(limit), 500))
 
         brain = get_brain_path()
