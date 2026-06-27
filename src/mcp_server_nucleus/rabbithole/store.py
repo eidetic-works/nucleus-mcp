@@ -72,6 +72,12 @@ def connect(db_path: Optional[str | Path] = None) -> sqlite3.Connection:
         db_path = default_db_path()
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
+    # Under concurrent tool calls (multiple PostToolUse hooks firing in one
+    # turn), SQLite's default busy behaviour is to raise OperationalError
+    # immediately on lock contention. That races the hook's increment/reset
+    # and silently loses depth counts. A 5s busy_timeout makes writers wait
+    # instead of failing — depth undercounts less, nudge fires on time.
+    conn.execute("PRAGMA busy_timeout = 5000")
     _init_schema(conn)
     return conn
 

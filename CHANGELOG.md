@@ -5,6 +5,34 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.3] - 2026-06-27 — "Perf + classifier fixes from live dogfood"
+
+### Fixed
+- **Hook startup perf** — the hook imported `store` via the package
+  (`from mcp_server_nucleus.rabbithole import store`), which eagerly ran the
+  grandparent `mcp_server_nucleus/__init__.py` (~1.2s) on every PostToolUse
+  call (fresh process, no warm cache). Fixed: file-path load of sibling
+  `store.py` via `importlib.util.spec_from_file_location`. The hook is now
+  stdlib-only and runs in ~0.02-0.04s/call under system `/usr/bin/python3`
+  (no venv/package dep). **Invoke the hook as a FILE**
+  (`python3 .../hook.py`), never `python -m …` — `-m` re-triggers the
+  package init.
+- **Bash classifier: stderr redirects** — `_classify_bash` treated any `>`
+  as a write (depth reset), including `2>/dev/null`. Because the operator's
+  mandatory inbox-poll prepends `ls … 2>/dev/null` to every Bash call, depth
+  reset on every Bash call → Bash-path rabbit-holing was invisible to the
+  tracker. Fixed: strip stderr redirects (`2>`, `2>>`, `2>&1`) before the
+  `>` test. Classifier battery 10/10 (2> = read; >/>>/1> = write).
+- **SQLite busy_timeout** — `store.connect` set no `busy_timeout`, so
+  concurrent tool calls in one turn raced on the SQLite store and lost
+  increments (depth undercounted, nudge fired late — never falsely). Fixed:
+  `PRAGMA busy_timeout = 5000` makes writers wait up to 5s instead of
+  failing immediately.
+
+### Added
+- 6 new classifier regression tests (26 total): `2>/dev/null`, `2>>`,
+  `2>&1` are reads; `>`, `>>`, `1>` are still writes.
+
 ## [1.14.2] - 2026-06-27 — "Intelligent nudge: pattern detection + self-rescue"
 
 ### Fixed
