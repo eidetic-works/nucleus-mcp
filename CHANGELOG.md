@@ -5,6 +5,17 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1] - 2026-06-27 — "Auto-detect hook: proactive rabbit-hole detection"
+
+### Added
+- **PostToolUse auto-detect hook** — watches the live tool-call stream and surfaces
+  a visible depth indicator without the AI calling anything. Classifies each tool
+  call as read/write/neutral, increments a read-depth counter, resets on writes
+  (real progress), and emits a `systemMessage` at configurable thresholds.
+  Kill switch: `RABBITHOLE_HOOK_DISABLED=1`. Thresholds: `RABBITHOLE_DEPTH_DANGER`
+  (default 10), `RABBITHOLE_DEPTH_RABBITHOLE` (default 15). Bridged into the same
+  rabbithole SQLite store. 16 new tests (28 total).
+
 ## [1.14.0] - 2026-06-27 — "nucleus-rabbithole: Rabbit-Hole Depth Tracker"
 
 ### Added
