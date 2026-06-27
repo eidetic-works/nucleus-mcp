@@ -5,6 +5,16 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-06-27 — "nucleus-rabbithole: Rabbit-Hole Depth Tracker"
+
+### Added
+- **nucleus-rabbithole** — a second, import-independent MCP server bundled inside
+  the nucleus-mcp package. A rabbit-hole depth tracker for focus-prone developers.
+  9 tools: `depth_push`, `depth_pop`, `depth_show`, `depth_map`, `switch_context`,
+  `add_loop`, `list_loops`, `close_loop`, `weekly_review`. Local SQLite, no network,
+  no daemon. Import-independent (imports only stdlib + mcp, nothing from sibling
+  nucleus-mcp modules). Console entry-point: `nucleus-rabbithole`. 12 unit tests.
+
 ## [Unreleased]
 
 ### Security
