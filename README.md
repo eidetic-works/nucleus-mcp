@@ -15,6 +15,36 @@ MIT licensed. File-based (plain JSON + markdown). No embeddings. No vendor lock-
 
 ---
 
+## Also included: nucleus-rabbithole
+
+`nucleus-mcp` ships a second, fully independent tool: **nucleus-rabbithole**,
+a rabbit-hole depth tracker for focus-prone developers.
+
+It gives your AI a push/pop depth stack, a context-switch thrash detector,
+an open-loop externaliser, and a weekly review — all backed by local SQLite,
+no network, no daemon.
+
+```bash
+# Already installed with nucleus-mcp — just run:
+nucleus-rabbithole
+```
+
+Claude Code `.mcp.json` snippet:
+```json
+{
+  "mcpServers": {
+    "nucleus-rabbithole": {
+      "command": "nucleus-rabbithole",
+      "args": []
+    }
+  }
+}
+```
+
+Full documentation: [docs/RABBITHOLE.md](docs/RABBITHOLE.md)
+
+---
+
 ## Three Frontiers
 
 The core loop that makes AI reliability compound over time:

@@ -62,6 +62,7 @@ nucleus-wedge = "nucleus_wedge.__main__:main"
 nucleus-mcp-http = "mcp_server_nucleus.http_transport.server:main"
 nucleus-mcp-cloud = "mcp_server_nucleus.http_transport.app:serve"
 nucleus-relay-bridge = "mcp_server_nucleus.runtime.relay.bridge:main"
+nucleus-rabbithole = "mcp_server_nucleus.rabbithole.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_nucleus", "src/nucleus_wedge"]
