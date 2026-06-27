@@ -139,8 +139,93 @@ def _should_emit(depth: int, danger: int, rabbithole: int) -> bool:
     return False
 
 
+# ---------------------------------------------------------------------------
+# Pattern detection (zero-token heuristics on the read streak)
+# ---------------------------------------------------------------------------
+
+# Extensions that indicate "reading docs/specs" rather than "reading code".
+_DOC_EXTENSIONS: frozenset[str] = frozenset({
+    ".md", ".txt", ".rst", ".pdf", ".doc", ".docx",
+    ".adoc", ".org", ".tex", ".rtf",
+})
+
+
+def _topic_stem(target: str) -> str:
+    """Reduce a streak target to a rough topic token for clustering.
+
+    Streak entries are short labels produced by ``_extract_target``:
+    basenames (``auth.py``), grep patterns (``grep:TODO``), or bash
+    prefixes (``cat config.yml``). We strip extension / common prefixes
+    so that ``auth.py``, ``auth_test.py``, ``oauth.py`` all share the
+    ``auth`` / ``oauth`` stems — close enough for the deep-dive heuristic.
+    """
+    t = target.strip().lower()
+    if t.startswith("grep:"):
+        t = t[5:]
+    # Take the first whitespace-delimited token (handles "cat config.yml" → "config.yml")
+    t = t.split()[0] if t else t
+    # Strip extension
+    for ext in (".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".go", ".java",
+                ".rb", ".php", ".c", ".h", ".cpp", ".hpp", ".cs", ".swift",
+                ".kt", ".scala", ".clj", ".ex", ".exs", ".erl", ".hs",
+                ".ml", ".nim", ".zig", ".v", ".sh", ".bash", ".zsh",
+                ".yml", ".yaml", ".toml", ".json", ".ini", ".cfg",
+                ".md", ".txt", ".rst", ".pdf", ".html", ".css", ".vue",
+                ".svelte", ".sql", ".proto", ".thrift"):
+        if t.endswith(ext):
+            t = t[: -len(ext)]
+            break
+    # Take the first underscore/hyphen-delimited segment as the topic stem.
+    # So auth_oauth.py → auth, jwt_helper.py → jwt, docker-compose.yml → docker.
+    for sep in ("_", "-"):
+        if sep in t:
+            t = t.split(sep, 1)[0]
+            break
+    return t or target
+
+
+def _classify_pattern(streak: list) -> str:
+    """Classify the read streak into ``deep_dive`` / ``thrashing`` / ``research_spiral``.
+
+    Zero-token heuristics on the streak labels:
+    * ``deep_dive``       — ≤2 unique topic stems (going deeper on one thing)
+    * ``research_spiral`` — >60% of targets are docs/specs (reading theory)
+    * ``thrashing``       — ≥4 unique topic stems (bouncing, no focus)
+    * ``unknown``         — fallback (short or ambiguous streak)
+    """
+    if not streak or len(streak) < 3:
+        return "unknown"
+
+    # Research spiral: mostly docs
+    doc_count = sum(
+        1 for t in streak
+        if any(t.lower().endswith(ext) for ext in _DOC_EXTENSIONS)
+    )
+    if doc_count > len(streak) * 0.6:
+        return "research_spiral"
+
+    # Topic clustering
+    stems = [_topic_stem(t) for t in streak]
+    unique = set(s for s in stems if s)
+    if len(unique) <= 2:
+        return "deep_dive"
+    if len(unique) >= 4:
+        return "thrashing"
+    return "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Output builder — intelligent, zero-token
+# ---------------------------------------------------------------------------
+
 def _build_output(depth: int, streak: list, danger: int, rabbithole: int) -> dict:
-    """Build the ``hookSpecificOutput`` JSON dict for the given depth."""
+    """Build the hook-output JSON dict with a contextual nudge.
+
+    Two channels (per the Claude Code hook contract):
+    * top-level ``systemMessage``        → shown to the HUMAN operator
+    * ``hookSpecificOutput.additionalContext`` → injected into the MODEL's
+      context so the agent can self-rescue (imperative instruction)
+    """
     if depth >= rabbithole:
         bar = "#" * min(depth, 20)
         level = "RABBIT HOLE"
@@ -148,25 +233,99 @@ def _build_output(depth: int, streak: list, danger: int, rabbithole: int) -> dic
         bar = "#" * min(depth, 15)
         level = "DANGER"
 
+    pattern = _classify_pattern(streak)
     recent = streak[-5:]
     files_str = ", ".join(recent) if recent else "?"
 
-    sys_msg = (
-        f"[{bar}] {depth} reads deep with no edit ({level})"
-        f" — still on your original task? (files: {files_str})"
-    )
-    additional = (
-        f"Auto-depth tracker: {depth} consecutive reads without an edit. "
-        f"Recent targets: {', '.join(streak[-10:]) if streak else '?'}. "
-        f"Call depth_show or depth_pop to resurface or inspect the stack."
-    )
+    # --- Human channel: contextual diagnosis + suggested action ---
+    sys_msg = _human_message(depth, level, pattern, recent, files_str)
+
+    # --- Model channel: imperative self-rescue instruction ---
+    additional = _model_instruction(depth, level, pattern, streak)
+
     return {
+        # Top-level: shown to the HUMAN operator. Per the Claude Code hook
+        # contract, ``systemMessage`` is only recognized at the top level —
+        # nested inside ``hookSpecificOutput`` it is an unrecognized field and
+        # is silently dropped, so the human would never see the nudge.
+        "systemMessage": sys_msg,
         "hookSpecificOutput": {
             "hookEventName": "PostToolUse",
-            "systemMessage": sys_msg,
+            # Injected into the model's context so the agent can self-resurface.
             "additionalContext": additional,
-        }
+        },
     }
+
+
+def _human_message(depth: int, level: str, pattern: str,
+                   recent: list, files_str: str) -> str:
+    """Build the human-visible nudge — diagnosis + suggested action."""
+    prefix = f"[{('#' * min(depth, 20))}] {depth} reads, no edits ({level})"
+
+    if pattern == "deep_dive":
+        topic = _topic_stem(recent[-1]) if recent else "?"
+        return (
+            f"{prefix} — deep dive on {topic} ({files_str}). "
+            f"You probably have enough context. Write the fix, "
+            f"or save this thread with add_loop."
+        )
+    if pattern == "thrashing":
+        return (
+            f"{prefix} — thrashing across {files_str}. "
+            f"This isn't a deep dive — you're bouncing. Pick one thing."
+        )
+    if pattern == "research_spiral":
+        return (
+            f"{prefix} — research spiral, mostly docs ({files_str}). "
+            f"You have enough theory. Go write the code."
+        )
+    # unknown / short streak — fall back to the static shape
+    return (
+        f"{prefix} — still on your original task? (files: {files_str})"
+    )
+
+
+def _model_instruction(depth: int, level: str, pattern: str,
+                       streak: list) -> str:
+    """Build the model-facing imperative self-rescue instruction.
+
+    This is the message that makes the agent rescue itself — it tells the
+    model exactly what to do, not just what's happening.
+    """
+    recent_str = ", ".join(streak[-10:]) if streak else "?"
+
+    if pattern == "deep_dive":
+        action = (
+            "STOP reading. You have enough context on this topic. "
+            "Do one of NOW (do not read another file first): "
+            "(1) write the code you already have context for; "
+            "(2) call depth_pop to resurface to the parent task; "
+            "(3) call add_loop to save this thread and move on."
+        )
+    elif pattern == "thrashing":
+        action = (
+            "STOP. You are thrashing — reading unrelated files without focus. "
+            "State your current hypothesis in one sentence, then either "
+            "write code or call depth_pop. Do not read another file."
+        )
+    elif pattern == "research_spiral":
+        action = (
+            "STOP reading docs. You have enough theory. "
+            "Write the code now, or call depth_pop to resurface. "
+            "Do not open another doc/spec file."
+        )
+    else:
+        action = (
+            "STOP. Call depth_show or depth_pop to resurface, "
+            "or write the code you have context for. "
+            "Do not read another file without doing one of these."
+        )
+
+    return (
+        f"RABBIT HOLE DETECTED: {depth} consecutive reads, 0 edits ({level}). "
+        f"Pattern: {pattern}. Recent targets: {recent_str}. "
+        f"{action}"
+    )
 
 
 # ---------------------------------------------------------------------------

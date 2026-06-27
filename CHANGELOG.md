@@ -5,6 +5,33 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.2] - 2026-06-27 — "Intelligent nudge: pattern detection + self-rescue"
+
+### Fixed
+- **systemMessage hoist** — moved `systemMessage` from nested inside
+  `hookSpecificOutput` (where it was silently dropped per the Claude Code hook
+  contract) to the top level (where it is shown to the human operator). The
+  model-facing context stays nested at `hookSpecificOutput.additionalContext`.
+  This was the root cause of the "human sees nothing" gap in 1.14.1.
+
+### Added
+- **Intelligent pattern detection** (zero-token heuristics) — classifies the
+  read streak into three patterns and emits a contextual nudge + imperative
+  self-rescue instruction:
+  - `deep_dive` — files share a topic stem (e.g. auth.py, auth_oauth.py,
+    auth_jwt.py). Nudge: "You probably have enough context. Write the fix."
+  - `thrashing` — files scattered across ≥4 unrelated topics. Nudge: "You're
+    bouncing. Pick one thing."
+  - `research_spiral` — >60% docs/specs (.md, .txt, .rst, .pdf). Nudge: "You
+    have enough theory. Go write the code."
+  - `unknown` — fallback for short/ambiguous streaks.
+- **Imperative self-rescue** — the `additionalContext` (model channel) now
+  contains an imperative instruction ("STOP reading. Do one of: write code,
+  call depth_pop, call add_loop. Do not read another file first.") instead of
+  a passive description. This is what makes the agent rescue itself.
+- 4 new tests (20 total): deep_dive, thrashing, research_spiral, imperative
+  instruction verification.
+
 ## [1.14.1] - 2026-06-27 — "Auto-detect hook: proactive rabbit-hole detection"
 
 ### Added
