@@ -25,6 +25,7 @@ SQLite store lives at $XDG_DATA_HOME/rabbithole/store.db
 
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 import time
@@ -106,6 +107,13 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             status      TEXT NOT NULL DEFAULT 'open',
             created_at  TEXT NOT NULL,
             closed_at   TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS hook_state (
+            session_id  TEXT PRIMARY KEY,
+            depth       INTEGER NOT NULL DEFAULT 0,
+            streak      TEXT    NOT NULL DEFAULT '[]',
+            updated_at  TEXT    NOT NULL
         );
         """
     )
@@ -590,3 +598,82 @@ def weekly_review(conn: sqlite3.Connection, days: int = 7) -> Dict[str, Any]:
         "active_stack": [f["topic"] for f in active],
         "narrative": "\n".join(parts),
     }
+
+
+# ---------------------------------------------------------------------------
+# Hook state — auto-depth tracker (used by rabbithole/hook.py)
+# ---------------------------------------------------------------------------
+
+_HOOK_STREAK_CAP = 20  # keep the last N targets in the streak list
+
+
+def hook_get_state(conn: sqlite3.Connection, session_id: str) -> Dict[str, Any]:
+    """Return current auto-depth hook state for *session_id*.
+
+    Returns ``{"depth": int, "streak": list[str]}``.
+    """
+    row = conn.execute(
+        "SELECT depth, streak FROM hook_state WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    if row is None:
+        return {"depth": 0, "streak": []}
+    return {"depth": row["depth"], "streak": json.loads(row["streak"])}
+
+
+def hook_increment(
+    conn: sqlite3.Connection, session_id: str, target: str
+) -> Dict[str, Any]:
+    """Atomically increment the read-depth counter and append *target* to the streak.
+
+    Uses a single UPSERT so concurrent invocations on the same *session_id*
+    are serialised by SQLite and never corrupt the counter.
+
+    Returns ``{"depth": int, "streak": list[str]}`` with the *updated* values.
+    """
+    row = conn.execute(
+        "SELECT depth, streak FROM hook_state WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+
+    if row is None:
+        new_depth = 1
+        new_streak: List[str] = [target]
+    else:
+        new_depth = row["depth"] + 1
+        old_streak: List[str] = json.loads(row["streak"])
+        new_streak = (old_streak + [target])[-_HOOK_STREAK_CAP:]
+
+    conn.execute(
+        """
+        INSERT INTO hook_state(session_id, depth, streak, updated_at)
+        VALUES(?, ?, ?, ?)
+        ON CONFLICT(session_id) DO UPDATE
+          SET depth      = excluded.depth,
+              streak     = excluded.streak,
+              updated_at = excluded.updated_at
+        """,
+        (session_id, new_depth, json.dumps(new_streak), _iso(_now())),
+    )
+    conn.commit()
+    return {"depth": new_depth, "streak": new_streak}
+
+
+def hook_reset(conn: sqlite3.Connection, session_id: str) -> None:
+    """Reset the auto-depth counter to zero for *session_id*.
+
+    Called when an Edit, Write, or write/run Bash is observed — a sign that
+    real progress was made, so the rabbit-hole counter should start fresh.
+    """
+    conn.execute(
+        """
+        INSERT INTO hook_state(session_id, depth, streak, updated_at)
+        VALUES(?, 0, '[]', ?)
+        ON CONFLICT(session_id) DO UPDATE
+          SET depth      = 0,
+              streak     = '[]',
+              updated_at = excluded.updated_at
+        """,
+        (session_id, _iso(_now())),
+    )
+    conn.commit()

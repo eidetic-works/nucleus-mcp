@@ -186,10 +186,142 @@ Then register it in `.claude/settings.json`:
 
 ---
 
+## Proactive auto-depth hook (opt-in)
+
+The `rabbithole/hook.py` module makes rabbit-hole detection **proactive**:
+it watches the live tool-call stream and surfaces a visible depth indicator
+**without Claude having to call any tool**.
+
+### What it does
+
+On every `PostToolUse` event the hook:
+
+1. **Classifies** the tool call as `read`, `write`, or `neutral`:
+   - **read** — `Read`, `Grep`, read-only Bash (`cat`/`grep`/`ls`/`find`/…)
+   - **write** — `Edit`, `Write`, Bash with side-effects or output redirection
+   - **neutral** — MCP tools, `WebFetch`, `WebSearch`, etc. (no change)
+2. **Increments** a per-session read-depth counter on reads; **resets** it to
+   zero on writes (a write means real progress was made).
+3. **Emits** a `systemMessage` visible to both the user and Claude when the
+   counter crosses a configurable threshold.
+
+The message looks like:
+
+```
+[##########] 10 reads deep with no edit (DANGER) — still on your original task? (files: store.py, hook.py, server.py…)
+```
+
+### Thresholds (env-configurable)
+
+| Env var | Default | Meaning |
+|---------|---------|---------|
+| `RABBITHOLE_DEPTH_CAUTION` | `6` | Tracked internally; not alerted by default |
+| `RABBITHOLE_DEPTH_DANGER` | `10` | First user-visible alert |
+| `RABBITHOLE_DEPTH_RABBITHOLE` | `15` | Escalated alert with `RABBIT HOLE` label |
+
+The hook fires at **exact** threshold crossings (`depth == 10`, `depth == 15`)
+and then every 5 reads above the rabbithole threshold (20, 25, …).  Between
+crossings it is silent so it does not nag.
+
+### Enable / disable
+
+```bash
+# Silence for this shell session
+export RABBITHOLE_HOOK_DISABLED=1
+
+# Lower thresholds for a focused sprint
+export RABBITHOLE_DEPTH_DANGER=6
+export RABBITHOLE_DEPTH_RABBITHOLE=10
+```
+
+### Wire-up: add to `.claude/settings.json`
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Read|Grep|Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m mcp_server_nucleus.rabbithole.hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+If `nucleus-mcp` is installed in a venv, use the venv's Python:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Read|Grep|Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/venv/bin/python -m mcp_server_nucleus.rabbithole.hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+A copy of the exact JSON stanza lives at
+`src/mcp_server_nucleus/rabbithole/hooks.json` for easy copy-paste.
+
+### Auto-depth state in the store
+
+The hook writes per-session depth state into the **same** SQLite store as
+the manual `depth_push` / `depth_pop` tools, using the `hook_state` table.
+This means `weekly_review` and `depth_map` will include dives that were
+auto-detected (though they appear as depth-counter events, not named frames).
+
+### Fail-safe guarantees
+
+- Any exception is swallowed; the hook **always** exits 0.
+- Startup cost for neutral tools (MCP, WebFetch, …) is sub-millisecond
+  because the SQLite import is lazy.
+- Parallel hook invocations on the same session are safe: state updates use
+  SQLite `ON CONFLICT DO UPDATE` (UPSERT), serialised by the database engine.
+
+### False-positive risk
+
+The Bash classifier is heuristic-based.  Commands whose first token is in the
+read-only set (`cat`, `grep`, `ls`, `find`, `head`, `tail`, `wc`, `diff`,
+`stat`, `file`, `echo`, `which`, `type`, `less`, `sort`, `uniq`, `cut`,
+`du`, `df`, `pwd`, `date`) **without** a `>` redirection are treated as
+read-only.  Anything else is treated as a write.
+
+Known false positives:
+- `git log`, `git status`, `git diff` → classified as **write** (resets
+  counter). In practice this is fine: seeing git output often means you
+  paused to check state, which is not rabbit-holing.
+- `python -m py_compile foo.py` → classified as **write**. No impact beyond
+  a premature reset.
+
+Known false negatives (rare):
+- A Bash read command that spawns a subprocess writing to disk (e.g. a
+  `cat` piped through a custom script that writes) will increment the counter
+  rather than reset it.
+
+At the default `danger=10` threshold these edge cases are unlikely to cause
+meaningful noise.
+
+---
+
 ## Import independence
 
 `nucleus-rabbithole` is a self-contained subpackage. It imports only stdlib
 and the `mcp` package (shipped by `fastmcp`, already a core dependency of
-`nucleus-mcp`). It does not import anything from sibling
-`mcp_server_nucleus` modules and will run correctly even if the rest of the
+`nucleus-mcp`). The `hook.py` module additionally imports
+`mcp_server_nucleus.rabbithole.store` (the same subpackage) and nothing
+else from sibling modules. It will run correctly even if the rest of the
 nucleus-mcp package is broken.

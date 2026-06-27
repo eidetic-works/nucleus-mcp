@@ -1,0 +1,17 @@
+{
+  "_comment": "Add the stanza below to your .claude/settings.json to enable the auto-depth hook.",
+  "_doc": "See docs/RABBITHOLE.md for env-var tuning and the full opt-in guide.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Read|Grep|Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m mcp_server_nucleus.rabbithole.hook"
+          }
+        ]
+      }
+    ]
+  }
+}
