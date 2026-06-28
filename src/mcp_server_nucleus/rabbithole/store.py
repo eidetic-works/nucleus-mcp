@@ -632,36 +632,44 @@ def hook_increment(
 ) -> Dict[str, Any]:
     """Atomically increment the read-depth counter and append *target* to the streak.
 
-    Uses a single UPSERT so concurrent invocations on the same *session_id*
-    are serialised by SQLite and never corrupt the counter.
+    Uses ``BEGIN IMMEDIATE`` to acquire a write lock before the SELECT, so the
+    read-modify-write is atomic across concurrent invocations. Without this,
+    multiple threads can read the same depth, all write depth+1, and lose
+    increments — ``busy_timeout`` alone prevents "database is locked" errors
+    but does NOT prevent the read-modify-write race.
 
     Returns ``{"depth": int, "streak": list[str]}`` with the *updated* values.
     """
-    row = conn.execute(
-        "SELECT depth, streak FROM hook_state WHERE session_id = ?",
-        (session_id,),
-    ).fetchone()
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute(
+            "SELECT depth, streak FROM hook_state WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
 
-    if row is None:
-        new_depth = 1
-        new_streak: List[str] = [target]
-    else:
-        new_depth = row["depth"] + 1
-        old_streak: List[str] = json.loads(row["streak"])
-        new_streak = (old_streak + [target])[-_HOOK_STREAK_CAP:]
+        if row is None:
+            new_depth = 1
+            new_streak: List[str] = [target]
+        else:
+            new_depth = row["depth"] + 1
+            old_streak: List[str] = json.loads(row["streak"])
+            new_streak = (old_streak + [target])[-_HOOK_STREAK_CAP:]
 
-    conn.execute(
-        """
-        INSERT INTO hook_state(session_id, depth, streak, updated_at)
-        VALUES(?, ?, ?, ?)
-        ON CONFLICT(session_id) DO UPDATE
-          SET depth      = excluded.depth,
-              streak     = excluded.streak,
-              updated_at = excluded.updated_at
-        """,
-        (session_id, new_depth, json.dumps(new_streak), _iso(_now())),
-    )
-    conn.commit()
+        conn.execute(
+            """
+            INSERT INTO hook_state(session_id, depth, streak, updated_at)
+            VALUES(?, ?, ?, ?)
+            ON CONFLICT(session_id) DO UPDATE
+              SET depth      = excluded.depth,
+                  streak     = excluded.streak,
+                  updated_at = excluded.updated_at
+            """,
+            (session_id, new_depth, json.dumps(new_streak), _iso(_now())),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     return {"depth": new_depth, "streak": new_streak}
 
 
