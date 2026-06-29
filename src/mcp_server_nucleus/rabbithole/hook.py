@@ -38,7 +38,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sys
 
 
@@ -94,20 +93,15 @@ def _classify_bash(cmd: str) -> str:
     """Classify a Bash command as ``'read'``, ``'write'``, or ``'neutral'``.
 
     A command whose first token is in the known-read-only set AND that
-    contains no output-redirection to a file is read-only. Stderr-only
-    redirects (``2>``, ``2>>``, ``2>&1``) do NOT count as writes — e.g.
-    ``cat x 2>/dev/null`` is still a read. Everything else is treated as a
-    write/run command that resets depth.
+    contains no output-redirection character (``>``) is read-only.
+    Everything else is treated as a write/run command that resets depth.
     """
     cmd = cmd.strip()
     if not cmd:
         return "neutral"
     # Handle absolute paths like /bin/grep → take basename
     first_token = cmd.split()[0].rsplit("/", 1)[-1]
-    # Drop stderr redirects before testing for a real output redirect, so a
-    # read with `2>/dev/null` (very common) isn't misclassified as a write.
-    no_stderr = re.sub(r"2>>?\s*\S+|2>&1", "", cmd)
-    if first_token in _READ_BASH_FIRST_WORDS and ">" not in no_stderr:
+    if first_token in _READ_BASH_FIRST_WORDS and ">" not in cmd:
         return "read"
     return "write"
 
@@ -356,18 +350,8 @@ def main() -> None:
         if classification == "neutral":
             sys.exit(0)
 
-        # Load sibling store.py directly by file path. Importing it through the
-        # package (``from mcp_server_nucleus.rabbithole import store``) first runs
-        # the grandparent ``mcp_server_nucleus/__init__.py`` — a ~1.2s eager
-        # import — on every read/write tool call, since PostToolUse hooks run as
-        # fresh processes with no warm cache. store.py is stdlib-only and
-        # self-contained, so a file-path load keeps this hook truly lightweight
-        # (~0.02s) while staying behaviourally identical.
-        import importlib.util as _ilu  # noqa: PLC0415
-        _store_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "store.py")
-        _spec = _ilu.spec_from_file_location("_rabbithole_store", _store_path)
-        store = _ilu.module_from_spec(_spec)
-        _spec.loader.exec_module(store)
+        # Lazy import — keeps startup overhead near-zero for neutral tools
+        from mcp_server_nucleus.rabbithole import store  # noqa: PLC0415
 
         db_path = os.environ.get("RABBITHOLE_DB_PATH") or None
         conn = store.connect(db_path)
