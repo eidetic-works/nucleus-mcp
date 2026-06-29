@@ -5,7 +5,7 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.14.3] - 2026-06-27 — "Perf + classifier + concurrency fixes from live dogfood"
+## [1.14.3] - 2026-06-27 — "Perf + classifier fixes from live dogfood"
 
 ### Fixed
 - **Hook startup perf** — the hook imported `store` via the package
@@ -22,46 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mandatory inbox-poll prepends `ls … 2>/dev/null` to every Bash call, depth
   reset on every Bash call → Bash-path rabbit-holing was invisible to the
   tracker. Fixed: strip stderr redirects (`2>`, `2>>`, `2>&1`) before the
-  `>` test. Classifier battery 18/18 across both Devin + Claude Code names.
+  `>` test. Classifier battery 10/10 (2> = read; >/>>/1> = write).
 - **SQLite busy_timeout** — `store.connect` set no `busy_timeout`, so
   concurrent tool calls in one turn raced on the SQLite store and lost
   increments (depth undercounted, nudge fired late — never falsely). Fixed:
   `PRAGMA busy_timeout = 5000` makes writers wait up to 5s instead of
   failing immediately.
-- **Atomic read-modify-write in hook_increment** — `busy_timeout` alone
-  prevented "database is locked" errors but did NOT prevent the
-  read-modify-write race: concurrent threads could SELECT the same depth,
-  all write depth+1, and lose increments (concurrency test showed 75/100
-  lost). Fixed: `BEGIN IMMEDIATE` acquires the write lock BEFORE the SELECT,
-  making the read-modify-write atomic. Concurrency test now passes: 100/100
-  increments preserved across 20 threads × 5 calls each.
 
 ### Added
-- **Devin CLI tool-name support** — `_classify` and `_extract_target` now
-  handle both Claude Code names (`Read`, `Grep`, `Bash`, `Edit`, `Write`)
-  and Devin CLI names (`read`, `grep`, `glob`, `exec`, `edit`). `glob` is
-  treated as a read (file discovery); `exec` is classified by inspecting
-  the command, same as `Bash`. One `hook.py` serves both agents.
-- **Classifier battery** (18 tests) — focused unit tests covering the full
-  `_classify` matrix for both tool-name dialects: read/grep/glob → read;
-  edit → write; exec cat → read; exec cat 2>/dev/null → read; exec cat >
-  out → write; exec python3 f.py → write; plus Claude Code equivalents.
-- **Concurrency regression test** — fires 20 threads × 5 increments
-  (100 total) against one session and asserts final depth == 100. Proves
-  `BEGIN IMMEDIATE` + `busy_timeout` prevents the lost-increment race.
-- 6 stderr-redirect regression tests: `2>/dev/null`, `2>>`, `2>&1` are
-  reads; `>`, `>>`, `1>` are still writes.
-- 6 Devin tool-name compatibility tests: read/exec/edit/glob classification
-  + exec with 2>/dev/null.
-- **Intelligent nudge confirmed wired** in both Claude Code (project
-  settings) and Devin CLI (`.devin/config.local.json`). Dogfood verified:
-  10 consecutive Devin-shaped `read` calls increment depth 1→10 and fire
-  the depth-10 nudge with both channels (human `systemMessage` + model
-  `additionalContext`).
-
-### Test count
-- 51 total (was 20 in 1.14.2): +18 classifier battery, +6 Devin names,
-  +6 stderr redirects, +1 concurrency.
+- 6 new classifier regression tests (26 total): `2>/dev/null`, `2>>`,
+  `2>&1` are reads; `>`, `>>`, `1>` are still writes.
 
 ## [1.14.2] - 2026-06-27 — "Intelligent nudge: pattern detection + self-rescue"
 

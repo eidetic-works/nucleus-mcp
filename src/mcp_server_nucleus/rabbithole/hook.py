@@ -13,29 +13,11 @@ Usage (add to ``.claude/settings.json`` — see docs/RABBITHOLE.md):
           "matcher": "Read|Grep|Bash|Edit|Write",
           "hooks": [
             {"type": "command",
-             "command": "python3 /path/to/mcp_server_nucleus/rabbithole/hook.py"}
+             "command": "python -m mcp_server_nucleus.rabbithole.hook"}
           ]
         }
       ]
     }
-
-For Devin CLI, add the same shape to ``.devin/config.local.json`` with
-Devin tool names in the matcher:
-
-    "hooks": {
-      "PostToolUse": [
-        {
-          "matcher": "read|grep|glob|exec|edit",
-          "hooks": [
-            {"type": "command",
-             "command": "python3 /path/to/mcp_server_nucleus/rabbithole/hook.py"}
-          ]
-        }
-      ]
-    }
-
-Invoke the hook as a FILE (``python3 .../hook.py``), never
-``python -m …`` — ``-m`` re-triggers the package init (~1.2s overhead).
 
 Env vars (all optional):
   RABBITHOLE_HOOK_DISABLED=1      Silently disable this hook (exit 0).
@@ -98,19 +80,12 @@ def _classify(tool_name: str, tool_input: dict) -> str:
     * ``read``    — increments the depth counter
     * ``write``   — resets the depth counter to zero
     * ``neutral`` — no change (MCP tool calls, WebFetch, etc.)
-
-    Handles both Claude Code tool names (``Read``, ``Grep``, ``Bash``,
-    ``Edit``, ``Write``) and Devin CLI tool names (``read``, ``grep``,
-    ``exec``, ``edit``, ``glob``). ``glob`` is a read (file discovery);
-    ``exec`` is classified by inspecting the command, same as ``Bash``.
     """
-    # Normalize to lowercase for a single comparison path.
-    tn = tool_name.lower() if tool_name else ""
-    if tn in ("read", "grep", "glob"):
+    if tool_name in ("Read", "Grep"):
         return "read"
-    if tn in ("edit", "write", "notebookedit", "notebook_edit"):
+    if tool_name in ("Edit", "Write", "NotebookEdit"):
         return "write"
-    if tn in ("bash", "exec"):
+    if tool_name == "Bash":
         return _classify_bash(tool_input.get("command") or "")
     return "neutral"
 
@@ -138,23 +113,17 @@ def _classify_bash(cmd: str) -> str:
 
 
 def _extract_target(tool_name: str, tool_input: dict) -> str:
-    """Return a short human-readable label for the thing being read.
-
-    Handles both Claude Code (``Read``, ``Grep``, ``Bash``) and Devin
-    (``read``, ``grep``, ``glob``, ``exec``) tool names. ``glob`` is
-    treated like ``grep`` — its ``pattern`` argument is the useful label.
-    """
-    tn = tool_name.lower() if tool_name else ""
-    if tn == "read":
+    """Return a short human-readable label for the thing being read."""
+    if tool_name == "Read":
         fp = tool_input.get("file_path") or ""
         return fp.rsplit("/", 1)[-1] or fp or "?"
-    if tn in ("grep", "glob"):
+    if tool_name == "Grep":
         pattern = tool_input.get("pattern") or ""
         path = (tool_input.get("path") or "").rsplit("/", 1)[-1]
         if pattern:
             return f"grep:{pattern[:30]}"
         return path or "?"
-    if tn in ("bash", "exec"):
+    if tool_name == "Bash":
         return (tool_input.get("command") or "")[:50]
     return tool_name
 

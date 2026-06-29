@@ -29,7 +29,7 @@ def _engrams_json(brain_path: Path) -> list[dict]:
 def ensure_seeds(store: Store | None = None) -> list[str]:
     """Copy named seeds into history if absent. Returns the list of keys written (empty if all present)."""
     s = store or Store()
-    engrams = _engrams_json(s._brain_path)
+    engrams = _engrams_json(s.brain_path())
     by_key = {e.get("key"): e for e in engrams if e.get("key")}
     present = s.keys_present()
     written: list[str] = []
