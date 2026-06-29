@@ -81,9 +81,8 @@ only-include = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src"]
 asyncio_mode = "auto"
-addopts = "-p _preimport_beartype"
 markers = [
     "e2e: end-to-end integration tests",
     "timeout: override default test timeout",
