@@ -1693,7 +1693,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
         latest_file = brain_dir / "chat" / f"{default_chat_tag}.json"
         if latest_file.exists():
             try:
-                import json
+                pass  # json imported at module level
                 data = json.loads(latest_file.read_text())
                 latest_turns = data.get("turn_count", 0)
                 _saved_history = data.get("history", [])
@@ -2292,7 +2292,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             return ""
         try:
             from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl
-            import json
+            pass  # json imported at module level
             # Extract meaningful search terms from path
             p = Path(filepath)
             terms = [p.stem]  # filename without extension
@@ -2469,7 +2469,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             print(f"   [Step {step}: 🧠 write engram '{key}']")
             try:
                 from mcp_server_nucleus.runtime.engram_ops import _brain_write_engram_impl
-                import json
+                pass  # json imported at module level
                 raw = _brain_write_engram_impl(key, value, context, intensity)
                 data = json.loads(raw) if isinstance(raw, str) else raw
                 if data.get("success"):
@@ -2487,7 +2487,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
             print(f"   [Step {step}: 🧠 search engrams '{query}']")
             try:
                 from mcp_server_nucleus.runtime.engram_ops import _brain_search_engrams_impl
-                import json
+                pass  # json imported at module level
                 raw = _brain_search_engrams_impl(query, limit=limit)
                 data = json.loads(raw) if isinstance(raw, str) else raw
                 engrams = data.get("data", {}).get("engrams", [])
@@ -3512,7 +3512,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     file_path = chat_dir / f"{chat_tag}.json"
                     data = {"history": history, "turn_count": turn_count}
                     try:
-                        import json
+                        pass  # json imported at module level
                         file_path.write_text(json.dumps(data, indent=2))
                         print(f"✅ Chat saved to tag '{chat_tag}'\n")
                     except Exception as e:
@@ -3522,7 +3522,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                     file_path = chat_dir / f"{chat_tag}.json"
                     if file_path.exists():
                         try:
-                            import json
+                            pass  # json imported at module level
                             data = json.loads(file_path.read_text())
                             history.clear()
                             history.extend(_normalize_history(data.get("history", [])))
@@ -4067,7 +4067,7 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                 # Auto-save (context window state — overwrites each time)
                 if brain_dir:
                     try:
-                        import json
+                        pass  # json imported at module level
                         chat_dir = brain_dir / "chat"
                         chat_dir.mkdir(exist_ok=True, parents=True)
                         latest_file = chat_dir / f"{default_chat_tag}.json"
