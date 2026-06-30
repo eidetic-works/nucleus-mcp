@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 
 
@@ -79,12 +80,23 @@ def _classify(tool_name: str, tool_input: dict) -> str:
     * ``read``    — increments the depth counter
     * ``write``   — resets the depth counter to zero
     * ``neutral`` — no change (MCP tool calls, WebFetch, etc.)
+
+    Supports both Claude Code (Read, Grep, Edit, Write, Bash) and
+    Devin (read, grep, glob, edit, exec) tool-name dialects.
     """
+    # Claude Code tool names
     if tool_name in ("Read", "Grep"):
         return "read"
     if tool_name in ("Edit", "Write", "NotebookEdit"):
         return "write"
     if tool_name == "Bash":
+        return _classify_bash(tool_input.get("command") or "")
+    # Devin tool names
+    if tool_name in ("read", "grep", "glob"):
+        return "read"
+    if tool_name == "edit":
+        return "write"
+    if tool_name == "exec":
         return _classify_bash(tool_input.get("command") or "")
     return "neutral"
 
@@ -93,31 +105,40 @@ def _classify_bash(cmd: str) -> str:
     """Classify a Bash command as ``'read'``, ``'write'``, or ``'neutral'``.
 
     A command whose first token is in the known-read-only set AND that
-    contains no output-redirection character (``>``) is read-only.
-    Everything else is treated as a write/run command that resets depth.
+    contains no stdout-redirection (``>``, ``>>`` but NOT ``2>``, ``2>>``,
+    ``&>``, ``&>>``) is read-only.  Everything else is treated as a
+    write/run command that resets depth.
     """
     cmd = cmd.strip()
     if not cmd:
         return "neutral"
     # Handle absolute paths like /bin/grep → take basename
     first_token = cmd.split()[0].rsplit("/", 1)[-1]
-    if first_token in _READ_BASH_FIRST_WORDS and ">" not in cmd:
+    # Strip stderr/both redirects (2>, 2>>, &>, &>>) before checking for stdout redirect
+    cmd_no_stderr = re.sub(r'[2&]>>{0,1}', '', cmd)
+    if first_token in _READ_BASH_FIRST_WORDS and ">" not in cmd_no_stderr:
         return "read"
     return "write"
 
 
 def _extract_target(tool_name: str, tool_input: dict) -> str:
     """Return a short human-readable label for the thing being read."""
-    if tool_name == "Read":
+    if tool_name in ("Read", "read"):
         fp = tool_input.get("file_path") or ""
         return fp.rsplit("/", 1)[-1] or fp or "?"
-    if tool_name == "Grep":
+    if tool_name in ("Grep", "grep"):
         pattern = tool_input.get("pattern") or ""
         path = (tool_input.get("path") or "").rsplit("/", 1)[-1]
         if pattern:
             return f"grep:{pattern[:30]}"
         return path or "?"
-    if tool_name == "Bash":
+    if tool_name == "glob":
+        pattern = tool_input.get("pattern") or ""
+        path = (tool_input.get("path") or "").rsplit("/", 1)[-1]
+        if pattern:
+            return f"glob:{pattern[:30]}"
+        return path or "?"
+    if tool_name in ("Bash", "exec"):
         return (tool_input.get("command") or "")[:50]
     return tool_name
 
