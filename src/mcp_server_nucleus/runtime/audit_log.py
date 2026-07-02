@@ -146,7 +146,7 @@ def _get_conn(db_path: Optional[Path] = None) -> sqlite3.Connection:
     conn_key = getattr(_local, "conn_key", None)
 
     if conn is None or conn_key != db_key:
-        conn = sqlite3.connect(str(db_path), timeout=5.0, check_same_thread=False)
+        conn = sqlite3.connect(str(db_path), check_same_thread=False)
         conn.row_factory = sqlite3.Row
         # WAL mode for concurrent readers
         conn.execute("PRAGMA journal_mode=WAL")

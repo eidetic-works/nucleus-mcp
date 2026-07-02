@@ -78,7 +78,7 @@ def _ensure_kind_columns(conn: sqlite3.Connection) -> None:
 def ensure_schema(brain_path: Path | None = None) -> Path:
     db = memories_db_path(brain_path)
     db.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    with sqlite3.connect(db) as conn:
         conn.executescript(SCHEMA)
         _ensure_kind_columns(conn)
     return db
@@ -128,7 +128,7 @@ def build_memories_index(brain_path: Path | None = None) -> Path:
     db = ensure_schema(brain_path)
     store = Store(Store.brain_path(brain_path))
     rows = [r for r in (_project_row(row) for row in store.rows()) if r is not None]
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    with sqlite3.connect(db) as conn:
         conn.execute(
             "DELETE FROM memories WHERE source = ? OR source LIKE ?",
             (HISTORY_SOURCE_PREFIX, f"{HISTORY_SOURCE_PREFIX}:%"),
@@ -195,7 +195,7 @@ def build_auto_memory_index(
             projected = _project_memory_file(md)
             if projected is not None:
                 rows.append(projected)
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    with sqlite3.connect(db) as conn:
         conn.execute("DELETE FROM memories WHERE source = ?", (AUTO_MEMORY_SOURCE,))
         conn.executemany(
             "INSERT INTO memories "
@@ -285,7 +285,7 @@ def recall_activity_health(
         roles_to_check = [_normalize_role(role)]
     now = datetime.now(timezone.utc)
     out_roles: list[dict] = []
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    with sqlite3.connect(db) as conn:
         for r in roles_to_check:
             row = conn.execute(
                 "SELECT MAX(created_at) FROM memories "

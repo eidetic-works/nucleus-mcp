@@ -34,7 +34,7 @@ class LocalSQLiteStore:
         self._init_db()
 
     def _init_db(self):
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS memories (
                     id TEXT PRIMARY KEY,
@@ -48,7 +48,7 @@ class LocalSQLiteStore:
     def store(self, content: str, metadata: Dict) -> str:
         import uuid
         doc_id = str(uuid.uuid4())
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 "INSERT INTO memories (id, content, metadata, created_at) VALUES (?, ?, ?, ?)",
                 (doc_id, content, json.dumps(metadata), time.time())
@@ -67,7 +67,7 @@ class LocalSQLiteStore:
         # retry once with phrase-quoting (`"..."` with `""`-escape doubling)
         # on FTS5 syntax error. FTS5's own error string is the discriminator;
         # context cancellation + other DB errors propagate unchanged.
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 "SELECT * FROM memories WHERE content LIKE ? ORDER BY created_at DESC LIMIT ?",
