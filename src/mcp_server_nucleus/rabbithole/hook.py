@@ -105,17 +105,22 @@ def _classify_bash(cmd: str) -> str:
     """Classify a Bash command as ``'read'``, ``'write'``, or ``'neutral'``.
 
     A command whose first token is in the known-read-only set AND that
-    contains no stdout-redirection (``>``, ``>>`` but NOT ``2>``, ``2>>``,
-    ``&>``, ``&>>``) is read-only.  Everything else is treated as a
-    write/run command that resets depth.
+    contains no stdout-redirection (``>``, ``>>``, and also ``&>``/``&>>``,
+    which redirect stdout too) is read-only.  Stderr-only redirects
+    (``2>``, ``2>>``) don't count as writes.  Everything else is treated
+    as a write/run command that resets depth.
     """
     cmd = cmd.strip()
     if not cmd:
         return "neutral"
     # Handle absolute paths like /bin/grep → take basename
     first_token = cmd.split()[0].rsplit("/", 1)[-1]
-    # Strip stderr/both redirects (2>, 2>>, &>, &>>) before checking for stdout redirect
-    cmd_no_stderr = re.sub(r'[2&]>>{0,1}', '', cmd)
+    # Strip stderr-only redirects (2>, 2>>) before checking for stdout
+    # redirect.  The fd digit must stand alone (start-of-string or after
+    # whitespace): in `cat file2> out` bash parses `file2` as a word and
+    # `>` as a stdout redirect.  `&>`/`&>>` redirect stdout as well as
+    # stderr, so they are deliberately NOT stripped and count as writes.
+    cmd_no_stderr = re.sub(r'(^|\s)2>>?', r'\1', cmd)
     if first_token in _READ_BASH_FIRST_WORDS and ">" not in cmd_no_stderr:
         return "read"
     return "write"

@@ -6,7 +6,7 @@ header/summary block but preserves the append-only ticket log below it.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -50,8 +50,10 @@ def generate_week_report(brain_path: Path, week: Optional[int] = None) -> Path:
     # Scope tickets to the current week (loose match on ticket_id timestamp)
     now = datetime.now(timezone.utc)
     week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    # timedelta, not replace(day=day-1): the walk back to Monday crosses a
+    # month boundary whenever the week starts in the previous month.
     while week_start.isocalendar()[1] == w and week_start.weekday() > 0:
-        week_start = week_start.replace(day=week_start.day - 1)
+        week_start = week_start - timedelta(days=1)
 
     by_step: Dict[str, int] = {}
     for t in tickets:

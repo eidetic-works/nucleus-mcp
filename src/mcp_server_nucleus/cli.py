@@ -1549,11 +1549,13 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
                             options=["reset and retry", "investigate manually", "pause autonomous work"],
                             source="circuit-breaker",
                         )
-                    except Exception:
-                        pass
+                    except Exception as _esc_err:
+                        print(f"⚠️ circuit-breaker escalation failed ({_esc_err}); halting anyway", file=sys.stderr)
                     sys.exit(1)
-            except Exception:
-                pass
+            except Exception as _cb_err:
+                # Safety-critical skip must be loud: a corrupt/unreadable breaker
+                # file means we run WITHOUT the halt guard.
+                print(f"⚠️ circuit-breaker check skipped ({type(_cb_err).__name__}: {_cb_err}); proceeding without halt guard", file=sys.stderr)
 
         # Brother context: big brother guiding small brother
         if brother_context:
