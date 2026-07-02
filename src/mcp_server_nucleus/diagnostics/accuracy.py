@@ -48,7 +48,7 @@ def verify_nucleus_accuracy() -> dict:
         accuracy = 100.0
         logic = "Deterministic SQLite Indexing"
     else:
-        conn = sqlite3.connect(str(db))
+        conn = sqlite3.connect(str(db), timeout=5.0)
         cursor = conn.cursor()
         cursor.execute(
             "INSERT OR REPLACE INTO engrams (key, value) VALUES (?, ?)",
