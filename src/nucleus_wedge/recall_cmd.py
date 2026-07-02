@@ -68,7 +68,7 @@ def _ensure_populated(brain_path_arg: str | None) -> Path:
         try:
             with open(history, "rb") as fh:
                 history_lines = sum(1 for _ in fh)
-            with sqlite3.connect(db) as conn:
+            with sqlite3.connect(db, timeout=5.0) as conn:
                 projected_rows = conn.execute(
                     "SELECT COUNT(*) FROM memories "
                     "WHERE source = 'history.jsonl' OR source LIKE 'history.jsonl:%'"
@@ -80,7 +80,7 @@ def _ensure_populated(brain_path_arg: str | None) -> Path:
             stale_vs_history_rowcount = True
 
     if db.exists() and not stale_vs_history_mtime and not stale_vs_history_rowcount:
-        with sqlite3.connect(db) as conn:
+        with sqlite3.connect(db, timeout=5.0) as conn:
             count = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
         if count > 0:
             return db
@@ -128,7 +128,7 @@ def _do_recall_query(
     sql_parts.append("ORDER BY created_at DESC LIMIT ?")
     params.append(limit)
     sql = " ".join(sql_parts)
-    with sqlite3.connect(db) as conn:
+    with sqlite3.connect(db, timeout=5.0) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(sql, params).fetchall()
     return [dict(r) for r in rows]
