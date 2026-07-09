@@ -954,7 +954,40 @@ def _capture(
     The body keeps the ``"model"`` (family) key for census stability and adds
     ``"model_id"`` (the selectable id that ran) and ``"effect"`` (the
     expect_paths verdict: ``unknown`` / ``files_touched`` / ``no_files_touched``).
+    crit-4 v2.1: the body gains an un-forgeable causal-edge signature. We stamp
+    ``ts`` + ``result_sha256`` (SHA-256 over the FULL result, pre-truncation — the
+    body only carries ``result[:3000]``, so the signed hash, not the truncated
+    text, is the binding) and HMAC-sign the exact field set with the brain's
+    machine key. The signature travels inside the JSON-string body that
+    ``relay_post`` stores verbatim, so it reaches the FS envelope with ZERO
+    changes to relay/core.py and zero new trust in the relay transport. Signing
+    is fault-isolated: on any failure (no brain, IO error) we stamp
+    ``dispatch_sig=null`` — the dispatch/capture never break, the envelope simply
+    will not count in the census (fail-closed at the census, not at dispatch).
     """
+    artifact_refs = [artifact_ref]
+    ts = int(time.time())
+    # Bind the FULL result (pre-truncation), not the truncated body text.
+    result_sha256 = hashlib.sha256((result.result or "").encode("utf-8")).hexdigest()
+
+    dispatch_sig: Optional[str] = None
+    try:
+        # periphery→periphery, lazy (ADR-0043 pattern; keeps the boundary green).
+        from .auth.signature_guard import get_signature_guard
+
+        dispatch_sig = get_signature_guard().sign_vendor_dispatch(
+            vendor=spec.vendor,
+            model=spec.model,
+            prompt_digest=prompt_digest,
+            artifact_refs=artifact_refs,
+            result_sha256=result_sha256,
+            status=result.status,
+            ts=ts,
+        )
+    except Exception as exc:  # noqa: BLE001 — signing must never break dispatch
+        logger.warning("vendor capture dispatch signing failed: %s", exc)
+        dispatch_sig = None
+
     body = json.dumps(
         {
             "vendor": spec.vendor,
@@ -962,6 +995,7 @@ def _capture(
             "model_id": result.model_id,
             "prompt_digest": prompt_digest,
             "result": result.result[:3000],
+            "result_sha256": result_sha256,
             "rc": result.rc,
             "status": result.status,
             "produced_output": result.produced_output,
@@ -979,6 +1013,9 @@ def _capture(
             # A criterion whose instrument cannot emit a passing value is the
             # required-check-that-cannot-report pattern, at the governance layer.
             "artifact_ref_source": artifact_ref_source,
+            "ts": ts,
+            "artifact_refs": artifact_refs,
+            "dispatch_sig": dispatch_sig,
         },
         ensure_ascii=False,
     )
