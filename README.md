@@ -294,3 +294,13 @@ See [TELEMETRY.md](TELEMETRY.md) for details.
 ## License
 
 MIT © 2026 | [hello@nucleusos.dev](mailto:hello@nucleusos.dev)
+
+## Privacy
+
+Nucleus is a local-first tool. All engrams, memories, and project state are stored on your machine in `.brain/` — no personal data is sent to any server unless you explicitly configure a remote relay.
+
+**Telemetry:** Anonymous, aggregate usage statistics only (command name, duration, error type, versions, OS). No engram content, no file paths, no prompts, no API keys, no PII — ever. Disable with `nucleus config --no-telemetry` or `NUCLEUS_ANON_TELEMETRY=false`.
+
+**Remote relay (optional):** If you configure a remote relay endpoint, engram metadata is synced to your own relay server. You control the relay — no third-party data sharing.
+
+**Contact:** Privacy questions → [hello@nucleusos.dev](mailto:hello@nucleusos.dev)
