@@ -88,7 +88,7 @@ pip install nucleus-mcp
 nucleus init --recipe founder
 ```
 
-Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` auto-configures your MCP client — just restart it.
+Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` writes a local `.mcp.json` for Claude Code — restart Claude Code and you're set. For other clients (Cursor, Windsurf, Claude Desktop), run `nucleus setup` after.
 
 ---
 
@@ -142,7 +142,8 @@ each config file it touches. No hand-editing JSON.
 
 ```bash
 pip install nucleus-mcp      # or:  uvx nucleus-mcp  ·  pipx install nucleus-mcp
-nucleus init                 # seeds .brain/ and writes the MCP config for every client found
+nucleus init                 # seeds .brain/ and writes .mcp.json (Claude Code)
+nucleus setup                # (optional) configure Cursor, Windsurf, Claude Desktop
 ```
 
 Then **restart your AI client**. To verify: your client's tool list now shows
@@ -249,7 +250,7 @@ nucleus config --no-telemetry
 # or: NUCLEUS_ANON_TELEMETRY=false
 ```
 
-See [TELEMETRY.md](TELEMETRY.md) for details.
+See [docs/SECURITY_WHITEPAPER.md](docs/SECURITY_WHITEPAPER.md) for telemetry details.
 
 ---
 

@@ -61,12 +61,11 @@ Override with `author_vendor`, `reviewer_vendor`, `author_model`,
 
 ### Where artifacts are saved
 
-All artifacts are persisted to the project's `the plans directory ` directory:
+All artifacts are persisted to the project's `plans/` directory:
 
 ```
 plans/
-└── plans/
-    └── plan_20260720_140156_ae9201/     ← plan_id (auto-generated)
+└── plan_20260720_140156_ae9201/     ← plan_id (auto-generated)
         ├── metadata.json                ← Input params + runtime config
         ├── state.json                   ← Real-time state machine + telemetry
         ├── plan_v1.md                   ← Round 1 author output
@@ -103,7 +102,7 @@ caller can poll progress at any time:
       "summary": "Found 2 blocking issues"
     }
   ],
-  "latest_plan_path": "the plans directory .../plan_v2.md",
+  "latest_plan_path": "plans/.../plan_v2.md",
   "final_plan_path": null
 }
 ```
@@ -122,7 +121,7 @@ caller can poll progress at any time:
 | `sandbox_test_cmd` | `""` | Optional test command run by bridge (authoritative evidence) |
 | `tiebreaker_vendor` | `""` | Optional 3rd vendor for final sign-off |
 | `artifact_ref` | git HEAD SHA | Immutable review target pin |
-| `plan_output_path` | auto | Default: `the plans directory <plan_id>/final_plan.md` |
+| `plan_output_path` | auto | Default: `plans/<plan_id>/final_plan.md` |
 
 ## Architecture diagram
 
@@ -136,7 +135,7 @@ caller can poll progress at any time:
 │  ┌─────────────────────┐                                                │
 │  │  Validate params    │  author ≠ reviewer (unless allow_same_vendor)  │
 │  │  Pin git SHA        │  artifact_ref or git rev-parse HEAD            │
-│  │  Create plan_dir    │  the plans directory <plan_id>/                       │
+│  │  Create plan_dir    │  plans/<plan_id>/                       │
 │  │  Write state.json   │  status = QUEUED                               │
 │  └────────┬────────────┘                                                │
 │           │                                                             │
@@ -386,7 +385,8 @@ dispatch has a conflict of interest (they commissioned the work they're auditing
 ### Model family comparison
 
 Based on evidence from the r/ClaudeCode "Fable + 5.6" thread (1.1K upvotes,
-200 comments) and our dogfooding exercise:
+200 comments) and our dogfooding exercise. Model codenames below are from
+the Reddit thread's discussion (users' aliases for their preferred models):
 
 | Model | Family | Planning (Author) | Adversarial Review | Implementation | Cost | Availability |
 |---|---|---|---|---|---|---|
