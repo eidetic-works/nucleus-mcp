@@ -171,7 +171,7 @@ lives in the wiki, but the most commonly needed blocks:
 
 | Block | Tool | Action | Input | Output |
 |---|---|---|---|---|
-| Plan | `nucleus_delegate` | `plan_review_loop` | prompt | approved plan (.brain/plans/) |
+| Plan | `nucleus_delegate` | `plan_review_loop` | prompt | approved plan (the plans directory ) |
 | Execute | `nucleus_delegate` | `dispatch` | vendor + prompt + artifact_ref | changed files + result |
 | Review | `nucleus_delegate` | `review` | pasted code/diff | verdict (SOUND/RISKY/BUGGY) |
 | List vendors | `nucleus_delegate` | `list` | — | vendors + models + actions |
@@ -189,8 +189,8 @@ lives in the wiki, but the most commonly needed blocks:
 LEGO blocks compose by shared format conventions, not by naming each other.
 
 ```
-Block A writes → .brain/plans/<id>/final_plan.md  (Markdown with - [ ] checkboxes)
-Block B reads  → .brain/plans/*.md  (latest, auto-discovered)
+Block A writes → the plans directory <id>/final_plan.md  (Markdown with - [ ] checkboxes)
+Block B reads  → the plans directory *.md  (latest, auto-discovered)
 
 Neither block names the other. The format is the contract.
 ```
