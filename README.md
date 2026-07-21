@@ -103,6 +103,7 @@ Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` au
 - **Tasks** — Priority queue with escalation, HITL gates, and heartbeat monitoring.
 - **Governance** — Kill switch, compliance configs (EU DORA, MAS TRM, SOC2), audit trails.
 - **Orchestration** — Agent slots, multi-brain sync, task dispatch.
+- **Cross-vendor delegate** — Hand tasks to other AI vendors (Gemini, Devin/GLM) with automatic permission flags, output capture, and status reporting. Includes `plan_review_loop` — multi-round plan drafting + adversarial review across different model families. ([docs/PLAN_REVIEW_LOOP.md](docs/PLAN_REVIEW_LOOP.md))
 - **Archive** — Training pipeline (SFT + DPO), delta tracking, frontier health dashboard.
 
 **Benchmark:** [decision-retention-evals](https://github.com/eidetic-works/decision-retention-evals) — does your AI agent remember why the code is the way it is?
