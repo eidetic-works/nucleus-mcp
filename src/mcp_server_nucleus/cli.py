@@ -9027,21 +9027,20 @@ def handle_status_command(args):
     # 1. Active Health Check (--health)
     if getattr(args, 'health', False):
         print(f"🔍 Performing EnvironmentGuard health check on {brain_path}...")
-        daemon = DaemonManager(brain_path)
+        from .runtime.health_check import get_health_status
         try:
-            health = asyncio.run(daemon.get_status())
-            print(f"\n🌐 Overall Status: {health.status.upper()}")
+            health = get_health_status()
+            print(f"\n🌐 Overall Status: {health['status'].upper()}")
             print("-" * 40)
-            for comp, info in health.components.items():
-                state = info.get("state", "unknown")
-                icon = "✅" if state in ["online", "active", "held"] else "❌"
-                print(f" {icon} {comp:<15} : {state}")
-                if "latency_ms" in info:
-                    print(f"    - Latency: {info['latency_ms']:.1f}ms")
-                if "error" in info:
-                    print(f"    - Error: {info['error']}")
+            for comp in health.get("components", []):
+                name = comp.get("component", "unknown")
+                state = comp.get("status", "unknown")
+                icon = "✅" if state in ["healthy", "active", "held"] else "❌"
+                print(f" {icon} {name:<15} : {state}")
+                if "error" in comp:
+                    print(f"    - Error: {comp['error']}")
             print("-" * 40)
-            print(f"⏰ Snapshot: {health.timestamp}")
+            print(f"⏰ Snapshot: {health['timestamp']}")
             return
         except Exception as e:
             print(f"❌ Health check failed: {e}")
