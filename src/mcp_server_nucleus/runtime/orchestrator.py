@@ -222,7 +222,21 @@ class SwarmsOrchestrator:
         # Lazy imports to avoid circular dependencies
         from .agent import EphemeralAgent
         from .llm_client import DualEngineLLM
-        
+
+        # Cross-vendor persona divert (flag-gated, default OFF). Import is guarded
+        # so a missing/broken vendor module can never break the mission loop; when
+        # the flag is off `_cv_enabled()` is False and the loop is byte-identical.
+        try:
+            from .vendor_dispatch import (
+                cross_vendor_enabled as _cv_enabled,
+                VENDOR_PERSONAS as _VENDOR_PERSONAS,
+                run_swarm_vendor_persona as _run_vendor,
+            )
+        except Exception:  # noqa: BLE001
+            _cv_enabled = lambda: False  # noqa: E731
+            _VENDOR_PERSONAS = frozenset()
+            _run_vendor = None
+
         try:
             logger.info(f"🔄 Mission {mission_id} loop started with agents: {agents}")
             
@@ -241,7 +255,47 @@ class SwarmsOrchestrator:
                     break
                 
                 logger.info(f"🤖 Spawning agent {i+1}/{len(agents)}: {agent_persona}")
-                
+
+                # Cross-vendor divert: an "agy"/"devin" persona routes through the
+                # vendor CLI executor (which fires its own capture envelope) instead
+                # of an internal LLM agent. Its contribution lands as a normal
+                # mission artifact. Flag OFF or non-vendor persona → skip entirely,
+                # so today's behavior is unchanged.
+                #
+                # The try/except mirrors the Claude-agent block below: a vendor
+                # error/timeout is caught per-node and does NOT break the mission
+                # loop. ``run_swarm_vendor_persona`` also catches internally and
+                # returns an ``{"error": ...}`` dict on failure — we treat that the
+                # same as a Claude agent error (artifact → mission_artifacts only,
+                # NOT state["artifacts"]) so the integration is identical.
+                if _cv_enabled() and _run_vendor is not None and agent_persona in _VENDOR_PERSONAS:
+                    logger.info(f"🔀 Routing persona '{agent_persona}' to cross-vendor CLI executor")
+                    try:
+                        artifact = _run_vendor(
+                            vendor=agent_persona,
+                            mission_id=mission_id,
+                            goal=state["goal"],
+                            step=i + 1,
+                            budget_usd=params.max_budget_usd - state["cost_usd"],
+                        )
+                        mission_artifacts.append(artifact)
+                        if "error" not in artifact:
+                            state["artifacts"].append(artifact)
+                        logger.info(f"✅ Vendor agent {agent_persona} completed step {i+1}")
+                    except Exception as vendor_error:
+                        logger.error(f"💥 Vendor agent {agent_persona} failed: {vendor_error}")
+                        mission_artifacts.append({
+                            "agent": agent_persona,
+                            "step": i + 1,
+                            "error": str(vendor_error),
+                        })
+
+                    state["step_count"] += 1
+                    state["cost_usd"] += 0.05
+                    self._active_missions[mission_id] = state
+                    self._save_state()
+                    continue
+
                 try:
                     # 1. Create context for this agent
                     context = self.context_factory.create_context_for_persona(

@@ -48,6 +48,11 @@ from mcp_server_nucleus.runtime.schema_versions import (
     upgrade,
 )
 
+# Slug helpers moved to runtime.project (core, self-contained) so that
+# core never eagerly imports periphery; this periphery->core import is
+# the allowed direction (ADR-0043 boundary ruling).
+from mcp_server_nucleus.runtime.project import _parse_owner_from_url, _slugify
+
 logger = logging.getLogger("nucleus.manifest")
 
 MANIFEST_FILENAME = "manifest.yaml"
@@ -243,40 +248,6 @@ def _detect_git_owner(brain_path: Path) -> Optional[str]:
         return _parse_owner_from_url(url)
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         return None
-
-
-def _parse_owner_from_url(url: str) -> Optional[str]:
-    """Extract 'org/repo' from common git URL shapes."""
-    if not url:
-        return None
-    url = url.strip()
-    if url.endswith(".git"):
-        url = url[:-4]
-    # git@host:org/repo
-    if url.startswith("git@"):
-        _, _, tail = url.partition(":")
-        return tail or None
-    # https://host/org/repo or ssh://git@host/org/repo
-    for scheme in ("https://", "http://", "ssh://"):
-        if url.startswith(scheme):
-            parts = url[len(scheme):].split("/", 2)
-            if len(parts) == 3:
-                return f"{parts[1]}/{parts[2]}"
-            return None
-    return None
-
-
-def _slugify(text: str) -> str:
-    out = []
-    prev_dash = False
-    for ch in text.lower():
-        if ch.isalnum():
-            out.append(ch)
-            prev_dash = False
-        elif not prev_dash:
-            out.append("-")
-            prev_dash = True
-    return "".join(out).strip("-")
 
 
 def _prime_envelope(manifest: Dict[str, Any]) -> None:

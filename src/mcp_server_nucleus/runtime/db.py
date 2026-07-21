@@ -78,6 +78,22 @@ class StorageBackend(ABC):
         """Update a task."""
         pass
 
+    def claim_task_atomic(self, task_id: str, agent_id: str) -> bool:
+        """Atomically claim a task. Returns True if this caller won.
+
+        Default implementation uses a non-atomic read-check-write (TOCTOU-vulnerable).
+        Backends with conditional-write support (SQLite, Postgres) should override
+        with a true atomic conditional UPDATE.
+        """
+        task = self.get_task(task_id)
+        if not task:
+            return False
+        if task.get("claimed_by") is not None:
+            return False
+        if task.get("status", "").upper() not in ("TODO", "PENDING", "READY", "BLOCKED"):
+            return False
+        return self.update_task(task_id, {"claimed_by": agent_id, "status": "IN_PROGRESS"})
+
 class JSONBackend(StorageBackend):
     """Legacy file-based storage backend for backward compatibility."""
     
@@ -267,11 +283,30 @@ class SQLiteBackend(StorageBackend):
                     source TEXT,
                     escalation_reason TEXT,
                     created_at TEXT,
-                    updated_at TEXT
+                    updated_at TEXT,
+                    required_role TEXT DEFAULT '',
+                    plan_ref TEXT DEFAULT ''
                 )
             ''')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_required_role ON tasks(required_role)')
+
+            # Migration: add columns to existing databases (ALTER TABLE is idempotent-safe via try/except)
+            for col in ["required_role", "plan_ref",
+                        "verification_status", "verified_by", "verified_at",
+                        "verification_note", "chief_review_note",
+                        "claimed_at",
+                        "retry_count"]:
+                try:
+                    if col == "retry_count":
+                        # integer column, default 0
+                        cursor.execute(f'ALTER TABLE tasks ADD COLUMN {col} INTEGER DEFAULT 0')
+                    else:
+                        default = '""' if col in ("required_role", "plan_ref") else 'NULL'
+                        cursor.execute(f'ALTER TABLE tasks ADD COLUMN {col} TEXT DEFAULT {default}')
+                except Exception:
+                    pass  # Column already exists
             
             conn.commit()
 
@@ -330,16 +365,18 @@ class SQLiteBackend(StorageBackend):
     def add_task(self, task_dict: Dict[str, Any]) -> str:
         with self._get_conn() as conn:
             conn.execute(
-                '''INSERT INTO tasks 
-                   (id, description, status, priority, blocked_by, required_skills, 
-                    claimed_by, source, escalation_reason, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                '''INSERT INTO tasks
+                   (id, description, status, priority, blocked_by, required_skills,
+                    claimed_by, source, escalation_reason, created_at, updated_at,
+                    required_role, plan_ref)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (
-                    task_dict["id"], task_dict["description"], task_dict["status"], 
+                    task_dict["id"], task_dict["description"], task_dict["status"],
                     task_dict["priority"], json.dumps(task_dict.get("blocked_by", [])),
                     json.dumps(task_dict.get("required_skills", [])), task_dict.get("claimed_by"),
                     task_dict.get("source"), task_dict.get("escalation_reason"),
-                    task_dict.get("created_at"), task_dict.get("updated_at")
+                    task_dict.get("created_at"), task_dict.get("updated_at"),
+                    task_dict.get("required_role", ""), task_dict.get("plan_ref", "")
                 )
             )
         _notify_tasks_changed()
@@ -394,7 +431,11 @@ class SQLiteBackend(StorageBackend):
                          "assigned_to", "claimed_by", "escalation_reason",
                          "description", "source", "updated_at",
                          "started_at", "completed_at", "attempts", "last_error",
-                         "fence_token", "metadata", "tags", "due_date"}
+                         "fence_token", "metadata", "tags", "due_date",
+                         "required_role", "plan_ref",
+                         "verification_status", "verified_by", "verified_at",
+                         "verification_note", "chief_review_note",
+                         "claimed_at", "retry_count"}
         invalid_keys = set(updates.keys()) - VALID_COLUMNS
         if invalid_keys:
             raise ValueError(f"Invalid task columns: {invalid_keys}. Allowed: {VALID_COLUMNS}")
@@ -420,6 +461,27 @@ class SQLiteBackend(StorageBackend):
         
         with self._get_conn() as conn:
             cursor = conn.execute(query, params)
+            changed = cursor.rowcount > 0
+        if changed:
+            _notify_tasks_changed()
+        return changed
+
+    def claim_task_atomic(self, task_id: str, agent_id: str) -> bool:
+        """Atomically claim a task using a conditional UPDATE.
+
+        Only succeeds if claimed_by IS NULL and status is claimable.
+        Returns True if this caller won the claim, False otherwise.
+        This prevents TOCTOU races where two executors read claimed_by=NULL
+        simultaneously and both succeed.
+        """
+        now = datetime.now().isoformat()
+        query = (
+            "UPDATE tasks SET claimed_by = ?, status = 'IN_PROGRESS', "
+            "claimed_at = ?, updated_at = ? "
+            "WHERE id = ? AND claimed_by IS NULL AND status IN ('TODO','PENDING','READY','BLOCKED')"
+        )
+        with self._get_conn() as conn:
+            cursor = conn.execute(query, [agent_id, now, now, task_id])
             changed = cursor.rowcount > 0
         if changed:
             _notify_tasks_changed()
@@ -485,7 +547,8 @@ class PostgresBackend(StorageBackend):
                         source TEXT,
                         escalation_reason TEXT,
                         created_at TEXT,
-                        updated_at TEXT
+                        updated_at TEXT,
+                        claimed_at TEXT
                     )
                 ''')
             conn.commit()
@@ -609,7 +672,11 @@ class PostgresBackend(StorageBackend):
                          "assigned_to", "claimed_by", "escalation_reason",
                          "description", "source", "updated_at",
                          "started_at", "completed_at", "attempts", "last_error",
-                         "fence_token", "metadata", "tags", "due_date"}
+                         "fence_token", "metadata", "tags", "due_date",
+                         "required_role", "plan_ref",
+                         "verification_status", "verified_by", "verified_at",
+                         "verification_note", "chief_review_note",
+                         "claimed_at", "retry_count"}
         invalid_keys = set(updates.keys()) - VALID_COLUMNS
         if invalid_keys:
             raise ValueError(f"Invalid task columns: {invalid_keys}. Allowed: {VALID_COLUMNS}")
@@ -638,6 +705,24 @@ class PostgresBackend(StorageBackend):
         if rows_updated > 0:
             _notify_tasks_changed()
         return rows_updated > 0
+
+    def claim_task_atomic(self, task_id: str, agent_id: str) -> bool:
+        """Atomically claim a task using a conditional UPDATE (Postgres)."""
+        from datetime import datetime
+        now = datetime.now().isoformat()
+        query = (
+            "UPDATE tasks SET claimed_by = %s, status = 'IN_PROGRESS', "
+            "claimed_at = %s, updated_at = %s "
+            "WHERE id = %s AND claimed_by IS NULL AND status IN ('TODO','PENDING','READY','BLOCKED')"
+        )
+        with self._get_conn() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (agent_id, now, now, task_id))
+                changed = cursor.rowcount > 0
+            conn.commit()
+        if changed:
+            _notify_tasks_changed()
+        return changed
 
 def get_storage_backend(brain_path: Path) -> StorageBackend:
     """Factory to get the configured storage backend."""

@@ -8,11 +8,28 @@ The report answers: "What did the AI agent decide, why, and who approved it?"
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger("nucleus.audit_report")
+
+# ── DSoR-Verifier gating seam (flag-gated; default OFF) — A12 ───────────────
+# See tools/governance.py for the companion validate_strategic_plan anchor.
+# When NUCLEUS_GOVERNANCE_ANCHOR is truthy, the "sovereignty verified"
+# checklist item below is no longer a hardcoded pass — it reflects whether the
+# actual event log (report["sections"]["events"]) recorded any egress
+# activity. With the flag OFF, behavior is byte-identical to the legacy
+# always-pass check.
+_GOVERNANCE_ANCHOR_ENV = "NUCLEUS_GOVERNANCE_ANCHOR"
+
+
+def _governance_anchor_enabled() -> bool:
+    """Read live (not cached) so tests can flip it per-case."""
+    return os.environ.get(_GOVERNANCE_ANCHOR_ENV, "").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
 
 
 def generate_audit_report(
@@ -292,11 +309,29 @@ def _generate_checklist(report: Dict) -> Dict[str, Any]:
         "status": "pass" if jurisdiction_id != "none" else "warn",
         "detail": report.get("jurisdiction", {}).get("name", "Not set"),
     })
-    checks.append({
-        "item": "All data local (sovereignty verified)",
-        "status": "pass",
-        "detail": "Nucleus is local-first. No external data transmission by default.",
-    })
+    if _governance_anchor_enabled():
+        egress_events = [
+            e for e in events.get("records", [])
+            if isinstance(e, dict) and str(e.get("type") or "").startswith("governance_egress_")
+        ]
+        if egress_events:
+            checks.append({
+                "item": "All data local (sovereignty verified)",
+                "status": "fail",
+                "detail": f"{len(egress_events)} egress event(s) found in the event log — external transmission occurred.",
+            })
+        else:
+            checks.append({
+                "item": "All data local (sovereignty verified)",
+                "status": "pass",
+                "detail": "No egress events found in the event log. Nucleus is local-first.",
+            })
+    else:
+        checks.append({
+            "item": "All data local (sovereignty verified)",
+            "status": "pass",
+            "detail": "Nucleus is local-first. No external data transmission by default.",
+        })
 
     passed = sum(1 for c in checks if c["status"] == "pass")
     total = len(checks)

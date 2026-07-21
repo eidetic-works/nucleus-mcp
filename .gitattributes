@@ -325,3 +325,10 @@ scratch-archive/peer-scratch-2026-04-28/relay_ack_all.py export-ignore
 scripts/tests/test_validate_public_surface.sh export-ignore
 scripts/identity_guard_hook.sh export-ignore
 scripts/install_identity_guard.sh export-ignore
+
+# REFLOAT report artifacts — never ship in public archive (2026-07-02)
+PR_BODY.md export-ignore
+pr_body_phase3.md export-ignore
+
+# SBOM contains local filesystem paths with username — never ship publicly
+sbom.json export-ignore

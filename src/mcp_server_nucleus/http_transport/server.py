@@ -52,8 +52,13 @@ def build_app(transport: str = "streamable-http"):
     Wraps the shared `mcp` instance from __init__ with tenant middleware.
     """
     # Import the shared mcp instance (same one used by stdio)
-    from mcp_server_nucleus import mcp
+    from mcp_server_nucleus import mcp, _ensure_registered
     from .tenant import NucleusTenantMiddleware
+
+    # Move 1 followup: registration is deferred (was import-time). Fire it here,
+    # at HTTP server start, before http_app() enumerates tools — else tools/list
+    # serves zero tools. Idempotent (fires exactly once per process).
+    _ensure_registered()
 
     # Get the fastmcp Starlette app for the chosen transport
     app = mcp.http_app(transport=transport)
@@ -105,8 +110,12 @@ def main():
     sys.stderr.flush()
 
     # Use fastmcp's built-in uvicorn runner for Option 1
-    from mcp_server_nucleus import mcp
+    from mcp_server_nucleus import mcp, _ensure_registered
     from .tenant import NucleusTenantMiddleware
+
+    # Move 1 followup: fire deferred tool registration at server start, before
+    # http_app() enumerates tools (mirrors the stdio main() entry). Idempotent.
+    _ensure_registered()
 
     # Attach tenant middleware
     # No explicit path= to avoid trailing-slash redirects from fastmcp

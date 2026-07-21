@@ -117,6 +117,9 @@ class DaemonManager:
         from .jobs import conversation_ingest_job
         from .jobs import tb_compound_job
         from .jobs import skill_extract_job
+        from .jobs import seeded_block_job
+        from .jobs import cold_start_job
+        from .jobs import self_digest_job
 
         jobs = [
             ScheduledJob("training_refresh", ScheduleType.DAILY, "02:00",
@@ -168,6 +171,25 @@ class DaemonManager:
             ScheduledJob("skill_extract", ScheduleType.DAILY, "03:00",
                          handler=skill_extract_job.run_skill_extract,
                          resource_level=ResourceLevel.MEDIUM, timeout_seconds=600),
+            # PRINCIPAL G1 workstream 2: seeded cross-project block instrument
+            # (docs/PRINCIPAL.md:67-73,149). Weekly; asserts the cross-project
+            # relay block holds + conflict-logs. Silence cannot pass.
+            ScheduledJob("seeded_block_instrument", ScheduleType.WEEKLY, "Sun 03:30",
+                         handler=seeded_block_job.run_seeded_block_job,
+                         resource_level=ResourceLevel.LOW, timeout_seconds=120),
+            # PRINCIPAL G1 criterion 2: cold-start acceptance endpoint instrument
+            # (docs/PRINCIPAL.md:71-74). Weekly; proves config written + seed
+            # engram recalled on screen, wall time measured to the endpoint.
+            ScheduledJob("cold_start_instrument", ScheduleType.WEEKLY, "Sun 03:45",
+                         handler=cold_start_job.run_cold_start_job,
+                         resource_level=ResourceLevel.LOW, timeout_seconds=300),
+            # PRINCIPAL G1 criterion 5: weekly self-digest (substrate reports
+            # on itself). docs/PRINCIPAL.md:86,129,149. Weekly; appends an
+            # observable run ledger record; failures alert via notifier.send
+            # and do NOT count as a successful firing.
+            ScheduledJob("self_digest_instrument", ScheduleType.WEEKLY, "Sun 04:00",
+                         handler=self_digest_job.run_self_digest_job,
+                         resource_level=ResourceLevel.LOW, timeout_seconds=120),
         ]
 
         for job in jobs:

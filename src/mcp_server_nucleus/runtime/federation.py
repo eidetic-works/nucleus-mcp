@@ -24,6 +24,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import random
 import time
 import uuid
@@ -74,6 +75,38 @@ _EVT_TASK_ROUTED = EventTypes.FEDERATION_TASK_ROUTED if DSOR_AVAILABLE else "fed
 _EVT_STATE_SYNCED = EventTypes.FEDERATION_STATE_SYNCED if DSOR_AVAILABLE else "federation_state_synced"
 
 logger = logging.getLogger(__name__)
+
+# --- A9 (federation-sync anchoring): IPC-token enforcement + Raft term bound ---
+# Flag-gated on NUCLEUS_FEDERATION_ANCHOR (default OFF). Off is byte-identical
+# to pre-A9 behavior: the IPC token check stays a no-op (the historical stub
+# below called auth_manager.verify_federation_token()/generate_federation_token(),
+# methods IPCAuthProvider never implemented — dead code, never enforced), and
+# Raft term/candidate_id are accepted verbatim (unbounded). See
+# docs/verifier/HANDOFF_BACKLOG.md §A9 and AUDIT_FINDINGS.md rows #1 (IPC
+# token-verify commented out) / #2 (unauthenticated candidate_id + unbounded
+# term can force this node's term to MAXINT and hijack leader/merge authority
+# via _become_leader / handle_append_entries).
+_FEDERATION_ANCHOR_FLAG = "NUCLEUS_FEDERATION_ANCHOR"
+_FEDERATION_ANCHOR_TRUTHY = frozenset({"1", "true", "yes", "on"})
+# Sane upper bound for a Raft term ("version" of leadership/merge authority).
+# A forged MAXINT (or negative/non-int) term is rejected rather than adopted.
+_MAX_RAFT_TERM = 2**31 - 1
+
+
+def _federation_anchor_on() -> bool:
+    """True iff ``NUCLEUS_FEDERATION_ANCHOR`` is set truthy (default False)."""
+    return os.environ.get(_FEDERATION_ANCHOR_FLAG, "").strip().lower() in _FEDERATION_ANCHOR_TRUTHY
+
+
+def _term_in_bounds(term: Any) -> bool:
+    """True iff ``term`` is a plausible Raft term: a non-negative int within
+    ``_MAX_RAFT_TERM``. Rejects forged/out-of-range values (MAXINT, negative,
+    float, string, ...) that would otherwise let a single crafted raft_vote /
+    raft_append RPC force this node's term arbitrarily high and clobber
+    leader/merge authority.
+    """
+    return isinstance(term, int) and not isinstance(term, bool) and 0 <= term <= _MAX_RAFT_TERM
+
 
 # =============================================================================
 # ENUMS AND CONSTANTS
@@ -349,25 +382,52 @@ class NetworkManager:
             self.server.close()
             await self.server.wait_closed()
     
+    def _verify_federation_token(self, message: Dict[str, Any]) -> Tuple[bool, str]:
+        """A9 (NUCLEUS_FEDERATION_ANCHOR): validate the IPC token on an inbound
+        federation RPC.
+
+        The original stub here called ``auth_manager.verify_federation_token()``
+        — a method ``IPCAuthProvider`` never implemented, so the check was dead
+        on arrival and every message dispatched regardless of auth
+        (AUDIT_FINDINGS.md #1). This wires real enforcement via the provider's
+        actual API (``validate_token`` / ``consume_token``).
+
+        Returns (accepted, reason). Always accepts when the flag is off or
+        DSoR is unavailable — legacy no-op, byte-identical to pre-A9 dispatch.
+        """
+        if not (DSOR_AVAILABLE and _federation_anchor_on()):
+            return True, "flag-off"
+        token = message.get("token")
+        if not token:
+            return False, "missing token"
+        auth_manager = get_ipc_auth_manager()
+        is_valid, err = auth_manager.validate_token(token, required_scope="federation_ipc")
+        if not is_valid:
+            return False, err
+        auth_manager.consume_token(token, resource_type="federation_ipc")
+        return True, "ok"
+
     async def _handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """Handle an incoming brain-to-brain RPC connection."""
         try:
             line = await reader.readline()
             if not line:
                 return
-            
+
             message = json.loads(line.decode())
             sender_id = message.get("sender_id", "unknown")
             msg_type = message.get("type", "unknown")
-            
+
             # v0.6.0 DSoR/Security: Verify IPC Token
-            if DSOR_AVAILABLE:
-                token = message.get("token")
-                # auth_manager = get_ipc_auth_manager()
-                # if not auth_manager.verify_federation_token(token, sender_id):
-                #     logger.warning(f"Invalid federation token from {sender_id}")
-                #     # return
-            
+            # A9: enforcement lives in _verify_federation_token (flag-gated,
+            # no-op when NUCLEUS_FEDERATION_ANCHOR is off).
+            accepted, reason = self._verify_federation_token(message)
+            if not accepted:
+                logger.warning(f"Rejected federation RPC ({msg_type}) from {sender_id}: {reason}")
+                writer.write((json.dumps({"success": False, "error": "unauthorized"}) + "\n").encode())
+                await writer.drain()
+                return
+
             # Dispatch to engine
             response = await self.engine.handle_message(message)
             
@@ -384,20 +444,39 @@ class NetworkManager:
             except Exception:
                 pass
     
+    def _stamp_federation_token(self, message: Dict[str, Any]) -> None:
+        """A9 (NUCLEUS_FEDERATION_ANCHOR): attach a real IPC token to an
+        outbound federation RPC.
+
+        The original stub here called ``get_ipc_auth_manager().generate_federation_token(host)``
+        — a method ``IPCAuthProvider`` never implemented (same stub-vs-real-API
+        gap as the receiver side in ``_verify_federation_token``). This issues
+        a real short-lived, single-use token via ``issue_token``.
+
+        No-op when the flag is off or DSoR is unavailable — legacy behavior
+        (no ``token`` key sent), so a flag-OFF receiver dispatches exactly as
+        before.
+        """
+        if not (DSOR_AVAILABLE and _federation_anchor_on()):
+            return
+        try:
+            token = get_ipc_auth_manager().issue_token(scope="federation_ipc", ttl_seconds=30)
+            message["token"] = token.token_id
+        except Exception as e:
+            logger.debug(f"A9 IPC token issue failed: {e}")
+
     async def send_message(self, address: str, message: Dict[str, Any], timeout: float = 3.0) -> Optional[Dict[str, Any]]:
         """Send an RPC message to a remote brain."""
         try:
             host, port = address.rsplit(":", 1) if ":" in address else (address, "9000")
             reader, writer = await asyncio.wait_for(asyncio.open_connection(host, int(port)), timeout=timeout)
-            
+
             # Enrich message
             message["sender_id"] = self.config.brain_id
             message["timestamp"] = datetime.now(tz=timezone.utc).isoformat()
-            
-            if DSOR_AVAILABLE:
-                # message["token"] = get_ipc_auth_manager().generate_federation_token(host)
-                pass
-            
+
+            self._stamp_federation_token(message)
+
             writer.write((json.dumps(message) + "\n").encode())
             await writer.drain()
             
@@ -781,7 +860,15 @@ class ConsensusManager:
         """Handle incoming Raft vote request."""
         term = request.get("term", 0)
         candidate_id = request.get("candidate_id")
-        
+
+        # A9 (NUCLEUS_FEDERATION_ANCHOR): reject an out-of-bounds/forged term
+        # before it can bump self.state.term or grant a vote — closes the
+        # "MAXINT term clobbers merge authority" hole (AUDIT_FINDINGS.md #2).
+        # No-op when the flag is off (legacy: any int-ish term is accepted).
+        if _federation_anchor_on() and not _term_in_bounds(term):
+            logger.warning(f"Rejected raft_vote with out-of-bounds term={term!r} from candidate={candidate_id!r}")
+            return {"term": self.state.term, "vote_granted": False}
+
         # 1. Reply false if term < currentTerm
         if term < self.state.term:
             return {"term": self.state.term, "vote_granted": False}
@@ -906,7 +993,14 @@ class ConsensusManager:
         """Handle incoming Raft AppendEntries request."""
         term = request.get("term", 0)
         leader_id = request.get("leader_id")
-        
+
+        # A9 (NUCLEUS_FEDERATION_ANCHOR): same term-bound guard as
+        # handle_request_vote — an unbounded/forged term here would let a
+        # crafted raft_append silently reassign self.state.leader_id.
+        if _federation_anchor_on() and not _term_in_bounds(term):
+            logger.warning(f"Rejected raft_append with out-of-bounds term={term!r} from leader={leader_id!r}")
+            return {"term": self.state.term, "success": False}
+
         # 1. Reply false if term < currentTerm
         if term < self.state.term:
             return {"term": self.state.term, "success": False}

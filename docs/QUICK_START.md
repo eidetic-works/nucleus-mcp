@@ -31,49 +31,48 @@ docker run -v ~/.brain:/data/.brain nucleus
 
 ## ⚙️ Configuration
 
-### 1. Set the Brain Path
-
-Nucleus stores all data in a `.brain/` folder. Set its location:
+### Recommended: one command
 
 ```bash
-# Add to your shell profile (~/.zshrc, ~/.bashrc)
-export NUCLEUS_BRAIN_PATH="$HOME/.brain"
+nucleus init
+```
 
-# Create the directory
+This seeds `.brain/` and auto-configures every MCP client it finds — Claude
+Desktop, Claude Code, Cursor, Windsurf, and Antigravity — backing up each config
+file it edits. Then restart your client. Already initialized? Run `nucleus setup`
+(add `--dry-run` to preview, `--force` to overwrite) to (re)configure clients
+without re-seeding the brain.
+
+That's all most setups need — skip to **Verify Installation** below.
+
+---
+
+### Manual alternative
+
+If you'd rather edit configs by hand, or a client wasn't auto-detected:
+
+**1. Pick a brain path** (optional — Nucleus defaults to `$HOME/.nucleus/brain`):
+
+```bash
+export NUCLEUS_BRAIN_PATH="$HOME/.brain"   # add to ~/.zshrc or ~/.bashrc
 mkdir -p ~/.brain
 ```
 
-### 2. Configure Your MCP Client
-
-**For Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "npx",
-      "args": ["-y", "nucleus-mcp"]
-    }
-  }
-}
-```
-
-**For Cursor** (`.cursor/mcp.json`):
+**2. Add the server** to your MCP client config — **Claude Desktop**
+(`~/Library/Application Support/Claude/claude_desktop_config.json`), **Cursor**
+(`.cursor/mcp.json`), or **Claude Code** (`.mcp.json`):
 
 ```json
 {
   "mcpServers": {
     "nucleus": {
-      "command": "npx",
-      "args": ["-y", "nucleus-mcp"]
+      "command": "nucleus-mcp"
     }
   }
 }
 ```
 
-### 3. Restart Your MCP Client
-
-After configuration, restart Claude Desktop or Cursor to load Nucleus.
+**3. Restart your MCP client** to load Nucleus.
 
 ---
 

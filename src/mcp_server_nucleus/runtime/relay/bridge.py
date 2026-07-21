@@ -532,6 +532,91 @@ def run_loop(interval_s: float = DEFAULT_INTERVAL_S) -> None:
         time.sleep(backoff)
 
 
+# ── Startup preflight: half-mirror / dead-remote detection (opt-in) ───
+#
+# Flag NUCLEUS_BRIDGE_PREFLIGHT (default OFF). The sync loop is deliberately
+# offline-tolerant — a transient-unreachable remote just backs off and the Mac
+# syncs on recovery (module docstring "Never crashes"). That same tolerance,
+# though, silently swallows a genuinely MISCONFIGURED remote: with
+# NUCLEUS_RELAY_URL set, relay_post routes over HTTP (core.relay_post →
+# is_http_mode), so a dead URL or a bearer the remote rejects (401) is a
+# one-way / half-mirror where local posts leave but are never reconciled —
+# messages are black-holed with no signal. relay/paths.py:42 already records
+# that the server IS the FS authority even under NUCLEUS_RELAY_URL; this gate
+# is the client-side dual: when the operator opts in, probe the remote ONCE at
+# startup and RAISE a hard, actionable error rather than ghost mail.
+#
+# Flag OFF ⇒ never called ⇒ startup byte-identical to today (the loop keeps its
+# offline-tolerant contract). Flag ON is a conscious strictness opt-in.
+
+_PREFLIGHT_TRUTHY = frozenset({"1", "true", "yes", "on"})
+
+
+def _preflight_enabled() -> bool:
+    """True iff ``NUCLEUS_BRIDGE_PREFLIGHT`` is set truthy (default False)."""
+    return os.environ.get("NUCLEUS_BRIDGE_PREFLIGHT", "").strip().lower() in _PREFLIGHT_TRUTHY
+
+
+class BridgeConfigError(RuntimeError):
+    """Startup config is a half-mirror / dead-remote that would black-hole mail."""
+
+
+def preflight_check() -> None:
+    """Probe the configured remote once; raise ``BridgeConfigError`` on a bad config.
+
+    Called only when ``NUCLEUS_BRIDGE_PREFLIGHT`` is enabled, and only after
+    the URL/bearer presence checks pass. Classifies one lightweight GET against
+    the first bridged inbox — ``GET /relay/{inbox}`` returns 200 even for an
+    empty inbox (http_transport/relay_route.get_relay), so an empty mailbox is
+    never a false alarm:
+
+      * transport error (status 0)  -> dead remote (unreachable).
+      * 401 / 403                   -> bearer rejected: the pull/ack leg is
+        dead, so this is a one-way / half-mirror where local posts leave over
+        HTTP but are never reconciled and mail is silently ghosted.
+      * any other non-200           -> the relay endpoint is misconfigured.
+
+    Every message names which env var is set, what failed, and how to fix it,
+    plus the escape hatch (unset the flag) — never a silent ghost.
+    """
+    url = _relay_url()
+    bearer = _bridge_bearer()
+    inboxes = bridge_inboxes()
+    probe_inbox = inboxes[0] if inboxes else "board"
+    status, resp = _http(
+        "GET", f"{url}/relay/{probe_inbox}?unread_only=false&limit=1", bearer
+    )
+    if status == 200:
+        return
+    if status == 0:
+        raise BridgeConfigError(
+            f"relay preflight: NUCLEUS_RELAY_URL={url!r} is set but the remote is "
+            f"UNREACHABLE (probe GET /relay/{probe_inbox} failed at the transport "
+            f"layer). With NUCLEUS_RELAY_URL set, relay_post routes over HTTP to this "
+            f"remote, so a dead remote silently black-holes every message. Fix: bring "
+            f"the relay service up / confirm the URL is reachable, or unset "
+            f"NUCLEUS_RELAY_URL to run FS-only. Unset NUCLEUS_BRIDGE_PREFLIGHT to keep "
+            f"the offline-tolerant behavior (back off and sync on recovery)."
+        )
+    if status in (401, 403):
+        raise BridgeConfigError(
+            f"relay preflight: NUCLEUS_RELAY_URL={url!r} returned HTTP {status} to the "
+            f"bridge bearer (NUCLEUS_RELAY_BEARER is "
+            f"{'set but rejected' if bearer else 'MISSING'}). The pull/ack leg is dead — "
+            f"this is a one-way / half-mirror config: local posts leave over HTTP but "
+            f"are never reconciled, so mail is silently ghosted. Fix: set "
+            f"NUCLEUS_RELAY_BEARER to a token the remote accepts for GET/ACK. Unset "
+            f"NUCLEUS_BRIDGE_PREFLIGHT to skip this check."
+        )
+    raise BridgeConfigError(
+        f"relay preflight: NUCLEUS_RELAY_URL={url!r} returned HTTP {status} "
+        f"(error={resp.get('error')!r}) to probe GET /relay/{probe_inbox}. The relay "
+        f"endpoint is misconfigured — the bridge cannot mirror and would black-hole "
+        f"mail. Fix: verify NUCLEUS_RELAY_URL points at the relay service root. Unset "
+        f"NUCLEUS_BRIDGE_PREFLIGHT to skip this check."
+    )
+
+
 def main() -> int:
     logging.basicConfig(
         level=os.environ.get("NUCLEUS_BRIDGE_LOG_LEVEL", "INFO"),
@@ -552,6 +637,12 @@ def main() -> int:
     if not _bridge_bearer():
         print("NUCLEUS_RELAY_BEARER is required (pull/ack bearer).")
         return 2
+
+    # Opt-in startup preflight (default OFF, byte-identical when unset): detect a
+    # half-mirror / dead-remote config and RAISE a hard error naming the failure,
+    # instead of silently ghosting mail through the offline-tolerant loop.
+    if _preflight_enabled():
+        preflight_check()
 
     if args.once:
         totals = sync_all()

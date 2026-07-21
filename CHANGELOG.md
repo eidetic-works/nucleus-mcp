@@ -5,6 +5,91 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-07-21 — "Plan review loop + Agent LEGO discipline"
+
+### Added
+- **`plan_review_loop` action** (`nucleus_delegate`) — multi-round, cross-vendor
+  plan drafting and review. An author vendor drafts a plan, a reviewer vendor
+  audits it, and the loop iterates until APPROVED or termination criteria are
+  met (max_rounds, max_cost_usd, cancel). Returns a `plan_id` immediately and
+  runs async. Produces `final_plan.md` with `- [ ]` checkboxes that the
+  secretary daemon can auto-discover and execute.
+- **`plan_review_loop_status` action** — poll the status of a running
+  plan_review_loop (current round, review trail, cost, terminal state).
+- **`plan_review_loop_cancel` action** — cancel a running plan_review_loop
+  mid-round. The loop terminates cleanly after the current author step.
+- **Agent LEGO discipline guide** (`docs/AGENT_LEGO_DISCIPLINE.md`) —
+  documents the principle that every agent action (write, edit, plan, decide,
+  call agent, review, recall, scope, execute, orchestrate, commit) must go
+  through a Nucleus LEGO block, not raw model. Includes the 5 paths to query
+  repo knowledge before declaring "no block fits."
+- **DeepWiki paths reference** (`docs/DEEPWIKI_PATHS.md`) — full reference
+  for all 5 paths to query repo knowledge (local wiki, DeepWiki MCP,
+  DeepWiki web, Devin API, DeepWiki-Open self-hosted), with real-world
+  evaluation, sample outputs, timing, session lifecycle/reuse patterns,
+  and a decision tree.
+- **Plan review loop docs** (`docs/PLAN_REVIEW_LOOP.md`) — architecture,
+  quick start, terminal states, reviewer JSON schema, API reference, and
+  model selection guide.
+- **Devin API credentials** in `.env.example` — placeholder entries for
+  `DEVIN_ORG_KEY` and `DEVIN_API_KEY` so agents can query the Devin API
+  for private repo analysis.
+
+### Changed
+- **`nucleus_delegate` docstring** — updated to reflect the 3 new
+  plan_review_loop actions and their parameters.
+- **`nucleus_delegate` list action** — now includes plan_review_loop,
+  plan_review_loop_status, and plan_review_loop_cancel in the action list.
+- **`AGENTS.md`** — added LEGO Discipline section at top with quick
+  reference table and wiki query workflow. Added Principle #6 (LEGO always)
+  and Guardrails row for actions.
+- **Author prompt format** — plan_review_loop author preamble now mandates
+  `- [ ]` checkbox format for implementation steps (standard plan format,
+  not coupled to any downstream consumer).
+
+## [1.15.0] - 2026-07-18 — "Lane hardening: timeout, retry re-check, shell tasks, PAUSED recovery"
+
+### Fixed
+- **Executor retry loop on killed sessions** — before retrying a failed task,
+  executor now re-checks if the task was marked DONE while the session was
+  running (e.g., principal manually completed it). If DONE, skips retry.
+  Prevents the retry-loop-on-killed-session bug.
+- **NOT_SEEDED state sync** — `_task_index()` was filtering by task_id prefix
+  (e.g., 'g3_mcp...' starts with 'lane-g9' = False). Now filters by
+  `required_role`, which correctly matches. Lane status shows DONE instead
+  of NOT_SEEDED for completed tasks.
+- **duration_s silently filtered** — `_update_task` valid_keys allowlist
+  was missing `duration_s`, causing wall-clock timing data to be dropped.
+  Now included.
+
+### Added
+- **task_type: shell** — SPEC.md now supports `task_type: shell` and
+  `command:` fields. Executor runs shell commands directly via subprocess
+  instead of going through an LLM session. 30x faster for meta-tasks like
+  running tests.
+- **1-hour wall-clock timeout** — executor passes `timeout_s=3600` to
+  vendor dispatch instead of 0 (no limit). Hung devin sessions get killed
+  after 1 hour instead of blocking the lane forever.
+- **Partial-failure recovery (PAUSED state)** — when retry_count ==
+  max_retries - 1, task goes to PAUSED state and asks principal for
+  guidance instead of burning the last retry blindly. PAUSED tasks are
+  not claimable.
+- **Per-task wall-clock metrics** — executor records `duration_s` in the
+  task store. Secretary telemetry includes avg/min/max duration:
+  `Task duration: avg=Xs, min=Ys, max=Zs (n=N)`.
+- **Unified daemon cleanup** — `nucleus lane stop` now kills standalone
+  bash daemons (scripts/secretary_daemon.sh, scripts/executor_daemon.sh)
+  that conflict with the lane system. `nucleus lane start` warns if
+  standalone daemons are running.
+- **Secretary telemetry: skipped relay reasons** — silent rejections now
+  reported with reasons (task_status_in_progress, task_not_found, etc.).
+- **G2 stranger-ready release** — .mcpb packaging, clean-env matrix test,
+  PyPI yank staging, telemetry receiver e2e, release-train v1.15
+  fresh-brain defaults, CC-plugin packaging.
+- **G3 quiet distribution signal** — MCP-registry listing package,
+  relay/envelope contract MCP community spec proposal, CC-plugin listing,
+  hosted-readiness proof (two-tenant HTTP relay round-trip).
+
 ## [1.14.2] - 2026-06-27 — "Intelligent nudge: pattern detection + self-rescue"
 
 ### Fixed

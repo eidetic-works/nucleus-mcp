@@ -78,6 +78,9 @@ def _envelope_summary(file_path: Path) -> dict[str, Any]:
             "priority": d.get("priority", "normal"),
             "in_reply_to": d.get("in_reply_to"),
             "created_at": d.get("created_at"),
+            # ADR-0042 D3: carry the project tag so the poll loop can apply the
+            # (project, role) filter. None on legacy untagged envelopes.
+            "project": d.get("project"),
         }
     except (json.JSONDecodeError, OSError) as exc:
         return {"id": file_path.stem, "error": f"parse_failed: {exc}"}
@@ -137,6 +140,27 @@ async def relay_subscribe_notifications_impl(
         timeout_seconds = max(60, min(1800, int(timeout_seconds)))
     inbox = _resolve_inbox_dir(role, inbox_filter=inbox_filter)
 
+    # ADR-0042 D3 (flag NUCLEUS_PROJECT_SPINE, default OFF): the live-session
+    # push path is the SECOND reader surface the fashion leak streams through
+    # (alongside relay_inbox), so it must apply the same (project, role) filter.
+    # Flag OFF ⇒ never computed, no predicate, notifications byte-identical to
+    # today. FS-only per D4 (HTTP hosted tenancy isolation is deferred to D5),
+    # so the HTTP poll branch below is intentionally left unfiltered.
+    from .common import _project_spine_on
+
+    _spine_on = _project_spine_on()
+    _my_proj: Optional[str] = None
+    _reader_bucket = inbox.name  # canonical inbox dir name (e.g. "claude_code_main", "board")
+    _project_visible = None
+    _warn_legacy_untagged = None
+    if _spine_on:
+        # Shared predicate + grace-warn helper live in relay/core.py and are
+        # re-exported through relay_ops. Import lazily so the OFF path never
+        # pulls them (and never touches runtime.project via _reader_project).
+        from .relay_ops import _project_visible, _reader_project, _warn_legacy_untagged
+
+        _my_proj = _reader_project()
+
     # Persistent marker dir per canonical inbox closes the BETWEEN-SUBSCRIBE
     # GAP empirically reported by agy 2026-06-06: arrivals landing while no
     # nucleus_ccr_arm was active (e.g., agy mid-tool-call between 270s windows)
@@ -163,9 +187,35 @@ async def relay_subscribe_notifications_impl(
     # main loop: GET ?unread_only=true and emit each id not yet in seen_dir."
     from .relay_transport import is_http_mode, read_inbox as _transport_read
     _http_mode = is_http_mode()
+    
+    events_fired = 0
+    last_seen_id: Optional[str] = None
+    
     if first_run:
         if _http_mode:
             try:
+                # Surface unread messages on first run instead of pre-marking.
+                # This closes the gap where a relay arrives while the agent
+                # isn't subscribed — it gets ignored on next subscribe call.
+                for env in _transport_read(inbox.name, unread_only=True, limit=200):
+                    rid = env.get("id") or ""
+                    if not rid:
+                        continue
+                    try:
+                        (seen_dir / rid).mkdir()
+                    except FileExistsError:
+                        continue
+                    except OSError:
+                        continue
+                    events_fired += 1
+                    last_seen_id = rid
+                    msg = (
+                        f"[relay-arrival] from={env.get('from','?')} "
+                        f"id={rid} priority={env.get('priority','normal')} "
+                        f"subject={env.get('subject','')[:80]}"
+                    )
+                    await ctx.info(msg)
+                # Now pre-mark any remaining read messages as seen
                 for env in _transport_read(inbox.name, unread_only=False, limit=200):
                     rid = env.get("id") or ""
                     if rid:
@@ -174,13 +224,41 @@ async def relay_subscribe_notifications_impl(
                         except OSError:
                             pass
             except Exception as exc:
-                logger.warning("relay_notify first-run http pre-mark exc: %s", exc)
+                logger.warning("relay_notify first-run http exc: %s", exc)
         else:
+            # FS mode: surface unread messages on first run
+            from .relay.core import _parse_relay_message
             for fp in inbox.glob("*.json"):
                 try:
-                    (seen_dir / fp.name).mkdir(exist_ok=True)
-                except OSError:
-                    pass
+                    msg_data = _parse_relay_message(fp)
+                    if msg_data.get("read"):
+                        # Already read — pre-mark as seen, don't surface
+                        try:
+                            (seen_dir / fp.name).mkdir(exist_ok=True)
+                        except OSError:
+                            pass
+                        continue
+                    # Unread — surface it
+                    try:
+                        (seen_dir / fp.name).mkdir()
+                    except FileExistsError:
+                        continue
+                    except OSError:
+                        continue
+                    events_fired += 1
+                    last_seen_id = msg_data.get("id", fp.name)
+                    msg = (
+                        f"[relay-arrival] from={msg_data.get('from','?')} "
+                        f"id={msg_data.get('id', fp.name)} priority={msg_data.get('priority','normal')} "
+                        f"subject={msg_data.get('subject','')[:80]}"
+                    )
+                    await ctx.info(msg)
+                except Exception:
+                    # Parse error — pre-mark to avoid retry loop
+                    try:
+                        (seen_dir / fp.name).mkdir(exist_ok=True)
+                    except OSError:
+                        pass
 
     await ctx.info(
         f"[relay-subscribe] watching {inbox} for {timeout_seconds}s "
@@ -188,8 +266,6 @@ async def relay_subscribe_notifications_impl(
     )
 
     deadline = time.monotonic() + timeout_seconds
-    events_fired = 0
-    last_seen_id: Optional[str] = None
 
     # 1s polling — lowest-dependency path. fsnotify/watchdog would add a
     # platform dep; polling at 1s gives sub-2s latency which beats the
@@ -229,14 +305,37 @@ async def relay_subscribe_notifications_impl(
                         await ctx.info(msg)
             else:
                 for fp in sorted(inbox.glob("*.json")):
-                    marker = seen_dir / fp.name
-                    try:
-                        marker.mkdir()  # atomic claim; fails if already seen
-                    except FileExistsError:
-                        continue
-                    except OSError:
-                        continue
-                    env = _envelope_summary(fp)
+                    if _spine_on:
+                        # Flag ON: read + filter BEFORE claiming the marker, so a
+                        # cross-project envelope in a shared bucket is left
+                        # unclaimed for its own project's reader (no marker
+                        # collision, no lost notification). ADR-0042 D3.
+                        env = _envelope_summary(fp)
+                        surface, warn = _project_visible(
+                            env.get("project"), _my_proj, _reader_bucket
+                        )
+                        if not surface:
+                            continue
+                        marker = seen_dir / fp.name
+                        try:
+                            marker.mkdir()  # atomic claim; fails if already seen
+                        except FileExistsError:
+                            continue
+                        except OSError:
+                            continue
+                        if warn:
+                            _warn_legacy_untagged(env.get("id"))
+                    else:
+                        # Flag OFF: unchanged ordering (claim → summary),
+                        # byte-identical to pre-spine.
+                        marker = seen_dir / fp.name
+                        try:
+                            marker.mkdir()  # atomic claim; fails if already seen
+                        except FileExistsError:
+                            continue
+                        except OSError:
+                            continue
+                        env = _envelope_summary(fp)
                     events_fired += 1
                     last_seen_id = env.get("id") or fp.name
                     msg = (

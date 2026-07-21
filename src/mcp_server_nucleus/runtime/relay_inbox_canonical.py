@@ -25,7 +25,15 @@ from __future__ import annotations
 #   - test_script: test scaffold dir; not a fleet agent.
 # Future cleanup PR can audit + consolidate these if any become real surfaces.
 CANONICAL_ROLE_TO_INBOX_DIR: dict[str, str] = {
-    # main + peer use claude_code_<role> full convention
+    # ── Functional role aliases (role_taxonomy_refactor_agy_v3.md Phase 1) ──
+    # These map the generic vocabulary to existing bucket dirs.
+    # The role+provider composite key is handled by resolve_canonical_inbox_name()
+    # which checks for "<role>+<provider>" before falling back to bare role.
+    "coordinator": "claude_code_main",
+    "worker": "claude_code_peer",  # default; provider-specific override below
+    "reviewer": "cc_tb",  # maps to existing cc_tb bare-name dir
+
+    # ── main + peer (legacy, kept for backward compat) ──
     "main": "claude_code_main",
     "peer": "claude_code_peer",
     "claude_code_main": "claude_code_main",
@@ -47,6 +55,12 @@ CANONICAL_ROLE_TO_INBOX_DIR: dict[str, str] = {
     # agy canonical bare-name (historical antigravity convention)
     "antigravity": "antigravity",
     "agy": "antigravity",
+
+    # devin canonical bare-name (cross-vendor GLM surface; NUCLEUS_CROSS_VENDOR).
+    # Kept bare-name to mirror the `antigravity` convention rather than the
+    # `claude_code_<role>` prefix, since it is a non-Claude vendor surface.
+    "devin": "devin",
+    "glm": "devin",
 
     # Antigravity IDE per-purpose sessions (operator roster expansion 2026-06-06).
     # Pattern: bare-name antigravity_<purpose>; mirrors the bare-name convention
@@ -76,6 +90,15 @@ CANONICAL_ROLE_TO_INBOX_DIR: dict[str, str] = {
 
     # board = shared multi-agent broadcast
     "board": "board",
+
+    # ── Provider-specific composite keys (role+provider → bucket) ──
+    # Per role_taxonomy_refactor_agy_v3.md Phase 1: vendor-aware alias layer.
+    # These override the bare role mapping when a provider is known.
+    "coordinator+anthropic": "claude_code_main",
+    "worker+anthropic": "claude_code_peer",
+    "worker+gemini": "antigravity",
+    "worker+glm": "devin",
+    "reviewer+anthropic": "cc_tb",
 }
 
 
@@ -99,11 +122,15 @@ DEPRECATED_DIR_TO_CANONICAL: dict[str, str] = {
 }
 
 
-def resolve_canonical_inbox_name(role: str) -> str:
+def resolve_canonical_inbox_name(role: str, provider: str | None = None) -> str:
     """Map an agent role to its canonical inbox dir NAME (not full path).
 
     Returns the dir NAME (e.g., 'cc_tb', 'claude_code_main') for downstream
     Path construction. Unknown roles pass through unchanged.
+
+    Per role_taxonomy_refactor_agy_v3.md Phase 1: if a provider is supplied,
+    checks the composite key "<role>+<provider>" first (vendor-aware alias
+    layer), then falls back to the bare role mapping.
 
     Examples:
         resolve_canonical_inbox_name('tb')                -> 'cc_tb'
@@ -111,11 +138,20 @@ def resolve_canonical_inbox_name(role: str) -> str:
         resolve_canonical_inbox_name('claude_code_tb')    -> 'cc_tb' (legacy alias)
         resolve_canonical_inbox_name('main')              -> 'claude_code_main'
         resolve_canonical_inbox_name('antigravity')       -> 'antigravity'
+        resolve_canonical_inbox_name('worker', 'gemini')  -> 'antigravity'
+        resolve_canonical_inbox_name('worker', 'glm')     -> 'devin'
+        resolve_canonical_inbox_name('worker', 'anthropic') -> 'claude_code_peer'
+        resolve_canonical_inbox_name('coordinator', 'anthropic') -> 'claude_code_main'
         resolve_canonical_inbox_name('unknown_role')      -> 'unknown_role'
     """
     if not role:
         return ""
     key = role.strip().lower().replace("-", "_")
+    # Phase 1: check provider-specific composite key first
+    if provider:
+        composite = f"{key}+{provider.strip().lower()}"
+        if composite in CANONICAL_ROLE_TO_INBOX_DIR:
+            return CANONICAL_ROLE_TO_INBOX_DIR[composite]
     return CANONICAL_ROLE_TO_INBOX_DIR.get(key, key)
 
 

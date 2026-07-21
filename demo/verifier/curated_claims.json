@@ -1,0 +1,98 @@
+[
+  {
+    "claim_id": "one-shipped-live",
+    "source": "relay",
+    "claimant": "claude_code_main",
+    "assertion": "'One' single-answer stylist mode built end-to-end (Stage 1 orchestration core + Stage 2 /one editorial page), flags ON, /one live in production.",
+    "timestamp": "2026-07-09T22:00:00Z",
+    "raw": {"relay": "20260709T220000Z_cowork_one_verified_entry_decision.json"},
+    "anchors": [
+      {"anchor_id": "one-git-stage1", "kind": "git", "spec": {"op": "commit_exists", "sha": "a6198cf"}, "description": "Stage 1 commit feat(one): /api/one orchestration core exists", "critical": true},
+      {"anchor_id": "one-git-stage2", "kind": "git", "spec": {"op": "commit_exists", "sha": "db302bc"}, "description": "Stage 2 commit feat(one): /one editorial page exists", "critical": true},
+      {"anchor_id": "one-http-live", "kind": "http", "spec": {"op": "status", "url": "https://composedfit.com/one", "expect_status": 200}, "description": "/one serves 200 in production", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "recently-viewed-currency-fixed",
+    "source": "relay",
+    "claimant": "cowork",
+    "assertion": "Recently Viewed strip renders INR correctly (₹1,899 struck ₹3,299) with no USD artifact — fix bd63f1d.",
+    "timestamp": "2026-07-05T04:00:00Z",
+    "raw": {"relay": "20260705T040000Z_cowork_final_smoke_passed.json"},
+    "anchors": [
+      {"anchor_id": "rv-git", "kind": "git", "spec": {"op": "commit_exists", "sha": "bd63f1d"}, "description": "Recently-Viewed currency fix commit exists", "critical": true},
+      {"anchor_id": "rv-shop-http", "kind": "http", "spec": {"op": "status", "url": "https://composedfit.com/shop", "expect_status": 200}, "description": "/shop (host of the Recently Viewed strip) serves 200", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "inr-scope-18695-items",
+    "source": "relay",
+    "claimant": "cowork",
+    "assertion": "Cold India visitor auto-scoped to INR (geo prefill f639dd3); 18,695 items in INR scope.",
+    "timestamp": "2026-07-05T04:00:00Z",
+    "raw": {"relay": "20260705T040000Z_cowork_final_smoke_passed.json"},
+    "anchors": [
+      {"anchor_id": "inr-git-prefill", "kind": "git", "spec": {"op": "commit_exists", "sha": "f639dd3"}, "description": "Geo currency auto-prefill commit exists", "critical": true},
+      {"anchor_id": "inr-http-live", "kind": "http", "spec": {"op": "status", "url": "https://composedfit.com/api/catalog?currency=INR&limit=1", "expect_status": 200}, "description": "INR catalog endpoint serves 200", "critical": true},
+      {"anchor_id": "inr-count-exact", "kind": "http", "spec": {"op": "json_get", "url": "https://composedfit.com/api/catalog?currency=INR&limit=1", "path": "total", "equals": 18695}, "description": "Live INR catalog total equals the claimed 18,695", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "fit-personalization-v1-shipped",
+    "source": "relay",
+    "claimant": "claude_code_main",
+    "assertion": "Fit-personalization v1 shipped live — exact-gender affinity in the fitq re-rank (d8bfd98), flags ON.",
+    "timestamp": "2026-07-09T06:00:00Z",
+    "raw": {"relay": "20260709T060000Z_cowork_fit_verified_digest_denim.json"},
+    "anchors": [
+      {"anchor_id": "fit-git", "kind": "git", "spec": {"op": "commit_exists", "sha": "d8bfd98"}, "description": "Exact-gender affinity fit re-rank commit exists", "critical": true},
+      {"anchor_id": "fit-http", "kind": "http", "spec": {"op": "status", "url": "https://composedfit.com/api/catalog/smart-search?q=women%27s%20jeans%20under%20%24100", "expect_status": 200}, "description": "The gendered search path serves 200", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "budget-honesty-guard-shipped",
+    "source": "relay",
+    "claimant": "claude_code_main",
+    "assertion": "Budget-honesty guard shipped (317f46e) — impossible-budget asks return an honest empty state, not a fake over-budget item.",
+    "timestamp": "2026-07-03T10:00:00Z",
+    "raw": {"relay": "session_2026_07_03_addendum"},
+    "anchors": [
+      {"anchor_id": "budget-git", "kind": "git", "spec": {"op": "commit_exists", "sha": "317f46e"}, "description": "Budget-honesty guard commit exists", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "welcome-email-fired-e2e",
+    "source": "relay",
+    "claimant": "cowork",
+    "assertion": "Welcome-email (user.created webhook -> Resend) path is production-ready and functioning.",
+    "timestamp": "2026-07-05T04:00:00Z",
+    "raw": {"relay": "20260705T040000Z_cowork_final_smoke_passed.json", "note": "the relay itself flags this path has NEVER fired end-to-end"},
+    "anchors": [
+      {"anchor_id": "welcome-manual", "kind": "manual", "spec": {"op": "manual", "note": "A webhook->email side effect cannot be confirmed by any external read-only probe. REMEDIATION: query the DB for a user.created event + a matching Resend send log, or fire one fresh-alias signup and assert the email lands."}, "description": "welcome-email e2e is not externally verifiable", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "b2-crons-resurrected-oci",
+    "source": "relay",
+    "claimant": "cowork",
+    "assertion": "B2 flywheel outage fixed — Vercel Hobby crons (dead since Jun 19) moved to the bespoq-worker OCI box and are running.",
+    "timestamp": "2026-07-09T21:00:00Z",
+    "raw": {"relay": "20260709T210000Z_cowork_one_verified_entry_decision.json"},
+    "anchors": [
+      {"anchor_id": "cron-http-gated", "kind": "http", "spec": {"op": "status", "url": "https://composedfit.com/api/cron/ai-health", "expect_status": 401}, "description": "Cron endpoint exists but is auth-gated (401) — cannot be exercised externally", "critical": false},
+      {"anchor_id": "cron-exec-manual", "kind": "manual", "spec": {"op": "manual", "note": "Cron EXECUTION on the worker box cannot be confirmed by an external probe (endpoint is auth-gated). REMEDIATION: read last-run timestamps from the ops DB / worker systemd journal for each of the 9 crons."}, "description": "cron liveness is not externally verifiable", "critical": true}
+    ]
+  },
+  {
+    "claim_id": "inrdeals-56-merchants-active",
+    "source": "relay",
+    "claimant": "claude_code_main",
+    "assertion": "Attribution: INRDeals active with 56 fashion merchants.",
+    "timestamp": "2026-07-03T12:00:00Z",
+    "raw": {"relay": "attribution report-back"},
+    "anchors": [
+      {"anchor_id": "inrdeals-code", "kind": "fs", "spec": {"op": "file_exists", "path": "bespoq/lib/catalog/affiliate-providers/inrdeals.ts"}, "description": "INRDeals affiliate provider integration exists in the codebase (path relative to --repo)", "critical": true},
+      {"anchor_id": "inrdeals-count-manual", "kind": "manual", "spec": {"op": "manual", "note": "'56 active fashion merchants' is a business-state claim, not checkable from code or a public endpoint. REMEDIATION: read the active-merchant count from the INRDeals dashboard/API or the provider config."}, "description": "the '56 active merchants' figure is not externally verifiable", "critical": true}
+    ]
+  }
+]

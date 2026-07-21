@@ -36,12 +36,25 @@ KNOWN_SESSION_TYPES = {
     "vscode",
     "claude_desktop",
     "gemini_cli",
+    # Cross-vendor surfaces (Phase 0 role taxonomy refactor)
+    "antigravity",
+    "devin",
+    "codex",
     "unknown",
 }
 
 
 def _maybe_split_cc_role(detected: str) -> str:
     """Upgrade bare `claude_code` to `claude_code_main`/`claude_code_peer` per ADR-0010.
+
+    This is a Claude Code-specific fallback. It only fires when the detected
+    session type is exactly "claude_code" (bare, not yet role-split). For all
+    other session types (devin, agy, codex, etc.) it passes through unchanged.
+
+    Per role_taxonomy_refactor_agy_v3.md Phase 1: this function is now called
+    only from the Claude Code detection path within _detect_session_type_raw(),
+    not as a blanket post-processing step. This prevents Claude-specific
+    CC_SESSION_ROLE logic from leaking into non-Claude agent routing.
 
     ADR-0010 § Decision: `CC_SESSION_ROLE ∈ {main, peer}` (unset → `main` for legacy
     single-CC compatibility). This function implements the "unset → main" default
@@ -58,36 +71,43 @@ def _maybe_split_cc_role(detected: str) -> str:
 
 
 def detect_session_type() -> str:
-    """Detect what kind of Claude surface is running this process.
+    """Detect what kind of agent surface is running this process.
 
     Uses environment variables and heuristics to determine whether
-    we're in Cowork, Claude Code, Windsurf, Cursor, etc. When CC_SESSION_ROLE
-    is set to `main` or `peer`, a bare `claude_code` detection is upgraded
-    to `claude_code_main` or `claude_code_peer` (Phase A three-surface routing).
+    we're in Cowork, Claude Code, Windsurf, Cursor, Devin, AGY, etc.
+
+    Per role_taxonomy_refactor_agy_v3.md Phase 1:
+    - _maybe_split_cc_role() is now called inside _detect_session_type_raw()
+      at the Claude Code detection point, not as a blanket post-processing step.
+    - This prevents Claude-specific CC_SESSION_ROLE logic from leaking into
+      non-Claude agent routing.
 
     Detection priority:
     1. Explicit override via NUCLEUS_SESSION_TYPE env var
-    2. Cowork sandbox path detection (/sessions/ with mnt)
-    3. IDE-specific env vars (Windsurf, Cursor, VS Code, Claude Desktop)
-    4. Claude Code heuristics (MCP_* env vars, CLAUDE_* vars, process tree)
-    5. Fallback to "unknown"
+    2. Registry ancestry (find_session_in_ancestry)
+    3. Cowork sandbox path detection (/sessions/ with mnt)
+    4. IDE-specific env vars (Windsurf, Cursor, VS Code, Claude Desktop)
+    5. Claude Code heuristics (CLAUDE_* vars, process tree) → _maybe_split_cc_role
+    6. Fallback to "unknown"
     """
-    return _maybe_split_cc_role(_detect_session_type_raw())
+    return _detect_session_type_raw()
 
 
 def detect_session_role() -> str:
     """Resolve the agent's role independent of its IDE/provider.
     
-    1. Explicit NUCLEUS_SESSION_ROLE env var.
-    2. Registry-aware ancestry detection (reads role from registry).
-    3. Fallback to detect_session_type() for backward compatibility.
+    Per role_taxonomy_refactor_agy_v3.md Phase 1:
+    1. Explicit NUCLEUS_SESSION_ROLE env var (vendor-neutral override).
+    2. Registry-aware ancestry detection (reads role from registry — source of truth).
+    3. CC_SESSION_ROLE env var (legacy fallback for pre-migration Claude Code sessions).
+    4. Fallback to detect_session_type() for backward compatibility.
     """
-    # Priority 1: Explicit override
+    # Priority 1: Explicit override (vendor-neutral)
     explicit = os.environ.get("NUCLEUS_SESSION_ROLE", "").lower()
     if explicit:
         return explicit
 
-    # Priority 2: Registry-aware ancestry detection
+    # Priority 2: Registry-aware ancestry detection (source of truth per v3 plan)
     try:
         from ...sessions.registry import find_session_in_ancestry
         matched = find_session_in_ancestry()
@@ -98,7 +118,15 @@ def detect_session_role() -> str:
     except Exception:
         pass
 
-    # Priority 3: Fallback to provider type (backward compatibility)
+    # Priority 3: CC_SESSION_ROLE (legacy fallback for pre-migration Claude Code)
+    # The wrapper previously set this for all CLIs; now only Claude Code sets it.
+    # Retained during transition period — removable after all CC sessions migrate
+    # to NUCLEUS_SESSION_ROLE.
+    cc_role = os.environ.get("CC_SESSION_ROLE", "").strip().lower()
+    if cc_role and cc_role != "unknown":
+        return cc_role
+
+    # Priority 4: Fallback to provider type (backward compatibility)
     return detect_session_type()
 
 
@@ -217,13 +245,16 @@ def _detect_session_type_raw() -> str:
     # Priority 5: Claude Code detection (multiple heuristics)
     # Direct env vars that Claude Code may set
     if os.environ.get("CLAUDE_CODE") or os.environ.get("CLAUDE_CODE_SESSION"):
-        return "claude_code"
+        return _maybe_split_cc_role("claude_code")
 
-    # Claude Code runs as an MCP client — check for MCP transport indicators
-    # When Nucleus is launched as an MCP server by Claude Code, it's via stdio
+    # MCP-over-stdio is used by Claude Code AND every other CLI (devin, agy, codex).
+    # Per role_taxonomy_refactor_agy_v3.md Phase 0: do NOT default to "claude_code"
+    # here — that swallowed non-Claude agents into Claude's routing. The registry
+    # ancestry walk (priority 2) or NUCLEUS_SESSION_TYPE env var (priority 1) should
+    # have already identified the vendor. If we reach this point, we genuinely don't
+    # know who launched us.
     if os.environ.get("MCP_TRANSPORT") == "stdio":
-        # If we're in stdio MCP mode and no IDE was detected, it's likely Claude Code
-        return "claude_code"
+        return "unknown"
 
     # Check if parent process looks like Claude Code (node-based CLI)
     try:
@@ -233,21 +264,16 @@ def _detect_session_type_raw() -> str:
             with open(cmdline_path, "r") as f:
                 parent_cmd = f.read()
             if "claude" in parent_cmd.lower():
-                return "claude_code"
+                return _maybe_split_cc_role("claude_code")
     except Exception:
         pass
 
-    # Check for Claude Code's config directory presence as a strong hint
-    home = os.environ.get("HOME", "")
-    if home:
-        claude_config = os.path.join(home, ".claude")
-        # If .claude dir exists AND we're not in any other detected IDE,
-        # and we're running as a stdio MCP server, likely Claude Code
-        if os.path.isdir(claude_config):
-            # Additional check: are we running as an MCP server (not interactive)?
-            import sys
-            if not sys.stdin.isatty():
-                return "claude_code"
+    # Per role_taxonomy_refactor_agy_v3.md Phase 0: the ~/.claude dir + non-tty
+    # heuristic (formerly lines 257-267) was removed because it classified ANY
+    # non-tty process on a machine with Claude Code installed as Claude Code.
+    # This was the cold-start false positive source — devin/agy/codex MCP
+    # servers all run without a tty and all have ~/.claude present.
+    # Cold start with no env vars, no registry entry, and no process match → unknown.
 
     # Priority 6: Fallback
     return "unknown"

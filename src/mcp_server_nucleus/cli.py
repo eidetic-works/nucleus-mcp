@@ -477,8 +477,18 @@ Ask your AI: "Why did we [X]?" to retrieve decisions from this log.
 
 
 
-def _build_nucleus_mcp_config(brain_path: str) -> dict:
-    """Single source of truth for generating MCP config."""
+def _build_nucleus_mcp_config(brain_path: str, *, use_wrapper: bool = False) -> dict:
+    """Single source of truth for generating MCP config.
+
+    When ``use_wrapper`` is True (relay mode), the config points to the
+    ``nucleus-mcp-wrapper`` script instead of the raw ``nucleus-mcp`` command.
+    The wrapper auto-detects the calling CLI (devin/agy/codex/claude) and
+    sets ``CC_SESSION_ROLE`` + ``NUCLEUS_RELAY_BEARER`` per-role, so a single
+    MCP config entry works across all CLIs without per-CLI token wiring.
+    """
+    if use_wrapper:
+        wrapper = Path.home() / ".tb" / "nucleus-mcp-wrapper"
+        return {"command": str(wrapper)}
     from .runtime.common import get_nucleus_mcp_command
     cmd = get_nucleus_mcp_command()
     config = {"command": cmd[0]}
@@ -489,6 +499,68 @@ def _build_nucleus_mcp_config(brain_path: str) -> dict:
         "NUCLEUS_AMBIENT_HEALTH": "1",
     }
     return config
+
+
+def _install_wrapper() -> Path:
+    """Install the nucleus-mcp-wrapper script to ~/.tb/.
+
+    The wrapper auto-detects the calling CLI (devin/agy/codex/claude) by
+    walking the parent process chain, sets CC_SESSION_ROLE + NUCLEUS_RELAY_BEARER
+    from per-role token files, then execs nucleus-mcp. This lets a single
+    .mcp.json entry work across all CLIs without per-CLI config.
+    """
+    wrapper_dir = Path.home() / ".tb"
+    wrapper_dir.mkdir(parents=True, exist_ok=True)
+    wrapper_path = wrapper_dir / "nucleus-mcp-wrapper"
+
+    wrapper_content = """#!/bin/bash
+# nucleus-mcp-wrapper — auto-detects calling CLI and sets relay env vars
+#
+# This wrapper sits between the CLI (devin/agy/codex/claude) and nucleus-mcp.
+# It detects which CLI launched it by inspecting the parent process chain,
+# sets CC_SESSION_ROLE + NUCLEUS_RELAY_BEARER accordingly, then execs nucleus-mcp.
+#
+# This allows a single .mcp.json entry to work across all CLIs without
+# per-CLI MCP config — each CLI gets the right role + token automatically.
+
+# Default relay URL (can be overridden by existing env)
+export NUCLEUS_RELAY_URL="${NUCLEUS_RELAY_URL:-https://relay.nucleusos.dev}"
+
+# Detect calling CLI by walking the parent process chain
+_detect_role() {
+    local pid=$PPID
+    local depth=0
+    while [ "$pid" -gt 1 ] && [ $depth -lt 10 ]; do
+        local name=$(ps -p "$pid" -o comm= 2>/dev/null | head -1)
+        case "$name" in
+            *devin*)       echo "devin"; return 0 ;;
+            *agy*|*antigravity*) echo "antigravity"; return 0 ;;
+            *codex*)       echo "codex"; return 0 ;;
+            *claude*)      echo "claude_code_main"; return 0 ;;
+            *windsurf*|*cascade*) echo "claude_code_main"; return 0 ;;
+        esac
+        pid=$(ps -p "$pid" -o ppid= 2>/dev/null | tr -d ' ')
+        depth=$((depth + 1))
+    done
+    # Fallback: use existing CC_SESSION_ROLE or "unknown"
+    echo "${CC_SESSION_ROLE:-unknown}"
+}
+
+# If CC_SESSION_ROLE is not already set, detect it
+if [ -z "$CC_SESSION_ROLE" ]; then
+    export CC_SESSION_ROLE=$(_detect_role)
+fi
+
+# Load bearer token for this role
+if [ -f "$HOME/.tb/relay_token_$CC_SESSION_ROLE" ]; then
+    export NUCLEUS_RELAY_BEARER=$(cat "$HOME/.tb/relay_token_$CC_SESSION_ROLE")
+fi
+
+exec nucleus-mcp "$@"
+"""
+    wrapper_path.write_text(wrapper_content, encoding="utf-8")
+    wrapper_path.chmod(0o755)
+    return wrapper_path
 
 
 def _get_ide_config_paths() -> list:
@@ -509,8 +581,10 @@ def _get_ide_config_paths() -> list:
     paths.append((home / ".cursor" / "mcp.json", "Cursor"))
     # Windsurf
     paths.append((home / ".codeium" / "windsurf" / "mcp_config.json", "Windsurf"))
-    # Antigravity
-    paths.append((home / ".gemini" / "antigravity" / "mcp_config.json", "Antigravity"))
+    # Antigravity (agy) — global config
+    paths.append((home / ".gemini" / "config" / "mcp_config.json", "Antigravity"))
+    # Devin CLI — global config
+    paths.append((home / ".config" / "devin" / "config.json", "Devin CLI"))
     return paths
 
 
@@ -601,124 +675,104 @@ def init_brain(path: str = ".brain", template: str = "default") -> bool:
     else:
         init_brain_default(brain_path)
     
-    print("\n✅ Nucleus Control Plane initialized!")
-    
-    # Generate config and auto-configure
-    abs_path = str(brain_path.absolute())
-    nucleus_config = _build_nucleus_mcp_config(abs_path)
+    print("✅ Nucleus Control Plane initialized!")
 
-    # Paths to known MCP configs
-    ide_configs = _get_ide_config_paths()
+    # Honest close-out: write project .mcp.json, prove memory on screen, and
+    # print a compact copy-paste next-steps block incl. the two-agent relay
+    # demo. Replaces the former clipboard-claiming, multi-client-patching tail
+    # (friction kill-list §3). `nucleus setup` still patches client configs.
+    _finish_init_with_value(brain_path, template)
 
-    auto_configured_any = False
-    for path_obj, name in ide_configs:
-        if _patch_mcp_config(path_obj, name, nucleus_config):
-            auto_configured_any = True
-
-    if not auto_configured_any:
-        # Build a complete, ready-to-paste JSON config block
-        full_config = json.dumps({
-            "mcpServers": {
-                "nucleus": nucleus_config
-            }
-        }, indent=2)
-        
-        # Auto-copy to clipboard
-        copied = False
-        try:
-            import subprocess
-            import platform
-            system = platform.system()
-            if system == "Darwin":
-                process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
-                process.communicate(full_config.encode('utf-8'))
-                copied = True
-            elif system == "Linux":
-                # Try xclip
-                try:
-                    process = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
-                    process.communicate(full_config.encode('utf-8'))
-                    copied = True
-                except FileNotFoundError:
-                    # Try xsel
-                    try:
-                        process = subprocess.Popen(['xsel', '--clipboard', '--input'], stdin=subprocess.PIPE)
-                        process.communicate(full_config.encode('utf-8'))
-                        copied = True
-                    except FileNotFoundError:
-                        pass
-            elif system == "Windows":
-                 import shutil as _shutil
-                 clip_path = _shutil.which('clip')
-                 if clip_path:
-                     process = subprocess.Popen([clip_path], stdin=subprocess.PIPE)
-                     process.communicate(full_config.encode('utf-8'))
-                     copied = True
-        except Exception:
-            pass # Fail silently
-            
-        print("\n" + "=" * 60)
-        if copied:
-            print("📋 COPIED TO CLIPBOARD! Add this to your MCP config:")
-        else:
-            print("📋 ADD THIS to your AI client's MCP config:")
-        print("=" * 60)
-        print()
-        print(full_config)
-        print()
-        print("=" * 60)
-        
-        # OS-specific config file locations
-        print("\n📍 Config file locations:")
-        for ide_path, ide_name in _get_ide_config_paths():
-            print(f"   {ide_name}: {ide_path}")
-    else:
-        print("\n✅ Auto-configured your MCP client(s). Config used:")
-        print(f'   Brain path: {abs_path}')
-        print(f'   Command:    {nucleus_config["command"]}')
-    
-    # ── Progressive Disclosure: Persona-Aware Next Steps ──────
-    print("\n" + "=" * 60)
-    print("🚀 WHAT TO DO NEXT")
-    print("=" * 60)
-
-    # Step 1: Always needed
-    print("\n① Restart your AI client (Claude Desktop, Cursor, Windsurf, etc.)")
-
-    # Step 2: Quick win — immediate value
-    print("\n② Try your first command (pick one):")
-    print("   nucleus status          → See your brain health")
-    print("   nucleus doctor          → Diagnose your setup")
-    print("   nucleus                 → Start an AI chat session")
-
-    # Step 3: Persona-specific guidance
-    if template == "default":
-        # Check if recipe was installed to tailor guidance
-        recipe_hint = ""
-        try:
-            installed = list((brain_path / "recipes").glob("*.json"))
-            if installed:
-                recipe_hint = f" ({installed[0].stem} recipe active)"
-        except Exception:
-            pass
-        print(f"\n③ Explore your brain{recipe_hint}:")
-        print("   nucleus recipe list     → Browse workflow packs")
-        print("   nucleus morning-brief   → Get your daily briefing")
-    else:
-        print("\n③ Build your memory:")
-        print("   Ask your AI: \"Write an engram about my current project\"")
-        print("   Ask your AI: \"Show me all tasks\"")
-
-    # Step 4: Growth path (progressive disclosure)
-    print("\n④ Level up (when you're ready):")
-    print("   nucleus recipe install founder  → Install Founder OS workflow")
-    print("   nucleus emergence collect       → Contribute usage patterns")
-
-    # Cost awareness from day 1
-    print("\n💰 Token budgets are active. View costs: nucleus cost-dashboard")
-    print("📚 Docs: https://github.com/eidetic-works/nucleus-mcp")
-    
     return True
+
+
+def _finish_init_with_value(brain_path: Path, template: str) -> None:
+    """Close `nucleus init` with demonstrated value (ADR-0043 E3/W2).
+
+    (a) write project-local .mcp.json ({"command": "nucleus-mcp"}), backing up
+        first and prompting before overwrite; (b) seed one engram and recall it
+        on screen — the printout IS the proof memory survives; (c) print a
+        compact next-steps block including the two-agent relay demo. Best-effort
+        throughout: a failed step degrades to an honest line, never aborts init.
+    """
+    server_cmd = "nucleus-mcp"  # console script pins its own interpreter via shebang
+
+    # (a) project-local .mcp.json — the config Claude Code reads in this folder.
+    mcp_path = Path(".mcp.json")
+    wrote_config = False
+    backup_note = ""
+    try:
+        if mcp_path.exists():
+            proceed = True
+            if sys.stdin.isatty():
+                proceed = input(f"⚠️  {mcp_path} exists — add nucleus server? (y/N): ").strip().lower() == "y"
+            if not proceed:
+                print(f"• left {mcp_path} unchanged (no files touched)")
+            else:
+                ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                backup = mcp_path.with_name(f".mcp.json.bak.{ts}")
+                shutil.copy2(mcp_path, backup)
+                backup_note = f"  (backup: {backup.name})"
+                try:
+                    merged = json.loads(mcp_path.read_text(encoding="utf-8"))
+                    if not isinstance(merged, dict):
+                        merged = {}
+                except Exception:
+                    merged = {}
+                servers = merged.get("mcpServers")
+                if not isinstance(servers, dict):
+                    servers = {}
+                servers["nucleus"] = {"command": server_cmd}
+                merged["mcpServers"] = servers
+                mcp_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+                wrote_config = True
+        else:
+            mcp_path.write_text(
+                json.dumps({"mcpServers": {"nucleus": {"command": server_cmd}}}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            wrote_config = True
+    except Exception as e:
+        print(f"• could not write {mcp_path}: {e}")
+
+    if wrote_config:
+        print(f'✓ wrote {mcp_path}  {{"nucleus": {{"command": "{server_cmd}"}}}}{backup_note}')
+
+    # (b) memory self-test — write one engram, recall it, print the recall.
+    os.environ["NUCLEUS_BRAIN_PATH"] = str(brain_path.absolute())
+    slug = Path.cwd().name or "project"
+    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    seed_value = f"Nucleus initialized {stamp} in {slug}"
+    print("✓ memory self-test:")
+    try:
+        from .runtime.engram_ops import _brain_write_engram_impl, _brain_search_engrams_impl
+        from .cli_output import parse_runtime_response
+        _brain_write_engram_impl("nucleus_init", seed_value, "Decision", 5)
+        print(f'    remember  "{seed_value}"')
+        _t0 = time.perf_counter()
+        raw = _brain_search_engrams_impl("initialized", case_sensitive=False, limit=5)
+        _dt_ms = int((time.perf_counter() - _t0) * 1000)
+        ok, data, _err = parse_runtime_response(raw)
+        hits = []
+        if ok:
+            if isinstance(data, list):
+                hits = data
+            elif isinstance(data, dict):
+                hits = data.get("engrams") or data.get("results") or []
+        if hits and isinstance(hits[0], dict):
+            recalled = hits[0].get("value", seed_value)
+            plural = "s" if len(hits) != 1 else ""
+            print(f'    recall "initialized"  →  "{recalled}"   ({len(hits)} hit{plural}, {_dt_ms} ms)')
+        else:
+            print("    recall returned no hits (self-test inconclusive)")
+    except Exception as e:
+        print(f"    self-test skipped: {e}")
+
+    # (c) compact next-steps incl. the two-agent relay demo (item 2's verbs).
+    print("✓ two agents? open a second terminal in this folder:")
+    print('    agent A:  nucleus relay send peer --subject handoff --body "deploy key in vault slot 4"')
+    print("    agent B:  nucleus relay inbox        → 1 new message from main")
+    print("Next: restart your AI client — tools nucleus_engrams, nucleus_relay go live.")
 
 
 # ============================================================
@@ -4270,17 +4324,28 @@ def main():
 
     # nucleus setup — Configure MCP clients for your brain
     setup_ide_parser = subparsers.add_parser('setup',
-        help='Configure MCP clients (Claude, Cursor, Windsurf, etc.) for your brain')
+        help='Configure MCP clients (Claude, Cursor, Windsurf, Devin, agy, etc.) for your brain')
     setup_ide_parser.add_argument('--brain-path', type=str, default=None,
         help='Path to .brain directory (auto-detects if not set)')
     setup_ide_parser.add_argument('--dry-run', action='store_true',
         help='Show what would be configured without writing')
     setup_ide_parser.add_argument('--force', action='store_true',
         help='Overwrite existing nucleus config in each IDE')
+    setup_ide_parser.add_argument('--relay', action='store_true',
+        help='Use the nucleus-mcp-wrapper (auto-detects CLI role + relay token). '
+             'Required for cross-vendor relay (Devin/agy/codex posting to OCI).')
 
     # nucleus self-setup - Meta-config: Automatically add Nucleus paths to your shell profile
     setup_parser = subparsers.add_parser('self-setup', help='🛠 Meta-config: Automatically add Nucleus paths to your shell profile')
     setup_parser.add_argument('--dry-run', action='store_true', help='Show what changes would be made without applying them')
+
+    # nucleus relay-token — Generate a relay token for a role
+    relay_token_parser = subparsers.add_parser('relay-token',
+        help='Generate a relay bearer token for a role (devin, agy, codex, etc.)')
+    relay_token_parser.add_argument('role', nargs='?', default=None,
+        help='Role name (e.g. devin, antigravity, codex, claude_code_main)')
+    relay_token_parser.add_argument('--list', action='store_true',
+        help='List existing relay tokens and their roles')
 
     # ============================================================
     # CHANNELS COMMAND — Manage notification channels
@@ -4690,6 +4755,55 @@ def main():
     # ============================================================
     # SUMMON COMMAND (Recursive Sovereignty)
     # ============================================================
+    # ============================================================
+    # AGENT-OS COMMAND — run ONE agent INSIDE the OS (reuses boot_cell)
+    # ============================================================
+    agent_os_parser = subparsers.add_parser('agent-os', help='🧠 Agent OS — run one agent inside the Nucleus loop')
+    agent_os_sub = agent_os_parser.add_subparsers(dest='agent_os_action', help='Agent OS actions')
+    agent_os_run_p = agent_os_sub.add_parser('run', help='Run one agent inside the OS (recall → gateway → record)')
+    agent_os_run_p.add_argument('prompt', help='The intent / task prompt for the agent')
+    agent_os_run_p.add_argument('--role', default='bespoq_cowork', help='Agent role label (default: bespoq_cowork)')
+    agent_os_run_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this run')
+    agent_os_run_p.add_argument('--recall-query', default=None, help='Override the recall query (default: the prompt)')
+
+    # nucleus agent-os demo [prompt] — compare naked vs inside Agent OS
+    agent_os_demo_p = agent_os_sub.add_parser('demo', help='Show the value of Agent OS by running a prompt naked vs inside')
+    agent_os_demo_p.add_argument('prompt', nargs='?', default=None, help='The prompt to run (optional)')
+    agent_os_demo_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this demo')
+
+    # nucleus agent-os recall <query> — selective memory-continuity (SessionStart hook primitive)
+    agent_os_recall_p = agent_os_sub.add_parser('recall', help='Recall prior context for a query (selective memory-continuity)')
+    agent_os_recall_p.add_argument('query', help='The recall query (what context to load)')
+    agent_os_recall_p.add_argument('--budget', type=int, default=2000, help='Context budget in chars for the pager selection (default: 2000)')
+    agent_os_recall_p.add_argument('--limit', type=int, default=None, help='Hard cap on the number of returned rows (default: none)')
+    agent_os_recall_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this recall')
+    agent_os_recall_p.add_argument('--recall-limit', type=int, default=5, help='How many candidate rows to pull from the brain (default: 5)')
+
+    # nucleus agent-os corpus — surface the VERIFIED-labeled training corpus (the moat)
+    agent_os_corpus_p = agent_os_sub.add_parser('corpus', help='Surface the VERIFIED-labeled training corpus in loop_turns.jsonl (the moat)')
+    agent_os_corpus_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this read')
+    agent_os_corpus_p.add_argument('--export', default=None, help='Write a jsonl of just the turns matching --status to this file')
+    agent_os_corpus_p.add_argument('--status', default='CONFIRMED', help='Which verified_label.status to export (default: CONFIRMED)')
+    agent_os_corpus_p.add_argument('--format', choices=['text', 'json'], default='text', help='Output format (text or json)')
+
+    # nucleus agent-os canary — re-verify CONFIRMED turns, flag temporal drift (moat's immune system v0)
+    agent_os_canary_p = agent_os_sub.add_parser('canary', help='Re-verify CONFIRMED turns and flag temporal-consequence drift (moat immune system v0)')
+    agent_os_canary_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this read')
+    agent_os_canary_p.add_argument('--sample', type=int, default=None, help='Re-check only the first N CONFIRMED turns (deterministic)')
+
+    # nucleus agent-os status — one dashboard for the moat loop (corpus + canary + providers)
+    agent_os_status_p = agent_os_sub.add_parser('status', help='One dashboard summarizing the Agent-OS moat loop (corpus + canary + providers)')
+    agent_os_status_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this read')
+    agent_os_status_p.add_argument('--sample', type=int, default=None, help='Re-check only the first N CONFIRMED turns in the canary section (deterministic)')
+
+    # nucleus agent-os loop — run the loop for a while (N cells through boot_cell, then corpus + canary)
+    agent_os_loop_p = agent_os_sub.add_parser('loop', help='Run the loop for a while: N cells through boot_cell, then corpus tally + canary drift check')
+    agent_os_loop_p.add_argument('--count', type=int, default=5, help='Number of cells to run through boot_cell (default: 5)')
+    agent_os_loop_p.add_argument('--brain-path', default=None, help='Override NUCLEUS_BRAIN_PATH for this run')
+    agent_os_loop_p.add_argument('--role', default='bespoq_cowork', help='Agent role label (default: bespoq_cowork)')
+    agent_os_loop_p.add_argument('--base-intent', default='Run the loop: observe, recall, think, record.', help='Base intent string (suffixed with the turn index per cell)')
+    agent_os_loop_p.add_argument('--recall-query', default=None, help='Override the per-cell recall query (default: the cell intent)')
+
     summon_parser = subparsers.add_parser('summon', help='🧬 Recursive Sovereignty: Summon a specialized sub-agent')
     summon_parser.add_argument('agent', help='Agent role/identity (e.g., Critic, DBA, Researcher)')
     summon_parser.add_argument('task', nargs='?', default='', help='Task for the summoned agent')
@@ -4833,6 +4947,240 @@ def main():
     _p = engram_subs.add_parser('quarantine', help='Quarantine an engram (exclude from brief/search)')
     _p.add_argument('key', help='Engram key to quarantine')
     _p.add_argument('--undo', action='store_true', help='Remove quarantine')
+
+    # --- DISPATCH COMMAND (cross-vendor CLI one-shot + capture; flag-gated) ---
+    dispatch_parser = subparsers.add_parser(
+        'dispatch',
+        help='🚀 Dispatch a one-shot cross-vendor CLI call (agy/devin) and capture the envelope',
+        epilog=(
+            'Requires NUCLEUS_CROSS_VENDOR=1 (default OFF).\n'
+            'Examples:\n'
+            '  NUCLEUS_CROSS_VENDOR=1 nucleus dispatch agy --prompt-file p.txt --artifact-ref <sha> --to peer\n'
+            '  echo "review this" | NUCLEUS_CROSS_VENDOR=1 nucleus dispatch devin --artifact-ref 123 --to peer\n'
+            'Prefer --prompt-file / stdin over --prompt (the prompt is passed to the\n'
+            'vendor CLI over stdin, never in argv; --prompt itself can still leak to ps).'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    _p = _add_agent_flags(dispatch_parser)
+    _p.add_argument('vendor', choices=['agy', 'devin'], help='Vendor CLI to dispatch (agy=Gemini, devin=GLM)')
+    _g = _p.add_mutually_exclusive_group()
+    _g.add_argument('--prompt', help='Prompt text (identity-safe: prefer --prompt-file or stdin)')
+    _g.add_argument('--prompt-file', help='Read the prompt from this file')
+    _p.add_argument('--artifact-ref', required=True,
+                    help='Commit SHA / PR# / file path to bind the capture envelope to (required)')
+    _p.add_argument('--to', default='peer', help='Capture recipient role (default: peer)')
+    _p.add_argument('--timeout', type=int, default=300, help='Hard subprocess timeout in seconds (default: 300)')
+    _p.add_argument('--budget', type=float, default=0.0, help='Budget ceiling in USD (default: 0.0 = free-tier)')
+
+    # --- LANE COMMAND (autonomous task-execution loop for any repo) ---
+    lane_parser = subparsers.add_parser(
+        'lane',
+        help='🔄 Autonomous lane: run a self-sustaining task loop in any repo',
+        epilog=(
+            'WHEN TO USE: You have a backlog of well-defined tasks (bugs, features, tests)\n'
+            '  that you want executed autonomously without manual prompting.\n'
+            '\n'
+            'Quick start (or run `nucleus lane guide` for context-aware help):\n'
+            '  nucleus lane init\n'
+            '  # Edit SPEC.md with your tasks\n'
+            '  nucleus lane validate  # check SPEC.md format\n'
+            '  nucleus lane start\n'
+            '  nucleus lane status\n'
+            '  nucleus lane telemetry  # detailed metrics\n'
+            '  nucleus lane stop\n'
+            '\n'
+            'Submit feedback to the nucleus team (creates GitHub issue):\n'
+            '  nucleus lane feedback --type bug --subject "mktemp fails on Linux" --body "..."'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    lane_subs = lane_parser.add_subparsers(dest='lane_action', help='Lane actions')
+
+    # lane init
+    _p = lane_subs.add_parser('init', help='Initialize an autonomous lane in this repo')
+    _p.add_argument('--spec', default='SPEC.md', help='Path to spec file (default: SPEC.md)')
+    _p.add_argument('--tag', default='', help='Git tag to pin the spec (default: <role>-v1)')
+    _p.add_argument('--role', default='lane-g1', help='Lane role (default: lane-g1)')
+    _p.add_argument('--vendor', default='devin', choices=['devin', 'agy'], help='Default vendor (default: devin)')
+    _p.add_argument('--brain', default='', help='Override brain path (default: .brain)')
+    _p.add_argument('--force', action='store_true', help='Skip isolation guards (for testing)')
+
+    # lane start
+    _p = lane_subs.add_parser('start', help='Start the autonomous lane daemons')
+    _p.add_argument('--spec', default='SPEC.md', help='Path to spec file (default: SPEC.md)')
+    _p.add_argument('--executor', action='append', help='Executor lane to start (can repeat, default: lane_devin)')
+    _p.add_argument('--no-secretary', action='store_true', help='Skip secretary daemon')
+    _p.add_argument('--no-watcher', action='store_true', help='Skip control watcher')
+    _p.add_argument('--background', action='store_true', help='Run daemons in background (default: foreground)')
+    _p.add_argument('--dry-run', action='store_true', help='Show what would start without launching')
+
+    # lane stop
+    _p = lane_subs.add_parser('stop', help='Stop all running lane daemons')
+    _p.add_argument('--all', action='store_true', help='Stop all nucleus lane daemons on this machine')
+
+    # lane status
+    _p = lane_subs.add_parser('status', help='Show current lane status')
+    _p.add_argument('--spec', default='SPEC.md', help='Path to spec file (default: SPEC.md)')
+    _p.add_argument('--json', action='store_true', help='Output as JSON')
+    _p.add_argument('--watch', action='store_true',
+                    help='Live-update status every 2s (clear screen + reprint) until Ctrl+C')
+
+    # lane feedback
+    _p = lane_subs.add_parser('feedback', help='Submit feedback to the nucleus team')
+    _p.add_argument('--type', required=True, choices=['bug', 'enhancement', 'observation', 'question'],
+                    help='Feedback type')
+    _p.add_argument('--subject', required=True, help='Short summary')
+    _p.add_argument('--body', required=True, help='Detailed description')
+    _p.add_argument('--reporter', default='', help='Your name/project (default: anonymous)')
+
+    # lane telemetry
+    _p = lane_subs.add_parser('telemetry', help='Show lane telemetry metrics')
+    _p.add_argument('--json', action='store_true', help='Output as JSON')
+
+    # lane guide
+    _p = lane_subs.add_parser('guide', help='Print context-aware quick-start guide based on repo state')
+
+    # lane validate
+    _p = lane_subs.add_parser('validate', help='Validate a SPEC.md for format errors (duplicate IDs, dangling blocked_by, missing acceptance)')
+    _p.add_argument('--spec', default='SPEC.md', help='Path to spec file (default: SPEC.md)')
+
+    # --- PLAN COMMAND (bridge plan files to task store + sprint mission) ---
+    plan_parser = subparsers.add_parser(
+        'plan',
+        help='📋 Plan operations: import, execute, validate, list plan files',
+        description=(
+            'Bridge plan files (.brain/plans/*.md) to the task store and sprint '
+            'mission engine. Parses `## Tasks` checkbox format and `### Slice N — '
+            'Title (owner)` slice format.'
+        ),
+        epilog=(
+            'Examples:\n'
+            '  nucleus plan import .brain/plans/my_plan.md\n'
+            '  nucleus plan validate .brain/plans/my_plan.md\n'
+            '  nucleus plan list\n'
+            '  nucleus plan execute .brain/plans/my_plan.md --goal "ship X" \\\n'
+            '      --budget 10.0 --time-limit 4.0\n'
+            '\n'
+            'Run `nucleus plan <subcommand> --help` for subcommand-specific flags.'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    plan_subs = plan_parser.add_subparsers(dest='plan_action', help='Plan actions')
+
+    # plan import
+    _p = plan_subs.add_parser(
+        'import',
+        help='Import a plan file as PENDING tasks (calls import_plan_as_tasks)',
+        description='Parse a plan file and create one PENDING task per item via task_ops._add_task. Prints the task_ids created.',
+    )
+    _p.add_argument('file', help='Path to the plan markdown file')
+    _p.add_argument('--plan-ref', default=None,
+                    help='Override plan_ref stamped on each task (default: the file path)')
+
+    # plan execute
+    _p = plan_subs.add_parser(
+        'execute',
+        help='Import a plan and start a sprint mission against its tasks',
+        description=(
+            'Calls import_plan_as_tasks() then _brain_start_mission_impl() with the '
+            'resulting task_ids. Prints the mission ID and status.'
+        ),
+    )
+    _p.add_argument('file', help='Path to the plan markdown file')
+    _p.add_argument('--goal', required=True, help='Mission goal statement')
+    _p.add_argument('--name', default=None,
+                    help='Mission name (default: derived from plan filename)')
+    _p.add_argument('--budget', type=float, default=10.0,
+                    help='Budget limit in USD (default: 10.0)')
+    _p.add_argument('--time-limit', type=float, default=4.0,
+                    help='Time limit in hours (default: 4.0)')
+    _p.add_argument('--plan-ref', default=None,
+                    help='Override plan_ref stamped on each task (default: the file path)')
+
+    # plan validate
+    _p = plan_subs.add_parser(
+        'validate',
+        help='Validate a plan file format and report task count + errors',
+        description='Calls validate_plan() and prints format + task count + errors.',
+    )
+    _p.add_argument('file', help='Path to the plan markdown file')
+
+    # plan list
+    _p = plan_subs.add_parser(
+        'list',
+        help='List plan files in .brain/plans with task counts',
+        description='Calls list_plans() and prints a table of plans with task counts.',
+    )
+    _p.add_argument('--plans-dir', default='.brain/plans',
+                    help='Directory to scan (default: .brain/plans)')
+    _p.add_argument('--json', action='store_true', help='Output as JSON')
+
+    # --- DISCOVER COMMAND (self-describing subsystem registry) ---
+    discover_parser = subparsers.add_parser(
+        'discover',
+        help='List all nucleus subsystems with descriptions and when-to-use triggers',
+        description='Discover all nucleus capabilities. Use this when you want to know what nucleus can do.',
+    )
+
+    # --- ONBOARD COMMAND (one-command, zero-config cross-vendor setup) ---
+    onboard_parser = subparsers.add_parser(
+        'onboard',
+        help='🚀 One-command, zero-config cross-vendor setup: detect CLIs, wire enablement, verify liveness',
+        epilog=(
+            'Detects claude/devin/agy, persists cross-vendor enablement (so `nucleus dispatch`\n'
+            'works without NUCLEUS_CROSS_VENDOR=1), and runs a liveness probe per detected vendor.\n'
+            'Examples:\n'
+            '  nucleus onboard\n'
+            '  nucleus onboard --skip-verify   # detect + wire only, no liveness probe\n'
+            '  nucleus onboard --format json   # machine-readable summary'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    _add_agent_flags(onboard_parser)
+    onboard_parser.add_argument('--skip-verify', action='store_true',
+                                help='Skip the per-vendor liveness probe (detect + wire only)')
+    onboard_parser.add_argument('--verify-timeout', type=int, default=20,
+                                help='Liveness probe timeout per vendor in seconds (default: 20)')
+
+    # --- RELAY COMMANDS (two-agent coordination over the shared brain mailbox) ---
+    relay_parser = subparsers.add_parser('relay', help='📮 Two-agent coordination: send/inbox over the shared brain')
+    relay_subs = relay_parser.add_subparsers(dest='relay_action', help='Relay actions')
+
+    _p = relay_subs.add_parser('send', help='Send a message to another agent',
+        epilog='Examples:\n  nucleus relay send peer --subject handoff --body "deploy key in vault slot 4"\n  nucleus relay send peer --body "ping"   # subject defaults to "message"',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    _p.add_argument('to', help='Recipient role/inbox (e.g. peer, main)')
+    _p.add_argument('--subject', '-s', default='message', help='Subject line (default: message)')
+    _p.add_argument('--body', '-b', required=True, help='Message body')
+    _p.add_argument('--from', dest='sender', default=None,
+                    help='Sender role (default: NUCLEUS_SESSION_ROLE env, else "main")')
+
+    _p = relay_subs.add_parser('inbox', help='Read messages addressed to you',
+        epilog='Examples:\n  nucleus relay inbox\n  nucleus relay inbox --unread --ack',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    _p.add_argument('--role', default=None,
+                    help='Your inbox role (default: NUCLEUS_SESSION_ROLE env, else "peer")')
+    _p.add_argument('--unread', action='store_true', help='Show only unread messages')
+    _p.add_argument('--ack', action='store_true', help='Mark listed messages as read after showing them')
+    _p.add_argument('--limit', type=int, default=20, help='Max messages to show (default: 20)')
+
+    # --- FLEET COMMANDS (multi-agent fleet setup — g4_fleet_init_command) ---
+    fleet_parser = subparsers.add_parser('fleet',
+        help='🚀 Multi-agent fleet setup: init a coordinated .brain for Claude Code, Gemini CLI, Devin')
+    fleet_subs = fleet_parser.add_subparsers(dest='fleet_action', help='Fleet actions')
+
+    fleet_init_p = fleet_subs.add_parser('init', help='Initialize a multi-agent fleet .brain in one command',
+        epilog='Examples:\n  nucleus fleet init\n  nucleus fleet init ./my-fleet --agents claude_code,gemini_cli,devin',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    fleet_init_p.add_argument('path', nargs='?', default='.brain',
+        help='Path to create the fleet .brain directory (default: .brain)')
+    fleet_init_p.add_argument('--agents', default=None,
+        help='Comma-separated agent roles to provision (default: claude_code_main,claude_code_peer,gemini_cli,devin)')
+    fleet_init_p.add_argument('--relay-url', default=None,
+        help='Optional hosted relay URL (default: filesystem mailbox at <path>/relay/)')
+    fleet_init_p.add_argument('--force', action='store_true',
+        help='Overwrite an existing .brain directory at <path>')
 
     # --- TASK COMMANDS ---
     task_parser = subparsers.add_parser('task', aliases=['tasks'], help='📋 Task management: list, add, update')
@@ -5076,6 +5424,10 @@ def main():
     verify_parser.add_argument('--pre-head', type=str, help='Git ref before session started')
     verify_parser.add_argument('--json', dest='json_output', action='store_true', help='Output raw JSON receipt')
 
+    # Schema — export the MCP tool schema to a JSON file
+    schema_parser = subparsers.add_parser('schema', help='Export the MCP tool schema to a JSON file')
+    schema_parser.add_argument('--output', '-o', type=str, default='schema.json', help='Output file path (default: schema.json)')
+
     args = parser.parse_args()
     cli_command = args.cli_command
 
@@ -5232,11 +5584,24 @@ def main():
                 print("❌ No .brain directory found. Run 'nucleus init' first or pass --brain-path.")
                 sys.exit(1)
 
-            nucleus_config = _build_nucleus_mcp_config(brain_path_str)
+            use_relay = getattr(args, 'relay', False)
+
+            # In relay mode, install the wrapper and use it
+            if use_relay:
+                wrapper_path = _install_wrapper()
+                print(f"📦 Installed wrapper: {wrapper_path}")
+                nucleus_config = _build_nucleus_mcp_config(brain_path_str, use_wrapper=True)
+            else:
+                nucleus_config = _build_nucleus_mcp_config(brain_path_str)
+
             ide_configs = _get_ide_config_paths()
 
             print(f"🧠 Brain path: {brain_path_str}")
             print(f"   Command:    {nucleus_config['command']}")
+            if use_relay:
+                print(f"   Mode:       relay (wrapper auto-detects CLI role + token)")
+            else:
+                print(f"   Mode:       local (direct nucleus-mcp)")
 
             if args.dry_run:
                 print("\n[DRY RUN] Would configure these IDEs:\n")
@@ -5258,6 +5623,13 @@ def main():
                 else:
                     print(f"\n✅ Configured {configured} IDE(s). Restart them to pick up changes.")
 
+                if use_relay:
+                    print("\n📝 Relay tokens (per-role):")
+                    print("   Each CLI needs a relay token at ~/.tb/relay_token_<role>")
+                    print("   Roles: devin, antigravity, codex, claude_code_main, etc.")
+                    print("   Generate with: nucleus relay-token <role>")
+                    print("   The wrapper auto-loads the token for the detected CLI.")
+
                 # Perplexity manual instructions (GUI-only, no config file)
                 print("\n📝 Perplexity (manual — GUI only):")
                 print("   Settings → MCP Servers → Add Server")
@@ -5267,7 +5639,51 @@ def main():
         elif cli_command == 'self-setup':
             from .setup import install_nucleus_path
             install_nucleus_path(dry_run=args.dry_run)
-            
+
+        elif cli_command == 'relay-token':
+            import secrets as _secrets
+            token_dir = Path.home() / ".tb"
+            token_dir.mkdir(parents=True, exist_ok=True)
+
+            if getattr(args, 'list', False):
+                # List existing tokens
+                tokens = sorted(token_dir.glob("relay_token_*"))
+                if not tokens:
+                    print("No relay tokens found.")
+                else:
+                    print(f"{'Role':<30} Token (first 16 chars)")
+                    print("-" * 50)
+                    for tp in tokens:
+                        role = tp.name.replace("relay_token_", "")
+                        tok = tp.read_text(encoding="utf-8").strip()
+                        print(f"{role:<30} {tok[:16]}...")
+                sys.exit(0)
+
+            role = args.role
+            if not role:
+                print("❌ Role is required. Usage: nucleus relay-token <role>")
+                print("   Example: nucleus relay-token devin")
+                sys.exit(1)
+            token_path = token_dir / f"relay_token_{role}"
+            token = _secrets.token_hex(32)  # 64 hex chars
+
+            if token_path.exists():
+                print(f"⚠️  Token for role '{role}' already exists at {token_path}")
+                print("   Use --force to overwrite (not implemented yet — delete the file first).")
+                sys.exit(1)
+
+            token_path.write_text(token, encoding="utf-8")
+            token_path.chmod(0o600)
+            print(f"✅ Generated relay token for role '{role}'")
+            print(f"   Saved to: {token_path}")
+            print(f"   Token: {token}")
+            print()
+            print("📝 Add this token to the relay server's token map:")
+            print(f'   "{token}": "{role}",')
+            print()
+            print("   On OCI: edit /home/ubuntu/.nucleus_relay_env")
+            print("   Then: sudo systemctl restart nucleus-relay.service")
+
         elif cli_command in ('brother', 'chat'):
             _run_chat(
                 tier_name=getattr(args, 'tier', 'local_free') or 'local_free',
@@ -5343,6 +5759,63 @@ def main():
             
         elif cli_command == 'run':
             sys.exit(handle_run_command(args))
+
+        elif cli_command == 'agent-os':
+            if getattr(args, 'agent_os_action', None) == 'run':
+                from .runtime.agent_os.run_cli import run as agent_os_run
+                sys.exit(agent_os_run(
+                    args.prompt,
+                    role=args.role,
+                    brain_path=args.brain_path,
+                    recall_query=args.recall_query,
+                ))
+            elif getattr(args, 'agent_os_action', None) == 'recall':
+                from .runtime.agent_os.recall_cli import recall as agent_os_recall
+                sys.exit(agent_os_recall(
+                    args.query,
+                    budget=args.budget,
+                    limit=args.limit,
+                    brain_path=args.brain_path,
+                    recall_limit=args.recall_limit,
+                ))
+            elif getattr(args, 'agent_os_action', None) == 'demo':
+                from .runtime.agent_os.demo_cli import run_demo as agent_os_demo
+                sys.exit(agent_os_demo(
+                    args.prompt,
+                    brain_path=args.brain_path,
+                ))
+            elif getattr(args, 'agent_os_action', None) == 'corpus':
+                from .runtime.agent_os.corpus_cli import corpus as agent_os_corpus
+                sys.exit(agent_os_corpus(
+                    brain_path=args.brain_path,
+                    export=args.export,
+                    status=args.status,
+                    format=args.format,
+                ))
+            elif getattr(args, 'agent_os_action', None) == 'canary':
+                from .runtime.agent_os.canary_cli import canary as agent_os_canary
+                sys.exit(agent_os_canary(
+                    brain_path=args.brain_path,
+                    sample=args.sample,
+                ))
+            elif getattr(args, 'agent_os_action', None) == 'status':
+                from .runtime.agent_os.status_cli import status as agent_os_status
+                sys.exit(agent_os_status(
+                    brain_path=args.brain_path,
+                    sample=args.sample,
+                ))
+            elif getattr(args, 'agent_os_action', None) == 'loop':
+                from .runtime.agent_os.loop_cli import loop as agent_os_loop
+                sys.exit(agent_os_loop(
+                    count=args.count,
+                    brain_path=args.brain_path,
+                    role=args.role,
+                    base_intent=args.base_intent,
+                    recall_query=args.recall_query,
+                ))
+            else:
+                print("nucleus agent-os: a subcommand is required (try 'nucleus agent-os run --help', 'nucleus agent-os recall --help', 'nucleus agent-os demo --help', 'nucleus agent-os corpus --help', 'nucleus agent-os canary --help', 'nucleus agent-os status --help', or 'nucleus agent-os loop --help')")
+                sys.exit(2)
 
         elif cli_command == 'summon':
             handle_summon_command(args)
@@ -5447,6 +5920,20 @@ def main():
 
         elif cli_command == 'engram':
             sys.exit(handle_engram_command(args))
+        elif cli_command == 'dispatch':
+            sys.exit(handle_dispatch_command(args))
+        elif cli_command == 'lane':
+            sys.exit(handle_lane_command(args))
+        elif cli_command == 'plan':
+            sys.exit(handle_plan_command(args))
+        elif cli_command == 'discover':
+            sys.exit(handle_discover_command(args))
+        elif cli_command == 'onboard':
+            sys.exit(handle_onboard_command(args))
+        elif cli_command == 'relay':
+            sys.exit(handle_relay_command(args))
+        elif cli_command == 'fleet':
+            sys.exit(handle_fleet_command(args))
         elif cli_command == 'task':
             sys.exit(handle_task_command(args))
         elif cli_command == 'session':
@@ -5972,6 +6459,1171 @@ def handle_engram_command(args) -> int:
 
     else:
         print("Usage: nucleus engram <search|write|query|quarantine>", file=sys.stderr)
+        return 1
+
+
+def handle_discover_command(args) -> int:
+    """Handle `nucleus discover` — self-describing subsystem registry.
+
+    Lists all nucleus subsystems with descriptions and when-to-use triggers
+    so any agent can discover capabilities without external prompts.
+    """
+    subsystems = [
+        {
+            "name": "lane",
+            "summary": "Autonomous task-execution loop (watcher → executor → secretary)",
+            "when_to_use": "You have a backlog of well-defined tasks to execute autonomously",
+            "commands": "nucleus lane guide | init | start | status | stop | validate | telemetry | feedback",
+            "start_here": "nucleus lane guide",
+        },
+        {
+            "name": "task",
+            "summary": "Single task management (add, list, claim, update, escalate)",
+            "when_to_use": "You need to track individual tasks manually",
+            "commands": "nucleus task add | list | claim | update | escalate",
+            "start_here": "nucleus task --help",
+        },
+        {
+            "name": "relay",
+            "summary": "Cross-agent messaging (post, inbox, ack)",
+            "when_to_use": "You need to send a message to another agent or check your inbox",
+            "commands": "nucleus relay post | inbox | ack",
+            "start_here": "nucleus relay --help",
+        },
+        {
+            "name": "dispatch",
+            "summary": "Cross-vendor task delegation (devin/agy)",
+            "when_to_use": "You want to hand a task to a different LLM vendor for execution",
+            "commands": "nucleus dispatch <agy|devin>",
+            "start_here": "nucleus dispatch --help",
+        },
+        {
+            "name": "onboard",
+            "summary": "One-command cross-vendor setup (detect CLIs, wire enablement)",
+            "when_to_use": "First time setting up cross-vendor dispatch on this machine",
+            "commands": "nucleus onboard",
+            "start_here": "nucleus onboard",
+        },
+        {
+            "name": "session",
+            "summary": "Session management (save, resume, end, checkpoint)",
+            "when_to_use": "You need to save context for later or resume a previous session",
+            "commands": "nucleus session save | resume | end | checkpoint",
+            "start_here": "nucleus session --help",
+        },
+        {
+            "name": "engram",
+            "summary": "Memory/engram store (search, write, query)",
+            "when_to_use": "You need to persist a learning or search past memories",
+            "commands": "nucleus engram search | write | query",
+            "start_here": "nucleus engram --help",
+        },
+    ]
+
+    print("=" * 60)
+    print("  NUCLEUS SUBSYSTEMS — Self-Discovery")
+    print("=" * 60)
+    print()
+    for sub in subsystems:
+        print(f"  {sub['name']}")
+        print(f"    {sub['summary']}")
+        print(f"    WHEN TO USE: {sub['when_to_use']}")
+        print(f"    START HERE:  {sub['start_here']}")
+        print()
+    print("To explore any subsystem: nucleus <name> --help")
+    print("To get a context-aware guide: nucleus lane guide")
+    print()
+    return 0
+
+
+def handle_lane_command(args) -> int:
+    """Handle `nucleus lane <init|start|stop|status|feedback>` — autonomous lane management."""
+    from pathlib import Path
+    import json as _json
+    import os
+    import subprocess
+    import sys
+
+    repo_root = Path(os.getcwd())
+    spec_path = repo_root / getattr(args, 'spec', 'SPEC.md')
+    brain_path = Path(getattr(args, 'brain', '') or '') if getattr(args, 'brain', '') else repo_root / ".brain"
+    role = getattr(args, 'role', 'lane-g1')
+    vendor = getattr(args, 'vendor', 'devin')
+    tag = getattr(args, 'tag', '') or f"{role}-v1"
+
+    if args.lane_action == 'init':
+        from mcp_server_nucleus.runtime.lane import isolate_brain, LaneConfig
+        from mcp_server_nucleus.runtime.lane.spec_parser import SpecParser
+
+        # Isolate brain
+        try:
+            brain = isolate_brain(repo_root, brain_path, force=getattr(args, 'force', False))
+        except Exception as exc:
+            print(f"ERROR: {exc}")
+            return 1
+
+        # Create SPEC.md template if it doesn't exist
+        if not spec_path.exists():
+            spec_template = f"""# SPEC: {repo_root.name}
+
+> This spec defines the autonomous lane's work. It is pinned via git tag
+> `{tag}` and verified before every dispatch cycle. Do not edit after pinning.
+
+## Gate G1
+
+### Task: {role}_example_task
+- **Title:** Example task — replace with your own
+- **Authority:** SPEC.md (G1 example)
+- **Acceptance:**
+  - A committed artifact proves the task is complete.
+  - The result is rerunnable from a clean checkout.
+- **Priority:** 1
+"""
+            spec_path.write_text(spec_template)
+            print(f"Created {spec_path} — edit it with your tasks, then run `nucleus lane start`")
+        else:
+            print(f"Using existing {spec_path}")
+
+        # Create config
+        config = LaneConfig(
+            repo_root=repo_root,
+            brain_path=brain,
+            spec_path=spec_path,
+            spec_tag=tag,
+            role=role,
+            vendor=vendor,
+        )
+
+        # Pin the spec
+        try:
+            parser = SpecParser(config)
+            parser.pin_spec()
+            print(f"Pinned spec via git tag: {tag}")
+            print(f"  commit: {config.spec_tag_commit[:12]}")
+            print(f"  blob:   {config.spec_blob[:12]}")
+        except Exception as exc:
+            print(f"WARNING: could not pin spec: {exc}")
+            print("  Run `git add SPEC.md && git commit -m 'spec' && nucleus lane init` to pin")
+
+        # Save config
+        config_path = brain / "state" / "lane_config.json"
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(_json.dumps(config.to_dict(), indent=2))
+        print(f"\nLane initialized: {role}")
+        print(f"  brain: {brain}")
+        print(f"  spec:  {spec_path}")
+        print(f"  config: {config_path}")
+        print(f"\nNext: edit {spec_path}, then run `nucleus lane start`")
+        return 0
+
+    elif args.lane_action == 'start':
+        from mcp_server_nucleus.runtime.lane import LaneConfig
+        from mcp_server_nucleus.runtime.lane.control_watcher import ControlWatcher
+        from mcp_server_nucleus.runtime.lane.executor_daemon import ExecutorDaemon
+        from mcp_server_nucleus.runtime.lane.secretary_daemon import SecretaryDaemon
+
+        # Load config
+        config_path = brain_path / "state" / "lane_config.json"
+        if not config_path.exists():
+            print(f"ERROR: no lane config found at {config_path}. Run `nucleus lane init` first.")
+            return 1
+        config = LaneConfig.from_dict(_json.loads(config_path.read_text()))
+
+        # Check for standalone bash daemons that would conflict with the lane
+        # system. If found, warn the user.
+        import subprocess as _sp
+        standalone_pids = []
+        for daemon_name in ["secretary_daemon", "executor_daemon"]:
+            try:
+                result = _sp.run(
+                    ["pgrep", "-f", daemon_name],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.stdout.strip():
+                    standalone_pids.extend(result.stdout.strip().split("\n"))
+            except Exception:
+                pass
+        if standalone_pids:
+            print(f"WARNING: {len(standalone_pids)} standalone bash daemon(s) detected (PIDs: {', '.join(standalone_pids)}).")
+            print("  These conflict with the lane system. Run `nucleus lane stop` first to kill them.")
+            print("  Starting anyway, but you may see duplicate telemetry and task conflicts.")
+
+        executors = getattr(args, 'executor', None) or [f"{role}_devin"]
+        no_secretary = getattr(args, 'no_secretary', False)
+        no_watcher = getattr(args, 'no_watcher', False)
+        background = getattr(args, 'background', False)
+        dry_run = getattr(args, 'dry_run', False)
+
+        print(f"Starting lane: {role}")
+        print(f"  brain: {config.brain_path}")
+        print(f"  spec:  {config.spec_path}")
+        print(f"  executors: {executors}")
+        print(f"  secretary: {not no_secretary}")
+        print(f"  watcher: {not no_watcher}")
+        print(f"  background: {background}")
+
+        if dry_run:
+            print("\n(dry-run: not starting daemons)")
+            return 0
+
+        procs = []
+
+        # Build env with NUCLEUS_BRAIN_PATH so subprocess daemons use the isolated brain
+        daemon_env = dict(os.environ)
+        daemon_env["NUCLEUS_BRAIN_PATH"] = str(config.brain_path)
+
+        if not no_watcher:
+            watcher = ControlWatcher(config)
+            if background:
+                p = subprocess.Popen(
+                    [sys.executable, "-c",
+                     f"from mcp_server_nucleus.runtime.lane import LaneConfig, ControlWatcher; import json as _json; "
+                     f"c = LaneConfig.from_dict(_json.loads(open('{config_path}').read())); "
+                     f"ControlWatcher(c).watch()"],
+                    stdout=open(config.brain_path / "logs" / "lane_watcher.log", "a"),
+                    stderr=subprocess.STDOUT,
+                    env=daemon_env,
+                )
+                procs.append(("watcher", p))
+                print(f"  watcher PID: {p.pid}")
+            else:
+                print("\nStarting control watcher (foreground)...")
+                watcher.watch(config.poll_interval)
+
+        for exec_lane in executors:
+            agent_id = exec_lane
+            daemon = ExecutorDaemon(
+                config=config,
+                agent_id=agent_id,
+                lane=exec_lane,
+                vendor=vendor,
+                poll_interval=config.executor_poll_interval,
+                max_retries=config.max_retries,
+            )
+            if background:
+                p = subprocess.Popen(
+                    [sys.executable, "-c",
+                     f"from mcp_server_nucleus.runtime.lane import LaneConfig, ExecutorDaemon; import json as _json; "
+                     f"c = LaneConfig.from_dict(_json.loads(open('{config_path}').read())); "
+                     f"ExecutorDaemon(c, '{agent_id}', '{exec_lane}', '{vendor}').run()"],
+                    stdout=open(config.brain_path / "logs" / f"lane_{exec_lane}.log", "a"),
+                    stderr=subprocess.STDOUT,
+                    env=daemon_env,
+                )
+                procs.append((exec_lane, p))
+                print(f"  {exec_lane} PID: {p.pid}")
+            else:
+                print(f"\nStarting executor {exec_lane} (foreground)...")
+                daemon.run()
+
+        if not no_secretary:
+            secretary = SecretaryDaemon(config=config, verify_only=True)
+            if background:
+                p = subprocess.Popen(
+                    [sys.executable, "-c",
+                     f"from mcp_server_nucleus.runtime.lane import LaneConfig, SecretaryDaemon; import json as _json; "
+                     f"c = LaneConfig.from_dict(_json.loads(open('{config_path}').read())); "
+                     f"SecretaryDaemon(c).run()"],
+                    stdout=open(config.brain_path / "logs" / "lane_secretary.log", "a"),
+                    stderr=subprocess.STDOUT,
+                    env=daemon_env,
+                )
+                procs.append(("secretary", p))
+                print(f"  secretary PID: {p.pid}")
+            else:
+                print("\nStarting secretary (foreground)...")
+                secretary.run()
+
+        if procs:
+            # Save PIDs
+            pid_file = config.brain_path / "state" / "lane_pids.json"
+            pids = {name: p.pid for name, p in procs}
+            pid_file.write_text(_json.dumps(pids, indent=2))
+            print(f"\nAll daemons started. PIDs saved to {pid_file}")
+            print("Run `nucleus lane status` to check progress.")
+            print("Run `nucleus lane stop` to stop all daemons.")
+
+        return 0
+
+    elif args.lane_action == 'stop':
+        pid_file = brain_path / "state" / "lane_pids.json"
+        stopped = 0
+
+        # Stop lane daemons (from lane_pids.json)
+        if pid_file.exists():
+            pids = _json.loads(pid_file.read_text())
+            for name, pid in pids.items():
+                try:
+                    os.kill(int(pid), 15)  # SIGTERM
+                    print(f"  Stopped {name} (PID {pid})")
+                    stopped += 1
+                except ProcessLookupError:
+                    print(f"  {name} (PID {pid}) already stopped")
+                except Exception as exc:
+                    print(f"  ERROR stopping {name}: {exc}")
+            pid_file.unlink()
+
+        # Also kill standalone bash daemons (scripts/secretary_daemon.sh,
+        # scripts/executor_daemon.sh) that may be running from a previous
+        # era. These conflict with the lane system by posting duplicate
+        # telemetry and stealing tasks. Unified cleanup prevents zombie
+        # daemons from causing confusion.
+        import subprocess as _sp
+        for daemon_name in ["secretary_daemon", "executor_daemon"]:
+            try:
+                result = _sp.run(
+                    ["pgrep", "-f", daemon_name],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.stdout.strip():
+                    for pid_str in result.stdout.strip().split("\n"):
+                        pid = int(pid_str.strip())
+                        try:
+                            os.kill(pid, 15)
+                            print(f"  Stopped standalone {daemon_name} (PID {pid})")
+                            stopped += 1
+                        except (ProcessLookupError, ValueError):
+                            pass
+            except Exception:
+                pass  # pgrep not available or no matches — fine
+
+        if stopped == 0:
+            print("No running lane daemons found.")
+        else:
+            print(f"\nStopped {stopped} daemon(s).")
+        return 0
+
+    elif args.lane_action == 'status':
+        from mcp_server_nucleus.runtime.lane import LaneConfig
+        from mcp_server_nucleus.runtime.lane.control_watcher import ControlWatcher
+
+        config_path = brain_path / "state" / "lane_config.json"
+        if not config_path.exists():
+            print("No lane config found. Run `nucleus lane init` first.")
+            return 1
+        config = LaneConfig.from_dict(_json.loads(config_path.read_text()))
+
+        def _print_status() -> None:
+            """Single status snapshot — used both for one-shot and --watch."""
+            watcher = ControlWatcher(config)
+            status = watcher.status()
+
+            if getattr(args, 'json', False):
+                print(_json.dumps(status, indent=2, default=str))
+            else:
+                counts = status.get("counts", {})
+                print(f"Lane: {status.get('role', 'unknown')}")
+                print(f"Spec: {config.spec_path}")
+                print(f"Spec verified: {status.get('principal', {}).get('verified', False)}")
+                print(f"Statuses: {counts}")
+                print()
+                for t in status.get("tasks", []):
+                    ver = t.get("verification_status") or "-"
+                    print(f"  {t['id']}: {t['status']} (verification={ver}, claimed_by={t.get('claimed_by')})")
+
+        if getattr(args, 'watch', False):
+            # Live-updating status: clear screen + reprint every 2s until Ctrl+C.
+            # Uses time.sleep(2) — not a busy loop.
+            import time as _time
+            try:
+                while True:
+                    # Clear screen + home cursor (ANSI); works on POSIX terminals.
+                    sys.stdout.write("\033[2J\033[H")
+                    sys.stdout.flush()
+                    _print_status()
+                    print("\n[watch] refreshing every 2s — Ctrl+C to exit", flush=True)
+                    _time.sleep(2)
+            except KeyboardInterrupt:
+                print("\n[watch] stopped.")
+                return 0
+        else:
+            _print_status()
+        return 0
+
+    elif args.lane_action == 'feedback':
+        from mcp_server_nucleus.runtime.lane import submit_feedback
+
+        item = submit_feedback(
+            feedback_type=args.type,
+            subject=args.subject,
+            body=args.body,
+            reporter=args.reporter or os.environ.get("USER", "anonymous"),
+            repo=str(repo_root),
+        )
+        print(f"Feedback submitted: {item['id']}")
+        print(f"  type: {item['type']}")
+        print(f"  subject: {item['subject']}")
+        print(f"  stored at: .brain/feedback/lane_feedback.json")
+        if item.get("github_issue"):
+            print(f"  github issue: {item['github_issue']['url']}")
+        if item.get("github_issue_error"):
+            print(f"  github issue failed: {item['github_issue_error']}")
+        print(f"\nThe nucleus team will review this feedback.")
+        return 0
+
+    elif args.lane_action == 'telemetry':
+        import json as _json
+        from collections import Counter
+
+        # Load task store
+        sys.path.insert(0, str(repo_root / "mcp-server-nucleus" / "src"))
+        from mcp_server_nucleus.runtime import task_ops
+        tasks = task_ops._list_tasks()
+        status_counts = Counter(t.get("status", "").upper() for t in tasks)
+
+        # Load feedback store
+        brain = Path(os.environ.get("NUCLEUS_BRAIN_PATH", str(repo_root / ".brain")))
+        feedback_path = brain / "feedback" / "lane_feedback.json"
+        feedback_items = []
+        if feedback_path.exists():
+            feedback_items = _json.loads(feedback_path.read_text())
+
+        # Load secretary telemetry from state if available
+        telemetry_state = brain / "state" / "secretary_telemetry.json"
+        sec_telemetry = {}
+        if telemetry_state.exists():
+            sec_telemetry = _json.loads(telemetry_state.read_text())
+
+        def _alive(pid):
+            try:
+                os.kill(int(pid), 0)
+                return True
+            except (OSError, ValueError):
+                return False
+
+        metrics = {
+            "tasks": {
+                "pending": status_counts.get("PENDING", 0),
+                "in_progress": status_counts.get("IN_PROGRESS", 0),
+                "done": status_counts.get("DONE", 0),
+                "escalated": status_counts.get("ESCALATED", 0),
+                "confirmed": sum(1 for t in tasks if t.get("verification_status") == "CONFIRMED"),
+                "total": len(tasks),
+            },
+            "feedback": {
+                "total": len(feedback_items),
+                "open": sum(1 for f in feedback_items if f.get("status") == "open"),
+            },
+            "secretary": sec_telemetry,
+        }
+
+        # Check daemon status
+        pids_path = brain / "state" / "lane_pids.json"
+        if pids_path.exists():
+            pids = _json.loads(pids_path.read_text())
+            metrics["daemons"] = {
+                name: {"pid": pid, "alive": _alive(pid)}
+                for name, pid in pids.items()
+            }
+
+        if args.json:
+            print(_json.dumps(metrics, indent=2, default=str))
+        else:
+            print("Lane Telemetry")
+            print(f"  Tasks: PENDING={metrics['tasks']['pending']} "
+                  f"IN_PROGRESS={metrics['tasks']['in_progress']} "
+                  f"DONE={metrics['tasks']['done']} "
+                  f"ESCALATED={metrics['tasks']['escalated']} "
+                  f"CONFIRMED={metrics['tasks']['confirmed']}")
+            print(f"  Feedback: {metrics['feedback']['total']} total "
+                  f"({metrics['feedback']['open']} open)")
+            if metrics.get("daemons"):
+                for name, info in metrics["daemons"].items():
+                    status = "alive" if info["alive"] else "dead"
+                    print(f"  Daemon {name}: PID {info['pid']} ({status})")
+            if sec_telemetry:
+                print(f"  Secretary: verified={sec_telemetry.get('verified', 0)} "
+                      f"confirmed={sec_telemetry.get('confirmed', 0)} "
+                      f"failed={sec_telemetry.get('failed', 0)}")
+        return 0
+
+    elif args.lane_action == 'guide':
+        # Context-aware guide based on repo state
+        has_spec = (repo_root / "SPEC.md").exists()
+        has_brain = (repo_root / ".brain").exists()
+        pids_path = repo_root / ".brain" / "state" / "lane_pids.json"
+        has_running_lane = pids_path.exists()
+
+        print("=" * 60)
+        print("  AUTONOMOUS LANE — Context-Aware Quick Start")
+        print("=" * 60)
+        print()
+        print("WHAT IT IS:")
+        print("  A self-sustaining task-execution loop for any git repo.")
+        print("  3 daemons: watcher (dispatches tasks) → executor (LLM implements)")
+        print("  → secretary (independently verifies). Trust anchor = secretary.")
+        print()
+        print("WHEN TO USE:")
+        print("  • You have a backlog of well-defined tasks (bugs, features, tests)")
+        print("  • You want them executed autonomously without manual prompting")
+        print("  • Tasks have clear acceptance criteria (rerunnable evidence)")
+        print()
+        print("YOUR REPO STATE:")
+        if has_spec and has_brain and has_running_lane:
+            print("  ✓ SPEC.md exists, .brain/ exists, lane appears running")
+            print("  → Check status:  nucleus lane status")
+            print("  → Stop when done: nucleus lane stop")
+        elif has_spec and has_brain:
+            print("  ✓ SPEC.md exists, .brain/ exists, lane NOT running")
+            print("  → Start the lane: nucleus lane start --background")
+            print("  → Check status:  nucleus lane status")
+        elif has_spec:
+            print("  ✓ SPEC.md exists, .brain/ NOT initialized")
+            print("  → Initialize:    nucleus lane init")
+            print("  → Start:         nucleus lane start --background")
+        else:
+            print("  ✗ No SPEC.md found")
+            print("  → Step 1: nucleus lane init  (creates SPEC.md template + .brain/)")
+            print("  → Step 2: Edit SPEC.md with your tasks (see format below)")
+            print("  → Step 3: git add SPEC.md && git commit -m 'Add lane spec'")
+            print("  → Step 4: nucleus lane init  (re-pin the spec)")
+            print("  → Step 5: nucleus lane start --background")
+            print("  → Step 6: nucleus lane status  (monitor progress)")
+            print("  → Step 7: nucleus lane stop  (when all tasks CONFIRMED)")
+        print()
+        print("SPEC.md FORMAT:")
+        print("  ### Task: <unique_task_id>")
+        print("  - **Title:** Human-readable title")
+        print("  - **Acceptance:**")
+        print("    - Criterion 1 (must be rerunnable evidence)")
+        print("    - Criterion 2")
+        print("  - **Blocked by:** <other_task_id>  (optional)")
+        print("  - **Priority:** 1  (lower = higher priority)")
+        print()
+        print("COMMANDS:")
+        print("  nucleus lane init      — set up .brain/ + SPEC.md template")
+        print("  nucleus lane validate  — check SPEC.md for format errors")
+        print("  nucleus lane start     — launch daemons (autonomous execution)")
+        print("  nucleus lane status    — check task counts + daemon health")
+        print("  nucleus lane telemetry — detailed metrics (failure rate, etc)")
+        print("  nucleus lane stop      — stop all daemons")
+        print("  nucleus lane feedback  — report friction (creates GitHub issue)")
+        print("  nucleus lane guide     — this message")
+        print()
+        print("FEEDBACK:")
+        print("  Hit friction? Run: nucleus lane feedback --type bug --subject '...' --body '...'")
+        print("  This creates a GitHub issue the nucleus team can see cross-machine.")
+        print()
+        return 0
+
+    elif args.lane_action == 'validate':
+        from mcp_server_nucleus.runtime.lane.validator import validate_spec
+
+        result = validate_spec(spec_path)
+
+        if result.task_ids:
+            print(f"Validated {len(result.task_ids)} task(s): "
+                  + ", ".join(result.task_ids))
+
+        for warning in result.warnings:
+            print(f"WARNING: {warning}")
+
+        if result.errors:
+            for err in result.errors:
+                print(f"ERROR: {err}")
+            print(f"\nSPEC validation failed: {len(result.errors)} error(s), "
+                  f"{len(result.warnings)} warning(s).")
+            return 1
+
+        print(f"\nSPEC valid: 0 errors, {len(result.warnings)} warning(s).")
+        return 0
+
+    else:
+        print("Unknown lane action. Run `nucleus lane --help` for usage.")
+        return 1
+
+
+def handle_plan_command(args) -> int:
+    """Handle `nucleus plan <import|execute|validate|list>` — plan→task→mission bridge.
+
+    Subcommands:
+      import <file>           — calls import_plan_as_tasks(), prints task_ids created
+      execute <file> --goal   — import_plan_as_tasks() then _brain_start_mission_impl()
+      validate <file>         — calls validate_plan(), prints format + task count + errors
+      list [--plans-dir DIR]  — calls list_plans(), prints table of plans with task counts
+
+    With no subcommand, prints help (argparse default for empty subparser dest).
+    """
+    import json as _json
+    from pathlib import Path
+
+    action = getattr(args, 'plan_action', None)
+    if action is None:
+        # No subcommand: print help. argparse doesn't auto-print for subparsers
+        # when dest is set, so we do it explicitly.
+        print("usage: nucleus plan [-h] {import,execute,validate,list} ...")
+        print()
+        print("Plan operations: import, execute, validate, list plan files.")
+        print()
+        print("subcommands:")
+        print("  import     Import a plan file as PENDING tasks (calls import_plan_as_tasks)")
+        print("  execute    Import a plan and start a sprint mission against its tasks")
+        print("  validate   Validate a plan file format and report task count + errors")
+        print("  list       List plan files in .brain/plans with task counts")
+        print()
+        print("Run `nucleus plan <subcommand> --help` for subcommand-specific flags.")
+        return 0
+
+    from mcp_server_nucleus.runtime.plan_ops import (
+        import_plan_as_tasks,
+        list_plans,
+        validate_plan,
+    )
+
+    if action == 'import':
+        result = import_plan_as_tasks(args.file, plan_ref=args.plan_ref)
+        if not result.get('success'):
+            print(f"ERROR: {result.get('error', 'unknown error')}")
+            return 1
+        task_ids = result.get('task_ids', [])
+        print(f"Imported {result.get('count', len(task_ids))} task(s) from {args.file}")
+        for tid in task_ids:
+            print(f"  {tid}")
+        return 0
+
+    if action == 'execute':
+        # Step 1: import the plan as tasks.
+        import_result = import_plan_as_tasks(args.file, plan_ref=args.plan_ref)
+        if not import_result.get('success'):
+            print(f"ERROR: import failed: {import_result.get('error', 'unknown error')}")
+            return 1
+        task_ids = import_result.get('task_ids', [])
+        if not task_ids:
+            print("ERROR: import produced no task_ids")
+            return 1
+
+        # Step 2: start a mission against those tasks.
+        from mcp_server_nucleus.runtime.sprint_ops import _brain_start_mission_impl
+
+        name = args.name or Path(args.file).stem
+        mission_output = _brain_start_mission_impl(
+            name=name,
+            goal=args.goal,
+            task_ids=task_ids,
+            budget_limit=args.budget,
+            time_limit_hours=args.time_limit,
+        )
+        print(mission_output)
+        # The impl returns a formatted string; surface import summary too.
+        print(f"\nImported {len(task_ids)} task(s) from {args.file}:")
+        for tid in task_ids:
+            print(f"  {tid}")
+        # Non-zero exit only if the impl clearly errored.
+        if mission_output.startswith("❌"):
+            return 1
+        return 0
+
+    if action == 'validate':
+        result = validate_plan(args.file)
+        print(f"File: {args.file}")
+        print(f"Format: {result.get('format', 'unknown')}")
+        print(f"Task count: {result.get('task_count', 0)}")
+        errors = result.get('errors', [])
+        if errors:
+            print("Errors:")
+            for err in errors:
+                print(f"  - {err}")
+        print(f"Valid: {'yes' if result.get('valid') else 'no'}")
+        return 0 if result.get('valid') else 1
+
+    if action == 'list':
+        plans = list_plans(plans_dir=args.plans_dir)
+        if getattr(args, 'json', False):
+            print(_json.dumps(plans, indent=2))
+            return 0
+        if not plans:
+            print(f"No plans found in {args.plans_dir}")
+            return 0
+        # Table: NAME | FORMAT | TASKS | SIZE
+        print(f"{'NAME':<48} {'FORMAT':<8} {'TASKS':>6} {'SIZE':>10}")
+        print("-" * 76)
+        for p in plans:
+            print(f"{p.get('name', ''):<48} {p.get('format', 'unknown'):<8} "
+                  f"{p.get('task_count', 0):>6} {p.get('size_bytes', 0):>10}")
+        print(f"\nTotal: {len(plans)} plan(s)")
+        return 0
+
+    print(f"Unknown plan action: {action}")
+    return 1
+
+
+def handle_dispatch_command(args) -> int:
+    """Handle `nucleus dispatch <agy|devin>` — flag-gated cross-vendor one-shot.
+
+    Resolves the prompt identity-safely (prefer --prompt-file / stdin over
+    --prompt), then delegates the flag gate + dispatch + capture to
+    ``vendor_dispatch.dispatch_cli`` (the single testable seam). With
+    NUCLEUS_CROSS_VENDOR off this prints an actionable message and never invokes
+    a vendor CLI.
+    """
+    from .cli_output import output
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+
+    # Resolve the prompt: --prompt-file > --prompt > stdin (if piped).
+    prompt = None
+    prompt_file = getattr(args, 'prompt_file', None)
+    if prompt_file:
+        try:
+            prompt = Path(prompt_file).read_text(encoding='utf-8')
+        except OSError as e:
+            return output(None, fmt, error=f"cannot read --prompt-file {prompt_file!r}: {e}")
+    elif getattr(args, 'prompt', None):
+        prompt = args.prompt
+    elif not sys.stdin.isatty():
+        try:
+            prompt = sys.stdin.read()
+        except Exception:
+            prompt = None
+
+    from .runtime.vendor_dispatch import dispatch_cli
+    code, payload = dispatch_cli(
+        args.vendor,
+        prompt,
+        getattr(args, 'artifact_ref', None),
+        to_role=getattr(args, 'to', 'peer'),
+        timeout_s=getattr(args, 'timeout', 300),
+        budget_usd=getattr(args, 'budget', 0.0),
+    )
+    if code != 0:
+        # Emit the actionable error/message to stderr, keep exit code meaningful.
+        msg = payload.get('message') or payload.get('error') or 'dispatch failed'
+        print(msg, file=sys.stderr)
+    output(payload, fmt)
+    return code
+
+
+def handle_onboard_command(args) -> int:
+    """Handle `nucleus onboard` — one-command, zero-config cross-vendor setup.
+
+    Four phases, each printed so the user SEES progress:
+      1. DETECT — vendor CLIs (claude/devin/agy) via ``detect_vendor_clis()``
+         (iterates the ``VENDOR_SPECS`` registry + the host ``claude`` CLI).
+      2. WIRE   — persist cross-vendor enablement (``write_onboard_config``) so
+         ``cross_vendor_enabled()`` returns True with NO env set (zero-config).
+      3. VERIFY — a tiny liveness dispatch per detected *dispatch* vendor (via the
+         existing ``VendorCLIExecutor`` path); failures are shown, not fatal.
+      4. REPORT — clean summary + a next-step line.
+    """
+    _setup_agent_env(args)
+    fmt = _get_fmt(args)
+
+    from .runtime.vendor_dispatch import (
+        VENDOR_SPECS, ONBOARD_HOST_CLI,
+        detect_vendor_clis, write_onboard_config, cross_vendor_enabled,
+        VendorCLIExecutor,
+    )
+
+    skip_verify = getattr(args, 'skip_verify', False)
+    verify_timeout = getattr(args, 'verify_timeout', 20)
+
+    # ── 1. DETECT ──────────────────────────────────────────────────────────────
+    print("🔍 Detecting vendor CLIs...")
+    detected = detect_vendor_clis()
+    found_rows, missing_rows = [], []
+    # Stable order: registry vendors first (agy, devin), then host claude.
+    order = list(VENDOR_SPECS) + [ONBOARD_HOST_CLI]
+    for name in order:
+        info = detected.get(name, {})
+        if info.get("found"):
+            ver = info.get("version") or "(version unavailable)"
+            found_rows.append(f"  ✓ {name:<8} {ver}  [{info.get('model')}]")
+        else:
+            missing_rows.append(f"  ✗ {name:<8} not found on PATH")
+    for line in found_rows:
+        print(line)
+    for line in missing_rows:
+        print(line)
+    found_count = len(found_rows)
+    print(f"   Detected: {found_count}/{len(order)} CLIs")
+
+    # ── 2. WIRE ────────────────────────────────────────────────────────────────
+    print("\n🔌 Wiring cross-vendor enablement (zero-config)...")
+    cfg_path = write_onboard_config(enabled=True, detected=detected)
+    print(f"  Wrote {cfg_path}")
+    # Prove the zero-config bar: cross_vendor_enabled() now True with NO env set.
+    env_was_set = bool(os.environ.get("NUCLEUS_CROSS_VENDOR"))
+    enabled_no_env = cross_vendor_enabled()
+    if enabled_no_env:
+        how = "env NUCLEUS_CROSS_VENDOR=1" if env_was_set else "persistent onboard config (no env needed)"
+        print(f"  ✓ cross_vendor_enabled() = True via {how}")
+    else:
+        print("  ✗ cross_vendor_enabled() = False (config write may have failed)")
+
+    # ── 3. VERIFY ──────────────────────────────────────────────────────────────
+    verify_results: Dict[str, Any] = {}
+    dispatch_vendors = [
+        n for n in VENDOR_SPECS if detected.get(n, {}).get("found")
+    ]
+    if skip_verify:
+        print("\n⏭  ️ Verify skipped (--skip-verify)")
+    elif not dispatch_vendors:
+        print("\n⏭  ️ Verify skipped (no dispatch vendors detected)")
+    else:
+        print(f"\n✅ Verifying liveness ({len(dispatch_vendors)} vendor(s))...")
+        probe = "Reply with the single word: OK"
+        for name in dispatch_vendors:
+            try:
+                res = VendorCLIExecutor(
+                    name, probe, timeout_s=verify_timeout
+                ).run()
+                ok = res.status == "ok"
+                verify_results[name] = ok
+                mark = "✓" if ok else "✗"
+                detail = "alive" if ok else f"{res.status}: {(res.result or '').strip()[:80]}"
+                print(f"  {mark} {name:<8} {detail}")
+            except Exception as exc:  # noqa: BLE001 — verify is non-fatal
+                verify_results[name] = False
+                print(f"  ✗ {name:<8} verify error: {exc}")
+
+    # ── 4. REPORT ──────────────────────────────────────────────────────────────
+    print("\n" + "=" * 60)
+    print("📊 Onboard summary")
+    print("=" * 60)
+    print(f"  Detected : {found_count}/{len(order)} CLIs")
+    print(f"  Wired    : cross-vendor {'ON' if enabled_no_env else 'OFF'}"
+          + ("" if enabled_no_env else " (config write failed)"))
+    if verify_results:
+        ok_count = sum(1 for v in verify_results.values() if v)
+        print(f"  Verified : {ok_count}/{len(verify_results)} vendors alive")
+    elif skip_verify or not dispatch_vendors:
+        print("  Verified : skipped")
+    else:
+        print("  Verified : n/a")
+    print("-" * 60)
+    if enabled_no_env:
+        print("Cross-vendor is ON. Try:")
+        print("  nucleus dispatch devin --prompt-file <file> --artifact-ref <sha>")
+    else:
+        print("Cross-vendor wiring incomplete — check config path above.")
+    print("=" * 60)
+
+    if fmt == 'json':
+        from .cli_output import output
+        output({
+            "detected": detected,
+            "wired": {"enabled": enabled_no_env, "config_path": str(cfg_path)},
+            "verified": verify_results,
+        }, fmt)
+    return 0 if enabled_no_env else 1
+
+
+# ── Fleet command (g4_fleet_init_command) ────────────────────────────────────
+# Default agent roster provisioned by `nucleus fleet init`. Each entry carries
+# enough connection info for the relay SDK to point the agent at the shared
+# brain mailbox without further configuration.
+_DEFAULT_FLEET_AGENTS = (
+    "claude_code_main",
+    "claude_code_peer",
+    "gemini_cli",
+    "devin",
+)
+
+# Per-agent setup instructions printed at the end of `nucleus fleet init`.
+# Keys MUST match the agent roles in _DEFAULT_FLEET_AGENTS / fleet.json.
+_AGENT_SETUP_INSTRUCTIONS = {
+    "claude_code_main": (
+        "Claude Code (main lane):\n"
+        "  1. In your repo: export NUCLEUS_BRAIN_PATH=\"{brain}\"\n"
+        "  2. export NUCLEUS_SESSION_ROLE=claude_code_main\n"
+        "  3. pip install nucleus-relay-sdk   (or use the in-repo SDK at\n"
+        "     mcp-server-nucleus/sdk/python/nucleus_relay_sdk/)\n"
+        "  4. From Python:\n"
+        "       from nucleus_relay_sdk import RelayClient\n"
+        "       client = RelayClient(sender=\"claude_code_main\", brain_path=\"{brain}\")\n"
+        "  5. Send: client.post(to=\"claude_code_peer\", subject=\"[HANDOFF]\", body=\"...\")\n"
+        "  6. Read: msgs = client.read(bucket=\"claude_code_main\")"
+    ),
+    "claude_code_peer": (
+        "Claude Code (peer lane):\n"
+        "  1. export NUCLEUS_BRAIN_PATH=\"{brain}\"\n"
+        "  2. export NUCLEUS_SESSION_ROLE=claude_code_peer\n"
+        "  3. pip install nucleus-relay-sdk\n"
+        "  4. from nucleus_relay_sdk import RelayClient\n"
+        "     client = RelayClient(sender=\"claude_code_peer\", brain_path=\"{brain}\")\n"
+        "  5. Read your inbox: client.read(bucket=\"claude_code_peer\")\n"
+        "  6. Reply to main:   client.post(to=\"claude_code_main\", subject=\"[DONE]\", body=\"...\")"
+    ),
+    "gemini_cli": (
+        "Gemini CLI (agy lane):\n"
+        "  1. export NUCLEUS_BRAIN_PATH=\"{brain}\"\n"
+        "  2. export NUCLEUS_SESSION_ROLE=gemini_cli\n"
+        "  3. pip install nucleus-relay-sdk\n"
+        "  4. from nucleus_relay_sdk import RelayClient\n"
+        "     client = RelayClient(sender=\"gemini_cli\", brain_path=\"{brain}\")\n"
+        "  5. Read: client.read(bucket=\"gemini_cli\")\n"
+        "  6. Post: client.post(to=\"claude_code_main\", subject=\"[REVIEW]\", body=\"...\")"
+    ),
+    "devin": (
+        "Devin (lane-devin):\n"
+        "  1. export NUCLEUS_BRAIN_PATH=\"{brain}\"\n"
+        "  2. export NUCLEUS_SESSION_ROLE=devin\n"
+        "  3. pip install nucleus-relay-sdk\n"
+        "  4. from nucleus_relay_sdk import RelayClient\n"
+        "     client = RelayClient(sender=\"devin\", brain_path=\"{brain}\")\n"
+        "  5. Read: client.read(bucket=\"devin\")\n"
+        "  6. Post: client.post(to=\"claude_code_main\", subject=\"[DONE]\", body=\"...\")"
+    ),
+}
+
+_FLEET_SPEC_TEMPLATE = """# SPEC — Fleet coordination tasks
+
+> Generated by `nucleus fleet init`. This is a placeholder spec; replace with
+> your fleet's real coordination tasks. Each task follows the same shape as
+> the G4 unicorn-path tasks (id, title, acceptance, blocked_by, priority).
+
+---
+
+### Task: fleet_first_handoff
+- **Title:** First cross-agent handoff over the relay
+- **Acceptance:**
+  - One agent posts a `[HELLO]` envelope to another agent's bucket
+  - The recipient reads it via `RelayClient.read()` and confirms the envelope
+    has all required fields (id, from, to, subject, body, priority, created_at)
+  - The recipient acks the message via `RelayClient.ack()`
+- **Blocked by:** (none)
+- **Priority:** 1
+"""
+
+
+def _build_fleet_config(brain_path: Path, agents: list, relay_url: Optional[str]) -> dict:
+    """Build the fleet.json config dict.
+
+    Each agent gets a connection block with:
+      - role: canonical inbox name (matches relay envelope `to`/`from`)
+      - transport: "filesystem" (default) or "http" (when --relay-url is set)
+      - connection: filesystem path OR HTTP URL the relay SDK should target
+      - inbox: relative path to the agent's mailbox inside the brain
+    """
+    transport = "http" if relay_url else "filesystem"
+    connection = relay_url if relay_url else str(brain_path / "relay")
+    members = {}
+    for role in agents:
+        members[role] = {
+            "role": role,
+            "transport": transport,
+            "connection": connection,
+            "inbox": f"relay/{role}",
+            "sender": role,
+        }
+    return {
+        "schema_version": 1,
+        "generated_by": "nucleus fleet init",
+        "brain_path": str(brain_path),
+        "relay": {
+            "transport": transport,
+            "connection": connection,
+            "default_priority": "normal",
+        },
+        "agents": members,
+    }
+
+
+def handle_fleet_command(args) -> int:
+    """`nucleus fleet` — multi-agent fleet setup.
+
+    Currently supports `init` (g4_fleet_init_command): creates a `.brain/`
+    directory with the standard fleet structure (relay/, tasks/, logs/,
+    state/), seeds a placeholder SPEC.md, writes `.brain/fleet.json` with
+    connection strings for each agent, and prints per-agent setup
+    instructions.
+    """
+    action = getattr(args, 'fleet_action', None)
+    if action == 'init':
+        return _fleet_init(args)
+    # No action → print help
+    print("Usage: nucleus fleet init [path] [--agents a,b,c] [--relay-url URL] [--force]")
+    print("\nInitializes a multi-agent fleet .brain with relay mailboxes for each agent.")
+    return 0 if action is None else 1
+
+
+def _fleet_init(args) -> int:
+    """Implements `nucleus fleet init`."""
+    path_arg = getattr(args, 'path', '.brain') or '.brain'
+    brain_path = Path(path_arg).expanduser().resolve()
+
+    # Parse --agents (comma-separated) or fall back to the default roster.
+    agents_arg = getattr(args, 'agents', None)
+    if agents_arg:
+        agents = [a.strip() for a in agents_arg.split(',') if a.strip()]
+        if not agents:
+            print("❌ --agents list is empty after parsing", file=sys.stderr)
+            return 1
+    else:
+        agents = list(_DEFAULT_FLEET_AGENTS)
+
+    relay_url = getattr(args, 'relay_url', None)
+    force = bool(getattr(args, 'force', False))
+
+    # Refuse to clobber an existing .brain unless --force.
+    if brain_path.exists() and any(brain_path.iterdir()):
+        if not force:
+            print(f"❌ {brain_path} already exists and is non-empty.", file=sys.stderr)
+            print("   Pass --force to overwrite, or pick a different path.", file=sys.stderr)
+            return 1
+        print(f"⚠️  --force: clearing existing contents at {brain_path}")
+        import shutil
+        shutil.rmtree(brain_path)
+
+    # 1. Create .brain/ with the standard fleet structure.
+    print(f"🚀 Initializing fleet .brain at {brain_path}")
+    dirs = [
+        brain_path / "relay",
+        brain_path / "tasks",
+        brain_path / "logs",
+        brain_path / "state",
+    ]
+    # Per-agent relay mailboxes.
+    for role in agents:
+        dirs.append(brain_path / "relay" / role)
+    for d in dirs:
+        d.mkdir(parents=True, exist_ok=True)
+        print(f"  📁 Created {d}")
+
+    # 2. Seed a placeholder SPEC.md with one task.
+    spec_path = brain_path / "SPEC.md"
+    spec_path.write_text(_FLEET_SPEC_TEMPLATE, encoding="utf-8")
+    print(f"  📄 Created {spec_path} (placeholder task: fleet_first_handoff)")
+
+    # 3. Generate fleet.json with connection strings for each agent.
+    fleet_config = _build_fleet_config(brain_path, agents, relay_url)
+    fleet_path = brain_path / "fleet.json"
+    _atomic_write_json(fleet_path, fleet_config)
+    print(f"  🔌 Created {fleet_path} ({len(agents)} agent connection string(s))")
+
+    # 4. Print per-agent setup instructions.
+    print("\n📋 Setup instructions per agent:")
+    print("=" * 60)
+    for role in agents:
+        instr = _AGENT_SETUP_INSTRUCTIONS.get(role)
+        if instr is None:
+            # Generic instruction for custom agent roles.
+            instr = (
+                f"{role}:\n"
+                f"  1. export NUCLEUS_BRAIN_PATH=\"{brain_path}\"\n"
+                f"  2. export NUCLEUS_SESSION_ROLE={role}\n"
+                f"  3. pip install nucleus-relay-sdk\n"
+                f"  4. from nucleus_relay_sdk import RelayClient\n"
+                f"     client = RelayClient(sender=\"{role}\", brain_path=\"{brain_path}\")\n"
+                f"  5. Read: client.read(bucket=\"{role}\")\n"
+                f"  6. Post: client.post(to=\"<other_role>\", subject=\"[HELLO]\", body=\"...\")"
+            )
+        print(instr.format(brain=brain_path))
+        print("-" * 60)
+
+    print(f"\n✓ Fleet initialized. {len(agents)} agent(s) ready.")
+    print(f"  Next: pick a task from {spec_path} and dispatch it via the relay SDK.")
+    return 0
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    """Write JSON atomically (stage to .tmp, then os.replace)."""
+    import tempfile
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = tempfile.NamedTemporaryFile(
+        mode='w', dir=str(path.parent), suffix='.tmp',
+        delete=False, encoding='utf-8',
+    )
+    try:
+        json.dump(payload, tmp, indent=2, sort_keys=True)
+        tmp.write('\n')
+        tmp.flush()
+        os.fsync(tmp.fileno())
+        tmp.close()
+        os.replace(tmp.name, str(path))
+    except Exception:
+        try:
+            tmp.close()
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+        raise
+
+
+def handle_relay_command(args) -> int:
+    """Two-agent coordination CLI — a thin shim over the shipped FS-mode relay.
+
+    Reuses runtime.relay_ops (relay_post / relay_inbox / relay_ack); envelope
+    schema and created_at (real clock) are unchanged. Defaults make the
+    two-agent base case zero-config — no tokens, no env vars, no canonical
+    inbox knowledge:
+      send  → sender defaults to "main"; recipient is the positional target
+      inbox → reads the "peer" inbox by default
+    force_fs=True pins the local .brain/relay/<role>/ mailbox so a stray
+    NUCLEUS_RELAY_URL can never turn this into a token-gated HTTP call.
+    """
+    from .runtime import relay_ops
+    action = getattr(args, 'relay_action', None)
+
+    if action == 'send':
+        sender = (args.sender or os.environ.get('NUCLEUS_SESSION_ROLE')
+                  or os.environ.get('CC_SESSION_ROLE') or 'main')
+        try:
+            result = relay_ops.relay_post(
+                to=args.to,
+                subject=args.subject,
+                body=args.body,
+                sender=sender,
+                force_fs=True,
+            )
+        except Exception as e:
+            print(f"❌ relay send failed: {e}", file=sys.stderr)
+            return 1
+        if not result.get('sent'):
+            print(f"❌ relay send rejected: {result.get('reason', result.get('error', 'unknown'))}", file=sys.stderr)
+            return 1
+        print(f"✓ sent to {result.get('to', args.to)} (from {sender}) · id {result.get('message_id', '?')}")
+        return 0
+
+    elif action == 'inbox':
+        me = (args.role or os.environ.get('NUCLEUS_SESSION_ROLE')
+              or os.environ.get('CC_SESSION_ROLE') or 'peer')
+        unread_only = bool(getattr(args, 'unread', False))
+        limit = getattr(args, 'limit', 20)
+        try:
+            result = relay_ops.relay_inbox(
+                unread_only=unread_only,
+                limit=limit,
+                recipient=me,
+                force_fs=True,
+            )
+        except Exception as e:
+            print(f"❌ relay inbox failed: {e}", file=sys.stderr)
+            return 1
+        messages = result.get('messages', []) if isinstance(result, dict) else []
+        if not messages:
+            scope = 'unread ' if unread_only else ''
+            print(f"📭 no {scope}messages for {me}")
+            return 0
+        print(f"📬 {len(messages)} message(s) for {me}:")
+        acked = 0
+        do_ack = bool(getattr(args, 'ack', False))
+        for m in messages:
+            frm = m.get('from') or m.get('from_role') or 'unknown'
+            subject = m.get('subject', '')
+            body = m.get('body', '')
+            ts = m.get('created_at', '')
+            print(f"  • from {frm}: {subject}")
+            if body:
+                print(f"      {body}")
+            if ts:
+                print(f"      ({ts})")
+            if do_ack:
+                mid = m.get('id') or m.get('message_id')
+                if mid:
+                    try:
+                        relay_ops.relay_ack(mid, recipient=me, force_fs=True)
+                        acked += 1
+                    except Exception:
+                        pass
+        if do_ack:
+            print(f"✓ acked {acked} message(s)")
+        return 0
+
+    else:
+        print("Usage: nucleus relay <send|inbox>", file=sys.stderr)
+        print("  nucleus relay send <to> --subject S --body B", file=sys.stderr)
+        print("  nucleus relay inbox [--unread] [--ack]", file=sys.stderr)
         return 1
 
 
@@ -7520,14 +9172,19 @@ def handle_schema_command(args):
     
     # We need an initialized MCP instance
     try:
-        from . import mcp
+        from . import mcp, _ensure_initialized
     except ImportError:
         print("Error: Could not import mcp instance. Ensure you are in the package root.")
         return
 
+    # Move 1 followup: registration is deferred into _ensure_initialized() (was
+    # import-time). Fire it before enumerating tools — else list_tools() returns
+    # an empty set and the exported schema is empty. Idempotent.
+    _ensure_initialized()
+
     async def run_gen():
-        tool_names = await mcp.get_tools()
-        print(f"🔍 Generating schema for {len(tool_names)} tools...")
+        tools = await mcp.list_tools()
+        print(f"🔍 Generating schema for {len(tools)} tools...")
         schema = await generate_tool_schema(mcp)
         export_schema_to_file(schema, args.output)
         print(f"✅ Schema exported to: {args.output}")

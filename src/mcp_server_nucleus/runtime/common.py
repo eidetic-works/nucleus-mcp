@@ -8,11 +8,17 @@ import os
 import json
 import logging
 import shutil
+import sqlite3
 import sys
 from contextvars import ContextVar
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Type-only: runtime.project is imported lazily inside function bodies
+    # (mirrors get_brain_path) so the flag-OFF path never loads the detector.
+    from mcp_server_nucleus.runtime.project import ProjectInfo
 
 # ============================================================
 # STRUCTURED LOGGING SYSTEM (AG-010)
@@ -61,6 +67,70 @@ def setup_nucleus_logging(name: str = "nucleus", level: int = logging.INFO):
 # Common logger
 logger = setup_nucleus_logging()
 
+
+# ============================================================
+# PROJECT SPINE FLAG (ADR-0042)
+# ============================================================
+# Gates the D1 precedence inversion in get_brain_path(). Default OFF; when
+# OFF the check short-circuits here without importing runtime.project, so
+# get_brain_path stays byte-identical to its pre-spine behavior. Idiom mirrors
+# NUCLEUS_MEMORY_SOR (memory/facade.py, runtime/memory.py).
+_PROJECT_SPINE_FLAG = "NUCLEUS_PROJECT_SPINE"
+_PROJECT_SPINE_TRUTHY = frozenset({"1", "true", "yes", "on"})
+
+
+def _project_spine_on() -> bool:
+    """True iff ``NUCLEUS_PROJECT_SPINE`` is set truthy (default False)."""
+    return os.environ.get(_PROJECT_SPINE_FLAG, "").strip().lower() in _PROJECT_SPINE_TRUTHY
+
+
+# ============================================================
+# SHARED SQLITE CONCURRENCY POSTURE
+# ============================================================
+# Primary-store hardening (runtime/db.py SQLiteBackend._get_conn): WAL lets
+# concurrent readers coexist with one writer, busy_timeout makes writers wait on
+# a lock instead of raising immediately, synchronous=NORMAL is durable enough
+# under WAL while faster than FULL. Secondary stores (vector_store, audit_log)
+# route their connects through open_hardened_sqlite() to inherit this posture.
+_SQLITE_HARDENING_PRAGMAS = (
+    "PRAGMA journal_mode=WAL",
+    "PRAGMA busy_timeout=5000",
+    "PRAGMA synchronous=NORMAL",
+)
+_sqlite_pragma_warned = False
+
+
+def open_hardened_sqlite(
+    db_path: Union[str, Path],
+    *,
+    timeout: float = 10,
+    check_same_thread: bool = True,
+) -> sqlite3.Connection:
+    """Open a SQLite connection with the primary-store concurrency posture.
+
+    ``connect(timeout=10)`` + WAL + ``busy_timeout=5000`` + ``synchronous=NORMAL``
+    — the same hardening ``runtime/db.py`` applies to the primary store — so
+    concurrent writers wait on the lock rather than failing with
+    ``database is locked``.
+
+    PRAGMA application degrades gracefully: on a read-only filesystem WAL cannot
+    create the ``-wal``/``-shm`` sidecars, so a PRAGMA failure is logged once and
+    the (still usable) connection is returned in whatever journal mode the DB
+    already has, rather than raising. Default ``isolation_level`` is preserved so
+    ``with open_hardened_sqlite(p) as conn:`` keeps committing on block exit.
+    """
+    conn = sqlite3.connect(str(db_path), timeout=timeout, check_same_thread=check_same_thread)
+    global _sqlite_pragma_warned
+    try:
+        for pragma in _SQLITE_HARDENING_PRAGMAS:
+            conn.execute(pragma)
+    except sqlite3.Error as exc:  # pragma: no cover - read-only-FS degrade path
+        if not _sqlite_pragma_warned:
+            logger.warning("SQLite PRAGMA hardening skipped (%s); continuing", exc)
+            _sqlite_pragma_warned = True
+    return conn
+
+
 def get_nucleus_bin_path() -> str:
     """Return the directory containing the nucleus executable."""
     nucleus_bin = shutil.which("nucleus")
@@ -108,19 +178,93 @@ def set_tenant_brain_path(path: Optional[str]) -> None:
     _tenant_brain_path.set(path)
 
 
+# ── Project ContextVar (ADR-0042 D6 — entrypoint lifecycle) ──────────────
+#
+# THE single process/request-scoped ContextVar that carries the detected
+# project (``runtime.project.ProjectInfo``) for the current context. Set once
+# per process at entrypoint init by ``init_project_context()`` — which
+# ``_ensure_initialized()`` (the unified stdio/http/cli-schema entry contract)
+# calls under ``NUCLEUS_PROJECT_SPINE``. It is orthogonal to
+# ``_tenant_brain_path``: that var carries the per-request *brain path* (managed
+# by the HTTP tenant middleware, unchanged here); this one carries project
+# *identity*.
+#
+# #653 root cause: a bare ``from common import _current_project`` in a consumer
+# module snapshots the reference at that module's import time and reads a stale
+# value. The var is therefore module-private and reached ONLY through
+# ``get_current_project()`` / ``set_current_project()`` — never from-imported.
+#
+# Flag OFF ⇒ ``init_project_context()`` returns before this var is ever set from
+# detection ⇒ it stays at its ``None`` default and no consumer diverges:
+# byte-identical to pre-spine startup.
+_current_project: "ContextVar[Optional[ProjectInfo]]" = ContextVar(
+    "nucleus_current_project", default=None
+)
+
+
+def get_current_project() -> "Optional[ProjectInfo]":
+    """Return the current context's detected project, or ``None`` when unset.
+
+    THE accessor for the project ContextVar. Consumers MUST call this instead
+    of from-importing ``_current_project`` (the #653 stale-reference trap).
+    ``None`` whenever detection declined or the flag is OFF.
+    """
+    return _current_project.get()
+
+
+def set_current_project(project: "Optional[ProjectInfo]") -> None:
+    """Set the project ContextVar for the current context.
+
+    Called by ``init_project_context()`` at per-process entrypoint init, and
+    available to the HTTP tenant middleware for per-request set/clear. Pass
+    ``None`` to clear.
+    """
+    _current_project.set(project)
+
+
+def init_project_context() -> None:
+    """Populate the project ContextVar from cwd detection (ADR-0042 D6).
+
+    Called once per process by ``_ensure_initialized()`` — the unified
+    entrypoint contract shared by stdio ``main()``, the HTTP
+    ``build_app()``/``main()``, and the ``nucleus schema`` (cli-schema) export.
+    Under ``NUCLEUS_PROJECT_SPINE`` it resolves the project owning
+    ``Path.cwd()`` and stores it; a declined detection (no project root) leaves
+    the var at its ``None`` default so the env var stays authoritative.
+
+    Flag OFF ⇒ returns immediately WITHOUT importing ``runtime.project`` and
+    WITHOUT touching the ContextVar ⇒ byte-identical to pre-spine startup. The
+    ``runtime.project`` import is function-local (mirrors ``get_brain_path``) so
+    the OFF path never loads the detection module.
+    """
+    if not _project_spine_on():
+        return
+    from mcp_server_nucleus.runtime.project import resolve_project
+
+    proj = resolve_project(Path.cwd())
+    if proj is not None:
+        set_current_project(proj)
+
+
 def get_brain_path() -> Path:
     """Get the brain path for the current request context.
 
     Resolution order:
       1. Per-request contextvar (set by tenant middleware; async-safe)
-      2. NUCLEUS_BRAIN_PATH env var (process-wide; races under concurrency)
-      3. NUCLEAR_BRAIN_PATH env var (legacy alias)
+      2. Project detection from cwd (ADR-0042 D2; flag NUCLEUS_PROJECT_SPINE)
+      3. NUCLEUS_BRAIN_PATH env var (process-wide; races under concurrency)
       4. Auto-detect .brain in cwd or parent directories
 
     The contextvar takes precedence because it is the only mechanism that
     is safe under concurrent multi-tenant async requests on a single
     process. os.environ is process-wide and can be overwritten by a
     different tenant's request during an await-point yield.
+
+    Under NUCLEUS_PROJECT_SPINE (default OFF), project detection is inserted
+    below the contextvar and above the env var (ADR-0042 D1 precedence
+    inversion: local project context beats a global env pin). Flag OFF => this
+    function's behavior is byte-identical to before; the detection layer is
+    never entered and its module is never imported.
     """
     # 1. Per-request contextvar (async-safe, set by tenant middleware)
     brain_path = _tenant_brain_path.get()
@@ -138,8 +282,28 @@ def get_brain_path() -> Path:
                 raise ValueError(f"Brain path does not exist and could not be created: {brain_path} ({e})")
         return path
 
-    # 2-3. Process-wide env vars (races under concurrent multi-tenant load;
-    #      safe for CLI/stdio single-tenant mode)
+    # 2. Project detection from cwd (ADR-0042 D1/D2, flag-gated).
+    #    Lazy import inside the guard so the OFF path never touches project.py.
+    if _project_spine_on():
+        from mcp_server_nucleus.runtime.project import resolve_project
+
+        proj = resolve_project(Path.cwd())
+        if proj is not None and proj.brain_root.exists():
+            # Diverge from the env pin only when a real project brain exists.
+            env_brain = os.environ.get("NUCLEUS_BRAIN_PATH")
+            if env_brain and Path(env_brain).resolve() != proj.brain_root.resolve():
+                # Silent-skip policy: state what won, what lost, and why.
+                logger.warning(
+                    "NUCLEUS_BRAIN_PATH (%s) overridden by detected project "
+                    "%s at %s (NUCLEUS_PROJECT_SPINE on)",
+                    env_brain, proj.slug, proj.brain_root,
+                )
+            return proj.brain_root
+        # proj is None or its brain is absent → fall through to env/cwd,
+        # unchanged from today.
+
+    # 3. Process-wide env vars (races under concurrent multi-tenant load;
+    #    safe for CLI/stdio single-tenant mode)
     brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
 
     if brain_path:

@@ -171,6 +171,7 @@ def _quarantine_bloated_files(conversation_id: str, create_checksums: bool = Tru
         
         # Quarantine .pb files or files >10MB
         if item.suffix == ".pb" or item.stat().st_size > 10 * 1024 * 1024:
+            file_size = item.stat().st_size
             rel_path = item.relative_to(conv_dir)
             dest = quarantine_dir / rel_path
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -186,7 +187,7 @@ def _quarantine_bloated_files(conversation_id: str, create_checksums: bool = Tru
             quarantined_files.append({
                 "original": str(item),
                 "quarantine": str(dest),
-                "size_mb": round(item.stat().st_size / (1024 * 1024), 2)
+                "size_mb": round(file_size / (1024 * 1024), 2)
             })
     
     # Save checksums

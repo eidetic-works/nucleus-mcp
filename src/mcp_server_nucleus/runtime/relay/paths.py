@@ -129,6 +129,10 @@ def _parse_relay_message(path: Path) -> Dict[str, Any]:
     """Parse a relay message file and lazily coerce legacy identity."""
     msg = json.loads(path.read_text(encoding="utf-8"))
     
+    # Lazily populate missing 'id' from 'message_id' (legacy/malformed messages)
+    if "id" not in msg and "message_id" in msg:
+        msg["id"] = msg["message_id"]
+    
     # ADR-0005 §D5: Lazy coercion for legacy envelopes missing 'from_provider'
     if "from_provider" not in msg:
         sender = msg.get("from", "")

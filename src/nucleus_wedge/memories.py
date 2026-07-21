@@ -13,13 +13,14 @@ Backfill 3-branch rule (idempotent — checks if column exists before adding):
 """
 from __future__ import annotations
 
+import logging
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-from .store import Store
+from .store import Store, _provenance_anchor_flag_on, verify_record
 from .role_normalize import _normalize_role
 
 SCHEMA = """
@@ -43,6 +44,61 @@ _LEGACY_TAXONOMY = {"Strategy", "Feature", "Architecture", "Decision", "Brand"}
 
 # Regex for branch #1: bracket-tag form `kind [#tag1,tag2]`
 _BRACKET_TAG_RE = re.compile(r"^(?P<kind>\S+)\s*\[#(?P<tags>[^\]]*)\]\s*$")
+
+logger = logging.getLogger("nucleus_wedge.memories")
+
+# Primary-store concurrency posture (mirrors runtime/db.py SQLiteBackend._get_conn):
+# WAL lets concurrent readers coexist with one writer, busy_timeout makes writers
+# wait on a lock instead of raising immediately, synchronous=NORMAL is durable
+# enough under WAL while being faster than FULL.
+_HARDENING_PRAGMAS = (
+    "PRAGMA journal_mode=WAL",
+    "PRAGMA busy_timeout=5000",
+    "PRAGMA synchronous=NORMAL",
+)
+_pragma_warned = False
+
+
+def _connect(db: Path | str) -> sqlite3.Connection:
+    """Open ``memories.db`` with the primary-store concurrency posture.
+
+    ``connect(timeout=10)`` + WAL + ``busy_timeout=5000`` + ``synchronous=NORMAL``
+    — the same hardening ``runtime/db.py`` applies to the primary store — so
+    concurrent wedge writers wait on the lock rather than failing with
+    ``database is locked``.
+
+    PRAGMA application degrades gracefully: on a read-only filesystem WAL cannot
+    create the ``-wal``/``-shm`` sidecars, so a PRAGMA failure is logged once and
+    the (still usable) connection is returned in whatever journal mode the DB
+    already has, rather than raising. Default ``isolation_level`` is preserved so
+    ``with _connect(db) as conn:`` keeps committing on block exit as before.
+    """
+    conn = sqlite3.connect(str(db), timeout=10)
+    global _pragma_warned
+    try:
+        for pragma in _HARDENING_PRAGMAS:
+            conn.execute(pragma)
+    except sqlite3.Error as exc:  # pragma: no cover - read-only-FS degrade path
+        if not _pragma_warned:
+            logger.warning("memories.db PRAGMA hardening skipped (%s); continuing", exc)
+            _pragma_warned = True
+    return conn
+
+
+def _checkpoint(conn: sqlite3.Connection) -> None:
+    """Flush the WAL into the main ``memories.db`` file after a write.
+
+    ``recall_cmd._ensure_populated`` decides whether to rebuild the projection by
+    comparing the main ``memories.db`` file mtime against ``history.jsonl``. Under
+    WAL, an INSERT lands in the ``-wal`` sidecar and the main file's mtime is not
+    bumped until a checkpoint — so without this flush every recall would see the
+    db as stale and rebuild. Checkpoint failures (read-only FS, busy) degrade
+    silently: the worst case is the pre-existing rebuild, never a raise.
+    """
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    except sqlite3.Error:  # pragma: no cover - read-only-FS / busy degrade path
+        pass
 
 
 def default_auto_memory_root() -> Path:
@@ -78,7 +134,7 @@ def _ensure_kind_columns(conn: sqlite3.Connection) -> None:
 def ensure_schema(brain_path: Path | None = None) -> Path:
     db = memories_db_path(brain_path)
     db.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    with _connect(db) as conn:
         conn.executescript(SCHEMA)
         _ensure_kind_columns(conn)
     return db
@@ -104,13 +160,25 @@ def _split_context(context: str) -> tuple[str, str, Optional[str]]:
     return ("unknown", "", s)
 
 
-def _project_row(row: dict) -> tuple | None:
+def _project_row(row: dict, brain_path: Path | None = None) -> tuple | None:
     """Project one history.jsonl row into the (text, tags, created_at, optional_date,
-    source, kind, legacy_context) 7-tuple for the extended memories table."""
+    source, kind, legacy_context) 7-tuple for the extended memories table.
+
+    A11 (recall provenance anchoring): when ``NUCLEUS_RECALL_PROVENANCE_ANCHOR``
+    is on, a row whose snapshot carries a ``signature`` that FAILS verification
+    is dropped from the index entirely — this is the read-side defense against
+    a record spliced directly into ``history.jsonl`` bypassing ``Store.append``
+    (which cannot forge the HMAC without the server secret). A row with no
+    signature at all (legacy/pre-A11) passes through unchanged — flag-ON is
+    additive over legacy data, not a retroactive rejection of it. Flag-OFF is
+    a byte-for-byte no-op (this check is skipped entirely).
+    """
     snap = row.get("snapshot") or {}
     text = snap.get("value") or row.get("value")
     if not text:
         return None
+    if _provenance_anchor_flag_on() and snap.get("signature") and not verify_record(snap, brain_path):
+        return None  # forged/tampered signature — excluded from recall's index
     raw_context = snap.get("context") or ""
     kind, tags, legacy_context = _split_context(raw_context)
     # Keep the legacy `tags` column populated with the original context for
@@ -126,9 +194,14 @@ def _project_row(row: dict) -> tuple | None:
 def build_memories_index(brain_path: Path | None = None) -> Path:
     """Rebuild history-projected rows. Auto-memory rows are preserved."""
     db = ensure_schema(brain_path)
-    store = Store(Store.brain_path(brain_path))
-    rows = [r for r in (_project_row(row) for row in store.rows()) if r is not None]
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    resolved_brain = Store.brain_path(brain_path)
+    store = Store(resolved_brain)
+    rows = [
+        r for r in (_project_row(row, resolved_brain) for row in store.rows())
+        if r is not None
+    ]
+    conn = _connect(db)
+    try:
         conn.execute(
             "DELETE FROM memories WHERE source = ? OR source LIKE ?",
             (HISTORY_SOURCE_PREFIX, f"{HISTORY_SOURCE_PREFIX}:%"),
@@ -139,6 +212,10 @@ def build_memories_index(brain_path: Path | None = None) -> Path:
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             rows,
         )
+        conn.commit()
+        _checkpoint(conn)
+    finally:
+        conn.close()
     return db
 
 
@@ -195,7 +272,8 @@ def build_auto_memory_index(
             projected = _project_memory_file(md)
             if projected is not None:
                 rows.append(projected)
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    conn = _connect(db)
+    try:
         conn.execute("DELETE FROM memories WHERE source = ?", (AUTO_MEMORY_SOURCE,))
         conn.executemany(
             "INSERT INTO memories "
@@ -203,6 +281,10 @@ def build_auto_memory_index(
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             rows,
         )
+        conn.commit()
+        _checkpoint(conn)
+    finally:
+        conn.close()
     return db
 
 
@@ -285,7 +367,7 @@ def recall_activity_health(
         roles_to_check = [_normalize_role(role)]
     now = datetime.now(timezone.utc)
     out_roles: list[dict] = []
-    with sqlite3.connect(db, timeout=5.0) as conn:
+    with _connect(db) as conn:
         for r in roles_to_check:
             row = conn.execute(
                 "SELECT MAX(created_at) FROM memories "

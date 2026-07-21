@@ -1,0 +1,26 @@
+# Bundle-local pyproject for the Claude Desktop .mcpb (uv runtime).
+#
+# The host launches the bundle with:
+#     uv run --directory <ext-dir> src/server.py
+# uv reads THIS file, provisions an ephemeral environment, installs the
+# published `nucleus-mcp` wheel from PyPI (all compiled deps ship as wheels,
+# so nothing needs bundling), then runs src/server.py which hands off to the
+# packaged stdio server.
+#
+# The dependency is intentionally unpinned at the minor level so a downloaded
+# bundle always pulls the latest published nucleus-mcp without a rebuild.
+#
+# `tool.uv.package = false` tells uv this directory is a launcher, not a
+# distributable package — so uv installs only the dependency and runs the
+# script, without trying to build the bundle dir itself.
+[project]
+name = "nucleus-mcp-bundle"
+version = "1.14.3"
+description = "Claude Desktop bundle launcher for nucleus-mcp"
+requires-python = ">=3.10"
+dependencies = [
+    "nucleus-mcp>=1.14",
+]
+
+[tool.uv]
+package = false

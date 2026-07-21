@@ -9,6 +9,41 @@ import time
 # Configure logger
 logger = logging.getLogger("nucleus.memory")
 
+# --- Move 2 batch 5: flag-gated SoR read-model repoint ---------------------
+# Self-contained env check (mirrors runtime/memory_pipeline.py::_sor_flag_on) so
+# the flag-OFF (and explicit ``mode="grep"``) path stays a byte-for-byte ripgrep
+# scan and nothing from ``mcp_server_nucleus.memory`` is imported until flag-ON.
+_SOR_FLAG = "NUCLEUS_MEMORY_SOR"
+_SOR_TRUTHY = frozenset({"1", "true", "yes", "on"})
+
+
+def _sor_flag_on() -> bool:
+    """True iff ``NUCLEUS_MEMORY_SOR`` is set truthy (default False)."""
+    return os.environ.get(_SOR_FLAG, "").strip().lower() in _SOR_TRUTHY
+
+
+def _merge_sor_grep(query: str, brain: Path, snippets: list) -> Dict:
+    """Union the unified SoR (``MemoryFacade.recall``, hybrid) onto the ripgrep
+    snippets, dedup by line. Fault-isolated → returns the grep-only result on any
+    SoR read failure (the SoR read is purely additive, never worse than grep)."""
+    try:
+        from mcp_server_nucleus.memory.facade import MemoryFacade
+
+        facade = MemoryFacade(brain_path=brain, enabled=True)
+        hits = facade.recall(query=query or "", limit=40, mode="hybrid")
+    except Exception as exc:  # noqa: BLE001 — additive read must not break search
+        logger.warning("SoR grep-union read failed; returning grep-only result: %s", exc)
+        return {"query": query, "count": len(snippets), "results": snippets[:20]}
+    merged = list(snippets)
+    seen = set(snippets)
+    for h in hits:
+        line = f"sor:{h.get('kind') or 'note'}:{h.get('text')}"
+        if line in seen:
+            continue
+        seen.add(line)
+        merged.append(line)
+    return {"query": query, "count": len(merged), "results": merged[:20]}
+
 def get_brain_path() -> Path:
     """Get the brain path from environment variable."""
     brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
@@ -23,9 +58,14 @@ def get_brain_path() -> Path:
         raise ValueError("NUCLEUS_BRAIN_PATH environment variable not set")
     return Path(brain_path)
 
-def _search_memory(query: str) -> Dict:
-    """
-    Search the 'Long-term Memory' (artifacts/memory and ledger/decisions.md) using ripgrep.
+def _search_memory(query: str, mode: str = "auto") -> Dict:
+    """Search the 'Long-term Memory' (artifacts/memory and ledger/decisions.md).
+
+    Move 2 batch 5: flag-OFF (default) and the explicit ``mode="grep"`` fallback
+    are byte-for-byte the legacy ripgrep scan (RETAINED — never deleted). Flag-ON
+    with the default/``"hybrid"`` mode additionally unions the unified SoR
+    (``MemoryFacade.recall``, hybrid) on top — additive and fault-isolated, so
+    ``mode="grep"`` remains a reachable escape hatch even under the flag.
     """
     try:
         brain = get_brain_path()
@@ -68,11 +108,17 @@ def _search_memory(query: str) -> Dict:
                     except Exception:
                         continue
 
-        return {
-            "query": query,
-            "count": len(snippets),
-            "results": snippets[:20] # Limit to 20 results
-        }
+        # Flag-OFF (default) or explicit grep mode: byte-for-byte the pre-batch-5
+        # ripgrep result — the RETAINED explicit grep fallback (mode="grep").
+        if mode == "grep" or not _sor_flag_on():
+            return {
+                "query": query,
+                "count": len(snippets),
+                "results": snippets[:20]  # Limit to 20 results
+            }
+
+        # Flag-ON hybrid: union the unified SoR recall on top of the grep result.
+        return _merge_sor_grep(query, brain, snippets)
 
     except Exception as e:
         logger.error(f"Memory search failed: {e}")

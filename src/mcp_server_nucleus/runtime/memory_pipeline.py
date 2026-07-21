@@ -18,6 +18,7 @@ Usage:
 
 import json
 import logging
+import os
 import re
 import time
 from datetime import datetime
@@ -26,6 +27,54 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 logger = logging.getLogger("nucleus.memory_pipeline")
+
+# --- Move 2 batch 3: dual-write shim (ADUN persistence tail -> unified SoR facade) ---
+# Flag-gated on NUCLEUS_MEMORY_SOR, mirroring the nucleus_wedge batch-2 shim
+# (nucleus_wedge/store.py). Kept as a self-contained env check (no top-level import
+# of ``mcp_server_nucleus.memory.*``) so the flag-OFF path stays a byte-for-byte
+# no-op. Truthy set matches ``memory.facade._TRUTHY`` on purpose.
+_SOR_FLAG = "NUCLEUS_MEMORY_SOR"
+_SOR_TRUTHY = frozenset({"1", "true", "yes", "on"})
+# Process-wide log-once latch for mirror failures (fault isolation must not spam).
+_sor_mirror_warned = False
+
+
+def _sor_flag_on() -> bool:
+    """True iff ``NUCLEUS_MEMORY_SOR`` is set truthy (default False)."""
+    return os.environ.get(_SOR_FLAG, "").strip().lower() in _SOR_TRUTHY
+
+
+# --- A3 (engram-insert anchoring): HMAC signature + server-stamped source_agent ---
+# Flag-gated on NUCLEUS_ENGRAM_ANCHOR (default OFF). Off is byte-identical to
+# pre-A3 behavior: signature stays None, source_agent stays whatever the caller
+# passed, dedup stays pure version/timestamp precedence. See
+# docs/verifier/HANDOFF_BACKLOG.md §A3 and ADJACENCY_THEOREM.md (engram-insert is
+# Regime-2: the load-bearing fact — who wrote this, when — has no witness outside
+# the claimant's own authority, so this is a bar-2 HMAC hardening, not a full
+# regime-1 conversion; the shared off-uid witness in backlog §B is the eventual
+# regime-2→bar-3 move).
+_ANCHOR_FLAG = "NUCLEUS_ENGRAM_ANCHOR"
+_ANCHOR_TRUTHY = frozenset({"1", "true", "yes", "on"})
+_ANCHOR_GENESIS_HASH = "0" * 32  # chain root for a key's first signed engram
+
+# The exact field set the A3 signature covers — the load-bearing facts of the
+# claim "this engram, with this content, by this author, at this time, exists".
+# Excludes ``signature`` itself and any transient/non-load-bearing keys (e.g.
+# ``_secret_warning``).
+_ANCHOR_CANONICAL_FIELDS = (
+    "key", "value", "context", "intensity", "version",
+    "source_agent", "op_type", "timestamp", "deleted", "prev_hash",
+)
+
+
+def _anchor_flag_on() -> bool:
+    """True iff ``NUCLEUS_ENGRAM_ANCHOR`` is set truthy (default False)."""
+    return os.environ.get(_ANCHOR_FLAG, "").strip().lower() in _ANCHOR_TRUTHY
+
+
+def _canonical_anchor_payload(engram: Dict) -> Dict:
+    """Deterministic subset of engram fields the A3 signature is computed over."""
+    return {field: engram.get(field) for field in _ANCHOR_CANONICAL_FIELDS}
 
 
 class EngramOp(str, Enum):
@@ -89,6 +138,14 @@ class MemoryPipeline:
         self.ledger_path = self.brain_path / "engrams" / "ledger.jsonl"
         self.history_path = self.brain_path / "engrams" / "history.jsonl"
         self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        # Lazy MemoryFacade for the SoR dual-write mirror (Move 2 batch 3). Never
+        # constructed while NUCLEUS_MEMORY_SOR is off — keeps flag-OFF a true no-op.
+        self._sor_facade = None
+        # Lazy derived-index sink (Move 2 batch 7). A ``runtime.vector_store``
+        # ``VectorStore`` fed to the ADUN capture so SoR-written engrams reach the
+        # vector index for hybrid recall re-rank. Never constructed while
+        # NUCLEUS_MEMORY_SOR is off (flag-OFF stays a byte-for-byte no-op).
+        self._sor_vector_sink = None
 
     # ── STEP 1: Extract Atoms ──────────────────────────────────────
 
@@ -160,6 +217,8 @@ class MemoryPipeline:
             existing = seen.get(key)
             if existing is None:
                 seen[key] = e
+            elif _anchor_flag_on():
+                seen[key] = self._resolve_dedup_winner(existing, e)
             else:
                 # Compare: higher version wins, then later timestamp
                 e_ver = e.get("version", 1)
@@ -311,6 +370,128 @@ class MemoryPipeline:
         suffix = str(int(time.time()))[-4:]
         return f"{prefix}_{slug}_{suffix}"
 
+    # ── A3: engram-insert anchoring (NUCLEUS_ENGRAM_ANCHOR) ─────────
+    # Server-side source_agent derivation, HMAC(server_key, canonical)+prev_hash
+    # signing at commit, and signature verification on read. See
+    # docs/verifier/HANDOFF_BACKLOG.md §A3.
+
+    def _derive_source_agent(self, caller_value: str) -> str:
+        """Server-side identity derivation — the A3 fix for "every field is
+        caller-asserted". When called, the caller-supplied ``source_agent``
+        string is IGNORED (a claimant-controlled field is exactly what Regime-2
+        forbids trusting) and replaced with the same ancestry-registry role
+        resolution the relay-sender path (A2) uses.
+
+        Deviation note: this is strictly stronger than trusting the op dict's
+        raw string, but it is not yet the full A1-hardened guarantee — A1
+        (sessions-identity create_time pin + dropped env override) is a
+        separate, not-yet-landed backlog item, and ``detect_session_role()``
+        still honors a same-process ``NUCLEUS_SESSION_ROLE`` override ahead of
+        the registry lookup. Falls back to the caller-supplied value only if
+        detection raises or yields nothing, so a write is never silently
+        dropped for lack of ancestry data.
+        """
+        try:
+            from .relay.session import detect_session_role
+            role = detect_session_role()
+            if role and role != "unknown":
+                return role
+        except Exception:
+            pass
+        return caller_value or "unknown"
+
+    def _last_signature_for_key(self, key: str) -> str:
+        """Signature of the most recent ledger line for ``key`` (any deleted
+        state), used as ``prev_hash`` — chains each key's signatures so a
+        forged entry can't be spliced into the ledger without a valid
+        predecessor link. Returns ``_ANCHOR_GENESIS_HASH`` if the key has no
+        prior signed entry.
+        """
+        if not self.ledger_path.exists():
+            return _ANCHOR_GENESIS_HASH
+        last_sig = None
+        try:
+            with open(self.ledger_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    try:
+                        e = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if e.get("key") == key:
+                        sig = e.get("signature")
+                        if sig:
+                            last_sig = sig
+        except OSError:
+            return _ANCHOR_GENESIS_HASH
+        return last_sig or _ANCHOR_GENESIS_HASH
+
+    def _sign_and_stamp(self, engram: Dict) -> None:
+        """Mutate ``engram`` in place: set ``prev_hash`` then compute+store the
+        A3 HMAC signature (``HMAC(server_key, canonical_fields) + prev_hash``,
+        the latter folded into the signed payload rather than concatenated as
+        a string, so tampering either the content or the chain link both fail
+        verification the same way). Self-guarding on the flag in addition to
+        callers already checking it.
+        """
+        if not _anchor_flag_on():
+            return
+        from .auth.signature_guard import get_signature_guard
+        engram["prev_hash"] = self._last_signature_for_key(engram["key"])
+        guard = get_signature_guard(self.brain_path)
+        engram["signature"] = guard.sign_dict(_canonical_anchor_payload(engram))
+
+    def verify_engram(self, engram: Dict) -> bool:
+        """Read-side verify: recompute the A3 HMAC over the engram's canonical
+        fields and compare against the stored ``signature``.
+
+        Returns False for: no signature (legacy/pre-A3/forged-blank), or any
+        mismatch — including a tampered ``source_agent`` (forged-author) or a
+        tampered ``timestamp`` (forged-future-ts), since both are covered
+        canonical fields.
+        """
+        sig = engram.get("signature")
+        if not sig:
+            return False
+        try:
+            from .auth.signature_guard import get_signature_guard
+            guard = get_signature_guard(self.brain_path)
+            return guard.verify_dict(_canonical_anchor_payload(engram), sig)
+        except Exception:
+            return False
+
+    def _resolve_dedup_winner(self, existing: Dict, candidate: Dict) -> Dict:
+        """A3 dedup arbiter: the fix for "newest-timestamp-wins" (§A3 — a forged
+        future timestamp silently overrides a real newer engram). A candidate
+        may only override ``existing`` by winning the legacy version-then-
+        timestamp precedence AND passing signature verification when either
+        record is signed. An entry whose fields were tampered post-signing (or
+        spliced into the ledger without ever going through ``commit_ops``) has
+        no valid HMAC and can no longer win on a forged version/timestamp
+        alone — regardless of how "new" it claims to be.
+        """
+        existing_valid = self.verify_engram(existing)
+        candidate_valid = self.verify_engram(candidate)
+
+        if candidate_valid and not existing_valid:
+            return candidate
+        if existing_valid and not candidate_valid:
+            return existing  # reject the forged override
+
+        # Both verified, or both unsigned/legacy — original precedence between
+        # two equally-trustworthy records.
+        e_ver = candidate.get("version", 1)
+        ex_ver = existing.get("version", 1)
+        if e_ver > ex_ver:
+            return candidate
+        if e_ver == ex_ver:
+            e_ts = candidate.get("timestamp", "")
+            ex_ts = existing.get("timestamp", "")
+            if e_ts > ex_ts:
+                return candidate
+        return existing
+
     # ── STEP 4: Commit Operations ──────────────────────────────────
 
     def commit_ops(self, operations: List[Dict]) -> Dict:
@@ -345,6 +526,9 @@ class MemoryPipeline:
                     "deleted": False,
                     "signature": None,
                 }
+                if _anchor_flag_on():
+                    engram["source_agent"] = self._derive_source_agent(engram["source_agent"])
+                    self._sign_and_stamp(engram)
                 self._append_to_ledger(engram)
                 self._append_to_history(engram, "ADD")
                 results["added"] += 1
@@ -364,6 +548,9 @@ class MemoryPipeline:
                     "deleted": False,
                     "signature": None,
                 }
+                if _anchor_flag_on():
+                    new_engram["source_agent"] = self._derive_source_agent(new_engram["source_agent"])
+                    self._sign_and_stamp(new_engram)
                 self._update_in_ledger(op["target_key"], new_engram)
                 self._append_to_history(new_engram, "UPDATE")
                 results["updated"] += 1
@@ -483,6 +670,111 @@ class MemoryPipeline:
         }
         with open(self.history_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(history_entry, ensure_ascii=False) + "\n")
+        # Dual-write: `_append_to_history` is the ONE seam every logical ADUN op
+        # (ADD/UPDATE/DELETE) funnels through exactly once, so mirroring here — and
+        # NOT also in `_append_to_ledger` — yields exactly one SoR row per logical
+        # write_engram (no double-mirror). Flag-gated + fault-isolated; the
+        # authoritative ledger/history writes above are never altered or gated.
+        self._mirror_to_sor(engram, op_type)
+
+    def _mirror_to_sor(self, engram: Dict, op_type: str) -> None:
+        """Best-effort mirror of one ADUN persistence-tail write into the SoR.
+
+        Single-seam dual-write shim (Move 2 batch 3, manifest §"Batch 3"). This is
+        the ADUN counterpart of the nucleus_wedge batch-2 shim, but the two are
+        distinct lineages: a ``write_engram`` flows through ``MemoryPipeline`` and
+        never calls ``nucleus_wedge.store.Store.append``, so the two shims never
+        both fire for one logical write. Within ADUN, ``_append_to_history`` is the
+        single funnel every ADD/UPDATE/DELETE passes through exactly once, so the
+        mirror lives here and NOT in ``_append_to_ledger`` — one logical write
+        yields exactly one SoR row.
+
+        Properties (mirror ``nucleus_wedge/store.py::_mirror_to_sor``):
+
+          * Flag-gated — ``NUCLEUS_MEMORY_SOR`` off (default) short-circuits to a
+            pure no-op: no import of ``mcp_server_nucleus.memory.*``, no facade,
+            nothing persisted. The ledger/history writes are byte-for-byte the
+            pre-batch-3 behavior.
+          * Fault-isolated — a SoR/facade failure must NEVER break the operator's
+            ``write_engram``, so every error is swallowed after a single warning
+            (process-wide log-once latch).
+          * Stable-keyed — the SoR record reuses the engram ``key`` and shares its
+            ``timestamp``, so the later backfill (manifest batch 6, dedup-by-key)
+            converges dual-written rows instead of duplicating them.
+          * ADUN-faithful — ADD/UPDATE map to ``capture()``; DELETE maps to
+            ``curate(archive)`` (non-destructive overlay). Maintenance/audit
+            markers (e.g. ``DEDUP_MIGRATION``) are history-only and never become
+            SoR rows. The ADUN op-classification (extract/compare/propose) is
+            untouched — only this persistence tail forks into the SoR.
+
+        Reads are unchanged in this batch (the read repoint is manifest batch 4).
+        """
+        if not _sor_flag_on():
+            return
+        # Only real engram ops fork into the SoR. Maintenance/audit markers
+        # (DEDUP_MIGRATION, …) are history-only and never become SoR rows.
+        if op_type not in ("ADD", "UPDATE", "DELETE"):
+            return
+        global _sor_mirror_warned
+        try:
+            if self._sor_facade is None:
+                from mcp_server_nucleus.memory.facade import MemoryFacade
+
+                self._sor_facade = MemoryFacade(brain_path=self.brain_path, enabled=True)
+            key = engram.get("key")
+            if op_type == "DELETE":
+                # Soft-delete → non-destructive overlay-archive of the SoR row.
+                # (If the key was never captured into the SoR — e.g. it was added
+                # while the flag was off — curate() returns ok=False, not an
+                # exception, so this stays a graceful no-op.)
+                if key:
+                    self._sor_facade.curate(key, "archive")
+                return
+            # ADD / UPDATE → capture the (new) engram version into the SoR. The
+            # same key means an UPDATE lands as a new SoR row sharing the key,
+            # which the batch-6 dedup-by-key backfill collapses.
+            #
+            # Move 2 batch 7: feed the SoR insert into the derived vector index so
+            # hybrid recall re-rank sees freshly-written engrams (before batch 7 the
+            # index stayed cold until a backfill). The sink is:
+            #   * lazily constructed inside this flag-ON branch — no import of
+            #     ``vector_store`` on the flag-OFF write path (Move 1 lazy contract);
+            #   * cached on ``self`` after first use — one VectorStore per pipeline;
+            #   * construction-isolated — a sink-build failure degrades to a
+            #     sink-less capture (the SoR row still lands) rather than aborting
+            #     the mirror. The facade itself already wraps ``sink.index()`` best-
+            #     effort (facade.capture), so an index failure never breaks the
+            #     primary write — which has already completed before this mirror.
+            sink = self._sor_vector_sink
+            if sink is None:
+                try:
+                    from .vector_store import VectorStore
+
+                    sink = self._sor_vector_sink = VectorStore()
+                except Exception:  # noqa: BLE001 — derived-index sink is best-effort
+                    sink = None
+            self._sor_facade.capture(
+                surface=engram.get("source_agent", "unknown"),
+                payload=engram.get("value", ""),
+                kind=engram.get("context", "note"),
+                tags=None,
+                ts=engram.get("timestamp"),
+                key=key,
+                meta={
+                    "op_type": op_type,
+                    "intensity": engram.get("intensity"),
+                    "version": engram.get("version"),
+                },
+                vector_sink=sink,
+            )
+        except Exception as exc:  # noqa: BLE001 — fault isolation is the whole point
+            if not _sor_mirror_warned:
+                logger.warning(
+                    "ADUN SoR mirror failed; primary write_engram unaffected "
+                    "(suppressing further mirror warnings this process): %s",
+                    exc,
+                )
+                _sor_mirror_warned = True
 
     # ── MAINTENANCE ────────────────────────────────────────────────
 

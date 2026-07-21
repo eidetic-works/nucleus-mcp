@@ -37,7 +37,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("nucleus.cloud")
 
-from mcp_server_nucleus import mcp, __version__
+from mcp_server_nucleus import mcp, __version__, _ensure_registered
 from mcp_server_nucleus.http_transport.tenant import NucleusTenantMiddleware
 from mcp_server_nucleus.http_transport.relay_route import (
     relay_route,
@@ -50,6 +50,15 @@ from mcp_server_nucleus.http_transport.engram_sync_route import (
     engram_sync_status_route,
 )
 from mcp_server_nucleus.http_transport.oauth_server import oauth_routes as _oauth_routes
+from mcp_server_nucleus.http_transport.telemetry_route import (
+    telemetry_post_route,
+    telemetry_installs_route,
+    telemetry_g35_route,
+)
+from mcp_server_nucleus.http_transport.fleet_dashboard import (
+    fleet_dashboard_route,
+    fleet_panel_route,
+)
 from mcp_server_nucleus.http_transport.readonly_app import get_readonly_app
 
 from starlette.applications import Starlette
@@ -61,6 +70,13 @@ from starlette.middleware import Middleware
 _start_time = time.time()
 _transport = os.environ.get("NUCLEUS_TRANSPORT", "streamable-http")
 _mcp_path = "/sse" if _transport == "sse" else "/mcp"
+
+# Move 1 followup: tool registration was deferred out of package import into
+# _ensure_registered() (invoked by the stdio main() entry). The HTTP/SSE/cloud
+# transports build tools/list from this shared `mcp` instance, so registration
+# must fire HERE — at cloud-app import (which is server start for this module) —
+# BEFORE http_app() enumerates tools. Idempotent: fires exactly once per process.
+_ensure_registered()
 
 # Build the fastmcp ASGI app — no explicit path arg to avoid trailing-slash redirects.
 # fastmcp handles routing internally; we mount at _mcp_path in Starlette below.
@@ -194,6 +210,13 @@ _mcp_app.router.routes.insert(7, relay_ack_route)
 _mcp_app.router.routes.insert(8, relay_status_route)
 _mcp_app.router.routes.insert(9, engram_sync_route)
 _mcp_app.router.routes.insert(10, engram_sync_status_route)
+# Telemetry routes — POST /telemetry, GET /telemetry/installs, GET /telemetry/g35
+_mcp_app.router.routes.insert(11, telemetry_post_route)
+_mcp_app.router.routes.insert(12, telemetry_installs_route)
+_mcp_app.router.routes.insert(13, telemetry_g35_route)
+# Fleet dashboard routes — GET /fleet (HTML page), GET /fleet/panel (HTMX partial)
+_mcp_app.router.routes.insert(14, fleet_dashboard_route)
+_mcp_app.router.routes.insert(15, fleet_panel_route)
 
 # OAuth 2.1 routes — for ChatGPT Connectors, Claude Connectors, and any
 # MCP client that follows the MCP authorization spec.

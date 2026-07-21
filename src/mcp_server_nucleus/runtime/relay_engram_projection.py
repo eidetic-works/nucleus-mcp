@@ -36,7 +36,33 @@ from nucleus_wedge.store import Store
 logger = logging.getLogger("nucleus.relay_engram")
 
 PROJECTION_SOURCE = "relay_surface_projection"
-LIVE_BUCKETS = ("cowork", "claude_code", "claude_code_main", "claude_code_peer")
+# G1 workstream #0 (docs/PRINCIPAL.md:39,67-69): engram projection MUST cover
+# every genuine vendor surface, not just the claude_code coordinator lanes.
+# Pre-2026-07-16 this tuple excluded antigravity/glm/devin, which produced the
+# "no GLM/Antigravity surfaces at all" engram-store finding. The capture_census
+# instrument (capture_census.py) measures whether projection is actually landing.
+LIVE_BUCKETS = (
+    # anthropic_claude_code surfaces
+    "cowork", "claude_code", "claude_code_main", "claude_code_peer",
+    "cc_main", "cc_peer", "cc_gq", "cc_tb", "cc_voice",
+    "claude_code_cc_gq", "claude_code_tb", "claude_code_cc_tb",
+    "claude_code_operator_assistant", "claude_code_ultraplan",
+    "peer", "coordinator", "op_assistant", "operator_assistant",
+    "board", "main_debug", "bespoq_cowork",
+    "secretary", "secretary_archive",
+    "principal", "principal_control", "role_principal_g1",
+    # antigravity surfaces (was missing — the capture gap)
+    "antigravity", "antigravity_gq", "antigravity_voice",
+    "agy", "agy_gq", "agy_voice",
+    # glm surfaces (was missing — the capture gap)
+    "glm_main_agent",
+    # devin surfaces (was missing — the capture gap)
+    "devin", "devin_terminal_agent",
+    "principal_g1_devin", "principal_g1_agy",
+    "principal-g1-devin", "principal-g1-agy",
+    # codex surfaces (added 2026-07-19 — new vendor surface)
+    "codex",
+)
 
 
 def _parse_body(raw: Any) -> Dict[str, Any]:

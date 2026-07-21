@@ -1,7 +1,7 @@
 
 from typing import List, Dict, Any
 from .base import Capability
-from ..vector_store import VectorStore
+from ..vector_store import VectorStore, _sor_flag_on
 
 class MemoryOps(Capability):
     """Capability for Long-term Memory Access (RAG)"""
@@ -47,6 +47,26 @@ class MemoryOps(Capability):
             }
         ]
 
+    def _search_via_facade(self, query: str, limit: int) -> List[Dict]:
+        """Route brain_search_memory through the unified SoR (Move 2 batch 5,
+        flag-ON). Returns rows in the ``{content, metadata}`` shape the formatter
+        expects. Fault-isolated → falls back to the legacy vector store on any
+        SoR read failure so recall never regresses versus flag-OFF."""
+        try:
+            from mcp_server_nucleus.memory.facade import MemoryFacade
+
+            facade = MemoryFacade(enabled=True)
+            hits = facade.recall(query=query or "", limit=limit, mode="hybrid")
+        except Exception:
+            return self.vector_store.search_memory(query=query, limit=limit)
+        out: List[Dict] = []
+        for h in hits:
+            meta = {"category": h.get("kind") or "gen"}
+            if h.get("tags"):
+                meta["tags"] = h.get("tags")
+            out.append({"content": h.get("text"), "metadata": meta})
+        return out
+
     def execute_tool(self, tool_name: str, args: Dict) -> Any:
         try:
             if tool_name == "brain_store_memory":
@@ -59,10 +79,19 @@ class MemoryOps(Capability):
                 return f"Stored memory: {doc_id}"
                 
             elif tool_name == "brain_search_memory":
-                results = self.vector_store.search_memory(
-                    query=args["query"], 
-                    limit=args.get("limit", 5)
-                )
+                # Move 2 batch 5: flag-OFF (default) is the byte-for-byte legacy
+                # vector-store read; flag-ON routes the read through the unified
+                # SoR (MemoryFacade.recall, hybrid), degrading gracefully to the
+                # legacy vector store on any SoR read failure.
+                if _sor_flag_on():
+                    results = self._search_via_facade(
+                        args["query"], args.get("limit", 5)
+                    )
+                else:
+                    results = self.vector_store.search_memory(
+                        query=args["query"],
+                        limit=args.get("limit", 5)
+                    )
                 if not results:
                     return "No matching memories found."
                 

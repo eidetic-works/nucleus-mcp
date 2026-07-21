@@ -481,7 +481,16 @@ def register_prompts(mcp, helpers):
 
 def main():
     """Main entry point for the MCP server."""
-    from . import mcp, get_brain_path, USE_STDIO_FALLBACK, __version__
+    from . import mcp, get_brain_path, USE_STDIO_FALLBACK, __version__, _ensure_initialized
+
+    # Move 1 followup: tool/resource/prompt registration is deferred out of
+    # package import into the unified _ensure_initialized() (was an import-time
+    # side effect on the eager main). The stdio entry (`python -m
+    # mcp_server_nucleus` -> __main__ -> this main()) reaches mcp.run() WITHOUT
+    # going through __init__.main(), so registration must fire HERE — before the
+    # tier summary reads registered_tools and before mcp.run() serves tools/list.
+    # Idempotent: fires exactly once per process.
+    _ensure_initialized()
 
     # Startup summary to stderr (never stdout — that's for JSON-RPC)
     try:

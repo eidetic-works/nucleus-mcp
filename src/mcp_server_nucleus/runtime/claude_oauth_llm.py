@@ -109,6 +109,7 @@ class ClaudeOAuthLLM:
         )
         self.system_instruction = system_instruction
         self.engine = "CLAUDE_OAUTH"
+        self._provider_id = "claude_oauth"
         self.tier = tier
         self.budget_mode = budget_mode
 

@@ -1,9 +1,11 @@
 """
 Nucleus LLM Client
 ==================
-Multi-Tier LLM Client with intelligent routing.
-Primary: google-genai (v1.0+) with Vertex AI
-Fallback: google-generativeai (Legacy) or API Key
+Multi-Tier, multi-provider LLM client with intelligent routing.
+Anthropic-shim and Ollama are the operating defaults in the current deployment;
+google-genai/Gemini (Vertex AI or API key) is one of several providers (also Groq).
+google.genai is imported lazily — only when the Gemini provider is actually
+selected — so it does not tax cold start of daemons / relays / MCP tools.
 
 MDR_010 Compliant: Ensures high availability and reliability.
 """
@@ -12,6 +14,7 @@ import os
 import logging
 import json
 import tempfile
+import importlib.util
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, Union
@@ -31,15 +34,48 @@ logger = logging.getLogger("nucleus.llm")
 # ============================================================
 
 # Primary SDK: google-genai (v1.0+)
-try:
-    from google import genai
-    from google.genai import types
-    HAS_GENAI = True
+# Availability is probed with importlib.util.find_spec, which locates the package
+# WITHOUT executing google.genai (a ~0.5-2s import that used to run on every
+# `import mcp_server_nucleus`). The heavy `from google import genai` /
+# `from google.genai import types` is deferred to the _load_genai() / _load_types()
+# loaders below, called lazily from the methods that actually use it
+# (DualEngineLLM.__init__ / generate_content / generate_vision / stream_content),
+# so importing this module no longer taxes daemon / relay / MCP-tool cold start.
+HAS_GENAI = importlib.util.find_spec("google.genai") is not None
+
+# Module-level SDK handles. Kept as attributes (so they stay monkeypatchable in
+# tests, e.g. patch("...llm_client.genai")) but left as None until first real use;
+# the lazy loaders populate them in-place. Behaviour is identical to the previous
+# eager `from google import genai` / `from google.genai import types` once loaded.
+genai = None
+types = None
+
+if HAS_GENAI:
     logger.debug("✅ SDK: google-genai (new) available")
-except ImportError:
-    HAS_GENAI = False
-    if os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
-        logger.debug("⚠️ google-genai not installed. Falling back to legacy SDK.")
+elif os.environ.get("NUCLEUS_SKIP_AUTOSTART", "false").lower() != "true":
+    logger.debug("⚠️ google-genai not installed. Falling back to legacy SDK.")
+
+
+def _load_genai():
+    """Lazily import the google-genai client on first use, caching it into the
+    module-level ``genai`` handle. No-op if already loaded (or patched in tests),
+    so it never overwrites a monkeypatched mock. Kept out of module import so
+    cold start is not taxed by the ~0.5-2s google.genai import."""
+    global genai
+    if genai is None:
+        from google import genai as _genai
+        genai = _genai
+    return genai
+
+
+def _load_types():
+    """Lazily import google.genai.types on first use, caching it into the
+    module-level ``types`` handle. No-op if already loaded (or patched in tests)."""
+    global types
+    if types is None:
+        from google.genai import types as _types
+        types = _types
+    return types
 
 # Fallback SDK: google.generativeai (Legacy)
 try:
@@ -73,6 +109,27 @@ class LLMTier(Enum):
     # --- API Key tiers (free-tier / local dev) ---
     LOCAL_PAID = "local_paid"     # API Key with billing (Anthropic fallback)
     LOCAL_FREE = "local_free"     # API Key free tier
+    # --- Cross-vendor CLI tiers (flag-gated via NUCLEUS_CROSS_VENDOR; default OFF) ---
+    GEMINI_CLI = "gemini_cli"     # Antigravity `agy` CLI (Gemini) — one-shot, captured
+    GLM_CLI = "glm_cli"           # `devin` CLI (GLM) — one-shot, captured
+
+
+# Cross-vendor CLI tiers are never selected unless NUCLEUS_CROSS_VENDOR is on.
+# Defined at module scope so both TierRouter.route() and get_llm_client() gate on it.
+_VENDOR_CLI_TIERS = frozenset({LLMTier.GEMINI_CLI, LLMTier.GLM_CLI})
+
+
+def _cross_vendor_enabled() -> bool:
+    """True iff cross-vendor dispatch is enabled (NUCLEUS_CROSS_VENDOR truthy).
+
+    Delegates to the single source of truth in ``vendor_dispatch``; falls back to
+    a safe False if that periphery module is unavailable.
+    """
+    try:
+        from .vendor_dispatch import cross_vendor_enabled
+        return cross_vendor_enabled()
+    except Exception:
+        return False
 
 
 class TierRouter:
@@ -123,6 +180,19 @@ class TierRouter:
             "cost_level": "free",
             "description": "Gemini 3.1 Flash Lite (Free, 500 RPD — best for fuzzing/testing/background)"
         },
+        # --- Cross-vendor CLI (flag-gated; executed via get_llm_client → VendorCLILLM) ---
+        LLMTier.GEMINI_CLI: {
+            "model": "agy",
+            "platform": "cli",
+            "cost_level": "free",
+            "description": "Gemini CLI (Antigravity `agy`) — cross-vendor, flag-gated + captured"
+        },
+        LLMTier.GLM_CLI: {
+            "model": "devin",
+            "platform": "cli",
+            "cost_level": "free",
+            "description": "GLM CLI (`devin`) — cross-vendor, flag-gated + captured"
+        },
     }
 
     # Free-tier model cascade
@@ -148,6 +218,17 @@ class TierRouter:
         "ORCHESTRATION": LLMTier.STANDARD,
         "BACKGROUND": LLMTier.ECONOMY,
         "TESTING": LLMTier.LOCAL_FREE,
+    }
+
+    # Cross-vendor policy tiers — consulted by route() ONLY when
+    # NUCLEUS_CROSS_VENDOR is on. These job types route to a DIFFERENT vendor so
+    # a "second-opinion / adversarial review" organically emits captured
+    # cross-vendor coordination. Kept separate from JOB_ROUTING so existing job
+    # types route byte-identically when the flag is off.
+    VENDOR_JOB_ROUTING = {
+        "SECOND_OPINION": LLMTier.GLM_CLI,
+        "ADVERSARIAL": LLMTier.GLM_CLI,
+        "CROSS_VENDOR_REVIEW": LLMTier.GEMINI_CLI,
     }
     
     BUDGET_MODES = {
@@ -180,12 +261,31 @@ class TierRouter:
         forced_tier = os.environ.get("NUCLEUS_LLM_TIER")
         if forced_tier:
             try:
-                return LLMTier(forced_tier.lower())
+                tier = LLMTier(forced_tier.lower())
             except ValueError:
                 logger.warning(f"Invalid NUCLEUS_LLM_TIER: {forced_tier}")
-        
+            else:
+                # A vendor-CLI tier is only honored when cross-vendor is enabled;
+                # otherwise fall through to normal routing (byte-identical to the
+                # pre-vendor behavior, where this member didn't exist).
+                if tier in _VENDOR_CLI_TIERS and not _cross_vendor_enabled():
+                    logger.warning(
+                        "NUCLEUS_LLM_TIER=%s selects a cross-vendor CLI tier but "
+                        "NUCLEUS_CROSS_VENDOR is off; ignoring.", forced_tier,
+                    )
+                else:
+                    return tier
+
         # Route based on job type
         job_upper = job_type.upper() if job_type else "ORCHESTRATION"
+
+        # Cross-vendor policy tiers (flag-gated). Never consulted when the flag is
+        # off, so existing job types are unaffected.
+        if _cross_vendor_enabled():
+            vendor_tier = cls.VENDOR_JOB_ROUTING.get(job_upper)
+            if vendor_tier is not None:
+                return vendor_tier
+
         base_tier = cls.JOB_ROUTING.get(job_upper, LLMTier.STANDARD)
         
         # CRITICAL jobs ALWAYS get their designated tier (premium)
@@ -274,12 +374,19 @@ class DualEngineLLM:
         # Determine platform from tier config
         use_vertex = self.tier_config.get("platform", "vertex") == "vertex" if self.tier_config else True
         force_vertex_env = os.environ.get("FORCE_VERTEX", "0") == "1"
-        
+
         # For local tiers, don't use vertex
         if self.tier in [LLMTier.LOCAL_PAID, LLMTier.LOCAL_FREE]:
             use_vertex = False
         else:
             use_vertex = use_vertex or force_vertex_env
+
+        # If GEMINI_API_KEY is set and FORCE_VERTEX is not explicitly on,
+        # prefer API key mode (free tier from aistudio.google.com) over
+        # Vertex AI (which requires billing). This lets the Agent OS
+        # gateway route to the free Gemini lane without code changes.
+        if self.api_key and not force_vertex_env:
+            use_vertex = False
         
         if not self.api_key and not use_vertex:
             raise ValueError("GEMINI_API_KEY is required for local tiers (or set FORCE_VERTEX=1).")
@@ -288,6 +395,7 @@ class DualEngineLLM:
         # 1. Initialize google-genai (Primary)
         if HAS_GENAI:
             try:
+                _load_genai()  # lazy: populate module-level `genai`, only when Gemini is used
                 proxy_url = os.environ.get("GEMINI_API_BASE_URL")
                 
                 # Phase 14 Hardening: Auto-discovery of local proxy
@@ -323,6 +431,7 @@ class DualEngineLLM:
                     self.client = genai.Client(api_key=self.api_key)
                     
                 self.engine = "NEW"
+                self._provider_id = "gemini"
                 return
             except Exception as e:
                 logger.warning(f"⚠️ V1 Init failed: {e}")
@@ -413,10 +522,11 @@ class DualEngineLLM:
                 pass # Fallback if event_ops not reachable
 
             if self.engine == "NEW":
+                _load_types()  # lazy: populate module-level `types`, only on Gemini path
                 config_args = {}
                 if self.system_instruction:
                     config_args['system_instruction'] = self.system_instruction
-                    
+
                 if 'tools' in kwargs:
                     tools_raw = kwargs['tools']
                     if isinstance(tools_raw, dict) and "function_declarations" in tools_raw:
@@ -472,6 +582,7 @@ class DualEngineLLM:
         if self.engine != "NEW":
             raise RuntimeError("generate_vision() requires the google-genai NEW SDK engine.")
 
+        _load_types()  # lazy: populate module-level `types`, only on Gemini path
         parts = []
         for path in image_paths:
             import mimetypes
@@ -558,6 +669,7 @@ class DualEngineLLM:
         """
         if self.engine == "NEW":
             try:
+                _load_types()  # lazy: populate module-level `types`, only on Gemini path
                 config_args = {}
                 if self.system_instruction:
                     config_args['system_instruction'] = self.system_instruction
@@ -641,6 +753,7 @@ class AnthropicLLM:
         )
         self.system_instruction = system_instruction
         self.engine = "ANTHROPIC"
+        self._provider_id = "anthropic"
         self.tier = tier
         self.budget_mode = budget_mode
 
@@ -1115,6 +1228,7 @@ class GroqLLM:
         )
         self.system_instruction = system_instruction
         self.engine = "GROQ"
+        self._provider_id = "groq"
         self.tier = tier
         self.budget_mode = budget_mode
 
@@ -1467,6 +1581,68 @@ class GroqLLM:
         return self.engine
 
 
+class VendorCLIResponse:
+    """LLM-client-shaped response for a vendor CLI call.
+
+    Exposes ``.text`` like AnthropicResponse / GroqResponse so callers that read
+    ``response.text`` work unchanged.
+    """
+
+    def __init__(self, result):  # result: vendor_dispatch.VendorResult
+        self.text = result.result
+        self.rc = result.rc
+        self.status = result.status
+        self.vendor = result.vendor
+        self.model = result.model
+        self.duration = result.duration
+
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        return f"VendorCLIResponse(vendor={self.vendor!r}, status={self.status!r})"
+
+
+class VendorCLILLM:
+    """LLM-client wrapper over ``VendorCLIExecutor`` (execution only, no capture).
+
+    Lets a cross-vendor CLI tier execute through ``get_llm_client``: exposes the
+    same ``generate_content(prompt) -> obj with .text`` shape as the other
+    clients here. Capture (the relay artifact_refs envelope + engram) is NOT
+    fired on this path — there is no artifact_ref to bind in a routing call; the
+    capture envelope is the job of ``nucleus dispatch`` and the swarm persona
+    hook, both of which carry an artifact_ref.
+    """
+
+    def __init__(self, vendor: str = "agy", *, timeout_s: int = 300,
+                 budget_usd: float = 0.0, **kwargs):
+        self.vendor = vendor
+        self.timeout_s = timeout_s
+        self.budget_usd = budget_usd
+        try:
+            from .vendor_dispatch import VENDOR_SPECS
+            self.model_name = VENDOR_SPECS[vendor].model
+        except Exception:
+            self.model_name = vendor
+        self.engine = f"vendor_cli:{vendor}"
+
+    def generate_content(self, prompt, **kwargs) -> VendorCLIResponse:
+        from .vendor_dispatch import VendorCLIExecutor
+        result = VendorCLIExecutor(
+            self.vendor, str(prompt),
+            timeout_s=self.timeout_s, budget_usd=self.budget_usd,
+        ).run()
+        return VendorCLIResponse(result)
+
+    # Alias to match the other clients' surface.
+    generate = generate_content
+
+    @property
+    def active_engine(self):
+        return self.engine
+
+
+# Provider name → vendor dispatch name for the CLI tiers.
+_VENDOR_PROVIDER_TO_VENDOR = {"gemini_cli": "agy", "glm_cli": "devin"}
+
+
 def get_llm_client(
     provider: Optional[str] = None,
     **kwargs,
@@ -1488,6 +1664,15 @@ def get_llm_client(
                           bearer from a Claude Code / Claude.app session
                           — covered by Max plan, no API key needed). Role
                           via NUCLEUS_OAUTH_ROLE, model via NUCLEUS_OAUTH_MODEL.
+      - "antigravity"   → AntigravityOAuthLLM (routes generateContent via
+                          Google OAuth bearer from an Antigravity / Cloud
+                          Code Assist session — Gemini quota, no API key
+                          needed). Token cached at ~/.tb/oauth_antigravity.json,
+                          model via NUCLEUS_ANTIGRAVITY_MODEL.
+      - "grok"          → GrokOAuthLLM (routes chat/completions via xAI
+                          OAuth bearer from a Grok-CLI session — Grok
+                          quota, no API key needed). Token cached at
+                          ~/.tb/oauth_grok.json, model via NUCLEUS_GROK_MODEL.
       - "groq"          → GroqLLM (Groq OpenAI-compatible, free tier 30 RPM)
       - "local"         → LocalLLM (Ollama / third-brother local model)
 
@@ -1497,6 +1682,17 @@ def get_llm_client(
         provider
         or os.environ.get("NUCLEUS_LLM_PROVIDER", "gemini")
     ).strip().lower()
+
+    # Cross-vendor CLI providers — flag-gated. When NUCLEUS_CROSS_VENDOR is off
+    # this branch does not exist (falls through to the Unknown-provider error),
+    # so behavior is byte-identical to before this tier was added.
+    if provider in _VENDOR_PROVIDER_TO_VENDOR:
+        if _cross_vendor_enabled():
+            return VendorCLILLM(vendor=_VENDOR_PROVIDER_TO_VENDOR[provider], **kwargs)
+        raise ValueError(
+            f"Provider '{provider}' requires NUCLEUS_CROSS_VENDOR=1 (cross-vendor "
+            "dispatch is disabled by default)."
+        )
 
     if provider == "gemini":
         return DualEngineLLM(**kwargs)
@@ -1508,6 +1704,14 @@ def get_llm_client(
         from .claude_oauth_llm import ClaudeOAuthLLM
         return ClaudeOAuthLLM(**kwargs)
 
+    if provider in ("antigravity", "antigravity_oauth"):
+        from .antigravity_oauth_llm import AntigravityOAuthLLM
+        return AntigravityOAuthLLM(**kwargs)
+
+    if provider in ("grok", "grok_oauth"):
+        from .grok_oauth_llm import GrokOAuthLLM
+        return GrokOAuthLLM(**kwargs)
+
     if provider == "groq":
         return GroqLLM(**kwargs)
 
@@ -1518,10 +1722,12 @@ def get_llm_client(
         except ImportError:
             raise ValueError(
                 "Local provider not available in this build. "
-                "Supported values: 'gemini', 'anthropic', 'claude_oauth', 'groq'."
+                "Supported values: 'gemini', 'anthropic', 'claude_oauth', "
+                "'antigravity', 'grok', 'groq'."
             )
 
     raise ValueError(
         f"Unknown LLM provider '{provider}'. "
-        "Supported values: 'gemini', 'anthropic', 'claude_oauth', 'groq', 'local'."
+        "Supported values: 'gemini', 'anthropic', 'claude_oauth', "
+        "'antigravity', 'grok', 'groq', 'local'."
     )

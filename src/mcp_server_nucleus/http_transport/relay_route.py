@@ -501,41 +501,79 @@ async def post_relay(request: Request) -> JSONResponse:
         return _err(401, "auth_missing", "Token not recognised")
     token_owner = token_map[token]
 
+    # Rate-limit headers on every response where a valid token exists
+    # (per a2a_envelope_alignment.md § "Response headers on every reply").
+    # Computed before recipient validation so invalid_recipient errors still
+    # carry headers; recomputed with the valid recipient after sanitization.
+    rate_headers = get_rate_limit_headers(token, "", now)
+
     # Recipient validation (allow-list style — defer to relay_ops._sanitize_recipient)
     try:
         recipient = relay_ops._sanitize_recipient(recipient_raw)
     except ValueError as e:
-        return _err(400, "invalid_recipient", str(e))
+        return _err(400, "invalid_recipient", str(e), rate_headers=rate_headers)
+
+    rate_headers = get_rate_limit_headers(token, recipient, now)
 
     # Body parse + size cap
     raw = await request.body()
     if len(raw) > MAX_BODY_BYTES:
-        return _err(413, "body_too_large", f"Request body exceeds {MAX_BODY_BYTES} bytes")
+        return _err(413, "body_too_large", f"Request body exceeds {MAX_BODY_BYTES} bytes",
+                    rate_headers=rate_headers)
     try:
         payload = json.loads(raw or b"{}")
     except json.JSONDecodeError as e:
-        return _err(400, "schema_violation", f"Invalid JSON: {e}")
+        return _err(400, "schema_violation", f"Invalid JSON: {e}", rate_headers=rate_headers)
     if not isinstance(payload, dict):
-        return _err(400, "schema_violation", "Body must be a JSON object")
+        return _err(400, "schema_violation", "Body must be a JSON object",
+                    rate_headers=rate_headers)
 
     # Schema validation
     for f in REQUIRED_FIELDS:
         if f not in payload or payload[f] in (None, ""):
-            return _err(400, "schema_violation", f"Required field missing: {f}")
+            return _err(400, "schema_violation", f"Required field missing: {f}",
+                        rate_headers=rate_headers)
     subject = payload["subject"]
     if not isinstance(subject, str) or len(subject) > MAX_SUBJECT_LEN or "\n" in subject:
         return _err(400, "schema_violation",
-                    f"subject must be a string ≤{MAX_SUBJECT_LEN} chars, no newlines")
+                    f"subject must be a string ≤{MAX_SUBJECT_LEN} chars, no newlines",
+                    rate_headers=rate_headers)
     body_field = payload["body"]
     if not isinstance(body_field, str):
-        return _err(400, "schema_violation", "body must be a string")
+        return _err(400, "schema_violation", "body must be a string",
+                    rate_headers=rate_headers)
     sender = payload["sender"]
     if not isinstance(sender, str):
-        return _err(400, "schema_violation", "sender must be a string")
+        return _err(400, "schema_violation", "sender must be a string",
+                    rate_headers=rate_headers)
     priority = payload.get("priority", "normal")
     if priority not in VALID_PRIORITIES:
         return _err(400, "schema_violation",
-                    f"priority must be one of {sorted(VALID_PRIORITIES)}")
+                    f"priority must be one of {sorted(VALID_PRIORITIES)}",
+                    rate_headers=rate_headers)
+
+    # Optional structured fields — type-checked per envelope contract
+    # (.brain/plans/a2a_envelope_alignment.md). None is always valid (means
+    # "not provided"); non-None must match the documented type.
+    to_session_id = payload.get("to_session_id")
+    if to_session_id is not None and not isinstance(to_session_id, str):
+        return _err(400, "schema_violation", "to_session_id must be a string or null",
+                    rate_headers=rate_headers)
+
+    from_session_id_body = payload.get("from_session_id")
+    if from_session_id_body is not None and not isinstance(from_session_id_body, str):
+        return _err(400, "schema_violation", "from_session_id must be a string or null",
+                    rate_headers=rate_headers)
+
+    context = payload.get("context")
+    if context is not None and not isinstance(context, dict):
+        return _err(400, "schema_violation", "context must be an object or null",
+                    rate_headers=rate_headers)
+
+    in_reply_to = payload.get("in_reply_to")
+    if in_reply_to is not None and not isinstance(in_reply_to, str):
+        return _err(400, "schema_violation", "in_reply_to must be a string or null",
+                    rate_headers=rate_headers)
 
     # Prompt-injection scan (runs after body-field type validation)
     injected, matched_pattern = scan_injection_patterns(body_field)
@@ -543,18 +581,13 @@ async def post_relay(request: Request) -> JSONResponse:
         logger.warning(
             "injection blocked sender=%s pattern=%s", token_owner, matched_pattern
         )
-        # Include rate-limit headers even on 403 so clients can inspect throttle state.
-        # Rate counter not yet charged at this point; compute tentative headers.
-        _tentative_remaining = RATE_PER_MIN + RATE_BURST - len(_buckets[(token, "")])
-        _injection_rate_headers = {
-            "X-RateLimit-Limit": str(RATE_PER_MIN),
-            "X-RateLimit-Remaining": str(max(0, _tentative_remaining)),
-            "X-RateLimit-Reset": str(int(now + 60)),
-        }
+        # Rate-limit headers included via the shared rate_headers (computed
+        # after recipient validation, before rate check — counter not yet
+        # charged at this point).
         return JSONResponse(
             {"sent": False, "error": "injection_detected", "pattern": matched_pattern},
             status_code=403,
-            headers=_injection_rate_headers,
+            headers=rate_headers,
         )
 
     # Sender-token binding — compared in canonical inbox space, because the
@@ -567,14 +600,27 @@ async def post_relay(request: Request) -> JSONResponse:
     # for deployed owner strings (deliberate-mismatch probe).
     if resolve_canonical_inbox_name(sender) != resolve_canonical_inbox_name(token_owner):
         return _err(403, "sender_mismatch",
-                    f"body.sender={sender!r} does not match token owner={token_owner!r}")
+                    f"body.sender={sender!r} does not match token owner={token_owner!r}",
+                    rate_headers=rate_headers)
+
+    # Relay-sender anchor stone (PRINCIPAL.md §G1 0b): verify the
+    # sender_anchor field when NUCLEUS_RELAY_SENDER_ANCHOR=1. Closes the
+    # census's forgeable `from` by binding the sender to a kernel-
+    # authenticated session in the registry. Flag-OFF = byte-identical
+    # (verify_sender_anchor returns (True, None) immediately).
+    from ..sessions.relay_sender_anchor import verify_sender_anchor
+    anchor_ok, anchor_err = verify_sender_anchor(payload, token_owner)
+    if not anchor_ok:
+        return _err(403, "sender_anchor_rejected", anchor_err or "anchor verification failed",
+                    rate_headers=rate_headers)
 
     # Idempotency replay check
     idem_key = request.headers.get("idempotency-key", "")
     cached = _idem_get(token, idem_key, now)
     if cached is not None:
         return _err(409, "idempotency_replay",
-                    f"Idempotency-Key already used; original message_id={cached.get('message_id')}")
+                    f"Idempotency-Key already used; original message_id={cached.get('message_id')}",
+                    rate_headers=rate_headers)
 
     # Rate limit
     allowed, remaining, retry_after = _check_rate(token, recipient, now)
@@ -583,8 +629,8 @@ async def post_relay(request: Request) -> JSONResponse:
         return _err(429, "rate_limited", "Rate limit exceeded",
                     retry_after_s=retry_after, rate_headers=rate_headers)
 
-    # X-Sender-Session-Id header overrides body
-    from_session_id = request.headers.get("x-sender-session-id") or payload.get("from_session_id")
+    # X-Sender-Session-Id header overrides body (both already type-validated above)
+    from_session_id = request.headers.get("x-sender-session-id") or from_session_id_body
 
     # Dispatch to existing relay_post — no new write paths.
     # force_fs=True: the server is the FS authority; without it a server
@@ -595,12 +641,26 @@ async def post_relay(request: Request) -> JSONResponse:
             subject=subject,
             body=body_field,
             priority=priority,
-            context=payload.get("context"),
+            context=context,
             sender=sender,
-            to_session_id=payload.get("to_session_id"),
+            to_session_id=to_session_id,
             from_session_id=from_session_id,
-            in_reply_to=payload.get("in_reply_to"),
+            in_reply_to=in_reply_to,
             force_fs=True,
+            # v3 anchor precondition: pass the verified sender_anchor through
+            # to relay_post so it's stored in the envelope. The census needs
+            # this to distinguish pre-anchor (forgeable) from post-anchor
+            # (verified) envelopes.
+            sender_anchor=payload.get("sender_anchor"),
+            # Stone 2 (anchor stone 2) was reverted in 4851660b — the
+            # ``from_verified`` kwarg was removed from relay_post's signature
+            # but this call site was not updated, which broke every HTTP
+            # relay route test (TypeError: unexpected keyword argument
+            # 'from_verified'). The sender-token binding at line 568 above
+            # (403 sender_mismatch) is the load-bearing identity gate; the
+            # from_verified stamp was additive and its removal does not
+            # weaken the route. Do NOT re-add from_verified here unless
+            # relay_post's signature is also restored.
             # Bridge push path: preserve a caller-supplied id so re-pushes
             # stay idempotent even after the in-memory Idempotency-Key cache
             # is lost on restart. relay_post validates and dedups by id.
@@ -613,6 +673,16 @@ async def post_relay(request: Request) -> JSONResponse:
         return _err(400, "schema_violation", msg, rate_headers=rate_headers)
     except OSError as e:
         return _err(503, "disk_unavailable", f"Relay write failed: {e}", rate_headers=rate_headers)
+
+    # relay_post can return a rejection dict (sent=False) for the STRICT
+    # artifact_refs gate — it does NOT raise ValueError for that path.
+    # Map the rejection to the documented 422 gate_rejected error code.
+    if isinstance(result, dict) and result.get("sent") is False:
+        err_code = result.get("error", "schema_violation")
+        err_reason = result.get("reason", "Relay post rejected")
+        if err_code == "gate_rejected":
+            return _err(422, "gate_rejected", err_reason, rate_headers=rate_headers)
+        return _err(400, err_code, err_reason, rate_headers=rate_headers)
 
     # Successful response — 202 Accepted per contract
     response = {
@@ -648,10 +718,12 @@ async def get_relay(request: Request) -> JSONResponse:
     if not token or token not in token_map:
         return _err(401, "auth_missing", "Token not recognised")
 
+    rate_headers = get_rate_limit_headers(token, "", now)
+
     try:
         recipient = relay_ops._sanitize_recipient(recipient_raw)
     except ValueError as e:
-        return _err(400, "invalid_recipient", str(e))
+        return _err(400, "invalid_recipient", str(e), rate_headers=rate_headers)
 
     rate_headers = get_rate_limit_headers(token, recipient, now)
 
@@ -698,10 +770,12 @@ async def ack_relay(request: Request) -> JSONResponse:
     if not token or token not in token_map:
         return _err(401, "auth_missing", "Token not recognised")
 
+    rate_headers = get_rate_limit_headers(token, "", now)
+
     try:
         recipient = relay_ops._sanitize_recipient(recipient_raw)
     except ValueError as e:
-        return _err(400, "invalid_recipient", str(e))
+        return _err(400, "invalid_recipient", str(e), rate_headers=rate_headers)
 
     rate_headers = get_rate_limit_headers(token, recipient, now)
 
@@ -755,10 +829,12 @@ async def get_relay_status(request: Request) -> JSONResponse:
     if not token or token not in token_map:
         return _err(401, "auth_missing", "Token not recognised")
 
+    rate_headers = get_rate_limit_headers(token, "", now)
+
     try:
         recipient = relay_ops._sanitize_recipient(recipient_raw)
     except ValueError as e:
-        return _err(400, "invalid_recipient", str(e))
+        return _err(400, "invalid_recipient", str(e), rate_headers=rate_headers)
 
     rate_headers = get_rate_limit_headers(token, recipient, now)
 

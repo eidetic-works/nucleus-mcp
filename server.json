@@ -6,7 +6,18 @@
     "url": "https://github.com/eidetic-works/nucleus-mcp",
     "source": "github"
   },
-  "version": "1.13.3",
+  "websiteUrl": "https://nucleusos.dev",
+  "version": "1.15.2",
+  "tags": [
+    "memory",
+    "agent-memory",
+    "governance",
+    "compliance",
+    "persistent-context",
+    "mcp",
+    "ai-agents",
+    "sovereign"
+  ],
   "remotes": [
     {
       "type": "streamable-http",
@@ -17,7 +28,7 @@
     {
       "registryType": "pypi",
       "identifier": "nucleus-mcp",
-      "version": "1.13.3",
+      "version": "1.15.2",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

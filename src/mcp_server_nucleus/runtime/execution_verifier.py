@@ -884,8 +884,12 @@ _CLAIM_PATTERNS = [
     # "N new tests/files/..."
     (r'(\d+)\s+new\s+(tests?|files?|chunks?|items?|endpoints?|modules?|functions?)',
      "count"),
-    # "create/add <filename>" (file existence claim)
-    (r'(?:create|add|write)\s+(?:file\s+)?[`"\']?([a-zA-Z0-9_/\-\.]+\.(?:py|js|ts|json|yaml|yml|md|sh|sql))[`"\']?',
+    # "create/add/write <filename>" (file existence claim)
+    # Supports absolute (/tmp/foo.txt), relative (src/app.py), and quoted paths.
+    # Extensions cover code, config, docs, and data files including .txt.
+    # NOTE: longer extensions MUST come before shorter prefixes in the
+    # alternation (e.g. json before js) so regex ordering doesn't truncate.
+    (r'(?:create|add|write)\s+(?:file\s+)?[`"\']?([a-zA-Z0-9_/\-\.]+\.(?:json|yaml|yml|toml|html|css|xml|sql|txt|csv|cfg|ini|py|js|ts|md|sh))[`"\']?',
      "file"),
 ]
 

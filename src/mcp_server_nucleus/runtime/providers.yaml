@@ -66,6 +66,16 @@ providers:
     provider: google_gemini
     default_role: reviewer
 
+  # Cross-vendor CLI surfaces (NUCLEUS_CROSS_VENDOR). `agy` sender resolves to the
+  # `antigravity` inbox before coercion, so the prefix here is `antigravity`.
+  - prefix: antigravity
+    provider: google_gemini
+    default_role: reviewer
+
+  - prefix: devin
+    provider: zhipuai_glm
+    default_role: reviewer
+
   - prefix: cursor
     provider: cursor
     default_role: primary

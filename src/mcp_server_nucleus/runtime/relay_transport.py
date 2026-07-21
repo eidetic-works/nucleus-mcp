@@ -1,215 +1,238 @@
-"""Relay transport abstraction — Filesystem vs HTTP switch (PR-A v0.1).
+"""Relay-as-Service v0.1 → v0.2.1 — client HTTP transport layer.
 
-Per spec at .brain/plans/2026-06-06_relay_as_service_v0_1.md (operator-approved
-2026-06-06 ~09:25Z via ExitPlanMode + Mac-flip addition).
+When ``NUCLEUS_RELAY_URL`` is set, relay reads/writes route through the
+canonical HTTP relay service (ADR-0039) instead of the local filesystem.
+When unset, every call returns a marker-shape so the caller can route
+to the existing FS code path — zero behaviour change.
 
-Architecture:
-    When NUCLEUS_RELAY_URL is unset → every public function returns FS-path
-    semantics identical to today's behaviour. No-op import for FS-only sessions.
+Contract mirrors ``http_transport/relay_route.py`` exactly:
+  - POST   /relay/{recipient}          → post_relay
+  - GET    /relay/{recipient}          → read_inbox
+  - POST   /relay/{recipient}/ack      → mark_seen
+  - GET    /relay/{recipient}/status   → get_status
 
-    When NUCLEUS_RELAY_URL is set → bearer-authed HTTP to the existing
-    http_transport/relay_route.py endpoints. Cloud-cowork sessions on
-    GitHub Actions / OCI / cloud Claude Code use this path for inbox access.
+v0.2.1 Layer A: per-role bearer. Callers resolve the bearer per-call
+from ``~/.tb/relay_token_<role>`` (or ``NUCLEUS_RELAY_BEARER`` env fallback)
+and pass it via the ``bearer=`` kwarg.
 
-Public functions:
-    is_http_mode()   → bool — read NUCLEUS_RELAY_URL once
-    read_inbox(role) → list[dict] — GET /relay/{canonical}?unread_only=&limit=
-    post_relay(payload) → dict — POST /relay/{to}
-    mark_seen(role, ids) → dict — POST /relay/{canonical}/ack
-    get_status(role) → dict — GET /relay/{canonical}/status
-
-Implementation notes (HARD per spec):
-    - urllib.request stdlib only (NOT httpx — httpx is in optional [http] extra
-      per pyproject.toml:40-43; runtime hard-dep breaks install profile of
-      every existing consumer)
-    - NUCLEUS_RELAY_BEARER required when NUCLEUS_RELAY_URL is set; fail loud
-      one-line RuntimeError at first call
-    - resolve_canonical_inbox_name called once at top of every public function
-    - Defensive shape on 401/403/404/5xx: return [] or {sent: False, error: ...},
-      log single warning, NEVER crash (mirrors mirror/hook.py:71-74 swallow-
-      json.JSONDecodeError pattern)
-    - Rate-limit awareness: read X-RateLimit-Remaining header; if 0, return
-      cached empty and let caller back off (don't retry tight)
-
-Reuse:
-    - resolve_canonical_inbox_name from .relay_inbox_canonical (PR #475 SSOT)
-    - Canonical role resolution + env precedence at call sites in relay_ops
-      (CC_SESSION_ROLE → NUCLEUS_SESSION_ROLE → NUCLEUS_RELAY_RECIPIENT → "main")
+Uses stdlib ``urllib.request`` only — httpx is in the optional ``[http]``
+extra and must not be a hard dependency of runtime.
 """
+
 from __future__ import annotations
 
 import json
-import logging
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from .relay_inbox_canonical import resolve_canonical_inbox_name
 
-logger = logging.getLogger(__name__)
+__all__ = [
+    "is_http_mode",
+    "post_relay",
+    "read_inbox",
+    "mark_seen",
+    "get_status",
+    "_bearer_or_raise",
+    "_http_call",
+    "InboxResult",
+]
 
-# ── HTTP transport tuning ──────────────────────────────────────────────────
-
-_DEFAULT_TIMEOUT_S = 10  # urllib timeout per request; v0.1 conservative
-_ENV_URL = "NUCLEUS_RELAY_URL"
-_ENV_BEARER = "NUCLEUS_RELAY_BEARER"
-# Same env var the server reads for its 413 guard (relay_route.MAX_BODY_BYTES)
-# so client fail-fast and server reject stay in lockstep.
-_ENV_MAX_BODY = "NUCLEUS_RELAY_MAX_BODY"
-_DEFAULT_MAX_BODY_BYTES = 65536
+_DEFAULT_MAX_BODY = 65536
 
 
-# ── Mode detection ─────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# InboxResult — list subclass with truth-in-signaling flags (PR #540)
+# ---------------------------------------------------------------------------
 
+class InboxResult(list):
+    """A list of relay messages with signaling flags.
+
+    ``isinstance(result, list)`` is True — all existing callers that
+    iterate or index work unchanged. The flags let new callers
+    distinguish "genuinely empty" from "transport failed" or "page
+    truncated by rate-limit budget".
+
+    Attributes:
+        has_more: Server signalled more messages exist beyond this page.
+        rate_limited: Rate budget exhausted (X-RateLimit-Remaining: 0
+            or HTTP 429).
+        transport_error: HTTP-level or connection error occurred;
+            the returned list may be empty or partial.
+    """
+
+    _has_more: bool = False
+    _rate_limited: bool = False
+    _transport_error: bool = False
+
+    @property
+    def has_more(self) -> bool:
+        return self._has_more
+
+    @has_more.setter
+    def has_more(self, v: bool) -> None:
+        self._has_more = bool(v)
+
+    @property
+    def rate_limited(self) -> bool:
+        return self._rate_limited
+
+    @rate_limited.setter
+    def rate_limited(self, v: bool) -> None:
+        self._rate_limited = bool(v)
+
+    @property
+    def transport_error(self) -> bool:
+        return self._transport_error
+
+    @transport_error.setter
+    def transport_error(self, v: bool) -> None:
+        self._transport_error = bool(v)
+
+
+# ---------------------------------------------------------------------------
+# Mode detection
+# ---------------------------------------------------------------------------
 
 def is_http_mode() -> bool:
-    """Return True if NUCLEUS_RELAY_URL is set (transport switch flipped).
-
-    Read fresh every call so test harnesses + env-flip-mid-session work.
-    Caching would risk stale behaviour after Mac-HTTP opt-in flip.
-    """
-    return bool(os.environ.get(_ENV_URL, "").strip())
+    """True when ``NUCLEUS_RELAY_URL`` is set to a non-blank value."""
+    return bool(os.environ.get("NUCLEUS_RELAY_URL", "").strip())
 
 
 def _base_url() -> str:
-    """Canonicalize the NUCLEUS_RELAY_URL — strip trailing slash for joins."""
-    raw = os.environ.get(_ENV_URL, "").strip()
-    return raw.rstrip("/")
+    url = os.environ.get("NUCLEUS_RELAY_URL", "").strip()
+    if not url:
+        raise RuntimeError("is_http_mode() is False but _base_url() called")
+    return url.rstrip("/")
 
 
-def _bearer_or_raise() -> str:
-    """Return bearer token from env or raise RuntimeError (fail loud per spec).
+def _bearer_or_raise(bearer: Optional[str] = None) -> str:
+    """Resolve the bearer token for a relay call.
 
-    Per v0.2.1 (per-role bearer Layer A): callers MAY pass an explicit bearer
-    kwarg into public functions; this env-read becomes the no-bearer-passed
-    fallback. The fail-loud RuntimeError shape stays unchanged for HTTP mode
-    + no bearer anywhere.
+    Explicit ``bearer`` arg wins (per-role token from the caller).
+    Falls through to ``NUCLEUS_RELAY_BEARER`` env.
+    Raises ``RuntimeError`` mentioning ``NUCLEUS_RELAY_BEARER missing``
+    if neither is set.
     """
-    token = os.environ.get(_ENV_BEARER, "").strip()
+    if bearer and bearer.strip():
+        return bearer.strip()
+    token = os.environ.get("NUCLEUS_RELAY_BEARER", "").strip()
     if not token:
         raise RuntimeError(
-            f"{_ENV_URL} set but {_ENV_BEARER} missing — refusing to send "
-            f"unauthenticated HTTP relay traffic"
+            "NUCLEUS_RELAY_URL set but NUCLEUS_RELAY_BEARER missing"
         )
     return token
 
 
-def _resolve_bearer(bearer: Optional[str]) -> str:
-    """Bearer precedence: explicit kwarg > env via _bearer_or_raise().
-
-    Per v0.2.1 Layer A bearer-kwarg threading: when caller (tools/relay.py
-    facade) resolves a per-role bearer from ~/.tb/relay_token_<role>, it
-    passes that bearer through to the transport function which forwards it
-    here. None → fall through to env. Non-empty string → use it directly
-    (treated as already-validated by caller).
-    """
-    if bearer is not None and bearer != "":
-        return bearer
-    return _bearer_or_raise()
+def _max_body_bytes() -> int:
+    raw = os.environ.get("NUCLEUS_RELAY_MAX_BODY", "").strip()
+    if not raw:
+        return _DEFAULT_MAX_BODY
+    try:
+        return int(raw)
+    except ValueError:
+        return _DEFAULT_MAX_BODY
 
 
-# ── HTTP helper (defensive, never raises on transport failure) ─────────────
+def _extract_rate_limit(headers) -> Optional[int]:
+    """Parse X-RateLimit-Remaining from response headers (case-insensitive)."""
+    if not headers:
+        return None
+    try:
+        val = headers.get("X-RateLimit-Remaining")
+    except (AttributeError, TypeError):
+        return None
+    if val is None:
+        return None
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return None
 
+
+# ---------------------------------------------------------------------------
+# HTTP helper — single I/O seam (monkeypatched in self-recursion tests)
+# ---------------------------------------------------------------------------
 
 def _http_call(
     method: str,
     path: str,
     *,
-    body: Optional[dict] = None,
-    headers: Optional[dict[str, str]] = None,
     bearer: Optional[str] = None,
-) -> tuple[int, Optional[dict], dict[str, str]]:
-    """Issue a bearer-authed HTTP request. Return (status, parsed_body, headers).
+    body: Optional[dict] = None,
+    params: Optional[dict] = None,
+    timeout: int = 15,
+) -> tuple[int, Optional[dict], Any, Optional[int]]:
+    """Issue an HTTP request to the relay service.
 
-    Defensive shape: connection errors / non-2xx surface as status codes the
-    caller checks. NEVER raises except for RuntimeError on missing bearer
-    (which is a configuration failure the caller cannot recover from).
+    Returns ``(status_code, parsed_json_or_None, error, rate_limit_remaining)``.
+    error is ``None`` on success, ``int`` (status code) for HTTP errors,
+    or ``"transport_failure"`` for connection errors.
+    rate_limit_remaining is parsed from ``X-RateLimit-Remaining`` header
+    or ``None`` if absent.
 
-    Args:
-        method: HTTP verb (GET / POST)
-        path: path relative to _base_url() (must start with "/")
-        body: dict JSON-encoded for POST; None for GET
-        headers: optional additional headers (e.g., Idempotency-Key)
-        bearer: explicit bearer token (v0.2.1 per-role); None → env fallback
-
-    Returns:
-        (status_code, parsed_response_body_or_None, response_headers_dict)
-        On connection refused / DNS failure / timeout: returns (0, None, {}).
+    This is the single HTTP I/O seam. Tests monkeypatch this to ``_boom``
+    as a self-recursion tripwire (see test_relay_route_self_recursion.py).
     """
     url = _base_url() + path
-    bearer = _resolve_bearer(bearer)
-    req_headers = {
-        "Authorization": f"Bearer {bearer}",
-        "Content-Type": "application/json",
+    if params:
+        qs = "&".join(
+            f"{k}={urllib.parse.quote(str(v), safe='')}"
+            for k, v in params.items()
+            if v is not None
+        )
+        if qs:
+            url += f"?{qs}"
+
+    data = None
+    headers: Dict[str, str] = {
+        "Authorization": f"Bearer {_bearer_or_raise(bearer)}",
         "Accept": "application/json",
     }
-    if headers:
-        req_headers.update(headers)
 
-    data: Optional[bytes] = None
     if body is not None:
-        data = json.dumps(body, separators=(",", ":")).encode("utf-8")
+        data = json.dumps(body).encode("utf-8")
+        headers["Content-Type"] = "application/json"
 
-    req = urllib.request.Request(url, data=data, method=method, headers=req_headers)
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+
     try:
-        with urllib.request.urlopen(req, timeout=_DEFAULT_TIMEOUT_S) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             status = resp.status
-            raw = resp.read().decode("utf-8")
-            resp_headers = {k: v for k, v in resp.headers.items()}
-            try:
-                parsed = json.loads(raw) if raw else None
-            except json.JSONDecodeError:
+            raw = resp.read()
+            if raw:
+                try:
+                    parsed = json.loads(raw)
+                except (json.JSONDecodeError, ValueError):
+                    parsed = None
+            else:
                 parsed = None
-            return status, parsed, resp_headers
-    except urllib.error.HTTPError as exc:
-        # Server returned non-2xx (401, 403, 404, 5xx). Defensive: capture
-        # status and headers but return parsed=None.
-        try:
-            resp_headers = {k: v for k, v in exc.headers.items()} if exc.headers else {}
-        except Exception:
-            resp_headers = {}
-        logger.warning(
-            "relay_transport: %s %s -> HTTP %s", method, path, exc.code
-        )
-        return exc.code, None, resp_headers
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        logger.warning(
-            "relay_transport: %s %s -> connection error: %s", method, path, exc
-        )
-        return 0, None, {}
+            rl = _extract_rate_limit(resp.headers)
+            return status, parsed, None, rl
+    except urllib.error.HTTPError as e:
+        raw = e.read()
+        if raw:
+            try:
+                parsed = json.loads(raw)
+            except (json.JSONDecodeError, ValueError):
+                parsed = None
+        else:
+            parsed = None
+        rl = _extract_rate_limit(e.headers) if e.headers else None
+        return e.code, parsed, e.code, rl
+    except (urllib.error.URLError, OSError, TimeoutError):
+        return 0, None, "transport_failure", None
 
 
-def _rate_limit_exhausted(headers: dict[str, str]) -> bool:
-    """Return True if X-RateLimit-Remaining == 0 (caller should back off)."""
-    remaining = headers.get("X-RateLimit-Remaining", "").strip()
-    return remaining == "0"
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
-
-# ── Public API (FS / HTTP dual-mode) ────────────────────────────────────────
-
-
-class InboxResult(list):
-    """``read_inbox`` return type: a plain list of envelope dicts plus
-    truth-in-signaling attributes so callers can tell "inbox is empty"
-    apart from "transport failed" / "rate budget exhausted" / "server
-    truncated the page". ``isinstance(x, list)`` stays True and JSON
-    serialization is unchanged — fully backward-compatible.
-    """
-
-    def __init__(
-        self,
-        messages=(),
-        *,
-        has_more: bool = False,
-        rate_limited: bool = False,
-        transport_error: bool = False,
-    ):
-        super().__init__(messages)
-        self.has_more = has_more
-        self.rate_limited = rate_limited
-        self.transport_error = transport_error
+_FS_MARKER = "fs_mode_caller_should_route_to_relay_ops"
 
 
 def read_inbox(
@@ -218,184 +241,208 @@ def read_inbox(
     unread_only: bool = True,
     limit: int = 50,
     bearer: Optional[str] = None,
-) -> "InboxResult":
-    """Return inbox messages for ``role``. FS-mode caller MUST guard with
-    ``if not is_http_mode():`` and fall back to existing FS code path.
+) -> InboxResult:
+    """GET /relay/{canonical} → list of messages.
 
-    HTTP-mode contract: GET {URL}/relay/{canonical}?unread_only=<>&limit=<>
-        → server returns {"messages": [...], "count": N, "has_more": bool}
-
-    Defensive return: connection error / 401 / 403 / 404 / 5xx → empty
-    InboxResult with ``transport_error=True`` + warning log; does NOT raise.
-    Rate-limit budget exhausted on a SUCCESSFUL response keeps the messages
-    and sets ``rate_limited=True`` (callers back off but no longer lose a
-    good page). Server ``has_more`` is surfaced instead of discarded.
-
-    bearer kwarg (v0.2.1 Layer A): explicit per-call bearer; None falls
-    through to NUCLEUS_RELAY_BEARER env via _resolve_bearer.
+    FS mode: returns empty ``InboxResult`` (caller routes to relay_ops).
+    HTTP mode: returns messages from server, or empty on error.
     """
-    canonical = resolve_canonical_inbox_name(role) or role
     if not is_http_mode():
-        # FS-mode callers in relay_ops.py route to existing code paths.
-        # This branch exists so direct importers (tests, admin tools) get a
-        # consistent empty-list fallback when HTTP isn't configured.
         return InboxResult()
 
-    qs = urllib.parse.urlencode(
-        {"unread_only": "true" if unread_only else "false", "limit": str(limit)}
+    canonical = resolve_canonical_inbox_name(role)
+    if not canonical:
+        return InboxResult()
+
+    status, parsed, err, rl_remaining = _http_call(
+        "GET",
+        f"/relay/{canonical}",
+        bearer=bearer,
+        params={"unread_only": str(unread_only).lower(), "limit": limit},
     )
-    status, body, headers = _http_call("GET", f"/relay/{canonical}?{qs}", bearer=bearer)
-    if not (200 <= status < 300) or not isinstance(body, dict):
-        return InboxResult(
-            rate_limited=(status == 429),
-            transport_error=True,
-        )
-    msgs = body.get("messages")
-    if not isinstance(msgs, list):
-        msgs = []
-    return InboxResult(
-        msgs,
-        has_more=bool(body.get("has_more", False)),
-        rate_limited=_rate_limit_exhausted(headers),
-    )
+
+    result = InboxResult()
+
+    if err:
+        result.transport_error = True
+        if status == 429:
+            result.rate_limited = True
+        return result
+
+    if parsed is None or not isinstance(parsed, dict):
+        result.transport_error = True
+        return result
+
+    if 200 <= status < 300:
+        msgs = parsed.get("messages", [])
+        if isinstance(msgs, list):
+            result.extend(msgs)
+        result.has_more = bool(parsed.get("has_more", False))
+        result.transport_error = False
+        result.rate_limited = bool(parsed.get("rate_limited", False)) or (rl_remaining == 0)
+        return result
+
+    # Non-2xx with parseable body
+    result.transport_error = True
+    if status == 429:
+        result.rate_limited = True
+    return result
 
 
 def post_relay(payload: dict, *, bearer: Optional[str] = None) -> dict:
-    """Post a relay envelope. FS-mode caller MUST guard with
-    ``if not is_http_mode():`` and call ``relay_ops.relay_post(**payload)``.
+    """POST /relay/{to} → send a relay envelope.
 
-    HTTP-mode contract: POST {URL}/relay/{payload['to']}
-        body = full envelope (subject, body, sender, priority, to, context,
-                              in_reply_to, to_session_id, from_session_id)
+    FS mode: returns ``{"sent": False, "error": _FS_MARKER}``.
+    HTTP mode: returns ``{"sent": True, "id": ...}`` on 2xx or
+    ``{"sent": False, "error": ...}`` on failure.
 
-    Idempotency-Key header derives from ``payload.get('id')`` when present,
-    falling back to a hash of the body fields if not.
-
-    Returns ``{"sent": True, "id": <message_id>}`` on success;
-    ``{"sent": False, "error": <code>}`` on transport failure.
-
-    bearer kwarg (v0.2.1 Layer A): explicit per-call bearer; None falls
-    through to NUCLEUS_RELAY_BEARER env via _resolve_bearer.
+    Relay-sender anchor stone: when ``NUCLEUS_RELAY_SENDER_ANCHOR=1``,
+    stamps the payload with ``sender_anchor`` from the session registry
+    before posting. No-op when the flag is OFF (byte-identical).
     """
     if not is_http_mode():
-        return {"sent": False, "error": "fs_mode_caller_should_route_to_relay_ops"}
+        return {"sent": False, "error": _FS_MARKER}
 
-    to_role = payload.get("to")
-    if not to_role:
+    # Relay-sender anchor stone: stamp payload with session anchor
+    from ..sessions.relay_sender_anchor import stamp_sender_anchor
+    payload = stamp_sender_anchor(payload)
+
+    recipient = payload.get("to") or payload.get("recipient") or ""
+    if not recipient:
         return {"sent": False, "error": "missing_to_field"}
-    canonical = resolve_canonical_inbox_name(to_role) or to_role
 
-    # Client-side mirror of the server's 413 guard: serialize exactly as
-    # _http_call will and fail fast instead of burning a rate-budget slot
-    # on a request the server is guaranteed to reject.
-    try:
-        max_body = int(os.environ.get(_ENV_MAX_BODY, "") or _DEFAULT_MAX_BODY_BYTES)
-    except ValueError:
-        max_body = _DEFAULT_MAX_BODY_BYTES
-    encoded_size = len(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
-    if encoded_size > max_body:
-        logger.warning(
-            "relay_transport: post_relay payload %d bytes exceeds cap %d — "
-            "refusing client-side (server would 413)",
-            encoded_size,
-            max_body,
-        )
+    canonical = resolve_canonical_inbox_name(recipient)
+
+    # Client-side body cap (matches server 413 guard)
+    body_bytes = json.dumps(payload).encode("utf-8")
+    if len(body_bytes) > _max_body_bytes():
         return {"sent": False, "error": "body_too_large"}
 
-    idempotency_key = payload.get("id") or ""
-    headers = {}
-    if idempotency_key:
-        headers["Idempotency-Key"] = str(idempotency_key)
+    # Idempotency-Key: use payload id if provided, else mint UUID
+    idem_key = payload.get("id") or str(uuid4())
+
+    # Extra headers from payload
+    extra_headers: Dict[str, str] = {"Idempotency-Key": str(idem_key)}
     if payload.get("from_session_id"):
-        headers["X-Sender-Session-Id"] = str(payload["from_session_id"])
+        extra_headers["X-Sender-Session-Id"] = str(payload["from_session_id"])
 
-    status, body, resp_headers = _http_call(
-        "POST", f"/relay/{canonical}", body=payload, headers=headers, bearer=bearer
+    # Build a custom _http_call with extra headers
+    # We inline the HTTP call here to pass extra headers cleanly
+    url = _base_url() + f"/relay/{canonical}"
+    headers: Dict[str, str] = {
+        "Authorization": f"Bearer {_bearer_or_raise(bearer)}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        **extra_headers,
+    }
+    req = urllib.request.Request(
+        url, data=body_bytes, headers=headers, method="POST"
     )
-    # 2xx contract: server returns 202 Accepted per relay_route.py POST
-    # /relay/{recipient}; pre-2026-06-07 narrow (200, 201) check excluded
-    # the server's actual success status and made post_relay() return
-    # sent=False for messages that were in fact persisted server-side.
-    if 200 <= status < 300 and isinstance(body, dict):
-        # Task #62: the live server 202 echoes the stored id as "message_id"
-        # (relay_route.py response contract); reading only "id" returned ""
-        # for callers that supplied no client id (Dispatch). "id" kept for
-        # older/raw deploys; idempotency key is the last-resort fallback.
-        returned_id = body.get("message_id") or body.get("id") or idempotency_key
-        return {"sent": True, "id": returned_id}
-    return {"sent": False, "error": status or "transport_failure"}
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            status = resp.status
+            raw = resp.read()
+            parsed = json.loads(raw) if raw else None
+    except urllib.error.HTTPError as e:
+        status = e.code
+        raw = e.read()
+        try:
+            parsed = json.loads(raw) if raw else None
+        except (json.JSONDecodeError, ValueError):
+            parsed = None
+    except (urllib.error.URLError, OSError, TimeoutError):
+        return {"sent": False, "error": "transport_failure"}
+
+    if 200 <= status < 300:
+        # message_id wins over id (server-canonical)
+        msg_id = ""
+        if parsed and isinstance(parsed, dict):
+            msg_id = parsed.get("message_id") or parsed.get("id") or ""
+        if not msg_id:
+            msg_id = str(idem_key)
+        return {"sent": True, "id": msg_id}
+
+    return {"sent": False, "error": status}
 
 
-def mark_seen(role: str, message_ids: list[str], *, bearer: Optional[str] = None) -> dict:
-    """Mark one or more relay messages as ack'd. FS-mode caller MUST guard
-    with ``if not is_http_mode():`` and call ``relay_ops.relay_ack(...)`` per id.
+def mark_seen(
+    role: str,
+    message_ids: List[str],
+    *,
+    bearer: Optional[str] = None,
+) -> dict:
+    """POST /relay/{canonical}/ack → mark messages as seen.
 
-    HTTP-mode contract: POST {URL}/relay/{canonical}/ack
-        body = {"message_ids": [id1, id2, ...]}
-
-    Returns ``{"acked": <count>, "failed": <count>}`` on success;
-    ``{"acked": 0, "failed": <len>, "error": <code>}`` on transport failure.
-
-    bearer kwarg (v0.2.1 Layer A): explicit per-call bearer; None falls
-    through to NUCLEUS_RELAY_BEARER env via _resolve_bearer.
+    FS mode: returns ``{"acked": 0, "failed": 0, "error": _FS_MARKER}``.
+    HTTP mode: returns ``{"acked": N, "failed": N}``.
+    Empty list short-circuits without HTTP call.
     """
-    if not is_http_mode():
-        return {"acked": 0, "failed": 0, "error": "fs_mode_caller_should_route_to_relay_ops"}
     if not message_ids:
         return {"acked": 0, "failed": 0}
 
-    canonical = resolve_canonical_inbox_name(role) or role
-    status, body, _ = _http_call(
+    if not is_http_mode():
+        return {"acked": 0, "failed": 0, "error": _FS_MARKER}
+
+    canonical = resolve_canonical_inbox_name(role)
+    if not canonical:
+        return {"acked": 0, "failed": len(message_ids)}
+
+    status, parsed, err, _ = _http_call(
         "POST",
         f"/relay/{canonical}/ack",
-        body={"message_ids": list(message_ids)},
         bearer=bearer,
+        body={"message_ids": message_ids},
     )
-    # 2xx contract for symmetry with post_relay: server currently returns 200
-    # but accept any 2xx success to stay resilient to future server-side
-    # status-code changes (matches post_relay's 2xx-success window).
-    if 200 <= status < 300 and isinstance(body, dict):
+
+    if err:
         return {
-            "acked": int(body.get("acked", len(message_ids))),
-            "failed": int(body.get("failed", 0)),
+            "acked": 0,
+            "failed": len(message_ids),
+            "error": err,
         }
+
+    if 200 <= status < 300:
+        if parsed and isinstance(parsed, dict):
+            return {
+                "acked": int(parsed.get("acked", len(message_ids))),
+                "failed": int(parsed.get("failed", 0)),
+            }
+        return {"acked": len(message_ids), "failed": 0}
+
     return {
         "acked": 0,
         "failed": len(message_ids),
-        "error": status or "transport_failure",
+        "error": status,
     }
 
 
-def get_status(role: str, *, bearer: Optional[str] = None) -> dict:
-    """Fetch server-side inbox status for ``role``. FS-mode caller MUST guard
-    with ``if not is_http_mode():`` and use the FS mailbox scan in relay_ops.
+def get_status(canonical: str, *, bearer: Optional[str] = None) -> dict:
+    """GET /relay/{canonical}/status → best-effort status.
 
-    HTTP-mode contract: GET {URL}/relay/{canonical}/status
-        → {"recipient": <canonical>, "queue_depth": N, "unread": N,
-           "marketplace": {...}}
-
-    Returns ``{"ok": True, **server_body}`` on success;
-    ``{"ok": False, "error": <code>}`` on transport failure (connection
-    error / 401 / 403 / 404 / 5xx) — warning logged by _http_call, never
-    raises.
-
-    bearer kwarg (v0.2.1 Layer A): explicit per-call bearer; None falls
-    through to NUCLEUS_RELAY_BEARER env via _resolve_bearer.
+    FS mode: returns ``{"ok": False, "error": _FS_MARKER}``.
+    HTTP mode: returns server body merged with ``ok: True`` on 2xx or
+    ``{"ok": False, "error": <status>}`` on failure.
     """
-    canonical = resolve_canonical_inbox_name(role) or role
     if not is_http_mode():
-        return {"ok": False, "error": "fs_mode_caller_should_route_to_relay_ops"}
+        return {"ok": False, "error": _FS_MARKER}
 
-    status, body, _ = _http_call("GET", f"/relay/{canonical}/status", bearer=bearer)
-    if 200 <= status < 300 and isinstance(body, dict):
-        return {"ok": True, **body}
-    return {"ok": False, "error": status or "transport_failure"}
+    resolved = resolve_canonical_inbox_name(canonical)
+    if not resolved:
+        return {"ok": False, "error": "missing_role"}
 
+    status, parsed, err, _ = _http_call(
+        "GET",
+        f"/relay/{resolved}/status",
+        bearer=bearer,
+    )
 
-__all__ = [
-    "is_http_mode",
-    "read_inbox",
-    "post_relay",
-    "mark_seen",
-    "get_status",
-]
+    if err:
+        return {"ok": False, "error": err}
+
+    if 200 <= status < 300 and parsed and isinstance(parsed, dict):
+        result = dict(parsed)
+        result["ok"] = True
+        return result
+
+    return {"ok": False, "error": status}

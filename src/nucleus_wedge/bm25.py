@@ -169,3 +169,64 @@ def search(
     _p = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain")) / "metrics" / "recall_timings.jsonl"; _p.parent.mkdir(parents=True, exist_ok=True)
     with _p.open("a") as _f: _f.write(json.dumps({"ts": time.time(), "query_token_count": len(q_tokens), "rows_count": len(flat), "ms": round((time.perf_counter() - _t0) * 1000.0, 3), "ranker": ranker_name}) + "\n")
     return ranked[: max(1, int(limit))]
+
+
+def rank_candidates(
+    candidates: list[dict],
+    query: str,
+    limit: int = 5,
+    *,
+    text_key: str = "text",
+    ts_key: str = "created_at",
+    kind_key: str = "kind",
+) -> list[dict]:
+    """Rank an EXPLICIT candidate list by BM25 over ``query`` and return the same
+    dicts, reordered best-first and truncated to ``limit``.
+
+    Move 2 batch 4 (recall reads SoR): lets ``recall_cmd._do_recall_query`` use
+    ``bm25.py`` as the scorer over a *unioned* set of SoR (FTS5) + legacy
+    ``memories.db`` candidates — the "hybrid" recall of the manifest (FTS5/SoR for
+    candidate recall, ``bm25.py`` for ranking). Reuses the same ``_tokenize`` +
+    ``NUCLEUS_WEDGE_RANKER`` re-rank as ``search`` so ranking behavior (and the
+    #440 ranker flag) is identical — no ranking regression versus the existing
+    wedge path. The ``search(store, ...)`` entry point above is untouched.
+
+    Candidate dict keys are preserved: scoring uses an internal wrapper and the
+    returned list contains the caller's original dicts (no ``score`` key added),
+    so the output shape matches the pre-batch-4 ``_do_recall_query`` contract.
+
+    Empty/whitespace ``query`` → no BM25 signal; candidates are returned in input
+    order truncated to ``limit`` (the caller supplies recency order for that case).
+    """
+    if not candidates:
+        return []
+    cap = max(1, int(limit))
+    q_tokens = _tokenize(query)
+    if not q_tokens:
+        return list(candidates)[:cap]
+
+    corpus: Iterable[list[str]] = [
+        _tokenize(str(c.get(text_key) or "")) for c in candidates
+    ]
+    bm25 = BM25Okapi(list(corpus))
+    scores = bm25.get_scores(q_tokens)
+
+    reranker, ranker_name = _select_reranker()
+    pre_limit = cap * (5 if ranker_name != "baseline" else 1)
+
+    wrapped = sorted(
+        (
+            {
+                "_cand": c,
+                "score": float(s),
+                "timestamp": c.get(ts_key, ""),
+                "kind": c.get(kind_key, ""),
+            }
+            for c, s in zip(candidates, scores)
+        ),
+        key=lambda d: d["score"],
+        reverse=True,
+    )[:pre_limit]
+
+    wrapped = reranker(wrapped)
+    return [d["_cand"] for d in wrapped[:cap]]

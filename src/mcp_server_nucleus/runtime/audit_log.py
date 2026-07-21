@@ -146,10 +146,13 @@ def _get_conn(db_path: Optional[Path] = None) -> sqlite3.Connection:
     conn_key = getattr(_local, "conn_key", None)
 
     if conn is None or conn_key != db_key:
-        conn = sqlite3.connect(str(db_path), timeout=5.0, check_same_thread=False)
+        # Primary-store concurrency posture (timeout + WAL + busy_timeout +
+        # synchronous=NORMAL) via the shared helper; foreign_keys + Row factory
+        # stay audit-log specific.
+        from .common import open_hardened_sqlite
+
+        conn = open_hardened_sqlite(str(db_path), check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        # WAL mode for concurrent readers
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
         _local.conn = conn
         _local.conn_key = db_key

@@ -15,6 +15,93 @@ import re
 from .common import get_brain_path, make_response
 from .event_ops import _emit_event
 
+# --- Move 2 batch 5: flag-gated SoR read-model repoint ---------------------
+# Self-contained env check (mirrors runtime/memory_pipeline.py::_sor_flag_on) so
+# the flag-OFF search path stays byte-for-byte and nothing from
+# ``mcp_server_nucleus.memory`` is imported until the flag-ON branch.
+_SOR_FLAG = "NUCLEUS_MEMORY_SOR"
+_SOR_TRUTHY = frozenset({"1", "true", "yes", "on"})
+
+
+def _sor_flag_on() -> bool:
+    """True iff ``NUCLEUS_MEMORY_SOR`` is set truthy (default False)."""
+    return os.environ.get(_SOR_FLAG, "").strip().lower() in _SOR_TRUTHY
+
+
+def _search_engrams_sor(query, case_sensitive, limit, existing):
+    """Query the unified SoR (``MemoryFacade.recall``, hybrid) and map hits into
+    the engram row shape ``{key, value, source, kind, tags}``. Fault-isolated →
+    returns ``[]`` on any failure so search degrades to the legacy ledger/history
+    read (the SoR read is purely additive)."""
+    try:
+        from mcp_server_nucleus.memory.facade import MemoryFacade
+
+        facade = MemoryFacade(enabled=True)
+        hits = facade.recall(query=query or "", limit=max(int(limit) * 4, 40), mode="hybrid")
+    except Exception:
+        return []
+    seen_keys = {m.get("key") for m in existing if isinstance(m, dict)}
+    out = []
+    for h in hits:
+        k = h.get("key") or str(h.get("id"))
+        if k in seen_keys:
+            continue
+        seen_keys.add(k)
+        out.append({
+            "key": k,
+            "value": h.get("text"),
+            "source": "sor",
+            "kind": h.get("kind"),
+            "tags": h.get("tags"),
+        })
+    return out
+
+
+def _query_engrams_sor(context, min_intensity, limit, existing):
+    """Query the unified SoR (``MemoryFacade.recall``) for engrams of a given
+    ``context`` and map hits into the engram row shape ``{key, value, source,
+    kind, tags}`` — the ``query_engrams`` analogue of ``_search_engrams_sor``.
+    Fault-isolated → returns ``[]`` on any failure so query degrades to the
+    legacy ledger read (the SoR read is purely additive).
+
+    ``context`` maps to the SoR ``kind`` filter — the ADUN mirror stores the
+    engram context as the SoR ``kind`` (see ``memory_pipeline._mirror_to_sor``),
+    so the union stays scoped to the requested category. ``min_intensity`` is
+    accepted for signature parity with the ledger filter but is NOT applied to
+    SoR rows: the intensity lives in the SoR ``meta`` JSON, which
+    ``SorStore.search`` does not project into a recall hit, and that batch-1
+    store is out of scope for this batch. The tool default ``min_intensity=1``
+    is a no-op filter, so this only under-filters an explicit high-intensity
+    query against SoR-only rows — additive, and never removes a legacy row.
+    """
+    try:
+        from mcp_server_nucleus.memory.facade import MemoryFacade
+
+        facade = MemoryFacade(enabled=True)
+        hits = facade.recall(
+            query="",
+            kind=context or None,
+            limit=max(int(limit) * 4, 40),
+            mode="hybrid",
+        )
+    except Exception:
+        return []
+    seen_keys = {m.get("key") for m in existing if isinstance(m, dict)}
+    out = []
+    for h in hits:
+        k = h.get("key") or str(h.get("id"))
+        if k in seen_keys:
+            continue
+        seen_keys.add(k)
+        out.append({
+            "key": k,
+            "value": h.get("text"),
+            "source": "sor",
+            "kind": h.get("kind"),
+            "tags": h.get("tags"),
+        })
+    return out
+
 
 def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int) -> str:
     """Implementation for engram writing — MDR_014 ADUN Protocol.
@@ -127,7 +214,12 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
         brain = get_brain_path()
         engram_path = brain / "engrams" / "ledger.jsonl"
 
-        if not engram_path.exists():
+        legacy_present = engram_path.exists()
+
+        # Flag-OFF (default) with no ledger: byte-for-byte the legacy "no engrams"
+        # response. Under the flag we still consult the SoR below even when the
+        # ledger is absent (mirrors ``_brain_search_engrams_impl``'s convention).
+        if not legacy_present and not _sor_flag_on():
             return make_response(True, data={
                 "engrams": [],
                 "count": 0,
@@ -137,22 +229,42 @@ def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50)
                 "message": "No engrams found. Use write_engram to create."
             })
 
-        # Use in-memory cache for O(1) repeated reads (mtime-invalidated)
-        from .engram_cache import get_engram_cache
-        engrams, total_matching = get_engram_cache().query(
-            engram_path, context=context, min_intensity=min_intensity, limit=limit
-        )
+        if legacy_present:
+            # Use in-memory cache for O(1) repeated reads (mtime-invalidated)
+            from .engram_cache import get_engram_cache
+            engrams, total_matching = get_engram_cache().query(
+                engram_path, context=context, min_intensity=min_intensity, limit=limit
+            )
+        else:
+            engrams, total_matching = [], 0
 
         truncated = total_matching > limit
 
-        return make_response(True, data={
+        # Move 2 batch 7: flag-ON layers the unified SoR recall on top of the
+        # ledger query result (additive union, dedup-by-key, fault-isolated),
+        # matching batch 5's ``_brain_search_engrams_impl`` union semantics. The
+        # ``sources`` key is added ONLY when the SoR actually contributes, so
+        # flag-OFF (default) is byte-for-byte the legacy ledger-only response.
+        data = {
             "engrams": engrams,
             "count": len(engrams),
             "total_matching": total_matching,
             "truncated": truncated,
             "limit": limit,
-            "filters": {"context": context, "min_intensity": min_intensity}
-        })
+            "filters": {"context": context, "min_intensity": min_intensity},
+        }
+        if _sor_flag_on():
+            sor_matches = _query_engrams_sor(context, min_intensity, limit, engrams)
+            if sor_matches:
+                engrams = (engrams + sor_matches)[:limit]
+                total_matching = max(total_matching, len(engrams))
+                data["engrams"] = engrams
+                data["count"] = len(engrams)
+                data["total_matching"] = total_matching
+                data["truncated"] = total_matching > limit
+                data["sources"] = ["ledger", "sor"]
+
+        return make_response(True, data=data)
     except Exception as e:
         from .error_sanitizer import sanitize_error
         return make_response(False, error=sanitize_error(e, "internal_error", "engram_query"))
@@ -184,7 +296,12 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
         ledger_path = brain / "engrams" / "ledger.jsonl"
         history_path = brain / "engrams" / "history.jsonl"
 
-        if not ledger_path.exists() and not history_path.exists():
+        legacy_present = ledger_path.exists() or history_path.exists()
+
+        # Flag-OFF (default) with no legacy stores: byte-for-byte the legacy
+        # "no engrams" response. Under the flag we still consult the SoR below
+        # even when the legacy JSONL stores are absent.
+        if not legacy_present and not _sor_flag_on():
             return make_response(True, data={
                 "engrams": [],
                 "count": 0,
@@ -195,14 +312,29 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
                 "message": "No engrams found. Use write_engram to create."
             })
 
-        # Use in-memory cache for O(1) repeated reads (mtime-invalidated per file)
-        from .engram_cache import get_engram_cache
-        matches, total_matching = get_engram_cache().search_dual(
-            ledger_path, history_path,
-            query=query, case_sensitive=case_sensitive, limit=limit,
-        )
+        if legacy_present:
+            # Use in-memory cache for O(1) repeated reads (mtime-invalidated per file)
+            from .engram_cache import get_engram_cache
+            matches, total_matching = get_engram_cache().search_dual(
+                ledger_path, history_path,
+                query=query, case_sensitive=case_sensitive, limit=limit,
+            )
+        else:
+            matches, total_matching = [], 0
 
         truncated = total_matching > limit
+
+        # Move 2 batch 5: flag-ON layers the unified SoR recall on top of the
+        # ledger/history matches (additive union, dedup-by-key, fault-isolated).
+        # Flag-OFF (default) is byte-for-byte the legacy dual-source result.
+        sources = ["ledger", "history"]
+        if _sor_flag_on():
+            sor_matches = _search_engrams_sor(query, case_sensitive, limit, matches)
+            if sor_matches:
+                matches = (matches + sor_matches)[:limit]
+                total_matching = max(total_matching, len(matches))
+                truncated = total_matching > limit
+                sources = ["ledger", "history", "sor"]
 
         return make_response(True, data={
             "engrams": matches,
@@ -212,7 +344,7 @@ def _brain_search_engrams_impl(query: str, case_sensitive: bool = False, limit: 
             "limit": limit,
             "query": query,
             "case_sensitive": case_sensitive,
-            "sources": ["ledger", "history"],
+            "sources": sources,
         })
     except Exception as e:
         from .error_sanitizer import sanitize_error

@@ -135,75 +135,43 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 ## Install
 
-### One-Click
-
-| IDE | Install |
-|-----|---------|
-| Cursor | [Add to Cursor](cursor://mcp/install?name=Nucleus%20MCP&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJudWNsZXVzLW1jcCJdfQ==) |
-| Claude Code | `npx -y nucleus-mcp` |
-| Any IDE | `pip install nucleus-mcp` |
-
-### pip / npx
+One command installs the CLI and auto-configures every MCP client you have —
+**Claude Desktop, Claude Code, Cursor, Windsurf, and Antigravity** — backing up
+each config file it touches. No hand-editing JSON.
 
 ```bash
-pip install nucleus-mcp
+pip install nucleus-mcp      # or:  uvx nucleus-mcp  ·  pipx install nucleus-mcp
+nucleus init                 # seeds .brain/ and writes the MCP config for every client found
 ```
 
-Or use npx (zero Python setup required):
+Then **restart your AI client**. To verify: your client's tool list now shows
+`nucleus_*` tools, or run `nucleus doctor`.
 
-```bash
-npx -y nucleus-mcp
-```
+`nucleus init` writes a `<config>.json.bak` backup before editing, and never
+touches an existing `nucleus` entry unless you pass `--force`. Already have a
+`.brain`? Run `nucleus setup` to (re)configure clients without re-seeding it —
+add `--dry-run` to preview the exact changes first.
 
-## Configure Your MCP Client
+### Claude Desktop — one-click bundle
 
-### Claude Desktop / Cursor / Windsurf
+A one-click **`nucleus.mcpb`** bundle for Claude Desktop is built via
+`bash scripts/build_mcpb.sh` (it will be attached to releases once the release
+workflow ships it). Opening the bundle with Claude Desktop uses Claude's
+built-in uv runtime to fetch and run `nucleus-mcp` — no Python setup required.
 
-Add to your MCP config (`claude_desktop_config.json` or equivalent):
+### No install (ChatGPT, Claude.ai, Perplexity)
 
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "npx",
-      "args": ["-y", "nucleus-mcp"]
-    }
-  }
-}
-```
+Add `https://relay.nucleusos.dev/mcp` as a remote MCP server in your platform's
+connector settings. Persistent memory, nothing to install.
 
 <details>
-<summary>Alternative: use pip install directly</summary>
+<summary>Manual config (fallback)</summary>
 
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "python3",
-      "args": ["-m", "mcp_server_nucleus"],
-      "env": {
-        "NUCLEUS_BRAIN_PATH": "/path/to/your/project/.brain"
-      }
-    }
-  }
-}
-```
+If a client isn't auto-detected, `nucleus init` prints a ready-to-paste
+`mcpServers` block and copies it to your clipboard, along with each client's
+config-file location. The full manual walkthrough lives in
+[docs/QUICK_START.md](docs/QUICK_START.md).
 </details>
-
-### Claude Code
-
-Add to `.mcp.json` in your project root:
-
-```json
-{
-  "mcpServers": {
-    "nucleus": {
-      "command": "npx",
-      "args": ["-y", "nucleus-mcp"]
-    }
-  }
-}
-```
 
 ### Path Discovery
 
