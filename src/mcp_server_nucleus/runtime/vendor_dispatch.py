@@ -335,7 +335,16 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         read_flags=("--dangerously-skip-permissions",),
         write_flags=("--dangerously-skip-permissions",),
         default_model="gemini-3.1-pro-high",
-        models=("gemini-3.1-pro-high",),
+        models=(
+            "gemini-3.1-pro-high",
+            "gemini-3.1-pro-low",
+            "gemini-3.5-flash-high",
+            "gemini-3.5-flash-medium",
+            "gemini-3.5-flash-low",
+            "claude-opus-4-6-thinking",
+            "claude-sonnet-4-6",
+            "gpt-oss-120b-medium",
+        ),
         model_flag="--model",
     ),
     # devin → GLM. Prompt delivered via a private 0600 temp file whose path is

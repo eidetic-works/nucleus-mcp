@@ -495,7 +495,7 @@ Answer: 1221-char structured list with exact file names
 Sample output:
 > "In mcp-server-nucleus, ship/commit/deploy surfaces:
 >
-> **MCP tool actions** (the source tree ):
+> **MCP tool actions** (src/mcp_server_nucleus/):
 > - nucleus_sync — deploy actions: start_deploy_poll, check_deploy,
 >   complete_deploy, smoke_test
 > - nucleus_orchestration — scan_commitments, list_commitments,

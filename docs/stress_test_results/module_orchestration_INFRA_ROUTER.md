@@ -1,0 +1,933 @@
+# Nucleus Tool Facade Stress Test — Full Report
+
+**Generated:** 2026-06-26T12:55:22
+**Total tests:** 84
+**Actions tested:** 12
+**Angles per action:** 7
+
+## Executive Summary
+
+| Status | Count | Percentage | Meaning |
+|--------|-------|-----------|---------|
+| ✅ pass | 48 | 57.1% | Tool returned a successful response |
+| ⚠️ handled | 36 | 42.9% | Tool returned a graceful error (no crash) |
+| 🔶 warn | 0 | 0.0% | Cross-agent compat warning (static analysis) |
+| ❌ fail | 0 | 0.0% | Tool failed without structured response |
+| 💥 crash | 0 | 0.0% | Unhandled exception (KeyError, AttributeError, etc.) |
+| **Total** | **84** | **100%** | |
+
+## Results by Angle
+
+### happy
+
+**What it tests:** Valid params provided — the "normal" call an LLM would make
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 9 | 75.0% |
+| ⚠️ handled | 3 | 25.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+### missing_params
+
+**What it tests:** No params provided at all (empty dict {}) — tests required-param validation
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 9 | 75.0% |
+| ⚠️ handled | 3 | 25.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+### wrong_types
+
+**What it tests:** Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 9 | 75.0% |
+| ⚠️ handled | 3 | 25.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+### empty_params
+
+**What it tests:** Empty params dict {} — same as missing_params, tests default handling
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 9 | 75.0% |
+| ⚠️ handled | 3 | 25.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+### unknown_action
+
+**What it tests:** Action name that does not exist in this tool's ROUTER — tests error handling for typos
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 12 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+### fire_without_thinking
+
+**What it tests:** 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 0 | 0.0% |
+| ⚠️ handled | 12 | 100.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+### cross_agent_compat
+
+**What it tests:** Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+
+| Status | Count | % |
+|--------|-------|---|
+| ✅ pass | 12 | 100.0% |
+| ⚠️ handled | 0 | 0.0% |
+| 🔶 warn | 0 | 0.0% |
+| ❌ fail | 0 | 0.0% |
+| 💥 crash | 0 | 0.0% |
+| **Total** | **12** | **100%** |
+
+## Per-Module Breakdown
+
+### Module: `orchestration.INFRA_ROUTER` (12 actions)
+
+| Action | happy | missing | wrong_types | empty | unknown | fire_blank | compat | Overall |
+|--------|-------|---------|-------------|-------|---------|------------|--------|---------|
+| `capture_metrics` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `file_changes` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `gcloud_services` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `gcloud_status` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `growth_pulse` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `list_services` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `manage_strategy` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+| `optimize_workflow` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `scan_marketing_log` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `status_report` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `synthesize_strategy` | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ 5 pass |
+| `update_roadmap` | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ 1 pass |
+
+#### `orchestration.INFRA_ROUTER.capture_metrics`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "github": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "source": "github_api",
+    "fetched_at": "2026-06-26T07:20:59.160642+00:00"
+  },
+  "pypi": {
+    "last_mon`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "github": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "source": "github_api",
+    "fetched_at": "2026-06-26T07:20:59.192329+00:00"
+  },
+  "pypi": {
+    "last_mon`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "github": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "source": "github_api",
+    "fetched_at": "2026-06-26T07:20:59.211421+00:00"
+  },
+  "pypi": {
+    "last_mon`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "github": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "source": "github_api",
+    "fetched_at": "2026-06-26T07:20:59.242125+00:00"
+  },
+  "pypi": {
+    "last_mon`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.file_changes`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{"status": "degraded", "event_count": 0, "events": []}`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.gcloud_services`
+
+**happy** — ⚠️ handled
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "success": false,
+  "data": null,
+  "error": "API [run.googleapis.com] not enabled on project [gentlequest-prod]. Would you \nlike to enable and retry (this will take a few minutes)? (y/N)?  \nERR`
+
+**missing_params** — ⚠️ handled
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "success": false,
+  "data": null,
+  "error": "API [run.googleapis.com] not enabled on project [gentlequest-prod]. Would you \nlike to enable and retry (this will take a few minutes)? (y/N)?  \nERR`
+
+**wrong_types** — ⚠️ handled
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{"error": "region must be str, got int"}`
+
+**empty_params** — ⚠️ handled
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "success": false,
+  "data": null,
+  "error": "API [run.googleapis.com] not enabled on project [gentlequest-prod]. Would you \nlike to enable and retry (this will take a few minutes)? (y/N)?  \nERR`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.gcloud_status`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "gcloud_available": true,
+  "gcloud_path": "/opt/homebrew/bin/gcloud",
+  "project": "gentlequest-prod",
+  "account": "operator@example.com"
+}`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "gcloud_available": true,
+  "gcloud_path": "/opt/homebrew/bin/gcloud",
+  "project": "gentlequest-prod",
+  "account": "operator@example.com"
+}`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "gcloud_available": true,
+  "gcloud_path": "/opt/homebrew/bin/gcloud",
+  "project": "gentlequest-prod",
+  "account": "operator@example.com"
+}`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "gcloud_available": true,
+  "gcloud_path": "/opt/homebrew/bin/gcloud",
+  "project": "gentlequest-prod",
+  "account": "operator@example.com"
+}`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.growth_pulse`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "pipeline": "growth_pulse",
+  "timestamp": "2026-06-26T07:21:15.010568+00:00",
+  "sections": {
+    "brief": {
+      "engram_count": 179,
+      "task_count": 0,
+      "recommendation": "BOOTSTRAP"
+`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "pipeline": "growth_pulse",
+  "timestamp": "2026-06-26T07:21:15.110461+00:00",
+  "sections": {
+    "brief": {
+      "engram_count": 184,
+      "task_count": 0,
+      "recommendation": "BOOTSTRAP"
+`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "pipeline": "growth_pulse",
+  "timestamp": "2026-06-26T07:21:15.196718+00:00",
+  "sections": {
+    "brief": {
+      "engram_count": 184,
+      "task_count": 0,
+      "recommendation": "BOOTSTRAP"
+`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "pipeline": "growth_pulse",
+  "timestamp": "2026-06-26T07:21:15.284792+00:00",
+  "sections": {
+    "brief": {
+      "engram_count": 184,
+      "task_count": 0,
+      "recommendation": "BOOTSTRAP"
+`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.list_services`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "mock": true,
+  "message": "Render API Key not found or call failed. Showing MOCK data.",
+  "error_detail": null,
+  "items": [
+    {
+      "service": {
+        "id": "srv-mock-1",
+        "name": `
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.manage_strategy`
+
+**happy** — ⚠️ handled
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "error": "Unknown action: test"
+}`
+
+**missing_params** — ⚠️ handled
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "error": "Invalid params for action 'manage_strategy': register.<locals>._h_manage_strategy() missing 1 required positional argument: 'action'",
+  "expected_params": "(action, content=None)",
+  "p`
+
+**wrong_types** — ⚠️ handled
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "error": "Unknown action: wrong_type"
+}`
+
+**empty_params** — ⚠️ handled
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "error": "Invalid params for action 'manage_strategy': register.<locals>._h_manage_strategy() missing 1 required positional argument: 'action'",
+  "expected_params": "(action, content=None)",
+  "p`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.optimize_workflow`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.scan_marketing_log`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "status": "healthy",
+  "failure_count": 0,
+  "failures": []
+}`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.status_report`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.synthesize_strategy`
+
+**happy** — ✅ pass
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
+
+**missing_params** — ✅ pass
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
+
+**wrong_types** — ✅ pass
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
+
+**empty_params** — ✅ pass
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `❌ Failed: GEMINI_API_KEY not found in environment`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+#### `orchestration.INFRA_ROUTER.update_roadmap`
+
+**happy** — ⚠️ handled
+- *Tests:* Valid params provided — the "normal" call an LLM would make
+- *Result preview:* `{
+  "error": "Unknown action: test. Use 'read', 'add', or 'complete'."
+}`
+
+**missing_params** — ⚠️ handled
+- *Tests:* No params provided at all (empty dict {}) — tests required-param validation
+- *Result preview:* `{
+  "error": "Invalid params for action 'update_roadmap': register.<locals>._h_update_roadmap() missing 1 required positional argument: 'action'",
+  "expected_params": "(action, item=None)",
+  "provid`
+
+**wrong_types** — ⚠️ handled
+- *Tests:* Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+- *Result preview:* `{
+  "error": "Unknown action: wrong_type. Use 'read', 'add', or 'complete'."
+}`
+
+**empty_params** — ⚠️ handled
+- *Tests:* Empty params dict {} — same as missing_params, tests default handling
+- *Result preview:* `{
+  "error": "Invalid params for action 'update_roadmap': register.<locals>._h_update_roadmap() missing 1 required positional argument: 'action'",
+  "expected_params": "(action, item=None)",
+  "provid`
+
+**unknown_action** — ⚠️ handled
+- *Tests:* Action name that does not exist in this tool's ROUTER — tests error handling for typos
+- *Result preview:* `{
+  "error": "Unknown action '__nonexistent_action__' in nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pul`
+
+**fire_without_thinking** — ⚠️ handled
+- *Tests:* 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+- *Result preview:* `{
+  "error": "No action specified for nucleus_infra",
+  "available_actions": [
+    "capture_metrics",
+    "file_changes",
+    "gcloud_services",
+    "gcloud_status",
+    "growth_pulse",
+    "list_serv`
+
+**cross_agent_compat** — ✅ pass
+- *Tests:* Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+- *No error, no result preview*
+
+---
+
+## Cross-Agent Compatibility Details
+
+## Fire-Without-Thinking (Confused-LLM) Details
+
+**12/12 actions return a useful response across 5 confused-LLM scenarios.**
+**0 actions fail or crash.**
+
+This tests 5 scenarios an LLM might produce when confused:
+1. **empty_action** — `('', {})` — LLM sends empty string
+2. **none_action** — `(None, {})` — LLM forgot to fill the action param
+3. **params_as_string** — `(action, 'just a prompt string')` — LLM passed a string instead of dict
+4. **swapped_args** — `(params_dict, action_string)` — LLM put params in the action slot
+5. **guessed_action** — `(action, {'random_garbage': True})` — LLM guessed an action but passed garbage
+
+Every action should return a structured response (even if it's an error), not crash.
+
+## Methodology
+
+### Test Harness
+
+The stress test harness (`scripts/stress_test_tools.py`) uses a MockMCP object that captures
+all tool registrations without starting a real MCP server. Each tool function is called
+directly with the test params, and the result is classified as:
+
+- **pass** — Tool returned a successful response (JSON with `success: true`)
+- **handled** — Tool returned a graceful error (JSON with `success: false` or `error: ...`)
+- **warn** — Static analysis warning (cross-agent compat check)
+- **fail** — Tool failed without a structured response
+- **crash** — Unhandled exception (KeyError, AttributeError, TypeError, IndexError)
+
+### Test Angles
+
+**happy**
+- Valid params provided — the "normal" call an LLM would make
+
+**missing_params**
+- No params provided at all (empty dict {}) — tests required-param validation
+
+**wrong_types**
+- Params with wrong types (int where str expected, str where int expected, etc.) — tests type coercion
+
+**empty_params**
+- Empty params dict {} — same as missing_params, tests default handling
+
+**unknown_action**
+- Action name that does not exist in this tool's ROUTER — tests error handling for typos
+
+**fire_without_thinking**
+- 5 confused-LLM scenarios: empty action, None action, params-as-string, swapped args (dict as action), guessed action + garbage params — tests what happens when an LLM fires blindly
+
+**cross_agent_compat**
+- Static analysis of tool function signature, description, async-ness, and client-specific references — tests compatibility across Claude/Cursor/Windsurf/ChatGPT MCP clients
+
+### Test Params
+
+For the 'happy path' angle, the harness uses a dictionary of default params based on
+common action names (e.g., `query` → `{'query': 'test', 'limit': 5}`). Actions that
+require specific params (like an `id` that exists in the brain) will return 'handled'
+instead of 'pass' because the test params don't match real data.
+
+### Limitations
+
+1. **Happy path params are generic.** Some actions need specific brain state (e.g., a real
+   engram ID) to succeed. The test uses generic params, so 'handled' may mean 'correctly
+   rejected because the ID doesn't exist' rather than 'broken.'
+2. **Cross-agent compat is static analysis.** The harness checks function signatures,
+   docstrings, and source code — it does not actually test against Claude, Cursor, or
+   Windsurf MCP clients.
+3. **No real MCP server.** The MockMCP captures registrations but doesn't test the full
+   MCP protocol (JSON-RPC, schema generation, transport).

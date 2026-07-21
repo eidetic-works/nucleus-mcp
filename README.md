@@ -88,7 +88,7 @@ pip install nucleus-mcp
 nucleus init --recipe founder
 ```
 
-Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` writes a local `.mcp.json` for Claude Code — restart Claude Code and you're set. For other clients (Cursor, Windsurf, Claude Desktop), run `nucleus setup` after.
+Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` auto-configures your MCP client — just restart it.
 
 ---
 
@@ -103,7 +103,6 @@ Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` wr
 - **Tasks** — Priority queue with escalation, HITL gates, and heartbeat monitoring.
 - **Governance** — Kill switch, compliance configs (EU DORA, MAS TRM, SOC2), audit trails.
 - **Orchestration** — Agent slots, multi-brain sync, task dispatch.
-- **Cross-vendor delegate** — Hand tasks to other AI vendors (Gemini, Devin/GLM) with automatic permission flags, output capture, and status reporting. Includes `plan_review_loop` — multi-round plan drafting + adversarial review across different model families. ([docs/PLAN_REVIEW_LOOP.md](docs/PLAN_REVIEW_LOOP.md))
 - **Archive** — Training pipeline (SFT + DPO), delta tracking, frontier health dashboard.
 
 **Benchmark:** [decision-retention-evals](https://github.com/eidetic-works/decision-retention-evals) — does your AI agent remember why the code is the way it is?
@@ -142,8 +141,7 @@ each config file it touches. No hand-editing JSON.
 
 ```bash
 pip install nucleus-mcp      # or:  uvx nucleus-mcp  ·  pipx install nucleus-mcp
-nucleus init                 # seeds .brain/ and writes .mcp.json (Claude Code)
-nucleus setup                # (optional) configure Cursor, Windsurf, Claude Desktop
+nucleus init                 # seeds .brain/ and writes the MCP config for every client found
 ```
 
 Then **restart your AI client**. To verify: your client's tool list now shows
@@ -250,7 +248,7 @@ nucleus config --no-telemetry
 # or: NUCLEUS_ANON_TELEMETRY=false
 ```
 
-See [docs/SECURITY_WHITEPAPER.md](docs/SECURITY_WHITEPAPER.md) for telemetry details.
+See [TELEMETRY.md](TELEMETRY.md) for details.
 
 ---
 

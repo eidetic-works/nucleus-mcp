@@ -108,7 +108,7 @@ To enable OAuth on your own Nucleus HTTP server:
 # Set these env vars on your nucleus-mcp-cloud process
 NUCLEUS_OAUTH_ENABLED=true
 NUCLEUS_OAUTH_ISSUER=https://your-domain.com
-NUCLEUS_OAUTH_STORE_PATH=/path/to/oauth_store.json
+NUCLEUS_OAUTH_STORE_PATH=/opt/nucleus/oauth_store.json
 ```
 
 The OAuth endpoints are served at:

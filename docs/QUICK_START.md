@@ -1,16 +1,18 @@
 # Nucleus Quick Start Guide
 ## Get Running in 5 Minutes
-### v1.16.0
+### v1.0.9 | The Agent Control Plane
 
 ---
 
-## Installation
+## 🚀 Installation
+
+### Option 1: pip (Recommended)
 
 ```bash
 pip install nucleus-mcp
 ```
 
-Or from source:
+### Option 2: From Source
 
 ```bash
 git clone https://github.com/eidetic-works/nucleus-mcp.git
@@ -18,123 +20,258 @@ cd nucleus-mcp
 pip install -e .
 ```
 
+### Option 3: Docker
+
+```bash
+docker pull ghcr.io/eidetic-works/nucleus-mcp:latest
+docker run -v ~/.brain:/data/.brain nucleus
+```
+
 ---
 
-## Setup
+## ⚙️ Configuration
+
+### Recommended: one command
 
 ```bash
 nucleus init
 ```
 
-This seeds `.brain/` in your project and writes a local `.mcp.json` for Claude Code. Restart Claude Code and the `nucleus_*` tools are available.
+This seeds `.brain/` and auto-configures every MCP client it finds — Claude
+Desktop, Claude Code, Cursor, Windsurf, and Antigravity — backing up each config
+file it edits. Then restart your client. Already initialized? Run `nucleus setup`
+(add `--dry-run` to preview, `--force` to overwrite) to (re)configure clients
+without re-seeding the brain.
 
-For other clients (Cursor, Windsurf, Claude Desktop):
+That's all most setups need — skip to **Verify Installation** below.
+
+---
+
+### Manual alternative
+
+If you'd rather edit configs by hand, or a client wasn't auto-detected:
+
+**1. Pick a brain path** (optional — Nucleus defaults to `$HOME/.nucleus/brain`):
 
 ```bash
-nucleus setup
+export NUCLEUS_BRAIN_PATH="$HOME/.brain"   # add to ~/.zshrc or ~/.bashrc
+mkdir -p ~/.brain
 ```
 
-Verify it's working:
+**2. Add the server** to your MCP client config — **Claude Desktop**
+(`~/Library/Application Support/Claude/claude_desktop_config.json`), **Cursor**
+(`.cursor/mcp.json`), or **Claude Code** (`.mcp.json`):
 
-```bash
-nucleus doctor
+```json
+{
+  "mcpServers": {
+    "nucleus": {
+      "command": "nucleus-mcp"
+    }
+  }
+}
+```
+
+**3. Restart your MCP client** to load Nucleus.
+
+---
+
+## ✅ Verify Installation
+
+Run these commands in your AI chat to verify Nucleus is working:
+
+```
+brain_health()
+```
+
+You should see:
+
+```
+💚 NUCLEUS HEALTH CHECK
+═══════════════════════════════════════
+
+🟢 HEALTHY
+[████████████████████] 100%
+
+📋 VERSION
+   Nucleus: 1.0.9
+   ...
+
+✅ System is healthy
 ```
 
 ---
 
-## Using the tools
+## 🎯 Your First 5 Minutes
 
-Nucleus exposes facade tools — each one takes an `action` and `params`. Here are the core ones:
-
-### Memory — `nucleus_engrams`
-
-Write a memory that persists across sessions:
+### 1. Start a Session
 
 ```
-nucleus_engrams(action="write", params={"key": "auth-design-decision", "content": "We chose JWT over session cookies because the API is stateless."})
+brain_session_start()
 ```
 
-Recall it later:
+This shows your current context, pending tasks, and recommendations.
+
+### 2. Create Your First Task
 
 ```
-nucleus_engrams(action="recall", params={"query": "auth design"})
+brain_add_task(description="Learn Nucleus basics", priority=1)
 ```
 
-### Tasks — `nucleus_tasks`
-
-Create a task:
+### 3. View Your Tasks
 
 ```
-nucleus_tasks(action="add", params={"description": "Fix the login bug", "priority": 1})
+brain_list_tasks()
 ```
 
-List tasks:
+### 4. Complete a Task
 
 ```
-nucleus_tasks(action="list", params={"status": "pending"})
+brain_complete_task(task_id="YOUR_TASK_ID")
 ```
 
-Claim and complete:
+### 5. Check the Dashboard
 
 ```
-nucleus_tasks(action="claim", params={"task_id": "TASK-001", "agent_id": "claude-code"})
-nucleus_tasks(action="update", params={"task_id": "TASK-001", "updates": {"status": "done"}})
-```
-
-### Sessions — `nucleus_sessions`
-
-Save your context at the end of a session:
-
-```
-nucleus_sessions(action="save", params={"context": "Working on the auth refactor, 3 files left to update"})
-```
-
-Resume next time:
-
-```
-nucleus_sessions(action="resume", params={})
-```
-
-### Cross-vendor delegate — `nucleus_delegate`
-
-Hand a task to another AI vendor (Gemini, Devin/GLM):
-
-```
-nucleus_delegate(action="dispatch", params={"vendor": "agy", "prompt": "Review src/auth.py for security issues", "artifact_ref": "src/auth.py", "mode": "read"})
-```
-
-Multi-round plan review loop (author drafts, reviewer audits, iterate until approved):
-
-```
-nucleus_delegate(action="plan_review_loop", params={"prompt": "Plan the migration from JWT to PASETO", "author_vendor": "agy", "reviewer_vendor": "devin", "max_rounds": 3})
-```
-
-Poll status:
-
-```
-nucleus_delegate(action="plan_review_loop_status", params={"plan_id": "plan_20260721_..."})
-```
-
-### Governance — `nucleus_governance`
-
-Lock a file immutable:
-
-```
-nucleus_governance(action="lock", params={"path": "src/auth.py"})
-```
-
-Check security state:
-
-```
-nucleus_governance(action="status", params={})
+brain_dashboard()
 ```
 
 ---
 
-## What's next
+## 🔧 Core Tools
 
-- **Full tool reference:** [docs/CLI_REFERENCE.md](CLI_REFERENCE.md)
-- **Plan review loop:** [docs/PLAN_REVIEW_LOOP.md](PLAN_REVIEW_LOOP.md)
-- **Engram specification:** [docs/ENGRAM_SPECIFICATION.md](ENGRAM_SPECIFICATION.md)
-- **Governance policies:** [docs/GOVERNANCE_POLICIES.md](GOVERNANCE_POLICIES.md)
-- **Security:** [docs/SECURITY_WHITEPAPER.md](SECURITY_WHITEPAPER.md)
+| Tool | Description |
+|------|-------------|
+| `brain_session_start()` | Start session, get context |
+| `brain_add_task()` | Create a new task |
+| `brain_list_tasks()` | View all tasks |
+| `brain_claim_task()` | Claim a task to work on |
+| `brain_complete_task()` | Mark task as done |
+| `brain_orchestrate()` | Auto-assign best task |
+| `brain_dashboard()` | View system status |
+| `brain_health()` | Check system health |
+
+---
+
+## � Checkpoint & Handoff (V3.1)
+
+Nucleus can save and resume long-running tasks across sessions, agents, and IDEs.
+
+### Save Progress Before Session End
+
+```
+brain_checkpoint_task(
+    task_id="task_123",
+    step=3,
+    progress_percent=60,
+    context="Completed API integration, starting tests",
+    artifacts=["src/api.py", "tests/test_api.py"]
+)
+```
+
+### Resume in a New Session
+
+```
+brain_resume_from_checkpoint(task_id="task_123")
+```
+
+Returns the checkpoint data, context summary, and resume instructions.
+
+### Generate Handoff Summary
+
+Before handing off to another agent or ending a session:
+
+```
+brain_generate_handoff_summary(
+    task_id="task_123",
+    summary="API integration complete, 3 of 5 tests passing",
+    key_decisions=["Used REST over GraphQL", "SQLite for MVP"],
+    handoff_notes="Next agent should fix the auth test"
+)
+```
+
+### When to Use Checkpoints
+
+| Scenario | Tool |
+|----------|------|
+| Session ending | `brain_checkpoint_task()` |
+| Hitting rate limits | `brain_checkpoint_task()` |
+| Handing off to another agent | `brain_generate_handoff_summary()` |
+| Starting a new session | `brain_resume_from_checkpoint()` |
+| Approaching reset cycle | `brain_checkpoint_task()` + `brain_generate_handoff_summary()` |
+
+---
+
+## �📁 Understanding .brain/
+
+Your `.brain/` folder structure:
+
+```
+.brain/
+├── ledger/
+│   ├── tasks.json      # Your task queue
+│   └── events.jsonl    # Activity log
+├── sessions/           # Saved sessions
+├── slots/
+│   └── registry.json   # Agent slots
+├── artifacts/          # Generated files
+└── state.json          # Current state
+```
+
+---
+
+## 🎓 Next Steps
+
+1. **Read the full docs:** `brain_version()` for links
+2. **Explore tools:** There are 110+ tools available
+3. **Try autopilot:** `brain_autopilot_sprint_v2()` for autonomous execution
+4. **Save sessions:** `brain_save_session()` to preserve context
+
+---
+
+## 🆘 Troubleshooting
+
+### "NUCLEUS_BRAIN_PATH not set"
+
+```bash
+export NUCLEUS_BRAIN_PATH="$HOME/.brain"
+mkdir -p ~/.brain
+```
+
+### "Brain path does not exist"
+
+```bash
+mkdir -p ~/.brain/ledger ~/.brain/sessions ~/.brain/slots
+```
+
+### MCP Server Not Loading
+
+1. Check your config file syntax (valid JSON)
+2. Verify the path to `nucleus-mcp` is correct
+3. Restart your MCP client
+
+### Need Help?
+
+- GitHub Issues: https://github.com/eidetic-works/nucleus-mcp/issues
+- Discord: https://discord.gg/RJuBNNJ5MT
+
+---
+
+## 🧠 The Trinity Framework
+
+Nucleus is built on three pillars:
+
+```
+ORCHESTRATION + CHOREOGRAPHY + CONTEXT = NUCLEUS
+   (control)      (autonomy)     (memory)
+```
+
+- **Orchestration:** Who does what (task assignment, scheduling)
+- **Choreography:** How it happens (autonomous execution)
+- **Context:** What we know (Persistent Engrams)
+
+This is what makes Nucleus different from task managers (no autonomy) or AutoGPT (no persistent state).
+
+---
+
+*Happy orchestrating! 🚀*
