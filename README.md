@@ -119,7 +119,7 @@ nucleus compliance-check                   # Score your AI governance
 nucleus audit-report --signed -o report.html  # Cryptographically signed report
 ```
 
-**$19/month** or **$149/year** — [nucleusos.dev/pricing](https://nucleusos.dev/pricing)
+**$29/month** or **$299/year** — [nucleusos.dev/pricing](https://nucleusos.dev/pricing)
 
 | | Free | Pro |
 |---|---|---|
