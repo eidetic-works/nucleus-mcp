@@ -13,7 +13,9 @@ Contains:
 """
 
 import json
+import os
 import time
+import fcntl
 from typing import Dict, List
 
 from .common import get_brain_path
@@ -135,19 +137,39 @@ def _get_fence_counter() -> Dict:
 
 
 def _increment_fence_token() -> int:
-    """Atomically increment and return the next fence token."""
+    """Atomically increment and return the next fence token.
+
+    Holds an exclusive advisory file lock (fcntl.flock LOCK_EX) across the
+    entire read-modify-write so concurrent callers serialize and each gets a
+    unique, monotonically increasing token. Without this lock two callers
+    could read the same value and both write the same token (duplicate fence
+    tokens => double-execution / resource corruption).
+    """
     brain = get_brain_path()
     counter_path = brain / "ledger" / "fence_counter.json"
     counter_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    counter = _get_fence_counter()
-    counter["value"] += 1
-    counter["last_issued"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-    
-    with open(counter_path, "w", encoding='utf-8') as f:
-        json.dump(counter, f, indent=2, ensure_ascii=False)
-    
-    return counter["value"]
+    lock_path = counter_path.with_name(counter_path.name + ".lock")
+
+    # Dedicated lock file held open for the duration of the RMW; flock is
+    # released automatically when the file descriptor closes (even on crash).
+    lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+
+        counter = _get_fence_counter()
+        counter["value"] += 1
+        counter["last_issued"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+
+        with open(counter_path, "w", encoding='utf-8') as f:
+            json.dump(counter, f, indent=2, ensure_ascii=False)
+
+        return counter["value"]
+    finally:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        os.close(lock_fd)
 
 
 def _get_model_cost(model: str) -> float:
