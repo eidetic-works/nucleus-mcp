@@ -9209,11 +9209,13 @@ def handle_schema_command(args):
     _ensure_initialized()
 
     async def run_gen():
-        # MCP SDK renamed list_tools() → get_tools() in newer versions.
-        # Support both for cross-version compatibility.
-        if hasattr(mcp, "get_tools"):
+        # MCP SDK has two variants: fastmcp.FastMCP.get_tools() (dict)
+        # and mcp.server.fastmcp.FastMCP.list_tools() (list). Try both.
+        try:
             tools = await mcp.get_tools()
-        else:
+            if not isinstance(tools, (list, dict)):
+                tools = []
+        except (AttributeError, TypeError):
             tools = await mcp.list_tools()
         print(f"🔍 Generating schema for {len(tools)} tools...")
         schema = await generate_tool_schema(mcp)

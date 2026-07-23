@@ -36,18 +36,27 @@ async def generate_tool_schema(mcp) -> Dict[str, Any]:
             }
         }
         
-        # 1. Tools — MCP SDK renamed list_tools() → get_tools() in newer versions
-        if hasattr(mcp, "get_tools"):
-            tools_list = await mcp.get_tools()
-        else:
+        # 1. Tools — MCP SDK has two variants:
+        #   - mcp.server.fastmcp.FastMCP: list_tools() → list of FunctionTool
+        #   - fastmcp.FastMCP: get_tools() → dict {name: tool}
+        # Try get_tools() first (newer fastmcp), fall back to list_tools().
+        try:
+            tools_dict = await mcp.get_tools()
+            if isinstance(tools_dict, dict):
+                tools_list = list(tools_dict.values())
+            else:
+                tools_list = tools_dict
+        except (AttributeError, TypeError):
             tools_list = await mcp.list_tools()
         for tool in tools_list:
-            path = f"/tools/{tool.name}"
+            # fastmcp tools may have .name (FunctionTool) or be the tool obj
+            tool_name = getattr(tool, "name", None) or getattr(tool, "__name__", str(tool))
+            path = f"/tools/{tool_name}"
             schema["paths"][path] = {
                 "post": {
-                    "summary": f"Tool: {tool.name}",
-                    "description": tool.description,
-                    "operationId": f"tool_{tool.name}",
+                    "summary": f"Tool: {tool_name}",
+                    "description": getattr(tool, "description", ""),
+                    "operationId": f"tool_{tool_name}",
                     "requestBody": {
                         "content": {
                             "application/json": {
