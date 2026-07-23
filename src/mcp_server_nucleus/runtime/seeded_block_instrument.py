@@ -121,79 +121,83 @@ def run_seeded_block_instrument(
     run_id = f"sb_{int(time.time())}_{uuid.uuid4().hex[:8]}"
     started_at = _utc_now_iso()
 
-    with tempfile.TemporaryDirectory(prefix="seeded_block_") as tmp:
-        tmp_path = Path(tmp)
-        # Shared brain relay root so both projects write into one bucket.
-        shared_brain = tmp_path / "shared_brain"
-        (shared_brain / "relay").mkdir(parents=True, exist_ok=True)
-        os.environ["NUCLEUS_BRAIN_PATH"] = str(shared_brain)
+    _orig_cwd = os.getcwd()
+    try:
+        with tempfile.TemporaryDirectory(prefix="seeded_block_") as tmp:
+            tmp_path = Path(tmp)
+            # Shared brain relay root so both projects write into one bucket.
+            shared_brain = tmp_path / "shared_brain"
+            (shared_brain / "relay").mkdir(parents=True, exist_ok=True)
+            os.environ["NUCLEUS_BRAIN_PATH"] = str(shared_brain)
 
-        proj_a = _make_project_dir(tmp_path, project_a_slug, project_a_remote)
-        proj_b = _make_project_dir(tmp_path, project_b_slug, project_b_remote)
+            proj_a = _make_project_dir(tmp_path, project_a_slug, project_a_remote)
+            proj_b = _make_project_dir(tmp_path, project_b_slug, project_b_remote)
 
-        # ── 1. Inject a POSITIVE cross-project relay from project A ──
-        os.chdir(proj_a)
-        cross_subject = f"[SEEDED-BLOCK] cross-project probe {run_id}"
-        cross_body = (
-            f"Seeded cross-project relay from {project_a_slug} → {bucket}. "
-            f"This envelope MUST be BLOCKED for {project_b_slug} readers. "
-            f"run_id={run_id}"
-        )
-        r_cross = relay_post(
-            to=bucket, subject=cross_subject, body=cross_body,
-            sender=sender, priority="normal",
-        )
-        cross_id = r_cross.get("message_id", "")
-        if not cross_id or not r_cross.get("sent"):
-            return {"blocked": False, "error": f"cross-project post failed: {r_cross}",
-                     "conflict_logged": False}
+            # ── 1. Inject a POSITIVE cross-project relay from project A ──
+            os.chdir(proj_a)
+            cross_subject = f"[SEEDED-BLOCK] cross-project probe {run_id}"
+            cross_body = (
+                f"Seeded cross-project relay from {project_a_slug} → {bucket}. "
+                f"This envelope MUST be BLOCKED for {project_b_slug} readers. "
+                f"run_id={run_id}"
+            )
+            r_cross = relay_post(
+                to=bucket, subject=cross_subject, body=cross_body,
+                sender=sender, priority="normal",
+            )
+            cross_id = r_cross.get("message_id", "")
+            if not cross_id or not r_cross.get("sent"):
+                return {"blocked": False, "error": f"cross-project post failed: {r_cross}",
+                         "conflict_logged": False}
 
-        # ── 2. Inject a SAME-project control relay from project B ──
-        os.chdir(proj_b)
-        ctrl_subject = f"[SEEDED-BLOCK] control probe {run_id}"
-        ctrl_body = (
-            f"Same-project control relay from {project_b_slug} → {bucket}. "
-            f"This envelope MUST be surfaced for {project_b_slug} readers. "
-            f"run_id={run_id}"
-        )
-        r_ctrl = relay_post(
-            to=bucket, subject=ctrl_subject, body=ctrl_body,
-            sender=sender, priority="normal",
-        )
-        ctrl_id = r_ctrl.get("message_id", "")
-        if not ctrl_id or not r_ctrl.get("sent"):
-            return {"blocked": False, "error": f"control post failed: {r_ctrl}",
-                     "conflict_logged": False}
+            # ── 2. Inject a SAME-project control relay from project B ──
+            os.chdir(proj_b)
+            ctrl_subject = f"[SEEDED-BLOCK] control probe {run_id}"
+            ctrl_body = (
+                f"Same-project control relay from {project_b_slug} → {bucket}. "
+                f"This envelope MUST be surfaced for {project_b_slug} readers. "
+                f"run_id={run_id}"
+            )
+            r_ctrl = relay_post(
+                to=bucket, subject=ctrl_subject, body=ctrl_body,
+                sender=sender, priority="normal",
+            )
+            ctrl_id = r_ctrl.get("message_id", "")
+            if not ctrl_id or not r_ctrl.get("sent"):
+                return {"blocked": False, "error": f"control post failed: {r_ctrl}",
+                         "conflict_logged": False}
 
-        # ── 3. Read the bucket from project B's cwd ──
-        os.chdir(proj_b)
-        inbox = relay_inbox(force_fs=True)
-        surfaced_ids = {
-            m.get("id") for m in inbox.get("messages", []) if m.get("id")
-        }
+            # ── 3. Read the bucket from project B's cwd ──
+            os.chdir(proj_b)
+            inbox = relay_inbox(force_fs=True, recipient=bucket, unread_only=False)
+            surfaced_ids = {
+                m.get("id") for m in inbox.get("messages", []) if m.get("id")
+            }
 
-        cross_blocked = cross_id not in surfaced_ids
-        control_surfaced = ctrl_id in surfaced_ids
+            cross_blocked = cross_id not in surfaced_ids
+            control_surfaced = ctrl_id in surfaced_ids
 
-        # ── 4. Conflict-log the event ──
-        record = {
-            "run_id": run_id,
-            "instrument": INSTRUMENT_NAME,
-            "authority": "docs/PRINCIPAL.md:67-73,149",
-            "immutable_source": "docs/PRINCIPAL.md@principal-v3",
-            "started_at_utc": started_at,
-            "finished_at_utc": _utc_now_iso(),
-            "project_a_slug": project_a_slug,
-            "project_b_slug": project_b_slug,
-            "bucket": bucket,
-            "cross_project_envelope_id": cross_id,
-            "control_envelope_id": ctrl_id,
-            "cross_project_blocked": cross_blocked,
-            "control_surfaced": control_surfaced,
-            "surfaced_ids": sorted(surfaced_ids),
-            "verdict": "PASS" if (cross_blocked and control_surfaced) else "FAIL",
-        }
-        log_path = _append_conflict_log(record, brain_path=bp)
+            # ── 4. Conflict-log the event ──
+            record = {
+                "run_id": run_id,
+                "instrument": INSTRUMENT_NAME,
+                "authority": "docs/PRINCIPAL.md:67-73,149",
+                "immutable_source": "docs/PRINCIPAL.md@principal-v3",
+                "started_at_utc": started_at,
+                "finished_at_utc": _utc_now_iso(),
+                "project_a_slug": project_a_slug,
+                "project_b_slug": project_b_slug,
+                "bucket": bucket,
+                "cross_project_envelope_id": cross_id,
+                "control_envelope_id": ctrl_id,
+                "cross_project_blocked": cross_blocked,
+                "control_surfaced": control_surfaced,
+                "surfaced_ids": sorted(surfaced_ids),
+                "verdict": "PASS" if (cross_blocked and control_surfaced) else "FAIL",
+            }
+            log_path = _append_conflict_log(record, brain_path=bp)
+    finally:
+        os.chdir(_orig_cwd)
 
     verdict = {
         "blocked": cross_blocked,
