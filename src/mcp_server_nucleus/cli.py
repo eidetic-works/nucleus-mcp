@@ -9182,7 +9182,12 @@ def handle_schema_command(args):
     _ensure_initialized()
 
     async def run_gen():
-        tools = await mcp.list_tools()
+        # MCP SDK renamed list_tools() → get_tools() in newer versions.
+        # Support both for cross-version compatibility.
+        if hasattr(mcp, "get_tools"):
+            tools = await mcp.get_tools()
+        else:
+            tools = await mcp.list_tools()
         print(f"🔍 Generating schema for {len(tools)} tools...")
         schema = await generate_tool_schema(mcp)
         export_schema_to_file(schema, args.output)

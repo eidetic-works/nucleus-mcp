@@ -36,8 +36,11 @@ async def generate_tool_schema(mcp) -> Dict[str, Any]:
             }
         }
         
-        # 1. Tools
-        tools_list = await mcp.list_tools()
+        # 1. Tools — MCP SDK renamed list_tools() → get_tools() in newer versions
+        if hasattr(mcp, "get_tools"):
+            tools_list = await mcp.get_tools()
+        else:
+            tools_list = await mcp.list_tools()
         for tool in tools_list:
             path = f"/tools/{tool.name}"
             schema["paths"][path] = {
