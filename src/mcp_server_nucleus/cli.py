@@ -5428,6 +5428,18 @@ def main():
     schema_parser = subparsers.add_parser('schema', help='Export the MCP tool schema to a JSON file')
     schema_parser.add_argument('--output', '-o', type=str, default='schema.json', help='Output file path (default: schema.json)')
 
+    # ============================================================
+    # BUILD COMMAND — dogfood-v0 build pipeline (plan → execute → verify → verdict)
+    # ============================================================
+    build_parser = subparsers.add_parser(
+        'build',
+        help='Run the build pipeline: plan review → vendor execution → verification → verdict',
+    )
+    build_parser.add_argument(
+        'task',
+        help='Task prompt for the build pipeline (quote multi-word prompts)',
+    )
+
     args = parser.parse_args()
     cli_command = args.cli_command
 
@@ -5968,6 +5980,9 @@ def main():
 
         elif cli_command == 'doctor':
             sys.exit(handle_doctor_command(args))
+
+        elif cli_command == 'build':
+            sys.exit(handle_build_command(args))
 
         elif cli_command is None:
             # Bare `nucleus` → launches brother (the family intelligence interface)
@@ -7191,6 +7206,18 @@ def handle_dispatch_command(args) -> int:
         print(msg, file=sys.stderr)
     output(payload, fmt)
     return code
+
+
+def handle_build_command(args) -> int:
+    """Handle `nucleus build "<task>"` — dogfood-v0 build pipeline.
+
+    Chains plan review loop → cross-vendor execution → multi-tier verification
+    → verdict card. Delegates to ``runtime.build_runner.run_build_pipeline``
+    (lazy-imported to keep CLI module load light) and exits with its return
+    code (``0`` = success, non-zero = failure/abort).
+    """
+    from .runtime.build_runner import run_build_pipeline
+    return run_build_pipeline(args.task)
 
 
 def handle_onboard_command(args) -> int:
