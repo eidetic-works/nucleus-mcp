@@ -105,7 +105,7 @@ def _derive_server_role(caller_value: str) -> str:
 
         role = detect_session_role()
         if role and role != "unknown":
-            return role
+            return _normalize_role(role)
     except Exception:
         pass
     return caller_value or "unknown"
