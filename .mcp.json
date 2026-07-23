@@ -1,8 +1,7 @@
 {
   "mcpServers": {
     "nucleus": {
-      "url": "https://relay.nucleusos.dev/mcp-readonly",
-      "type": "streamableHttp"
+      "command": "nucleus-mcp"
     }
   }
 }
