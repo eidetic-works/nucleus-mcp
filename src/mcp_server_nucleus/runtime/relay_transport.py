@@ -69,6 +69,12 @@ class InboxResult(list):
     _rate_limited: bool = False
     _transport_error: bool = False
 
+    def __init__(self, iterable=(), *, has_more=False, rate_limited=False, transport_error=False):
+        super().__init__(iterable)
+        self._has_more = bool(has_more)
+        self._rate_limited = bool(rate_limited)
+        self._transport_error = bool(transport_error)
+
     @property
     def has_more(self) -> bool:
         return self._has_more

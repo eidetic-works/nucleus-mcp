@@ -297,11 +297,14 @@ class SQLiteBackend(StorageBackend):
                         "verification_status", "verified_by", "verified_at",
                         "verification_note", "chief_review_note",
                         "claimed_at",
-                        "retry_count"]:
+                        "retry_count",
+                        "duration_s", "pause_reason"]:
                 try:
                     if col == "retry_count":
                         # integer column, default 0
                         cursor.execute(f'ALTER TABLE tasks ADD COLUMN {col} INTEGER DEFAULT 0')
+                    elif col == "duration_s":
+                        cursor.execute(f'ALTER TABLE tasks ADD COLUMN {col} REAL DEFAULT 0')
                     else:
                         default = '""' if col in ("required_role", "plan_ref") else 'NULL'
                         cursor.execute(f'ALTER TABLE tasks ADD COLUMN {col} TEXT DEFAULT {default}')
@@ -435,7 +438,8 @@ class SQLiteBackend(StorageBackend):
                          "required_role", "plan_ref",
                          "verification_status", "verified_by", "verified_at",
                          "verification_note", "chief_review_note",
-                         "claimed_at", "retry_count"}
+                         "claimed_at", "retry_count", "duration_s",
+                         "pause_reason"}
         invalid_keys = set(updates.keys()) - VALID_COLUMNS
         if invalid_keys:
             raise ValueError(f"Invalid task columns: {invalid_keys}. Allowed: {VALID_COLUMNS}")
@@ -676,7 +680,8 @@ class PostgresBackend(StorageBackend):
                          "required_role", "plan_ref",
                          "verification_status", "verified_by", "verified_at",
                          "verification_note", "chief_review_note",
-                         "claimed_at", "retry_count"}
+                         "claimed_at", "retry_count", "duration_s",
+                         "pause_reason"}
         invalid_keys = set(updates.keys()) - VALID_COLUMNS
         if invalid_keys:
             raise ValueError(f"Invalid task columns: {invalid_keys}. Allowed: {VALID_COLUMNS}")
