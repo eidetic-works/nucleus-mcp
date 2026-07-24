@@ -30,7 +30,13 @@ logger = logging.getLogger("nucleus.build_runner")
 
 # ── Polling constants ────────────────────────────────────────────────────────
 _PLAN_POLL_INTERVAL_S = 2
-_PLAN_POLL_TIMEOUT_S = 600
+# execute_plan_review_loop runs its actual work in a daemon thread inside
+# THIS process — if this poll gives up and the CLI process exits, that thread
+# dies with it and the plan is orphaned mid-round (observed live: 5 dispatch
+# rounds over ~9 min still left the plan IN_PROGRESS at round 3/5 when the
+# 600s budget below expired). 1200s gives real headroom over the ~75-140s per
+# round observed live, for the max_rounds=3 this module requests below.
+_PLAN_POLL_TIMEOUT_S = 1200
 
 # Statuses that abort the build (anything other than APPROVED).
 _ABORT_STATUSES = frozenset({
@@ -129,7 +135,29 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
     # Lazy import to avoid eager import of the tools package at module load.
     from ..tools.plan_review_loop import execute_plan_review_loop
 
-    params = {"prompt": task_prompt}
+    # reviewer_vendor="devin": the tool's own default (agy authoring, agy also
+    # reviewing) failed 3/3 live-fire attempts with "vendor did not produce
+    # output" specifically at the reviewer step, while a direct agy read-mode
+    # health check succeeded — i.e. agy is up, but agy-self-review is not.
+    # agy-author / devin-reviewer succeeded 2/2 in the same session. Pin the
+    # working pairing explicitly rather than trust the tool default.
+    #
+    # reviewer_model=None: the tool's _DEFAULT_REVIEWER_MODEL is an
+    # Anthropic-only model id and is applied unconditionally regardless of
+    # reviewer_vendor, so overriding reviewer_vendor alone still sends an
+    # invalid model to devin. Passing None here makes vendor_dispatch fall
+    # back to devin's own default model (glm-5.2).
+    # max_rounds=3: the tool's own default is 5, but 3 rounds is what has
+    # actually converged in live use (both APPROVED and MAX_ROUNDS_EXHAUSTED
+    # outcomes seen at round 3); keeping the cap here bounds real wall-clock
+    # against the poll timeout above rather than letting a slow plan run
+    # past this process's own budget.
+    params = {
+        "prompt": task_prompt,
+        "reviewer_vendor": "devin",
+        "reviewer_model": None,
+        "max_rounds": 3,
+    }
     raw = execute_plan_review_loop(params, _make_response)
     try:
         res = json.loads(raw)
