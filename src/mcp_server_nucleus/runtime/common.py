@@ -303,8 +303,9 @@ def get_brain_path() -> Path:
         # unchanged from today.
 
     # 3. Process-wide env vars (races under concurrent multi-tenant load;
-    #    safe for CLI/stdio single-tenant mode)
-    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH")
+    #    safe for CLI/stdio single-tenant mode). Check NUCLEUS_BRAIN_PATH
+    #    first, then NUCLEAR_BRAIN_PATH (legacy alias).
+    brain_path = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
 
     if brain_path:
         path = Path(brain_path)
