@@ -84,3 +84,12 @@ HARDENING_CONVERGENCE_REPORT*.md
 
 # Test stubs
 gemini
+
+# Auto-generated config backups (created on every nucleus init / config write)
+/.mcp.json.bak.*
+
+# Auto-generated OpenAPI export (nucleus schema default output)
+/schema.json
+
+# Stale telemetry stderr capture
+infra/telemetry/reports/digest.err
