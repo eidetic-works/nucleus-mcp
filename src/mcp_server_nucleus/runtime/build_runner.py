@@ -393,13 +393,19 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     tier1_results = execution_verifier._tier1_syntax_check(
         changed_files, project_root, budget_s=30.0,
     )
-    tier1_passed = bool(tier1_results) and all(
-        r.get("passed", False) for r in tier1_results
-    )
-    details["tier1"] = {
-        "status": "PASSED" if tier1_passed else "FAILED",
-        "signals": tier1_results,
-    }
+    if not tier1_results:
+        # No syntax-checkable files (e.g. LICENSE, README, no-extension) → SKIPPED.
+        tier1_passed = True
+        details["tier1"] = {
+            "status": "SKIPPED", "signals": tier1_results,
+            "reason": "no syntax-checkable files",
+        }
+    else:
+        tier1_passed = all(r.get("passed", False) for r in tier1_results)
+        details["tier1"] = {
+            "status": "PASSED" if tier1_passed else "FAILED",
+            "signals": tier1_results,
+        }
 
     # ── Tier 2: import check (only .py files) ───────────────────────────────
     py_files = [f for f in changed_files if f.endswith(".py")]

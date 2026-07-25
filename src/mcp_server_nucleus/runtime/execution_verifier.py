@@ -342,6 +342,8 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
     # Committed during session
     if pre_head:
         files.update(_run_git("log", "--name-only", "--format=", f"{pre_head}..HEAD"))
+    # Untracked but not gitignored (newly-created files never staged/committed)
+    files.update(_run_git("ls-files", "--others", "--exclude-standard"))
 
     return sorted(files)
 
