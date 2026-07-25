@@ -13,9 +13,13 @@ Contains:
 """
 
 import asyncio
+import enum
 import json
 import logging
 import os
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from .common import get_brain_path
 from .event_ops import _emit_event
@@ -27,6 +31,38 @@ def _surface() -> str:
     """Resolve current surface from CC_SESSION_ROLE env var (per E3 spec)."""
     role = os.environ.get("CC_SESSION_ROLE", "").strip().lower()
     return role if role in ("main", "peer") else "unknown"
+
+
+def _sanitize_to_primitives(obj: Any) -> Any:
+    """Recursively coerce a value into JSON-primitive-safe types.
+
+    Walks dicts/lists/tuples and converts non-serializable leaves to
+    primitives: enums → ``.name``, ``Path`` → ``str``, ``datetime`` →
+    isoformat, bytes → decoded str. Anything else that isn't already a
+    JSON primitive is stringified as a last resort so ``json.dumps``
+    never raises on federation status payloads.
+    """
+    if isinstance(obj, dict):
+        return {str(k): _sanitize_to_primitives(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize_to_primitives(v) for v in obj]
+    if isinstance(obj, enum.Enum):
+        return obj.name
+    if isinstance(obj, Path):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, (bytes, bytearray)):
+        try:
+            return obj.decode("utf-8")
+        except UnicodeDecodeError:
+            return obj.hex()
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    try:
+        return str(obj)
+    except Exception:
+        return None
 
 
 # ── Singleton ────────────────────────────────────────────────────
@@ -132,6 +168,94 @@ def _brain_federation_status_impl() -> str:
             "surface": _surface(),
         })
         return f"❌ Federation status error: {str(e)}"
+
+
+def _brain_federation_status_json_impl() -> str:
+    """Internal implementation of federation status as a JSON string.
+
+    Returns a primitive-sanitized JSON payload (suitable for consumption
+    by other modules such as ``pm_view_ops``). Emits ``_emit_event``
+    telemetry on both success and failure paths and degrades gracefully
+    to a safe standalone-mode payload when the ``FederationEngine`` is
+    unavailable or raises.
+
+    Contract (consumed by ``pm_view_ops._brain_pm_summary_impl``):
+    - ``peers``: ``{"total": int, "online": int, "suspect": int}``
+    - ``sovereign_mode``: bool — True when running with ≥1 peer
+      (participating in federation consensus); False when standalone.
+    """
+    try:
+        engine = _get_federation_engine()
+        if engine is None:
+            _emit_event("federation_status_json_failed", "nucleus_federation", {
+                "action": "status_json",
+                "reason": "engine_unavailable",
+                "surface": _surface(),
+            })
+            return json.dumps({
+                "available": False,
+                "running": False,
+                "sovereign_mode": False,
+                "peers": {"total": 0, "online": 0, "suspect": 0},
+                "reason": "engine_unavailable",
+            })
+
+        status = engine.get_status()
+        peers_raw = status.get("peers", {})
+        peers = peers_raw if isinstance(peers_raw, dict) else {}
+        running = bool(status.get("running", False))
+        peers_total = int(peers.get("total", 0) or 0)
+        # Sovereign mode: participating in federation consensus
+        # (engine running and at least one peer discovered).
+        sovereign_mode = running and peers_total > 0
+
+        payload = {
+            "available": True,
+            "brain_id": status.get("brain_id"),
+            "region": status.get("region"),
+            "running": running,
+            "leader_id": status.get("leader_id"),
+            "is_leader": bool(status.get("is_leader", False)),
+            "term": status.get("term"),
+            "partition_status": status.get("partition_status"),
+            "class_a_enabled": bool(status.get("class_a_enabled", False)),
+            "peers": {
+                "total": peers_total,
+                "online": int(peers.get("online", 0) or 0),
+                "suspect": int(peers.get("suspect", 0) or 0),
+            },
+            "sovereign_mode": sovereign_mode,
+            "sync": status.get("sync", {}),
+            "metrics": status.get("metrics", {}),
+        }
+
+        sanitized = _sanitize_to_primitives(payload)
+
+        _emit_event("federation_status_json_succeeded", "nucleus_federation", {
+            "action": "status_json",
+            "brain_id": sanitized.get("brain_id"),
+            "running": sanitized.get("running"),
+            "is_leader": sanitized.get("is_leader"),
+            "peers_online": sanitized.get("peers", {}).get("online", 0),
+            "peers_total": sanitized.get("peers", {}).get("total", 0),
+            "sovereign_mode": sanitized.get("sovereign_mode"),
+            "surface": _surface(),
+        })
+        return json.dumps(sanitized, indent=2, ensure_ascii=False)
+
+    except Exception as e:
+        _emit_event("federation_status_json_failed", "nucleus_federation", {
+            "action": "status_json",
+            "error": str(e),
+            "surface": _surface(),
+        })
+        return json.dumps({
+            "available": False,
+            "running": False,
+            "sovereign_mode": False,
+            "peers": {"total": 0, "online": 0, "suspect": 0},
+            "error": str(e),
+        })
 
 
 async def _brain_federation_join_impl(seed_peer: str) -> str:
