@@ -102,6 +102,14 @@ def agent_registry_root() -> Path:
     override = os.environ.get("NUCLEUS_AGENT_REGISTRY")
     if override:
         return Path(override)
+    # Resolve brain path from NUCLEUS_BRAIN_PATH / NUCLEAR_BRAIN_PATH (same
+    # resolution as common.get_brain_path) rather than paths.brain_path()
+    # (which reads NUCLEUS_BRAIN). This ensures test isolation: the conftest
+    # sets NUCLEUS_BRAIN_PATH to a temp dir, and find_session_in_ancestry()
+    # reads from the isolated registry, not the real .brain.
+    brain = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
+    if brain:
+        return Path(brain) / "agent_registry"
     return brain_path() / "agent_registry"
 
 
