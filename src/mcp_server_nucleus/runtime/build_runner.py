@@ -16,11 +16,15 @@ The entry point :func:`run_build_pipeline` returns a process exit code
 
 from __future__ import annotations
 
+import atexit
 import json
 import logging
+import os
 import re
 import shutil
+import signal
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -107,6 +111,44 @@ def _read_state(plan_id: str) -> Dict[str, Any]:
         return {}
 
 
+def _write_state(plan_id: str, state: Dict[str, Any]) -> None:
+    """Atomically write ``.brain/plans/<plan_id>/state.json``.
+
+    Uses temp-file + rename so that a crash mid-write doesn't leave a
+    truncated/partial state file — the root cause of the 'APPROVED but
+    final_plan_path missing on disk' friction point.
+    """
+    plan_dir = _brain_path() / "plans" / plan_id
+    plan_dir.mkdir(parents=True, exist_ok=True)
+    state_path = plan_dir / "state.json"
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(plan_dir), suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp, str(state_path))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("state.json atomic write failed for %s: %s", plan_id, exc)
+
+
+def _mark_plan_orphaned(plan_id: str) -> None:
+    """Mark a plan as ORPHANED in state.json.
+
+    Called on process exit / signal so that a timed-out plan isn't left
+    IN_PROGRESS forever — the next run can detect and clean up.
+    """
+    if not plan_id:
+        return
+    state = _read_state(plan_id)
+    if not state:
+        return
+    if state.get("status") in ("APPROVED", "SINGLE_VENDOR_PLAN", "ORPHANED"):
+        return  # Already terminal
+    state["status"] = "ORPHANED"
+    state["orphaned_at"] = int(time.time())
+    _write_state(plan_id, state)
+    logger.warning("plan %s marked ORPHANED (process exiting while IN_PROGRESS)", plan_id)
+
+
 def _resolve_final_plan_path(plan_id: str, state: Dict[str, Any]) -> Optional[Path]:
     """Resolve the approved plan markdown path.
 
@@ -153,8 +195,25 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
     uses, so the plan text is a real captured vendor result, not a
     passthrough. Returns ``(ok, message, final_plan_path)``.
     """
-    if not shutil.which("claude"):
-        return False, "single-vendor mode requires the `claude` CLI on PATH", None
+    # Detect available CLI for plan dispatch — prefer claude, fall back to
+    # devin/agy so single-vendor mode works even if only one CLI is installed.
+    if shutil.which("claude"):
+        plan_vendor = "claude"
+    elif shutil.which("devin"):
+        plan_vendor = "devin"
+        logger.info("claude CLI not found, using devin for single-vendor plan")
+    elif shutil.which("agy"):
+        plan_vendor = "agy"
+        logger.info("claude CLI not found, using agy for single-vendor plan")
+    else:
+        return (
+            False,
+            "no coding agent CLI found on PATH. Install one of: "
+            "`claude` (npm i -g @anthropic-ai/claude-code), "
+            "`devin` (pip install devin-cli), or "
+            "`agy` (pip install agy-cli)",
+            None,
+        )
 
     plan_id = f"build_single_{int(time.time())}"
     plan_dir = _brain_path() / "plans" / plan_id
@@ -176,7 +235,7 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
         f"BUILD TASK:\n{task_prompt}"
     )
     res = dispatch_and_capture(
-        "claude", plan_prompt,
+        plan_vendor, plan_prompt,
         artifact_ref=str(plan_dir),
         mode="read",
     )
@@ -190,21 +249,28 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
 
     plan_text = res.get("result", "") or ""
     final_plan_path = plan_dir / "final_plan.md"
-    final_plan_path.write_text(plan_text, encoding="utf-8")
+    # Atomic write: temp file + rename so a crash doesn't leave a
+    # truncated final_plan.md that causes 'APPROVED but final_plan_path
+    # missing on disk' downstream.
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(plan_dir), suffix=".md.tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(plan_text)
+        os.replace(tmp, str(final_plan_path))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("final_plan.md atomic write failed: %s", exc)
+        final_plan_path.write_text(plan_text, encoding="utf-8")
 
-    # Write state.json consistently with how the dual-vendor path records
-    # terminal state, but with the honestly distinct status label.
+    # Write state.json atomically with the honestly distinct status label.
     state: Dict[str, Any] = {
         "plan_id": plan_id,
         "status": _SINGLE_VENDOR_PLAN_STATUS,
         "final_plan_path": str(final_plan_path),
         "execution_mode": _MODE_SINGLE_VENDOR,
-        "vendor": "claude",
+        "vendor": plan_vendor,
         "created_at": int(time.time()),
     }
-    (plan_dir / "state.json").write_text(
-        json.dumps(state, indent=2), encoding="utf-8",
-    )
+    _write_state(plan_id, state)
     return True, _SINGLE_VENDOR_PLAN_STATUS, final_plan_path
 
 
@@ -242,10 +308,17 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     # outcomes seen at round 3); keeping the cap here bounds real wall-clock
     # against the poll timeout above rather than letting a slow plan run
     # past this process's own budget.
+    reviewer_vendor = "devin"
+    # Auto-default reviewer_model to None when the reviewer vendor differs
+    # from the author vendor — the tool's _DEFAULT_REVIEWER_MODEL is
+    # Anthropic-specific and sending it to devin/gemini causes silent
+    # failures. This makes the fix automatic instead of requiring caller
+    # discipline.
+    reviewer_model = None  # vendor_dispatch picks the right default per vendor
     params = {
         "prompt": task_prompt,
-        "reviewer_vendor": "devin",
-        "reviewer_model": None,
+        "reviewer_vendor": reviewer_vendor,
+        "reviewer_model": reviewer_model,
         "max_rounds": 3,
     }
     raw = execute_plan_review_loop(params, _make_response)
@@ -270,24 +343,55 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
         return False, f"plan_review_loop returned no plan_id (status={status})", None, _MODE_DUAL_VENDOR
 
     # Poll state.json until APPROVED or an abort status fires.
+    # Register orphan cleanup so that if THIS process exits (timeout, Ctrl-C,
+    # crash) while the plan is still IN_PROGRESS, the plan is marked ORPHANED
+    # instead of being left in a zombie state for the next run to stumble on.
+    _active_plan_id: Optional[str] = None
+
+    def _orphan_cleanup(*_args: Any) -> None:
+        if _active_plan_id:
+            _mark_plan_orphaned(_active_plan_id)
+
+    atexit.register(_orphan_cleanup)
+    old_sigterm = signal.getsignal(signal.SIGTERM)
+    old_sigint = signal.getsignal(signal.SIGINT)
+
+    def _signal_handler(signum: int, frame: Any) -> None:
+        _orphan_cleanup()
+        # Restore and re-raise so the default handler runs
+        signal.signal(signum, old_sigterm if signum == signal.SIGTERM else old_sigint)
+        if signum == signal.SIGTERM:
+            raise SystemExit(143)
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, _signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
+
     deadline = time.monotonic() + _PLAN_POLL_TIMEOUT_S
     last_status: Optional[str] = None
-    while time.monotonic() < deadline:
-        state = _read_state(plan_id)
-        status = state.get("status")
-        if status and status != last_status:
-            logger.info("plan %s status: %s", plan_id, status)
-            last_status = status
-        if status == "APPROVED":
-            fp = _resolve_final_plan_path(plan_id, state)
-            if fp is None:
-                return False, "APPROVED but final_plan_path missing on disk", None, _MODE_DUAL_VENDOR
-            return True, "APPROVED", fp, _MODE_DUAL_VENDOR
-        if status in _ABORT_STATUSES:
-            return False, f"plan review aborted: status={status}", None, _MODE_DUAL_VENDOR
-        time.sleep(_PLAN_POLL_INTERVAL_S)
+    _active_plan_id = plan_id
+    try:
+        while time.monotonic() < deadline:
+            state = _read_state(plan_id)
+            status = state.get("status")
+            if status and status != last_status:
+                logger.info("plan %s status: %s", plan_id, status)
+                last_status = status
+            if status == "APPROVED":
+                fp = _resolve_final_plan_path(plan_id, state)
+                if fp is None:
+                    return False, "APPROVED but final_plan_path missing on disk", None, _MODE_DUAL_VENDOR
+                return True, "APPROVED", fp, _MODE_DUAL_VENDOR
+            if status in _ABORT_STATUSES:
+                return False, f"plan review aborted: status={status}", None, _MODE_DUAL_VENDOR
+            time.sleep(_PLAN_POLL_INTERVAL_S)
 
-    return False, f"plan review timed out after {_PLAN_POLL_TIMEOUT_S}s (last={last_status})", None, _MODE_DUAL_VENDOR
+        return False, f"plan review timed out after {_PLAN_POLL_TIMEOUT_S}s (last={last_status})", None, _MODE_DUAL_VENDOR
+    finally:
+        # Clear active plan and restore signal handlers on clean exit
+        _active_plan_id = None
+        signal.signal(signal.SIGTERM, old_sigterm)
+        signal.signal(signal.SIGINT, old_sigint)
 
 
 # ── EXECUTE stage ────────────────────────────────────────────────────────────
@@ -311,9 +415,26 @@ def _run_execute_stage(
     last. On fail-stop *post_head* equals *pre_head* (no further dispatch ran).
     """
     if execution_mode == _MODE_SINGLE_VENDOR:
-        if not shutil.which("claude"):
-            return False, "single-vendor execute requires the `claude` CLI on PATH", "", "", []
-        vendor = "claude"
+        # Detect available CLIs instead of hard-requiring claude. If claude
+        # is missing, check for devin/agy as fallbacks so a stranger's first
+        # run doesn't hit a wall with a cryptic error.
+        if shutil.which("claude"):
+            vendor = "claude"
+        elif shutil.which("devin"):
+            vendor = "devin"
+            logger.info("claude CLI not found, falling back to devin for single-vendor execute")
+        elif shutil.which("agy"):
+            vendor = "agy"
+            logger.info("claude CLI not found, falling back to agy for single-vendor execute")
+        else:
+            return (
+                False,
+                "no coding agent CLI found on PATH. Install one of: "
+                "`claude` (npm i -g @anthropic-ai/claude-code), "
+                "`devin` (pip install devin-cli), or "
+                "`agy` (pip install agy-cli)",
+                "", "", [],
+            )
     else:
         if not cross_vendor_enabled():
             return False, "cross-vendor dispatch is disabled (run `nucleus onboard`)", "", "", []
