@@ -190,6 +190,13 @@ def is_multi_vendor_available() -> bool:
     return bool(shutil.which("devin")) and bool(shutil.which("agy"))
 
 
+# Per-dispatch subprocess timeout. Overridable because vendor throughput varies
+# by orders of magnitude: agy answered a trivial prompt in 21s one hour and 176s
+# the next, and a real plan draft then exceeded the 300s hard kill repeatedly
+# (partial=0 bytes). Env-tunable so a slow-vendor window does not require a code
+# change. Default is unchanged at 300s. Read at import time.
+_DEFAULT_VENDOR_TIMEOUT_S = int(os.environ.get("NUCLEUS_VENDOR_TIMEOUT_S", "300"))
+
 # ── Vendor registry ───────────────────────────────────────────────────────────
 VENDOR_MODES = ("read", "write")
 DEFAULT_MODE = "write"
@@ -610,7 +617,7 @@ class VendorCLIExecutor:
         vendor: str,
         prompt: str,
         *,
-        timeout_s: int = 300,
+        timeout_s: int = _DEFAULT_VENDOR_TIMEOUT_S,
         budget_usd: float = 0.0,
         model: Optional[str] = None,
         mode: str = DEFAULT_MODE,
@@ -853,7 +860,7 @@ def dispatch_and_capture(
     model: Optional[str] = None,
     mode: str = DEFAULT_MODE,
     expect_paths: Optional[List[str]] = None,
-    timeout_s: int = 300,
+    timeout_s: int = _DEFAULT_VENDOR_TIMEOUT_S,
     budget_usd: float = 0.0,
     force_fs: bool = True,
 ) -> Dict[str, Any]:
@@ -945,7 +952,7 @@ def dispatch_cli(
     to_role: Optional[str] = None,
     model: Optional[str] = None,
     mode: str = DEFAULT_MODE,
-    timeout_s: int = 300,
+    timeout_s: int = _DEFAULT_VENDOR_TIMEOUT_S,
     budget_usd: float = 0.0,
 ) -> tuple[int, Dict[str, Any]]:
     """Backing logic for ``nucleus dispatch`` — returns ``(exit_code, payload)``.
@@ -997,7 +1004,7 @@ def run_swarm_vendor_persona(
     goal: str,
     step: int,
     *,
-    timeout_s: int = 300,
+    timeout_s: int = _DEFAULT_VENDOR_TIMEOUT_S,
     budget_usd: float = 0.05,
     to_role: str = "cross_vendor",
 ) -> Dict[str, Any]:
