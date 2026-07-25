@@ -474,22 +474,99 @@ def _run_execute_stage(
 
 # ── VERIFY stage ─────────────────────────────────────────────────────────────
 
+def _evaluate_tier(
+    signals: List[Dict[str, Any]],
+    skip_reason: str,
+) -> Tuple[Optional[bool], Dict[str, Any]]:
+    """Reduce one tier's signal list to a 3-state ``(passed, details)`` verdict.
+
+    This is the shared reducer for tiers 1–3. It enforces the tri-state
+    semantics introduced to fix the bug where an empty Tier-1 result list
+    was coerced to FAILED (``bool([]) == False``) while Tiers 2/3 correctly
+    treated "nothing to check" as SKIPPED — the same shape now applies to
+    every tier.
+
+    States (the only three legal values of ``details["status"]``):
+
+    * ``SKIPPED`` — *signals* is empty ("nothing to check" for this tier,
+      e.g. no syntax-checkable files, no ``.py`` files, no test files
+      discovered). Reported via *passed* = ``None``: "no verdict — does
+      not count for or against the gate." *details* carries a ``reason``
+      string explaining what was absent.
+    * ``PASSED`` — *signals* is non-empty and every entry's ``passed`` flag
+      is truthy, aggregated via ``all(r.get("passed", False) for r in signals)``.
+      Reported via *passed* = ``True``.
+    * ``FAILED`` — *signals* is non-empty and at least one entry's
+      ``passed`` flag is falsy. Reported via *passed* = ``False``.
+
+    A SKIPPED tier is never silently counted as a pass and never fails the
+    gate on its own; only an explicit FAILED contributes to
+    ``failed_count`` in :func:`_run_verify_stage` (and thus to exit code 1).
+
+    Returns ``(passed, details)`` where *details* always carries ``status``
+    and the raw ``signals`` list, plus a ``reason`` string on SKIPPED.
+    """
+    if not signals:
+        return None, {"status": "SKIPPED", "signals": signals, "reason": skip_reason}
+    passed = all(r.get("passed", False) for r in signals)
+    return passed, {
+        "status": "PASSED" if passed else "FAILED",
+        "signals": signals,
+    }
+
+
 def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[bool, Dict[str, Any]]:
     """VERIFY stage — multi-tier verification of changed files.
 
     Derives the changed-file set via ``execution_verifier._get_changed_files``
     (passing ``""`` as the first positional arg — the function ignores it and
-    queries git state directly). Empty ``changed_files`` is a tier-0 FAILURE
-    (nothing provably changed → ``verification_passed = False``); all tiers
-    reported as SKIPPED. Otherwise runs tier-1 syntax, tier-2 import, and
-    tier-3 test checks, aggregating each returned ``list[dict]`` signal list
-    via ``all(r.get("passed", False) for r in results)``. An empty tier-2 or
-    tier-3 signal list is reported as SKIPPED (never silently counted as a
-    pass, never failing the gate on its own).
+    queries git state directly, including untracked files via
+    ``git ls-files --others --exclude-standard`` so newly-created files are
+    not invisible). Empty ``changed_files`` is a tier-0 FAILURE (nothing
+    provably changed) that short-circuits: tiers 1–3 are left at their
+    initial SKIPPED state and never run, and the run is reported as a hard
+    ``FAILED`` with ``failed_count=1`` (tier 0) and ``skipped_count=3``
+    (tiers 1–3). Otherwise runs tier-1 syntax, tier-2 import, and tier-3
+    test checks, each reduced to a 3-state ``(passed, details)`` verdict
+    via :func:`_evaluate_tier`.
 
-    Returns ``(verification_passed, details)`` where *details* carries per-tier
-    status strings (PASSED/FAILED/SKIPPED), raw signals, and the changed-file
-    list.
+    Tier 2 is Python-only: when no ``.py`` files are present it is reported
+    SKIPPED without invoking the import checker. For all tiers, an empty
+    signal list (e.g. no syntax-checkable files, no importable candidates
+    after filtering, no test files discovered) is reported as SKIPPED —
+    never silently counted as a pass, never failing the gate on its own.
+
+    Count tracking (over tiers 1–3 only; tier 0 is accounted for
+    separately in the short-circuit branch above):
+
+    * ``passed_count``  — number of tiers with status ``PASSED``
+    * ``failed_count``  — number of tiers with status ``FAILED``
+    * ``skipped_count`` — number of tiers with status ``SKIPPED``
+
+    The three counts always sum to 3. ``summary_status`` is then derived:
+
+    * ``FAILED``      — ``failed_count > 0`` (any tier explicitly failed)
+    * ``INSUFFICIENT``— ``failed_count == 0`` AND ``skipped_count > 0``
+      (no failures, but verification incomplete — at least one tier could
+      not run, e.g. no ``.py`` files, no test files discovered)
+    * ``PASSED``      — every tier ran and passed
+      (``failed_count == 0`` AND ``skipped_count == 0``)
+
+    Gate + exit-code-1 enforcement: ``verification_passed`` is ``True`` iff
+    ``failed_count == 0``. Crucially, an ``INSUFFICIENT`` run still returns
+    ``verification_passed = True`` — a SKIPPED tier is a warning
+    (incomplete verification), not a failure, and does NOT on its own
+    force exit code 1. Only a FAILED run (``failed_count > 0``, including
+    the tier-0 short-circuit) returns ``verification_passed = False``,
+    which :func:`_render_verdict_card` enforces as exit code ``1`` via
+    ``return 0 if (all_tasks_succeeded and verification_passed) else 1``.
+    A task-side failure (``all_tasks_succeeded`` False) also enforces
+    exit 1 independently of verification.
+
+    Returns ``(verification_passed, details)`` where *details* carries
+    per-tier status strings (``PASSED``/``FAILED``/``SKIPPED``), raw
+    signals, the changed-file list, a ``files_count`` on a passing
+    tier-0, the three tier counts, and the derived ``summary_status``.
     """
     # Lazy import — keeps module load stdlib-clean.
     from . import execution_verifier
@@ -504,73 +581,86 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
         "tier3": {"status": "SKIPPED", "signals": []},
     }
 
+    # ── Tier 0: diff nonempty ───────────────────────────────────────────────
     if not changed_files:
-        # Tier-0 failure: nothing provably changed.
+        # Tier-0 failure is a hard FAILED: tiers 1–3 stay SKIPPED and never
+        # run. failed_count=1 accounts for tier 0; skipped_count=3 accounts
+        # for the three tiers that were never exercised.
         details["tier0"] = {"status": "FAILED", "reason": "no changed files"}
+        details["summary_status"] = "FAILED"
+        details["passed_count"] = 0
+        details["failed_count"] = 1
+        details["skipped_count"] = 3
         return False, details
     details["tier0"] = {"status": "PASSED", "files_count": len(changed_files)}
 
     # ── Tier 1: syntax check ────────────────────────────────────────────────
-    tier1_results = execution_verifier._tier1_syntax_check(
+    tier1_signals = execution_verifier._tier1_syntax_check(
         changed_files, project_root, budget_s=30.0,
     )
-    if not tier1_results:
-        # No syntax-checkable files (e.g. LICENSE, README, no-extension) → SKIPPED.
-        tier1_passed = True
-        details["tier1"] = {
-            "status": "SKIPPED", "signals": tier1_results,
-            "reason": "no syntax-checkable files",
-        }
-    else:
-        tier1_passed = all(r.get("passed", False) for r in tier1_results)
-        details["tier1"] = {
-            "status": "PASSED" if tier1_passed else "FAILED",
-            "signals": tier1_results,
-        }
+    # The per-tier passed flag is no longer needed directly — the gate is
+    # derived below from the aggregated status counts.
+    _, details["tier1"] = _evaluate_tier(
+        tier1_signals, skip_reason="no syntax-checkable files",
+    )
 
     # ── Tier 2: import check (only .py files) ───────────────────────────────
     py_files = [f for f in changed_files if f.endswith(".py")]
     if not py_files:
-        # No Python files → SKIPPED (passes the gate, reported as such).
-        tier2_passed = True
+        # No Python files → SKIPPED without invoking the import checker.
         details["tier2"] = {"status": "SKIPPED", "signals": [], "reason": "no .py files"}
     else:
-        tier2_results = execution_verifier._tier2_import_check(
+        tier2_signals = execution_verifier._tier2_import_check(
             py_files, project_root, budget_s=30.0,
         )
-        if not tier2_results:
-            # Empty signal list (e.g. all candidates filtered) → SKIPPED.
-            tier2_passed = True
-            details["tier2"] = {
-                "status": "SKIPPED", "signals": tier2_results,
-                "reason": "no importable candidates after filtering",
-            }
-        else:
-            tier2_passed = all(r.get("passed", False) for r in tier2_results)
-            details["tier2"] = {
-                "status": "PASSED" if tier2_passed else "FAILED",
-                "signals": tier2_results,
-            }
+        _, details["tier2"] = _evaluate_tier(
+            tier2_signals, skip_reason="no importable candidates after filtering",
+        )
 
     # ── Tier 3: test execution ──────────────────────────────────────────────
-    tier3_results = execution_verifier._tier3_test_execution(
+    tier3_signals = execution_verifier._tier3_test_execution(
         changed_files, {"description": task_prompt}, project_root, budget_s=120.0,
     )
-    if not tier3_results:
-        # No test files discovered → SKIPPED (passes the gate, reported as such).
-        tier3_passed = True
-        details["tier3"] = {
-            "status": "SKIPPED", "signals": tier3_results,
-            "reason": "no test files discovered",
-        }
-    else:
-        tier3_passed = all(r.get("passed", False) for r in tier3_results)
-        details["tier3"] = {
-            "status": "PASSED" if tier3_passed else "FAILED",
-            "signals": tier3_results,
-        }
+    _, details["tier3"] = _evaluate_tier(
+        tier3_signals, skip_reason="no test files discovered",
+    )
 
-    verification_passed = tier1_passed and tier2_passed and tier3_passed
+    # ── Aggregate per-tier counts → summary_status ─────────────────────────
+    # Counts are over tiers 1–3 (tier 0 is accounted for separately above).
+    # A SKIPPED tier (passed is None) never counts for or against the gate;
+    # the gate fails iff any tier explicitly returned False (status FAILED).
+    tier_statuses = (
+        details["tier1"]["status"],
+        details["tier2"]["status"],
+        details["tier3"]["status"],
+    )
+    passed_count = sum(1 for s in tier_statuses if s == "PASSED")
+    failed_count = sum(1 for s in tier_statuses if s == "FAILED")
+    skipped_count = sum(1 for s in tier_statuses if s == "SKIPPED")
+
+    if failed_count > 0:
+        summary_status = "FAILED"
+    elif skipped_count > 0:
+        # No failures, but verification incomplete — at least one tier
+        # could not run (e.g. no .py files, no test files discovered).
+        summary_status = "INSUFFICIENT"
+    else:
+        summary_status = "PASSED"
+
+    # The gate requires POSITIVE evidence, not merely the absence of failure.
+    # `failed_count == 0` alone is satisfied by a run in which every
+    # substantive tier SKIPPED — which is how the original tautology
+    # ("VERIFICATION PASSED: True" with tiers 2 and 3 SKIPPED) survived a
+    # refactor that fixed everything except this predicate. Verified only if
+    # at least one of tiers 1–3 actually executed AND nothing failed; tier 0
+    # (diff non-empty) is excluded on purpose, since a changed file proves
+    # nothing about correctness.
+    verification_passed = failed_count == 0 and passed_count > 0
+
+    details["summary_status"] = summary_status
+    details["passed_count"] = passed_count
+    details["failed_count"] = failed_count
+    details["skipped_count"] = skipped_count
     return verification_passed, details
 
 
@@ -650,7 +740,7 @@ def _render_verdict_card(
     print(f"    Tier 1 (syntax)        : {tier1.get('status', 'SKIPPED')}", flush=True)
     print(f"    Tier 2 (imports)       : {tier2.get('status', 'SKIPPED')}", flush=True)
     print(f"    Tier 3 (tests)         : {tier3.get('status', 'SKIPPED')}", flush=True)
-    print(f"  VERIFICATION PASSED     : {verification_passed}", flush=True)
+    print(f"  VERIFICATION            : {verify_details.get('passed_count', 0)} PASSED, {verify_details.get('failed_count', 0)} FAILED, {verify_details.get('skipped_count', 0)} SKIPPED — {verify_details.get('summary_status', 'UNKNOWN')}", flush=True)
     print("─" * 72, flush=True)
 
     return 0 if (all_tasks_succeeded and verification_passed) else 1
