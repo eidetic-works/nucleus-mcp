@@ -19,12 +19,17 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shutil
 import subprocess
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from .vendor_dispatch import cross_vendor_enabled, dispatch_and_capture
+from .vendor_dispatch import (
+    cross_vendor_enabled,
+    dispatch_and_capture,
+    is_multi_vendor_available,
+)
 
 logger = logging.getLogger("nucleus.build_runner")
 
@@ -47,6 +52,19 @@ _ABORT_STATUSES = frozenset({
     "ERROR",
     "OSCILLATING",
 })
+
+# Single-vendor native-fallback plan status. HONESTLY DISTINCT from the
+# dual-vendor ``APPROVED``: a single-vendor run performs ONE real plan
+# dispatch to the ``claude`` vendor and skips the adversarial review round
+# (there is no second vendor to review). Using ``APPROVED`` here would lie to
+# the verdict card by implying an adversarially-reviewed plan; this label
+# makes the unreviewed nature explicit. See ADR review rejecting the earlier
+# design that mislabeled a raw passthrough as ``APPROVED``.
+_SINGLE_VENDOR_PLAN_STATUS = "SINGLE_VENDOR_PLAN"
+
+# Execution-mode labels surfaced on the verdict card.
+_MODE_DUAL_VENDOR = "dual-vendor"
+_MODE_SINGLE_VENDOR = "single-vendor"
 
 # ── Small state helpers ──────────────────────────────────────────────────────
 
@@ -126,12 +144,84 @@ def _parse_task_checkboxes(final_plan_path: Path) -> List[Tuple[int, str]]:
 
 # ── PLAN stage ───────────────────────────────────────────────────────────────
 
-def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
-    """Run the plan review loop and poll until APPROVED.
-
-    Returns ``(ok, message, final_plan_path)``. On failure *ok* is ``False``,
-    *message* describes the abort reason, and *final_plan_path* is ``None``.
+def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
+    """Single-vendor plan: ONE real dispatch to the ``claude`` vendor asking
+    for a concrete task-decomposition plan, written to ``final_plan.md`` with
+    status ``SINGLE_VENDOR_PLAN`` (NOT ``APPROVED`` — no adversarial review
+    round ran, there being no second vendor to review). Reuses the SAME
+    ``dispatch_and_capture`` subprocess path the dual-vendor execute stage
+    uses, so the plan text is a real captured vendor result, not a
+    passthrough. Returns ``(ok, message, final_plan_path)``.
     """
+    if not shutil.which("claude"):
+        return False, "single-vendor mode requires the `claude` CLI on PATH", None
+
+    plan_id = f"build_single_{int(time.time())}"
+    plan_dir = _brain_path() / "plans" / plan_id
+    plan_dir.mkdir(parents=True, exist_ok=True)
+
+    # Prompt the claude vendor to emit the EXACT checkbox format
+    # _parse_task_checkboxes expects, so the execute stage can parse the
+    # resulting final_plan.md unchanged.
+    plan_prompt = (
+        "You are a task planner for the `nucleus build` pipeline. Decompose "
+        "the following build task into a numbered list of concrete, "
+        "independently-dispatchable sub-tasks. Output ONLY a markdown "
+        "checklist using EXACTLY this format for each task (one per line, "
+        "no prose, no preamble, no summary):\n"
+        "  - [ ] Task N: <one-line description>\n"
+        "The tasks must each be executable by a coding agent in write mode "
+        "(file edits / shell commands) and together must accomplish the "
+        "build task.\n\n"
+        f"BUILD TASK:\n{task_prompt}"
+    )
+    res = dispatch_and_capture(
+        "claude", plan_prompt,
+        artifact_ref=str(plan_dir),
+        mode="read",
+    )
+    if not (res.get("status") == "ok" and res.get("produced_output") is True):
+        return (
+            False,
+            f"single-vendor plan dispatch failed: status={res.get('status')!r} "
+            f"produced_output={res.get('produced_output')!r}",
+            None,
+        )
+
+    plan_text = res.get("result", "") or ""
+    final_plan_path = plan_dir / "final_plan.md"
+    final_plan_path.write_text(plan_text, encoding="utf-8")
+
+    # Write state.json consistently with how the dual-vendor path records
+    # terminal state, but with the honestly distinct status label.
+    state: Dict[str, Any] = {
+        "plan_id": plan_id,
+        "status": _SINGLE_VENDOR_PLAN_STATUS,
+        "final_plan_path": str(final_plan_path),
+        "execution_mode": _MODE_SINGLE_VENDOR,
+        "vendor": "claude",
+        "created_at": int(time.time()),
+    }
+    (plan_dir / "state.json").write_text(
+        json.dumps(state, indent=2), encoding="utf-8",
+    )
+    return True, _SINGLE_VENDOR_PLAN_STATUS, final_plan_path
+
+
+def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
+    """Run the plan stage; returns ``(ok, message, final_plan_path, execution_mode)``.
+
+    When :func:`is_multi_vendor_available` is True, runs the existing
+    dual-vendor adversarial plan review loop (status ``APPROVED``) —
+    byte-identical to prior behavior. When False, runs the single-vendor
+    ``claude`` plan dispatch (status ``SINGLE_VENDOR_PLAN``, no review round).
+    *execution_mode* is ``"dual-vendor"`` or ``"single-vendor"`` and threads
+    through to the execute + verdict stages.
+    """
+    if not is_multi_vendor_available():
+        ok, msg, fp = _run_single_vendor_plan_stage(task_prompt)
+        return ok, msg, fp, _MODE_SINGLE_VENDOR
+
     # Lazy import to avoid eager import of the tools package at module load.
     from ..tools.plan_review_loop import execute_plan_review_loop
 
@@ -162,10 +252,10 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
     try:
         res = json.loads(raw)
     except Exception as exc:  # noqa: BLE001
-        return False, f"plan_review_loop returned non-JSON: {exc}", None
+        return False, f"plan_review_loop returned non-JSON: {exc}", None, _MODE_DUAL_VENDOR
 
     if not res.get("success") or res.get("error"):
-        return False, f"plan_review_loop failed: {res.get('error') or res}", None
+        return False, f"plan_review_loop failed: {res.get('error') or res}", None, _MODE_DUAL_VENDOR
 
     data = res.get("data") or {}
     plan_id = data.get("plan_id")
@@ -175,9 +265,9 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
         if status == "APPROVED":
             fp = _resolve_final_plan_path(data.get("plan_id", ""), data)
             if fp is None:
-                return False, "APPROVED but final_plan_path missing on disk", None
-            return True, "APPROVED", fp
-        return False, f"plan_review_loop returned no plan_id (status={status})", None
+                return False, "APPROVED but final_plan_path missing on disk", None, _MODE_DUAL_VENDOR
+            return True, "APPROVED", fp, _MODE_DUAL_VENDOR
+        return False, f"plan_review_loop returned no plan_id (status={status})", None, _MODE_DUAL_VENDOR
 
     # Poll state.json until APPROVED or an abort status fires.
     deadline = time.monotonic() + _PLAN_POLL_TIMEOUT_S
@@ -191,26 +281,43 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
         if status == "APPROVED":
             fp = _resolve_final_plan_path(plan_id, state)
             if fp is None:
-                return False, "APPROVED but final_plan_path missing on disk", None
-            return True, "APPROVED", fp
+                return False, "APPROVED but final_plan_path missing on disk", None, _MODE_DUAL_VENDOR
+            return True, "APPROVED", fp, _MODE_DUAL_VENDOR
         if status in _ABORT_STATUSES:
-            return False, f"plan review aborted: status={status}", None
+            return False, f"plan review aborted: status={status}", None, _MODE_DUAL_VENDOR
         time.sleep(_PLAN_POLL_INTERVAL_S)
 
-    return False, f"plan review timed out after {_PLAN_POLL_TIMEOUT_S}s (last={last_status})", None
+    return False, f"plan review timed out after {_PLAN_POLL_TIMEOUT_S}s (last={last_status})", None, _MODE_DUAL_VENDOR
 
 
 # ── EXECUTE stage ────────────────────────────────────────────────────────────
 
-def _run_execute_stage(task_prompt: str, final_plan_path: Path) -> Tuple[bool, str, str, str, List[Dict[str, Any]]]:
-    """Dispatch each parsed task checkbox to devin (write mode), fail-stop.
+def _run_execute_stage(
+    task_prompt: str,
+    final_plan_path: Path,
+    execution_mode: str = _MODE_DUAL_VENDOR,
+) -> Tuple[bool, str, str, str, List[Dict[str, Any]]]:
+    """Dispatch each parsed task checkbox to a vendor (write mode), fail-stop.
+
+    Vendor selection by *execution_mode*: ``"dual-vendor"`` → ``devin``
+    (requires :func:`cross_vendor_enabled`, byte-identical to prior behavior);
+    ``"single-vendor"`` → ``claude`` (the native-fallback path, no
+    cross-vendor gate). Both paths reuse the SAME :func:`dispatch_and_capture`
+    subprocess dispatch, so pre_head/post_head git-diff provenance and the
+    verify-stage machinery work completely unchanged.
 
     Returns ``(ok, message, pre_head, post_head, dispatch_results)``.
     *pre_head* is captured before the first dispatch; *post_head* after the
     last. On fail-stop *post_head* equals *pre_head* (no further dispatch ran).
     """
-    if not cross_vendor_enabled():
-        return False, "cross-vendor dispatch is disabled (run `nucleus onboard`)", "", "", []
+    if execution_mode == _MODE_SINGLE_VENDOR:
+        if not shutil.which("claude"):
+            return False, "single-vendor execute requires the `claude` CLI on PATH", "", "", []
+        vendor = "claude"
+    else:
+        if not cross_vendor_enabled():
+            return False, "cross-vendor dispatch is disabled (run `nucleus onboard`)", "", "", []
+        vendor = "devin"
 
     pre_head = _git_head()
     if not pre_head:
@@ -222,13 +329,13 @@ def _run_execute_stage(task_prompt: str, final_plan_path: Path) -> Tuple[bool, s
 
     results: List[Dict[str, Any]] = []
     for task_num, task_desc in tasks:
-        logger.info("dispatching task %d: %s", task_num, task_desc)
+        logger.info("dispatching task %d (%s): %s", task_num, vendor, task_desc)
         res = dispatch_and_capture(
-            "devin", task_desc,
+            vendor, task_desc,
             artifact_ref=str(final_plan_path),
             mode="write",
         )
-        results.append({"task_num": task_num, "task_desc": task_desc, "result": res})
+        results.append({"task_num": task_num, "task_desc": task_desc, "result": res, "vendor": vendor})
         # Fail-stop predicate: status == "ok" AND produced_output is True.
         if not (res.get("status") == "ok" and res.get("produced_output") is True):
             return (
@@ -241,7 +348,7 @@ def _run_execute_stage(task_prompt: str, final_plan_path: Path) -> Tuple[bool, s
             )
 
     post_head = _git_head()
-    return True, f"executed {len(tasks)} task(s)", pre_head, post_head, results
+    return True, f"executed {len(tasks)} task(s) via {vendor}", pre_head, post_head, results
 
 
 # ── VERIFY stage ─────────────────────────────────────────────────────────────
@@ -351,22 +458,29 @@ def _render_verdict_card(
     results: List[Dict[str, Any]],
     verification_passed: bool,
     verify_details: Dict[str, Any],
+    execution_mode: str = _MODE_DUAL_VENDOR,
 ) -> int:
     """VERDICT stage — format + print the verdict card, return exit code.
 
-    Card sections: CLAIMED (tasks parsed), PROVEN (tasks passing the fail-stop
-    predicate), PROVENANCE (pre/post HEAD SHAs), CHANGED FILES, and per-tier
-    VERIFICATION STATUS (SKIPPED rendered explicitly — a skip is never shown
-    as a pass). Returns ``0`` iff every task succeeded AND
-    ``verification_passed`` is ``True``; otherwise ``1``.
+    Card sections: EXECUTION MODE + CONFIDENCE (distinguishing dual-vendor
+    adversarial runs from single-vendor ``claude``-only runs — a single-vendor
+    run is NEVER shown as ``PROVEN`` or counted the same as a dual-vendor
+    pass), CLAIMED (tasks parsed), the per-mode task-outcome line, PROVENANCE
+    (pre/post HEAD SHAs), CHANGED FILES, and per-tier VERIFICATION STATUS
+    (SKIPPED rendered explicitly — a skip is never shown as a pass).
+
+    Returns ``0`` iff every task succeeded AND ``verification_passed`` is
+    ``True``; otherwise ``1``. The exit code reflects pipeline completion;
+    the CONFIDENCE line is what distinguishes an adversarially-reviewed pass
+    from a single-vendor unreviewed run.
     """
     claimed = len(results)
-    proven = sum(
+    succeeded = sum(
         1 for r in results
         if r.get("result", {}).get("status") == "ok"
         and r.get("result", {}).get("produced_output") is True
     )
-    all_tasks_succeeded = proven == claimed and claimed > 0
+    all_tasks_succeeded = succeeded == claimed and claimed > 0
 
     changed_files = verify_details.get("changed_files", [])
     tier0 = verify_details.get("tier0", {})
@@ -374,15 +488,30 @@ def _render_verdict_card(
     tier2 = verify_details.get("tier2", {})
     tier3 = verify_details.get("tier3", {})
 
+    if execution_mode == _MODE_SINGLE_VENDOR:
+        mode_label = "single-vendor (claude only, no adversarial review)"
+        confidence_label = "SINGLE-VENDOR UNREVIEWED"
+        # Single-vendor runs do NOT show 'PROVEN' — the tasks ran but were
+        # never adversarially reviewed. Honest weaker tier.
+        task_outcome_label = "EXECUTED"
+        task_outcome_suffix = " (single-vendor, unreviewed — NOT adversarially proven)"
+    else:
+        mode_label = "dual-vendor adversarial"
+        confidence_label = "DUAL-VENDOR ADVERSARIAL"
+        task_outcome_label = "PROVEN"
+        task_outcome_suffix = ""
+
     print("─" * 72, flush=True)
     print("  NUCLEUS BUILD — VERDICT CARD", flush=True)
     print("─" * 72, flush=True)
-    print(f"  TASK PROMPT : {task_prompt}", flush=True)
-    print(f"  PLAN        : {final_plan_path}", flush=True)
-    print(f"  CLAIMED     : {claimed} task(s) parsed from plan", flush=True)
-    print(f"  PROVEN      : {proven}/{claimed} task(s) passed fail-stop predicate", flush=True)
-    print(f"  PROVENANCE  : pre_head={pre_head or '(unknown)'}", flush=True)
-    print(f"                post_head={post_head or '(unknown)'}", flush=True)
+    print(f"  TASK PROMPT     : {task_prompt}", flush=True)
+    print(f"  PLAN            : {final_plan_path}", flush=True)
+    print(f"  EXECUTION MODE  : {mode_label}", flush=True)
+    print(f"  CONFIDENCE      : {confidence_label}", flush=True)
+    print(f"  CLAIMED         : {claimed} task(s) parsed from plan", flush=True)
+    print(f"  {task_outcome_label:<15} : {succeeded}/{claimed} task(s) passed fail-stop predicate{task_outcome_suffix}", flush=True)
+    print(f"  PROVENANCE      : pre_head={pre_head or '(unknown)'}", flush=True)
+    print(f"                    post_head={post_head or '(unknown)'}", flush=True)
     print(f"  CHANGED FILES ({len(changed_files)}):", flush=True)
     if changed_files:
         for f in changed_files:
@@ -412,13 +541,15 @@ def run_build_pipeline(task_prompt: str) -> int:
         return 2
 
     # ── PLAN ─────────────────────────────────────────────────────────────────
-    ok, msg, final_plan_path = _run_plan_stage(task_prompt)
+    ok, msg, final_plan_path, execution_mode = _run_plan_stage(task_prompt)
     if not ok or final_plan_path is None:
         print(f"build: PLAN stage failed — {msg}", flush=True)
         return 1
 
     # ── EXECUTE ──────────────────────────────────────────────────────────────
-    ok, msg, pre_head, post_head, results = _run_execute_stage(task_prompt, final_plan_path)
+    ok, msg, pre_head, post_head, results = _run_execute_stage(
+        task_prompt, final_plan_path, execution_mode=execution_mode,
+    )
     if not ok:
         print(f"build: EXECUTE stage failed — {msg}", flush=True)
         return 1
@@ -435,4 +566,5 @@ def run_build_pipeline(task_prompt: str) -> int:
         results=results,
         verification_passed=verification_passed,
         verify_details=verify_details,
+        execution_mode=execution_mode,
     )

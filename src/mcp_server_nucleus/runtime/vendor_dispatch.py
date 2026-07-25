@@ -172,6 +172,24 @@ def cross_vendor_enabled() -> bool:
     return _onboard_config_enabled()
 
 
+def is_multi_vendor_available() -> bool:
+    """True iff the dual-vendor adversarial path can actually run.
+
+    Requires :func:`cross_vendor_enabled` AND BOTH the ``devin`` and ``agy``
+    binaries resolvable on PATH via the same ``shutil.which`` lookup that
+    :func:`dispatch_and_capture` uses to detect the ``not_found`` status. When
+    False, ``nucleus build`` falls back to single-vendor ``claude``-only mode
+    (one real plan dispatch to the ``claude`` vendor, no adversarial review
+    round, status ``SINGLE_VENDOR_PLAN`` — never the dual-vendor ``APPROVED``).
+
+    This is the gate the build pipeline branches on; it is additive — when
+    True, behavior is byte-identical to today.
+    """
+    if not cross_vendor_enabled():
+        return False
+    return bool(shutil.which("devin")) and bool(shutil.which("agy"))
+
+
 # ── Vendor registry ───────────────────────────────────────────────────────────
 VENDOR_MODES = ("read", "write")
 DEFAULT_MODE = "write"
@@ -382,6 +400,30 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         default_model="swe-1.7",
         models=("swe-1.7",),
         model_flag="--model",
+    ),
+    # claude → Claude Code CLI (host). Single-vendor native-fallback mode for
+    # `nucleus build` when the dual-vendor adversarial path (devin+agy) is not
+    # available. Prompt delivered INLINE in argv as the value of `-p`/`--print`
+    # (mirrors the agy inline-argv delivery shape). REAL-CLI VERIFIED:
+    # `claude --help` confirms `-p, --print  Print response and exit`. This
+    # spec lets single-vendor mode reuse the EXACT SAME subprocess dispatch,
+    # pre_head/post_head git-diff provenance, and verify-stage machinery as
+    # devin/agy — no new architecture, no new return contract. It is NOT a
+    # peer in the adversarial review loop (single-vendor runs skip the review
+    # round and use the honestly distinct status SINGLE_VENDOR_PLAN).
+    "claude": VendorSpec(
+        vendor="claude",
+        model="claude",
+        binary="claude",
+        sender="claude",
+        to_default="cross_vendor",
+        engram_tags=("vendor:claude", "surface:claude-code"),
+        argv_template=("claude", "-p", "{prompt}"),
+        read_flags=("--dangerously-skip-permissions",),
+        write_flags=("--dangerously-skip-permissions",),
+        default_model="",
+        models=(),
+        model_flag="",
     ),
 }
 
