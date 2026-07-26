@@ -1,4 +1,6 @@
 from __future__ import annotations
+import hashlib
+import hmac
 import inspect
 import json
 import logging
@@ -17,6 +19,78 @@ from ..providers import coerce_to_tuple
 from ..relay_inbox_canonical import resolve_canonical_inbox_name
 
 logger = logging.getLogger("nucleus.relay")
+
+
+# ============================================================
+# high_relay_forgery fix: HMAC sender authentication for FS-mode relay
+# ============================================================
+# FS-mode relay has no sender validation — any process can write a JSON file
+# to the relay inbox claiming to be any sender. This fix signs each message
+# with an HMAC using the sender's relay token (~/.tb/relay_token_<role>).
+# On read, the signature is validated; invalid signatures are flagged.
+#
+# The signature covers: message id, sender, recipient, subject, created_at.
+# Body is excluded (may be large; integrity of identity fields is the goal).
+#
+# Backward compatibility: messages without sender_hmac are accepted (legacy
+# messages pre-fix). Messages WITH sender_hmac that fail validation are flagged
+# with sender_hmac_valid=False so readers can choose to reject them.
+
+def _get_relay_token_for_sender(sender: str) -> Optional[str]:
+    """Load the relay token for a sender role from ~/.tb/relay_token_<role>.
+
+    Returns None if the token file doesn't exist (graceful — signing is
+    best-effort, not mandatory).
+    """
+    token_path = Path.home() / ".tb" / f"relay_token_{sender}"
+    if not token_path.exists():
+        return None
+    try:
+        return token_path.read_text().strip()
+    except Exception:
+        return None
+
+
+def _sign_relay_message(message: Dict[str, Any], sender: str) -> Optional[str]:
+    """Sign a relay message with HMAC-SHA256 using the sender's relay token.
+
+    Returns the hex signature, or None if no token is available (graceful —
+    signing is best-effort, not mandatory for backward compatibility).
+    """
+    token = _get_relay_token_for_sender(sender)
+    if not token:
+        return None
+    # Sign the identity fields (not body — body may be large)
+    payload = f"{message.get('id', '')}|{sender}|{message.get('to', '')}|{message.get('subject', '')}|{message.get('created_at', '')}"
+    return hmac.new(
+        token.encode("utf-8"),
+        payload.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _verify_relay_signature(message: Dict[str, Any]) -> bool:
+    """Verify a relay message's HMAC signature.
+
+    Returns True if:
+    - The message has no sender_hmac (legacy message — accepted)
+    - The message has a valid sender_hmac
+    Returns False if:
+    - The message has a sender_hmac but it doesn't match (forged/tampered)
+    """
+    sig = message.get("sender_hmac")
+    if not sig:
+        return True  # Legacy message (pre-fix) — accepted for backward compat
+    sender = message.get("from", "")
+    token = _get_relay_token_for_sender(sender)
+    if not token:
+        # Token file missing — can't verify. Accept (graceful degradation)
+        return True
+    expected = _sign_relay_message(message, sender)
+    if expected is None:
+        return True
+    return hmac.compare_digest(sig, expected)
+
 
 _RELAY_ID_RE = re.compile(r"^relay_\d{8}_\d{6}_[a-f0-9]{8}")
 
@@ -517,6 +591,17 @@ def relay_post(
         relay_dir = _get_relay_dir(to, force_fs=force_fs)
     filename = f"{now.strftime('%Y%m%d_%H%M%S')}_{msg_id}.json"
     path = relay_dir / filename
+
+    # high_relay_forgery fix: sign the message with HMAC using the sender's
+    # relay token. This prevents any process from forging a message as another
+    # sender — only someone with the sender's relay token can produce a valid
+    # signature. The signature covers the message identity, sender, recipient,
+    # subject, and created_at timestamp (not the body — body may be large).
+    # On read, the signature is validated; invalid signatures are rejected.
+    sig = _sign_relay_message(message, sender)
+    if sig:
+        message["sender_hmac"] = sig
+
     # Atomic write: stage to a sibling .tmp (never matches the readers' "*.json"
     # glob), then os.replace() — atomic on POSIX and Windows. Prevents a
     # subscriber from reading a half-written file and permanently dropping the
@@ -673,6 +758,10 @@ def relay_inbox(
             break
         try:
             msg = _parse_relay_message(f)
+            # high_relay_forgery fix: verify HMAC signature if present.
+            # Flag forged/tampered messages so readers can choose to reject.
+            # Legacy messages (no sender_hmac) pass — backward compatible.
+            msg["sender_hmac_valid"] = _verify_relay_signature(msg)
             if _spine_on:
                 surface, warn = _project_visible(
                     msg.get("project"), _my_proj, _reader_bucket

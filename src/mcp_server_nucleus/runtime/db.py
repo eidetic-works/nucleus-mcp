@@ -213,6 +213,46 @@ class JSONBackend(StorageBackend):
             self._save_tasks(tasks)
         return changed
 
+    def claim_task_atomic(self, task_id: str, agent_id: str) -> bool:
+        """Atomically claim a task using file lock serialization.
+
+        Overrides the non-atomic default to close crit_claim_toctou for the
+        JSON backend. The file lock (fcntl on the ledger lock file) serializes
+        the read-check-write so two executors cannot both read claimed_by=NULL
+        and both succeed.
+
+        Inlines the task load/save (not via _load_tasks/_save_tasks) to avoid
+        re-acquiring the same lock, which would deadlock.
+        """
+        from datetime import datetime as _dt
+        with self._get_lock("ledger", self.brain_path).section():
+            # Inline load (do NOT call _load_tasks — it acquires the same lock)
+            if not self.tasks_path.exists():
+                return False
+            try:
+                data = self.tasks_path.read_text().strip()
+                tasks = json.loads(data) if data else []
+            except Exception:
+                return False
+            for i, t in enumerate(tasks):
+                if t.get("id") != task_id:
+                    continue
+                if t.get("claimed_by") is not None:
+                    return False
+                if t.get("status", "").upper() not in ("TODO", "PENDING", "READY", "BLOCKED"):
+                    return False
+                now = _dt.now().isoformat()
+                tasks[i]["claimed_by"] = agent_id
+                tasks[i]["status"] = "IN_PROGRESS"
+                tasks[i]["claimed_at"] = now
+                tasks[i]["updated_at"] = now
+                # Inline write (do NOT call _save_tasks — it acquires the same lock)
+                self.tasks_path.parent.mkdir(parents=True, exist_ok=True)
+                self.tasks_path.write_text(json.dumps(tasks, indent=2, ensure_ascii=False))
+                _notify_tasks_changed()
+                return True
+            return False
+
 class SQLiteBackend(StorageBackend):
     """Local SQLite database backend for Sovereign OS defaults."""
     

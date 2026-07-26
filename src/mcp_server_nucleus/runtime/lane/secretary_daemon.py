@@ -36,6 +36,10 @@ class SecretaryDaemon:
         self.config = config
         self.poll_interval = poll_interval
         self.verify_only = verify_only
+        self._tick_count = 0
+        # high_relay_unbounded fix: run relay_clear every ~6h (2160 ticks at 10s poll)
+        self._relay_cleanup_interval_ticks = 2160
+        self._relay_cleanup_older_than_hours = 168  # 7 days
         self._telemetry = {
             "verified": 0,
             "confirmed": 0,
@@ -497,6 +501,26 @@ class SecretaryDaemon:
             except Exception:
                 pass  # Best-effort
 
+    def _cleanup_old_relays(self) -> None:
+        """high_relay_unbounded fix: periodically delete relay messages older than 7 days.
+
+        Without this, relay inboxes grow unbounded — every message ever sent
+        stays on disk forever. This runs every ~6h (2160 ticks at 10s poll)
+        and deletes messages older than self._relay_cleanup_older_than_hours.
+        """
+        try:
+            from mcp_server_nucleus.runtime.relay.core import relay_clear
+            result = relay_clear(older_than_hours=self._relay_cleanup_older_than_hours)
+            if result.get("deleted", 0) > 0:
+                print(
+                    f"[secretary] relay cleanup: deleted {result['deleted']} old messages "
+                    f"(older than {self._relay_cleanup_older_than_hours}h, "
+                    f"errors={result.get('errors', 0)})",
+                    flush=True,
+                )
+        except Exception as exc:
+            print(f"[secretary] relay cleanup error: {exc}", flush=True)
+
     def run(self) -> None:
         """Run the secretary daemon loop."""
         print(
@@ -507,9 +531,13 @@ class SecretaryDaemon:
 
         while True:
             try:
+                self._tick_count += 1
                 self._reap_stale_tasks()
                 self._process_done_relays()
                 self._post_telemetry()
+                # high_relay_unbounded fix: periodically clean old relay messages
+                if self._tick_count % self._relay_cleanup_interval_ticks == 0:
+                    self._cleanup_old_relays()
             except KeyboardInterrupt:
                 print("[secretary] shutting down", flush=True)
                 break

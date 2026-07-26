@@ -431,6 +431,7 @@ class ExecutorDaemon:
 
             # Count real lines (non-comment, non-blank)
             real_lines = 0
+            has_function_or_class = False
             for line in added_lines:
                 content = line[1:].strip()  # remove leading +
                 if not content:
@@ -442,6 +443,11 @@ class ExecutorDaemon:
                 if content.startswith("/*") or content.startswith("*"):
                     continue  # comment (C/Java block)
                 real_lines += 1
+                # Check for function/class definitions (indicates real code, not just config tweaks)
+                if (content.startswith("def ") or content.startswith("class ")
+                        or content.startswith("function ") or content.startswith("pub fn ")
+                        or content.startswith("fn ") or content.startswith("func ")):
+                    has_function_or_class = True
 
             # Extract files changed
             files_changed = []
@@ -449,10 +455,15 @@ class ExecutorDaemon:
                 if "|" in line and not line.startswith(" "):
                     files_changed.append(line.split("|")[0].strip())
 
+            # crit_verify_bypass fix: threshold raised from 5 to 10 real lines,
+            # AND require at least one function/class definition OR >=20 real lines
+            # (config-only changes with 10+ real lines are legitimate if substantial)
+            passed = real_lines >= 10 and (has_function_or_class or real_lines >= 20)
             return {
-                "pass": real_lines >= 5,
+                "pass": passed,
                 "insertions": insertions,
                 "real_lines": real_lines,
+                "has_function_or_class": has_function_or_class,
                 "files_changed": files_changed,
             }
         except Exception as exc:
