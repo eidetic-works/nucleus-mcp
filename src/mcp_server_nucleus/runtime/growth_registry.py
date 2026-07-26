@@ -55,6 +55,22 @@ DEFAULT_MAX_AGE_MULTIPLIER = 3.0
 # Environment-assignment lines in crontab. Never parsed as jobs, never echoed.
 _ENV_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\s*=")
 
+# Locations the OS clears, so ABSENCE THERE PROVES NOTHING. A job logging to
+# /tmp whose log is missing may have run perfectly and been wiped at reboot.
+# Calling that DEAD is a false accusation; the honest verdict is that the job
+# is unobservable by construction — which is itself worth reporting, because a
+# job you can never verify is a job you will never notice dying. Three of five
+# apparent deaths on this machine were exactly this.
+_EPHEMERAL_PREFIXES = ("/tmp/", "/private/tmp/", "/var/tmp/", "/var/folders/")
+
+
+def is_ephemeral_proof(proof: str) -> bool:
+    """True when the proof target lives somewhere the OS periodically clears."""
+    if not proof:
+        return False
+    expanded = os.path.expanduser(proof)
+    return any(expanded.startswith(pfx) for pfx in _EPHEMERAL_PREFIXES)
+
 
 @dataclass
 class RegistryEntry:
@@ -249,7 +265,16 @@ def entry_to_liveness_item(entry: RegistryEntry,
     # that kept a 102-day-dead cron looking merely UNKNOWN.
     status = LivenessStatus.UNKNOWN
     if entry.proof and mtime is None:
-        status = LivenessStatus.DEAD
+        # DEAD only when absence is INFORMATIVE. Under an ephemeral path the
+        # artifact may have been wiped rather than never written, so the honest
+        # answer is that we cannot tell — and the reason is recorded so the
+        # unverifiable job is still visible as a problem to fix.
+        if is_ephemeral_proof(entry.proof):
+            status = LivenessStatus.UNKNOWN
+            detail = (f"{detail} — proof target is under an OS-cleared path; "
+                      f"absence proves nothing. Move it somewhere durable.")
+        else:
+            status = LivenessStatus.DEAD
 
     return LivenessItem(
         status=status,
@@ -284,8 +309,8 @@ def reconcile(discovered: List[Any], entries: List[RegistryEntry],
             # Registry supplies what discovery could not: the proof artifact.
             if mtime is not None:
                 existing.last_run = mtime
-            elif e.proof:
-                # Declared a proof, artifact absent: a real death, not ignorance.
+            elif e.proof and not is_ephemeral_proof(e.proof):
+                # Declared a proof, artifact absent, path durable: a real death.
                 from .liveness import LivenessStatus as _LS
                 existing.status = _LS.DEAD
             if e.max_age_seconds and not existing.interval_seconds:

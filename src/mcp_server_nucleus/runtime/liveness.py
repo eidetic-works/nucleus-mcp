@@ -477,6 +477,14 @@ def enumerate_launchd_jobs(target_dirs: Optional[List[Path]] = None) -> List[Liv
                             "pid": pid,
                             "run_at_load": data.get("RunAtLoad", False),
                             "keep_alive": data.get("KeepAlive", False),
+                            # A plist that declares where its output goes has
+                            # already told us what proves it ran. 34 of 56
+                            # plists on this machine carry StandardOutPath and
+                            # it was being discarded, so the registry seeder
+                            # reported "no inferable proof" for jobs that had
+                            # declared one all along.
+                            "stdout_path": data.get("StandardOutPath", ""),
+                            "stderr_path": data.get("StandardErrorPath", ""),
                         },
                     )
                     item.status = classify_liveness_item(item)
