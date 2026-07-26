@@ -7,10 +7,13 @@ Coverage reports a file-level percentage. None of them prove a given function
 RETRACTED (2026-07-26). This docstring previously claimed "58.7% of product
 functions ... never executed by any of its 2,705 passing tests, and 16.8% of
 tests executed zero product lines" for this repo. An independent audit could
-not reproduce any of those figures: the suite collects 12,228 tests, not
-2,705, and no surviving coverage database carries the per-test contexts the
-numbers would have required. Withdrawn, with no replacement offered until
-one is measured by a rerunnable command.
+not reproduce any of those figures, and no surviving coverage database
+carries the per-test contexts they would have required. A replacement test
+count stated here ("12,228") was itself never verified -- it was copied from
+the audit report into the retraction, inside the very commit whose purpose was
+removing unverified numbers. Independent collection yields 11,874 / 2,597 /
+14,469 depending on scope, so no bare count is honest without its command.
+All of them are withdrawn rather than restated.
 
 WHY DIFF-SCOPED. A repo-wide list of never-executed symbols is 2,124 rows —
 wallpaper. Nobody acts on it, the same way nobody has acted on coverage's
