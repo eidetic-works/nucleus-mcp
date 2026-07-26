@@ -84,6 +84,13 @@ class RegistryEntry:
     max_age_seconds: Optional[float] = None
     owner: str = ""
     enabled: bool = True
+    # "declared" = a human named this artifact and meant it. "inferred" = we
+    # guessed it from StandardOutPath or a >> redirect. A missing INFERRED
+    # proof is weak evidence: the job may write its real output elsewhere and
+    # emit no stdout at all, so the file never appears even on a healthy run.
+    # Treating those alike produced a false DEAD for a weekly job that had in
+    # fact written its real artifact six days earlier.
+    proof_source: str = "declared"
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -160,6 +167,8 @@ def _entry_from_dict(raw: Dict[str, Any], idx: int) -> Tuple[Optional[RegistryEn
             max_age_seconds=float(max_age) if max_age is not None else None,
             owner=str(raw.get("owner") or ""),
             enabled=bool(raw.get("enabled", True)),
+            # Anything a human wrote into the registry file is declared.
+            proof_source=str(raw.get("proof_source") or "declared"),
         ), None
     except Exception as exc:  # noqa: BLE001
         return None, f"entry #{idx} ({ident}): {exc}"
@@ -273,6 +282,13 @@ def entry_to_liveness_item(entry: RegistryEntry,
             status = LivenessStatus.UNKNOWN
             detail = (f"{detail} — proof target is under an OS-cleared path; "
                       f"absence proves nothing. Move it somewhere durable.")
+        elif entry.proof_source != "declared":
+            # Inferred proof, artifact absent: not enough to accuse. Say what
+            # is actually known and what would settle it.
+            status = LivenessStatus.UNKNOWN
+            detail = (f"{detail} — proof was INFERRED from the job definition, "
+                      f"not declared. The job may write elsewhere and emit no "
+                      f"stdout. Confirm the real artifact to get a verdict.")
         else:
             status = LivenessStatus.DEAD
 
@@ -366,6 +382,10 @@ def seed_entries_from_machine() -> List[RegistryEntry]:
             max_age_seconds=None,
             owner="",
             enabled=bool(getattr(item, "enabled", True)),
+            # Everything seeded is a GUESS from the job definition until a
+            # human confirms it. Marked as such so a missing artifact is
+            # reported as "cannot tell" rather than "dead".
+            proof_source="inferred",
         ))
     return entries
 
