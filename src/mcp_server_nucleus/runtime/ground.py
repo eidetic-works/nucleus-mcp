@@ -20,16 +20,28 @@ from .common import get_brain_path, logger
 
 
 def detect_project_root(start: Path = None) -> Path:
-    """Walk up from start looking for .git, pyproject.toml, or package.json."""
-    p = (start or Path.cwd()).resolve()
-    for d in [p, *p.parents]:
+    """Walk up from start looking for git top-level, .git, pyproject.toml, or package.json."""
+    start_path = (start or Path.cwd()).resolve()
+    start_dir = start_path if start_path.is_dir() else start_path.parent
+    try:
+        r = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(start_dir),
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            return Path(r.stdout.strip()).resolve()
+    except Exception:
+        pass
+
+    for d in [start_dir, *start_dir.parents]:
         if (d / ".git").exists():
             return d
         if (d / "pyproject.toml").exists():
             return d
         if (d / "package.json").exists():
             return d
-    return p  # fallback to start
+    return start_path  # fallback to start
 
 
 def detect_python(project_root: Path) -> str:

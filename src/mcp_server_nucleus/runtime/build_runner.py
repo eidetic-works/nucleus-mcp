@@ -588,8 +588,9 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     """
     # Lazy import — keeps module load stdlib-clean.
     from . import execution_verifier
+    from .ground import detect_project_root
 
-    project_root = Path.cwd()
+    project_root = detect_project_root()
     changed_files = execution_verifier._get_changed_files("", pre_head, project_root)
 
     details: Dict[str, Any] = {
