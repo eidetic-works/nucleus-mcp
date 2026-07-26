@@ -2,9 +2,15 @@
 
 THE GAP THIS CLOSES. Linters prove code parses. Type checkers prove it types.
 Coverage reports a file-level percentage. None of them prove a given function
-*ran*. Measured on this repo: 58.7% of product functions in files the suite
-touches were never executed by any of its 2,705 passing tests, and 16.8% of
-tests executed zero product lines. The suite was green throughout.
+*ran*.
+
+RETRACTED (2026-07-26). This docstring previously claimed "58.7% of product
+functions ... never executed by any of its 2,705 passing tests, and 16.8% of
+tests executed zero product lines" for this repo. An independent audit could
+not reproduce any of those figures: the suite collects 12,228 tests, not
+2,705, and no surviving coverage database carries the per-test contexts the
+numbers would have required. Withdrawn, with no replacement offered until
+one is measured by a rerunnable command.
 
 WHY DIFF-SCOPED. A repo-wide list of never-executed symbols is 2,124 rows —
 wallpaper. Nobody acts on it, the same way nobody has acted on coverage's
@@ -379,8 +385,10 @@ def emit_receipt(r: ProveResult) -> None:
 # "did this test execute anything?" A test that passes while touching zero
 # product lines is counted in CI, reported green, and verifies nothing.
 #
-# Measured on this repo: 458 of 2,733 test functions executed zero product
-# lines. The canonical specimen mocks out its own subject with
+# RETRACTED (2026-07-26): a prior "458 of 2,733 test functions executed zero
+# product lines" here was unreproducible and is withdrawn. What survives is
+# the specimen itself, which is real and was read by hand:
+# The canonical specimen mocks out its own subject with
 # patch.dict(sys.modules, {...: MagicMock()}), re-implements the production
 # logic inside the test body, asserts the mock it just created was called by
 # itself, and prints a green checkmark. It passes in 0.08s.
