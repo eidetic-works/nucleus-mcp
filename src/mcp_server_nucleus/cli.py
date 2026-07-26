@@ -4559,6 +4559,17 @@ def main():
     eod_parser.add_argument('summary', help='What was accomplished today (2-3 sentences)')
     eod_parser.add_argument('--decisions', nargs='*', help='Key decisions made')
     eod_parser.add_argument('--blockers', nargs='*', help='Blockers encountered')
+
+    # ============================================================
+    # ALIVE COMMAND — Scheduled Task & Process Liveness Audit
+    # ============================================================
+    alive_parser = subparsers.add_parser('alive', help='🔍 Scheduled task & process liveness status audit')
+    alive_parser.add_argument('--json', action='store_true', help='Output as JSON')
+    alive_parser.add_argument('--format', choices=['table', 'json'], default=None, help='Output format (table or json)')
+    alive_parser.add_argument('--no-redact', dest='redact', action='store_false', default=True, help='Disable credential redaction')
+    alive_parser.add_argument('--grace-multiplier', type=float, default=1.5, help='Staleness grace multiplier (default: 1.5)')
+    alive_parser.add_argument('--source', choices=['all', 'cron', 'launchd'], default='all', help='Filter by liveness source (default: all)')
+
     
     # --- STATUS SUBCOMMAND (SATELLITE VIEW) ---
     status_parser = subparsers.add_parser('status', help='Show unified satellite view of the brain')
@@ -5850,6 +5861,9 @@ def main():
         elif cli_command == 'end-of-day':
             handle_end_of_day_command(args)
 
+        elif cli_command == 'alive':
+            sys.exit(handle_alive_command(args))
+
         elif cli_command == 'graph':
             handle_graph_command(args)
 
@@ -6000,7 +6014,7 @@ def main():
                 'morning-brief', 'engram', 'federation', 'depth', 'loop',
                 'sessions', 'features', 'billing', 'graph', 'channels',
                 'skill', 'growth', 'task', 'review', 'train', 'drive',
-                'doctor', 'mount', 'install', 'init', 'status',
+                'doctor', 'mount', 'install', 'init', 'status', 'alive',
             }
             if cli_command in _trackable_features:
                 record_feature_adoption(cli_command)
@@ -6019,7 +6033,7 @@ def main():
                 'morning-brief', 'engram', 'federation', 'depth', 'loop',
                 'sessions', 'features', 'billing', 'graph', 'channels',
                 'skill', 'growth', 'task', 'review', 'train', 'drive',
-                'doctor', 'mount', 'install', 'init', 'status',
+                'doctor', 'mount', 'install', 'init', 'status', 'alive',
             }
             if cli_command in _trackable_features:
                 record_feature_adoption(cli_command)
@@ -8918,6 +8932,7 @@ def _print_curated_help():
     nucleus combo pulse              Health check + synthesis
     nucleus end-of-day               Capture end-of-day learnings
     nucleus status                   Satellite view of the brain
+    nucleus alive                    Audit scheduled tasks & process liveness
 
   Memory:
     nucleus engram search <query>    Search your memory
@@ -9354,6 +9369,60 @@ def handle_end_of_day_command(args):
         print(f"❌ Error capturing end-of-day: {e}")
         print()
         print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
+
+
+def handle_alive_command(args):
+    """Handle nucleus alive command — audit scheduled tasks and process liveness."""
+    from .runtime.liveness import (
+        enumerate_all_liveness,
+        enumerate_cron_jobs,
+        enumerate_launchd_jobs,
+        format_liveness_table,
+        format_liveness_json,
+        redact_liveness_item,
+    )
+
+    redact = getattr(args, 'redact', True)
+    grace = getattr(args, 'grace_multiplier', 1.5)
+    source = getattr(args, 'source', 'all')
+    use_json = getattr(args, 'json', False) or (getattr(args, 'format', None) == 'json')
+
+    if source == 'cron':
+        items = enumerate_cron_jobs()
+        if redact:
+            items = [redact_liveness_item(it) for it in items]
+        if use_json:
+            print(format_liveness_json(items, redact=False))
+        else:
+            print(format_liveness_table(items, redact=False))
+    elif source == 'launchd':
+        items = enumerate_launchd_jobs()
+        if redact:
+            items = [redact_liveness_item(it) for it in items]
+        if use_json:
+            print(format_liveness_json(items, redact=False))
+        else:
+            print(format_liveness_table(items, redact=False))
+    else:
+        report = enumerate_all_liveness(grace_multiplier=grace, redact=redact)
+        if use_json:
+            print(format_liveness_json(report, redact=False))
+        else:
+            print(format_liveness_table(report, redact=False))
+        items = report.items
+
+    # Exit code carries the verdict, so `nucleus alive` is usable as a check.
+    # Without this the command always exited 0 — reporting success while
+    # printing 11 FAILED jobs, which is precisely the false-green this tool
+    # exists to detect. UNKNOWN deliberately does NOT fail the gate: "I cannot
+    # determine this" is an honest third state, not a failure, and coercing it
+    # either way is the mistake being guarded against.
+    def _status_of(it):
+        s = getattr(it, "status", None)
+        return str(getattr(s, "value", s) or "").upper()
+
+    failed = sum(1 for it in items if _status_of(it) == "FAILED")
+    return 1 if failed else 0
 
 
 def handle_graph_command(args):
