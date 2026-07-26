@@ -50,6 +50,13 @@ class Symbol:
     kind: str
     lineno: int
     end_lineno: int
+    # First line of the actual BODY, past the def/decorators and any docstring.
+    # The `def` line itself executes at IMPORT time — binding the function
+    # object — so a window starting at `lineno` reports every function in every
+    # imported module as executed. That false negative made a planted dead
+    # function in an external repo come back PROVEN; only a positive control
+    # caught it. The body is the only region whose execution means the code ran.
+    body_lineno: int = 0
     executed_lines: int = 0
 
     @property
@@ -137,6 +144,26 @@ def changed_python_files(repo: Path, base: Optional[str] = None) -> List[str]:
     return seen
 
 
+def _body_start(node) -> int:
+    """First executable body line: past decorators, the def line, and a docstring.
+
+    A docstring is a real statement and coverage records it, so counting it
+    would keep the import-time false positive alive in a subtler form.
+    """
+    body = getattr(node, "body", None) or []
+    if not body:
+        return node.lineno + 1
+    first = body[0]
+    is_docstring = (isinstance(first, ast.Expr)
+                    and isinstance(getattr(first, "value", None), ast.Constant)
+                    and isinstance(first.value.value, str))
+    if is_docstring and len(body) > 1:
+        return body[1].lineno
+    if is_docstring:
+        return node.lineno + 1  # docstring-only body: nothing to execute
+    return first.lineno
+
+
 def extract_symbols(repo: Path, relpaths: List[str]) -> List[Symbol]:
     """AST symbols (functions, methods, classes) with their line extents."""
     syms: List[Symbol] = []
@@ -154,7 +181,8 @@ def extract_symbols(repo: Path, relpaths: List[str]) -> List[Symbol]:
                 end = getattr(node, "end_lineno", node.lineno) or node.lineno
                 kind = "class" if isinstance(node, ast.ClassDef) else "function"
                 syms.append(Symbol(file=rel, name=node.name, kind=kind,
-                                   lineno=node.lineno, end_lineno=end))
+                                   lineno=node.lineno, end_lineno=end,
+                                   body_lineno=_body_start(node)))
     return syms
 
 
@@ -241,7 +269,8 @@ def prove_diff(repo: Optional[Path] = None, base: Optional[str] = None,
 
     for s in measured:
         hit = by_rel.get(s.file, set())
-        s.executed_lines = sum(1 for ln in hit if s.lineno <= ln <= s.end_lineno)
+        start = s.body_lineno or (s.lineno + 1)
+        s.executed_lines = sum(1 for ln in hit if start <= ln <= s.end_lineno)
 
     never = [s for s in measured if not s.executed]
 
