@@ -308,7 +308,15 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     # outcomes seen at round 3); keeping the cap here bounds real wall-clock
     # against the poll timeout above rather than letting a slow plan run
     # past this process's own budget.
-    reviewer_vendor = "devin"
+    # ENV-SELECTABLE, deliberately not hardcoded. The "devin" pin above was
+    # adopted after agy appeared to fail self-review 3/3 — but those failures
+    # were an expired agy OAuth token (discovered ~30 min later), not a
+    # self-review defect. The cause was misattributed and then frozen into
+    # source. When devin's own quota later ran out ("/upgrade to access this
+    # model") the pin became a single point of failure: 13 of 33 plan runs in
+    # 30 hours died as "vendor did not produce output". Vendor availability is
+    # a moving target; pinning it in source is itself the bug.
+    reviewer_vendor = os.environ.get("NUCLEUS_PLAN_REVIEWER", "agy").strip() or "agy"
     # Auto-default reviewer_model to None when the reviewer vendor differs
     # from the author vendor — the tool's _DEFAULT_REVIEWER_MODEL is
     # Anthropic-specific and sending it to devin/gemini causes silent
@@ -438,7 +446,17 @@ def _run_execute_stage(
     else:
         if not cross_vendor_enabled():
             return False, "cross-vendor dispatch is disabled (run `nucleus onboard`)", "", "", []
-        vendor = "devin"
+        # ENV-SELECTABLE for the same reason NUCLEUS_PLAN_REVIEWER is: a vendor
+        # pinned in source becomes a single point of failure the moment that
+        # vendor's quota or auth lapses. Observed: devin returned
+        # "/upgrade to access this model" instantly, so every EXECUTE task
+        # fail-stopped at task 1 even though the plan had been APPROVED.
+        # NOTE: shutil.which()-style PATH detection (used by the single-vendor
+        # branch above) cannot catch this — devin IS installed and on PATH; it
+        # is the account quota that is exhausted. Availability is only knowable
+        # by dispatching, which is why this is an operator-set override rather
+        # than an auto-detect.
+        vendor = os.environ.get("NUCLEUS_BUILD_EXECUTOR", "devin").strip() or "devin"
 
     pre_head = _git_head()
     if not pre_head:
