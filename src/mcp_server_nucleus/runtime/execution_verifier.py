@@ -421,40 +421,76 @@ def _tier2_import_check(py_files: list[str], project_root: Path,
         if time.monotonic() - t0 > budget_s:
             break
 
-        # Skip __init__, test files, and non-package files
+        # Skip __init__ and test files
         name = Path(relpath).name
         if name == "__init__.py" or name.startswith("test_"):
-            continue
-
-        # Skip paths with hyphens — not valid Python module names
-        # (e.g. mcp-server-nucleus/src/... is imported as mcp_server_nucleus)
-        if "-" in relpath:
             continue
 
         # Resolve Python per-file: explicit override > nearest venv > system
         python = python_path or _find_venv_python(relpath, project_root) or sys.executable
 
-        # Build per-file environment:
-        # For subproject files (e.g. backend/app/main.py), set cwd to subproject
-        # and strip prefix from module — matches how code runs in production
         parts = Path(relpath).parts
         env = dict(__import__("os").environ)
+
         if len(parts) > 2:
             cwd = str(project_root / parts[0])
-            # Strip subproject prefix: backend/app/main.py → app.main
-            subrel = str(Path(*parts[1:]))
-            module = subrel.replace("/", ".").replace("\\", ".")
-            if module.endswith(".py"):
-                module = module[:-3]
+            subrel_parts = parts[1:]
             env["PYTHONPATH"] = cwd + ":" + str(project_root)
         else:
             cwd = str(project_root)
-            module = relpath.replace("/", ".").replace("\\", ".")
-            if module.endswith(".py"):
-                module = module[:-3]
+            subrel_parts = parts
             env["PYTHONPATH"] = str(project_root)
 
-        cmd = [python, "-c", f"import {module}"]
+        # Process and sanitize subrel components & perform identifier checking
+        sanitized_comps = []
+        valid = True
+        for i, part in enumerate(subrel_parts):
+            comp = part[:-3] if (i == len(subrel_parts) - 1 and part.endswith(".py")) else part
+            sanitized = comp.replace("-", "_")
+            if not sanitized.isidentifier():
+                valid = False
+                break
+            sanitized_comps.append(sanitized)
+
+        if not valid or not sanitized_comps:
+            continue
+
+        module = ".".join(sanitized_comps)
+
+        # Build directory-only package registration fallback paths
+        fallback_dirs = []
+        curr = Path(cwd)
+        for j, part in enumerate(subrel_parts[:-1]):
+            curr = curr / part
+            if curr.is_dir():
+                fallback_dirs.append((str(curr), j))
+
+        import_script = f"""import sys, importlib
+
+module_name = {repr(module)}
+fallback_dirs = {repr(fallback_dirs)}
+sanitized_comps = {repr(sanitized_comps)}
+
+try:
+    importlib.import_module(module_name)
+except (ImportError, ModuleNotFoundError):
+    imported = False
+    for d, j in fallback_dirs:
+        if d not in sys.path:
+            sys.path.insert(0, d)
+        rel_mod = ".".join(sanitized_comps[j + 1:])
+        if rel_mod:
+            try:
+                importlib.import_module(rel_mod)
+                imported = True
+                break
+            except (ImportError, ModuleNotFoundError):
+                pass
+    if not imported:
+        raise
+"""
+
+        cmd = [python, "-c", import_script]
         try:
             r = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=5,
