@@ -676,6 +676,37 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     # nothing about correctness.
     verification_passed = failed_count == 0 and passed_count > 0
 
+    # Emit a claim receipt. The verify stage is the substrate's densest source
+    # of CLAIMED-vs-PROVEN pairs, so it is the natural first producer for the
+    # corpus. Best-effort by construction — `record` never raises, because an
+    # observability layer that can break the check it observes is worse than
+    # none. Note INSUFFICIENT maps straight through rather than collapsing to
+    # REFUTED: "nothing was verified" is not "verification failed".
+    try:
+        from .receipt import ClaimType, Receipt, Verdict, record
+
+        _verdict = (
+            Verdict.PROVEN if summary_status == "PASSED"
+            else Verdict.REFUTED if summary_status == "FAILED"
+            else Verdict.INSUFFICIENT
+        )
+        record(Receipt(
+            claim_type=ClaimType.BUILD_VERIFIED,
+            claim="build changes are verified",
+            verdict=_verdict,
+            primitive="execution_verifier tiers 1-3 over git-reported changed files",
+            claimed="vendor reported task completion",
+            observed=(f"{passed_count} PASSED, {failed_count} FAILED, "
+                      f"{skipped_count} SKIPPED"),
+            source="nucleus_build",
+            evidence=str({k: v.get("status") for k, v in details.items()
+                          if isinstance(v, dict) and "status" in v}),
+            reason=summary_status,
+            tags=["build", "verify"],
+        ))
+    except Exception as exc:  # noqa: BLE001 — receipts never gate the build
+        logger.debug("receipt emit skipped: %s", exc)
+
     details["summary_status"] = summary_status
     details["passed_count"] = passed_count
     details["failed_count"] = failed_count
