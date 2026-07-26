@@ -4563,6 +4563,8 @@ def main():
     # ============================================================
     # ALIVE COMMAND — Scheduled Task & Process Liveness Audit
     # ============================================================
+    alive_registry_note = ('Path to growth_registry.yaml (default: <brain>/growth_registry.yaml). '
+                           'Registry entries supply the proof artifact that OS enumeration cannot infer.')
     prove_parser = subparsers.add_parser('prove', help='🧾 Prove the code you changed actually ran')
     prove_parser.add_argument('--diff', action='store_true', default=True,
                               help='Scope to symbols in the current diff (default)')

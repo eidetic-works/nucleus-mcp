@@ -27,10 +27,22 @@ logger = logging.getLogger("nucleus.runtime.liveness")
 # ── Liveness Models & Enums ───────────────────────────────────
 
 class LivenessStatus(str, Enum):
+    """Liveness outcomes.
+
+    DEAD and UNKNOWN are deliberately distinct. DEAD means a proof artifact was
+    DECLARED and does not exist — the job was supposed to produce something and
+    did not, which is a finding. UNKNOWN means nothing was declared, so nothing
+    can be concluded. Collapsing the two hides real deaths behind ignorance:
+    a cron scheduled every 2 hours whose output directory had not changed in
+    ~102 days read as UNKNOWN until they were separated.
+    """
     HEALTHY = "HEALTHY"
     STALE = "STALE"
     FAILED = "FAILED"
     DISABLED = "DISABLED"
+    # A DECLARED proof artifact that does not exist. Distinct from UNKNOWN,
+    # which means nothing was declared and nothing can be concluded.
+    DEAD = "DEAD"
     UNKNOWN = "UNKNOWN"
 
 
@@ -40,6 +52,10 @@ class LivenessSource(str, Enum):
     SYSTEMD = "systemd"
     PROCESS = "process"
     NUCLEUS_SCHEDULER = "nucleus_scheduler"
+    # Declared in growth_registry.yaml rather than discovered from the OS.
+    # Carries the `proof` artifact that launchd/crontab enumeration cannot
+    # infer — the missing input that lets classification reach HEALTHY.
+    REGISTRY = "registry"
     CUSTOM = "custom"
 
 
@@ -301,7 +317,13 @@ def classify_liveness_item(
     grace_multiplier: float = 1.5,
     now: Optional[datetime] = None,
 ) -> LivenessStatus:
-    """Classify a LivenessItem into HEALTHY, STALE, FAILED, DISABLED, or UNKNOWN."""
+    """Classify a LivenessItem into HEALTHY, STALE, FAILED, DEAD, DISABLED, or UNKNOWN."""
+    # A pre-set DEAD is evidence, not a default: the caller resolved a DECLARED
+    # proof artifact and found it absent. Re-deriving would discard that and
+    # fall through to UNKNOWN, turning a real finding back into ignorance.
+    if item.status == LivenessStatus.DEAD:
+        return LivenessStatus.DEAD
+
     if not item.enabled:
         return LivenessStatus.DISABLED
 
