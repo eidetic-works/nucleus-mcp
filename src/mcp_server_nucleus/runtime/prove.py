@@ -322,3 +322,166 @@ def emit_receipt(r: ProveResult) -> None:
         ))
     except Exception as exc:  # noqa: BLE001
         logger.debug("prove receipt skipped: %s", exc)
+
+
+# ── Test oracle ──────────────────────────────────────────────────────────────
+#
+# A DIFFERENT question from prove_diff: not "was this code executed?" but
+# "did this test execute anything?" A test that passes while touching zero
+# product lines is counted in CI, reported green, and verifies nothing.
+#
+# Measured on this repo: 458 of 2,733 test functions executed zero product
+# lines. The canonical specimen mocks out its own subject with
+# patch.dict(sys.modules, {...: MagicMock()}), re-implements the production
+# logic inside the test body, asserts the mock it just created was called by
+# itself, and prints a green checkmark. It passes in 0.08s.
+#
+# This is uniquely an AI-authored failure mode — humans rarely bother mocking
+# out the thing they are testing — and it is invisible to linters, type
+# checkers, coverage percentage, vulture, deadcode and SAST alike. Mutation
+# testing is the only existing answer, at 100-1000x the runtime.
+
+@dataclass
+class TautologyResult:
+    """Tests that passed while executing no product code."""
+
+    verdict: str                       # PROVEN | REFUTED | INSUFFICIENT
+    reason: str
+    total_tests: int
+    zero_product_tests: List[str]
+    coverage_source: str = ""
+
+
+def _is_test_path(rel: str) -> bool:
+    """True for test files, whose own lines never count as product code."""
+    parts = Path(rel).parts
+    return ("tests" in parts or "test" in parts
+            or Path(rel).name.startswith("test_")
+            or Path(rel).name.endswith("_test.py")
+            or "conftest" in Path(rel).name)
+
+
+def prove_tests(repo: Optional[Path] = None,
+                coverage_file: Optional[Path] = None) -> TautologyResult:
+    """Find tests that passed while executing zero product lines.
+
+    Requires the suite to have been run with per-test contexts::
+
+        coverage run --context=test --source=<pkg> -m pytest
+        # or set dynamic_context = test_function in .coveragerc
+
+    Without contexts nothing can be attributed to individual tests, which is
+    INSUFFICIENT — never a pass. Reporting "no tautologies found" from a
+    database that cannot express the answer would be the exact false-green
+    this module exists to catch.
+    """
+    repo = repo or repo_root()
+    if coverage_file is not None:
+        cov_path = coverage_file
+    else:
+        candidates = [Path.cwd() / ".coverage", repo / ".coverage"]
+        cov_path = next((c for c in candidates if c.exists()), candidates[-1])
+
+    try:
+        from coverage import CoverageData
+    except ImportError:
+        return TautologyResult("INSUFFICIENT", "coverage not installed", 0, [])
+    if not cov_path.exists():
+        return TautologyResult("INSUFFICIENT", f"no coverage data at {cov_path}", 0, [])
+
+    try:
+        data = CoverageData(basename=str(cov_path))
+        data.read()
+        contexts = [c for c in (data.measured_contexts() or []) if c]
+    except Exception as exc:  # noqa: BLE001
+        return TautologyResult("INSUFFICIENT", f"unreadable coverage data: {exc}", 0, [])
+
+    # A STATIC LABEL IS NOT PER-TEST ATTRIBUTION. `coverage run --context=test`
+    # writes ONE context named "test" covering the whole run. Treating that as
+    # per-test data made this function report "PROVEN — all 1 test(s) executed
+    # product code" from a run of 33 tests: a false green produced by the tool
+    # misreading its own evidence. Per-test contexts carry a separator and the
+    # test's own name (e.g. tests.test_prove.test_foo); a bare label does not.
+    per_test = [c for c in contexts if ("." in c or "::" in c) and "test" in c.lower()]
+    if not per_test:
+        return TautologyResult(
+            "INSUFFICIENT",
+            "coverage database has no PER-TEST contexts (found %d aggregate "
+            "label(s): %s) — re-run with `dynamic_context = test_function` in "
+            "a coverage rcfile; note `--context=NAME` sets one static label "
+            "for the whole run and cannot attribute anything to a test"
+            % (len(contexts), ", ".join(sorted(contexts)[:3]) or "none"),
+            0, [], coverage_source=str(cov_path))
+    contexts = per_test
+
+    measured = list(data.measured_files())
+    zero: List[str] = []
+    for ctx in contexts:
+        touched_product = 0
+        for fname in measured:
+            try:
+                rel = str(Path(fname).resolve().relative_to(repo.resolve()))
+            except Exception:  # noqa: BLE001 — outside the repo
+                continue
+            if _is_test_path(rel):
+                continue  # a test executing its own lines proves nothing
+            try:
+                data.set_query_context(ctx)
+                if data.lines(fname):
+                    touched_product += 1
+                    break
+            except Exception:  # noqa: BLE001
+                continue
+        if touched_product == 0:
+            zero.append(ctx)
+
+    if zero:
+        pct = round(100.0 * len(zero) / len(contexts), 1)
+        return TautologyResult(
+            "REFUTED",
+            f"{len(zero)} of {len(contexts)} test(s) ({pct}%) executed zero product lines",
+            len(contexts), zero, coverage_source=str(cov_path))
+    return TautologyResult(
+        "PROVEN", f"all {len(contexts)} test(s) executed product code",
+        len(contexts), [], coverage_source=str(cov_path))
+
+
+def format_tautology(r: TautologyResult) -> str:
+    """Human-readable oracle verdict. INSUFFICIENT never renders as a pass."""
+    bar = "─" * 68
+    out = [bar, "  NUCLEUS PROVE — did your tests execute anything?", bar]
+    out.append(f"  TESTS         : {r.total_tests} with per-test attribution")
+    if r.coverage_source:
+        out.append(f"  EVIDENCE      : {r.coverage_source}")
+    if r.zero_product_tests:
+        out.append("")
+        out.append("  PASSED WHILE EXECUTING ZERO PRODUCT CODE:")
+        for t in r.zero_product_tests[:25]:
+            out.append(f"    {t}")
+        if len(r.zero_product_tests) > 25:
+            out.append(f"    … and {len(r.zero_product_tests) - 25} more")
+    out.append("")
+    out.append(f"  VERDICT       : {r.verdict} — {r.reason}")
+    out.append(bar)
+    return "\n".join(out)
+
+
+def emit_tautology_receipt(r: TautologyResult) -> None:
+    """Record the oracle result in the claim corpus. Never raises."""
+    try:
+        from .receipt import ClaimType, Receipt, Verdict, record
+
+        record(Receipt(
+            claim_type=ClaimType.TESTS_PASS,
+            claim="passing tests exercise product code",
+            verdict=getattr(Verdict, r.verdict),
+            primitive="coverage per-test contexts ∩ non-test files",
+            claimed=f"{r.total_tests} tests passed",
+            observed=f"{len(r.zero_product_tests)} executed zero product lines",
+            source="nucleus_prove",
+            evidence=r.coverage_source,
+            reason=r.reason,
+            tags=["prove", "test-oracle"],
+        ))
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("tautology receipt skipped: %s", exc)

@@ -4572,6 +4572,8 @@ def main():
                               help='Path to a coverage database (default: <repo>/.coverage)')
     prove_parser.add_argument('--min-lines', type=int, default=3,
                               help='Ignore symbols smaller than this many lines (default: 3)')
+    prove_parser.add_argument('--tests', action='store_true',
+                              help='Test oracle: find tests that passed while executing zero product code')
     alive_parser = subparsers.add_parser('alive', help='🔍 Scheduled task & process liveness status audit')
     alive_parser.add_argument('--json', action='store_true', help='Output as JSON')
     alive_parser.add_argument('--format', choices=['table', 'json'], default=None, help='Output format (table or json)')
@@ -9397,6 +9399,17 @@ def handle_prove_command(args) -> int:
     from .runtime.prove import prove_diff, format_result, emit_receipt
 
     cov = _Path(args.coverage_data) if getattr(args, 'coverage_data', None) else None
+
+    if getattr(args, 'tests', False):
+        # Different question from --diff: not "was this code executed" but
+        # "did this test execute anything". A test passing while touching zero
+        # product lines is counted in CI, reported green, and verifies nothing.
+        from .runtime.prove import prove_tests, format_tautology, emit_tautology_receipt
+        t = prove_tests(coverage_file=cov)
+        print(format_tautology(t))
+        emit_tautology_receipt(t)
+        return {"PROVEN": 0, "REFUTED": 1}.get(t.verdict, 2)
+
     result = prove_diff(
         base=getattr(args, 'base', None),
         coverage_file=cov,
