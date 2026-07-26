@@ -213,16 +213,17 @@ def load_executed_lines(coverage_file: Path) -> Tuple[Dict[str, Set[int]], str]:
 
 def prove_diff(repo: Optional[Path] = None, base: Optional[str] = None,
                coverage_file: Optional[Path] = None,
-               min_body_lines: int = _MIN_BODY_LINES) -> ProveResult:
+               min_body_lines: int = _MIN_BODY_LINES,
+               allow_stale: bool = False) -> ProveResult:
     """Check which symbols in the current diff were executed by anything."""
-    repo = repo or repo_root()
+    repo = Path(repo).resolve() if repo is not None else repo_root()
     # coverage.py writes .coverage to the CWD of the test run, which in a
     # monorepo is usually the package directory, not the git root. Check both
     # rather than reporting INSUFFICIENT next to a perfectly good database.
     if coverage_file is not None:
-        cov_path = coverage_file
+        cov_path = Path(coverage_file)
     else:
-        candidates = [Path.cwd() / ".coverage", repo / ".coverage"]
+        candidates = [repo / ".coverage", Path.cwd() / ".coverage"]
         cov_path = next((c for c in candidates if c.exists()), candidates[-1])
 
     files = changed_python_files(repo, base)
@@ -238,6 +239,13 @@ def prove_diff(repo: Optional[Path] = None, base: Optional[str] = None,
                            f"no symbols of >={min_body_lines} lines in {len(files)} changed file(s)",
                            files, [], [])
 
+    if not cov_path.exists():
+        return ProveResult(
+            "INSUFFICIENT",
+            f"no coverage data at {cov_path} — run your suite under coverage first",
+            files, symbols, [], coverage_source=str(cov_path),
+        )
+
     executed, source = load_executed_lines(cov_path)
     if not executed:
         # THE load-bearing branch. Without execution data nothing is known, and
@@ -248,6 +256,18 @@ def prove_diff(repo: Optional[Path] = None, base: Optional[str] = None,
             f"(e.g. `coverage run -m pytest`), then re-run",
             files, symbols, [], coverage_source=source,
         )
+
+    cov_mtime = cov_path.stat().st_mtime
+    stale_files = [
+        f for f in files
+        if (repo / f).exists() and cov_mtime < (repo / f).stat().st_mtime
+    ]
+    if stale_files:
+        msg = (f"coverage database at {cov_path} is older than changed file(s): "
+               f"{', '.join(stale_files)} — re-run your suite under coverage")
+        if not allow_stale:
+            return ProveResult("INSUFFICIENT", msg, files, symbols, [], coverage_source=source)
+        logger.warning(msg)
 
     # Coverage keys are absolute; diff paths are repo-relative.
     by_rel: Dict[str, Set[int]] = {}
@@ -391,7 +411,8 @@ def _is_test_path(rel: str) -> bool:
 
 
 def prove_tests(repo: Optional[Path] = None,
-                coverage_file: Optional[Path] = None) -> TautologyResult:
+                coverage_file: Optional[Path] = None,
+                allow_stale: bool = False) -> TautologyResult:
     """Find tests that passed while executing zero product lines.
 
     Requires the suite to have been run with per-test contexts::
@@ -404,11 +425,11 @@ def prove_tests(repo: Optional[Path] = None,
     database that cannot express the answer would be the exact false-green
     this module exists to catch.
     """
-    repo = repo or repo_root()
+    repo = Path(repo).resolve() if repo is not None else repo_root()
     if coverage_file is not None:
-        cov_path = coverage_file
+        cov_path = Path(coverage_file)
     else:
-        candidates = [Path.cwd() / ".coverage", repo / ".coverage"]
+        candidates = [repo / ".coverage", Path.cwd() / ".coverage"]
         cov_path = next((c for c in candidates if c.exists()), candidates[-1])
 
     try:
@@ -442,6 +463,25 @@ def prove_tests(repo: Optional[Path] = None,
             % (len(contexts), ", ".join(sorted(contexts)[:3]) or "none"),
             0, [], coverage_source=str(cov_path))
     contexts = per_test
+
+    cov_mtime = cov_path.stat().st_mtime
+    stale_files = []
+    repo_abs = repo.resolve()
+    for fname in data.measured_files():
+        try:
+            p = Path(fname).resolve()
+            rel = str(p.relative_to(repo_abs))
+        except (ValueError, Exception):
+            continue
+        if p.exists() and cov_mtime < p.stat().st_mtime:
+            stale_files.append(rel)
+
+    if stale_files:
+        msg = (f"coverage database at {cov_path} is older than file(s): "
+               f"{', '.join(stale_files)} — re-run your suite under coverage")
+        if not allow_stale:
+            return TautologyResult("INSUFFICIENT", msg, len(contexts), [], coverage_source=str(cov_path))
+        logger.warning(msg)
 
     measured = list(data.measured_files())
     zero: List[str] = []
