@@ -4563,6 +4563,15 @@ def main():
     # ============================================================
     # ALIVE COMMAND — Scheduled Task & Process Liveness Audit
     # ============================================================
+    prove_parser = subparsers.add_parser('prove', help='🧾 Prove the code you changed actually ran')
+    prove_parser.add_argument('--diff', action='store_true', default=True,
+                              help='Scope to symbols in the current diff (default)')
+    prove_parser.add_argument('--base', type=str, default=None,
+                              help='Compare against this git ref instead of the working tree')
+    prove_parser.add_argument('--coverage-data', type=str, default=None,
+                              help='Path to a coverage database (default: <repo>/.coverage)')
+    prove_parser.add_argument('--min-lines', type=int, default=3,
+                              help='Ignore symbols smaller than this many lines (default: 3)')
     alive_parser = subparsers.add_parser('alive', help='🔍 Scheduled task & process liveness status audit')
     alive_parser.add_argument('--json', action='store_true', help='Output as JSON')
     alive_parser.add_argument('--format', choices=['table', 'json'], default=None, help='Output format (table or json)')
@@ -5860,6 +5869,9 @@ def main():
 
         elif cli_command == 'end-of-day':
             handle_end_of_day_command(args)
+
+        elif cli_command == 'prove':
+            sys.exit(handle_prove_command(args))
 
         elif cli_command == 'alive':
             sys.exit(handle_alive_command(args))
@@ -9369,6 +9381,30 @@ def handle_end_of_day_command(args):
         print(f"❌ Error capturing end-of-day: {e}")
         print()
         print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
+
+
+def handle_prove_command(args) -> int:
+    """Handle `nucleus prove` — did the symbols you changed actually execute?
+
+    Exit code carries the verdict so this is usable as a gate:
+      0 = PROVEN, 1 = REFUTED, 2 = INSUFFICIENT.
+
+    INSUFFICIENT is deliberately its OWN code, not folded into either
+    neighbour. "I could not determine this" is not success and not failure,
+    and collapsing it is the defect this command exists to surface.
+    """
+    from pathlib import Path as _Path
+    from .runtime.prove import prove_diff, format_result, emit_receipt
+
+    cov = _Path(args.coverage_data) if getattr(args, 'coverage_data', None) else None
+    result = prove_diff(
+        base=getattr(args, 'base', None),
+        coverage_file=cov,
+        min_body_lines=getattr(args, 'min_lines', 3),
+    )
+    print(format_result(result))
+    emit_receipt(result)
+    return {"PROVEN": 0, "REFUTED": 1}.get(result.verdict, 2)
 
 
 def handle_alive_command(args):
