@@ -50,6 +50,19 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
     tiers_passed = []
     tiers_failed = []
     tiers_skipped = []
+    # WHY A REASON PER SKIP. `tiers_skipped` conflated three different facts:
+    # the tier ran with nothing eligible, the tier was switched off by config,
+    # and the tier never ran because the time budget expired. Merged into one
+    # token they are indistinguishable — which is exactly why "has tier 2 ever
+    # actually executed?" could not be answered from 3,342 receipts without
+    # reading the caller's config by hand.
+    skip_reasons: dict = {}
+
+    def _skip(tier: int, why: str) -> None:
+        """Record a skip WITH its cause. A tier must never vanish silently."""
+        if tier not in tiers_skipped:
+            tiers_skipped.append(tier)
+        skip_reasons[str(tier)] = why
 
     # Get clean file paths
     changed = _get_changed_files(git_diff_text, pre_head, project_root)
@@ -63,10 +76,14 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         signals.append(sig)
         (tiers_passed if sig["passed"] else tiers_failed).append(0)
     else:
-        tiers_skipped.append(0)
-
-    # ── Tier 1: syntax check ──
-    if 1 in enabled_tiers and remaining() > 0:
+        _skip(0, "not enabled")
+    if 1 in enabled_tiers and remaining() <= 0:
+        # Budget expired BEFORE this tier ran. This previously fell
+        # through every branch: the tier appeared in NO list —
+        # neither passed, failed, nor skipped. A verification tier
+        # that simply vanishes reads as a clean run.
+        _skip(1, "time budget expired")
+    elif 1 in enabled_tiers:
         t1_sigs = _tier1_syntax_check(changed, project_root, remaining())
         signals.extend(t1_sigs)
         if t1_sigs:
@@ -75,13 +92,17 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(1)
         else:
-            tiers_skipped.append(1)  # no files to check
+            _skip(1, "no eligible files")
     elif 1 not in enabled_tiers:
-        tiers_skipped.append(1)
-
-    # ── Tier 2: import check ──
+        _skip(1, "not enabled")
     python_path = config.get("python_path")
-    if 2 in enabled_tiers and remaining() > 0:
+    if 2 in enabled_tiers and remaining() <= 0:
+        # Budget expired BEFORE this tier ran. This previously fell
+        # through every branch: the tier appeared in NO list —
+        # neither passed, failed, nor skipped. A verification tier
+        # that simply vanishes reads as a clean run.
+        _skip(2, "time budget expired")
+    elif 2 in enabled_tiers:
         py_files = [f for f in changed if f.endswith(".py")]
         t2_sigs = _tier2_import_check(py_files, project_root, remaining(), python_path)
         signals.extend(t2_sigs)
@@ -91,12 +112,16 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(2)
         else:
-            tiers_skipped.append(2)
+            _skip(2, "not enabled")
     elif 2 not in enabled_tiers:
-        tiers_skipped.append(2)
-
-    # ── Tier 3: test execution ──
-    if 3 in enabled_tiers and remaining() > 0:
+        _skip(2, "not enabled")
+    if 3 in enabled_tiers and remaining() <= 0:
+        # Budget expired BEFORE this tier ran. This previously fell
+        # through every branch: the tier appeared in NO list —
+        # neither passed, failed, nor skipped. A verification tier
+        # that simply vanishes reads as a clean run.
+        _skip(3, "time budget expired")
+    elif 3 in enabled_tiers:
         t3_sigs = _tier3_test_execution(changed, task, project_root, remaining(), python_path)
         signals.extend(t3_sigs)
         if t3_sigs:
@@ -105,11 +130,9 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(3)
         else:
-            tiers_skipped.append(3)
+            _skip(3, "not enabled")
     elif 3 not in enabled_tiers:
-        tiers_skipped.append(3)
-
-    # ── Tier 4: runtime verification ──
+        _skip(3, "not enabled")
     runtime_checks = config.get("execution_verification_runtime_checks", [])
     runtime_budget = config.get("execution_verification_runtime_timeout_s", 15)
     if 4 in enabled_tiers and runtime_checks:
@@ -121,14 +144,18 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(4)
         else:
-            tiers_skipped.append(4)
+            _skip(4, "not enabled")
     elif 4 not in enabled_tiers:
-        tiers_skipped.append(4)
+        _skip(4, "not enabled")
     elif not runtime_checks:
-        tiers_skipped.append(4)
-
-    # ── Tier 5: outcome verification (delta-based) ──
-    if 5 in enabled_tiers and remaining() > 0:
+        _skip(4, "not enabled")
+    if 5 in enabled_tiers and remaining() <= 0:
+        # Budget expired BEFORE this tier ran. This previously fell
+        # through every branch: the tier appeared in NO list —
+        # neither passed, failed, nor skipped. A verification tier
+        # that simply vanishes reads as a clean run.
+        _skip(5, "time budget expired")
+    elif 5 in enabled_tiers:
         baseline_path = project_root / ".brain" / "driver" / "outcome_baseline.json"
         plan_path = _find_recent_plan(project_root)
         if baseline_path.exists() and plan_path:
@@ -168,11 +195,11 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
                 except Exception:
                     pass  # flywheel hook is best-effort
             else:
-                tiers_skipped.append(5)
+                _skip(5, "not enabled")
         else:
-            tiers_skipped.append(5)  # No baseline or plan = skip, not fail
+            _skip(5, "not enabled")
     elif 5 not in enabled_tiers:
-        tiers_skipped.append(5)
+        _skip(5, "not enabled")
 
     duration = round(time.monotonic() - t0, 2)
     verified = len(tiers_failed) == 0 and len(tiers_passed) > 0
@@ -195,6 +222,7 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         "tiers_passed": tiers_passed,
         "tiers_failed": tiers_failed,
         "tiers_skipped": tiers_skipped,
+        "skip_reasons": skip_reasons,
         "signals": signals,
         "duration_s": duration,
         "receipt_id": receipt_id,

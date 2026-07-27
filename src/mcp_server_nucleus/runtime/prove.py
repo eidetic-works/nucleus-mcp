@@ -153,6 +153,75 @@ def changed_python_files(repo: Path, base: Optional[str] = None) -> List[str]:
     return seen
 
 
+def changed_line_ranges(repo: Path, base: Optional[str] = None) -> Dict[str, Set[int]]:
+    """Line numbers actually touched, per file — not whole files.
+
+    FILE-level scoping makes REFUTED accuse code the author never touched: edit
+    one function in a 600-line module and every never-executed symbol in that
+    module is reported as "code you just changed". The first stranger to hit
+    that stops trusting the tool, correctly. Worse, it corrupts the acceptance
+    gate itself — a seeded draw over a mature suite came back REFUTED on 10 of
+    98 symbols under file-level scoping, none of which were in the diff.
+
+    Returns {relpath: {line numbers}}. A file present in the diff but absent
+    from this mapping is a REAL distinction (deletion-only hunks, mode changes)
+    and callers must treat it as unmeasured, never as "nothing to report".
+    """
+    ranges: Dict[str, Set[int]] = {}
+
+    def _absorb(diff_text: str) -> None:
+        current: Optional[str] = None
+        for line in diff_text.splitlines():
+            if line.startswith("+++ "):
+                path = line[4:].strip()
+                current = path[2:] if path.startswith("b/") else (
+                    None if path == "/dev/null" else path)
+            elif line.startswith("@@") and current:
+                # @@ -old,count +new,count @@ — only the NEW side can be executed.
+                try:
+                    plus = line.split("+", 1)[1].split("@@", 1)[0].strip()
+                    start_s, _, count_s = plus.partition(",")
+                    start, count = int(start_s), int(count_s or 1)
+                except (ValueError, IndexError):
+                    continue  # unparseable hunk header: skip this hunk, keep the file
+                if count:
+                    ranges.setdefault(current, set()).update(
+                        range(start, start + count))
+
+    specs = [["diff", "-U0"], ["diff", "-U0", "--cached"]]
+    if base:
+        specs.append(["diff", "-U0", f"{base}...HEAD"])
+    for args in specs:
+        _absorb(_git(args, repo))
+
+    # Untracked files never appear in `git diff` at all — every line is new.
+    for rel in _git(["ls-files", "--others", "--exclude-standard"], repo).splitlines():
+        rel = rel.strip()
+        if not rel.endswith(".py"):
+            continue
+        p = repo / rel
+        if p.exists():
+            try:
+                n = len(p.read_text(encoding="utf-8").splitlines())
+            except Exception:  # noqa: BLE001
+                continue
+            ranges.setdefault(rel, set()).update(range(1, n + 1))
+
+    return ranges
+
+
+def _symbol_touched(sym: "Symbol", touched: Dict[str, Set[int]]) -> bool:
+    """True if any line of the symbol's BODY is in the diff.
+
+    Body, not span: the `def` line can move when an unrelated symbol above it
+    changes size, and a shifted signature is not a changed function.
+    """
+    lines = touched.get(sym.file)
+    if not lines:
+        return False
+    return any(n in lines for n in range(sym.body_lineno, sym.end_lineno + 1))
+
+
 def _body_start(node) -> int:
     """First executable body line: past decorators, the def line, and a docstring.
 
@@ -241,11 +310,32 @@ def prove_diff(repo: Optional[Path] = None, base: Optional[str] = None,
         return ProveResult("INSUFFICIENT", "no changed Python files to check",
                            [], [], [])
 
-    symbols = [s for s in extract_symbols(repo, files)
-               if s.body_lines >= min_body_lines]
+    # HUNK-SCOPE. Without this, every never-executed symbol in a file you
+    # merely touched is reported as "code you just changed".
+    touched = changed_line_ranges(repo, base)
+    all_symbols = [s for s in extract_symbols(repo, files)
+                   if s.body_lines >= min_body_lines]
+    symbols = [s for s in all_symbols if _symbol_touched(s, touched)]
+
+    # A file with symbols but no parseable hunks is UNMEASURED, not clean.
+    # Dropping it silently would be this tool's own defect: a file that could
+    # not be scoped rendered as a file with nothing to report.
+    unscoped = sorted({s.file for s in all_symbols} - set(touched))
+    if unscoped and not symbols:
+        return ProveResult(
+            "INSUFFICIENT",
+            "could not determine changed line ranges for %d file(s): %s "
+            "— diff may be deletion-only or in an unsupported format"
+            % (len(unscoped), ", ".join(unscoped[:3])),
+            files, all_symbols, [], coverage_source=str(cov_path))
+
     if not symbols:
         return ProveResult("INSUFFICIENT",
-                           f"no symbols of >={min_body_lines} lines in {len(files)} changed file(s)",
+                           (f"no symbols of >={min_body_lines} lines in {len(files)} "
+                            f"changed file(s)") if not all_symbols else
+                           (f"{len(all_symbols)} symbol(s) of >={min_body_lines} lines "
+                            f"in {len(files)} changed file(s), but none overlap the "
+                            f"lines you changed — nothing in this diff to judge"),
                            files, [], [])
 
     if not cov_path.exists():
