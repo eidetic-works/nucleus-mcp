@@ -4981,10 +4981,16 @@ def main():
         epilog=(
             'Requires NUCLEUS_CROSS_VENDOR=1 (default OFF).\n'
             'Examples:\n'
-            '  NUCLEUS_CROSS_VENDOR=1 nucleus dispatch agy --prompt-file p.txt --artifact-ref <sha> --to peer\n'
-            '  echo "review this" | NUCLEUS_CROSS_VENDOR=1 nucleus dispatch devin --artifact-ref 123 --to peer\n'
+            '  NUCLEUS_CROSS_VENDOR=1 nucleus dispatch agy --prompt-file p.txt --to peer\n'
+            '  echo "review this" | NUCLEUS_CROSS_VENDOR=1 nucleus dispatch devin --to peer\n'
             'Prefer --prompt-file / stdin over --prompt (the prompt is passed to the\n'
-            'vendor CLI over stdin, never in argv; --prompt itself can still leak to ps).'
+            'vendor CLI over stdin, never in argv; --prompt itself can still leak to ps).\n'
+            '\n'
+            'NOTE: --artifact-ref was REMOVED on 2026-07-31. The capture envelope is\n'
+            'bound to the vendor worktree\'s git HEAD SHA, stamped by the capture\n'
+            'instrument and never accepted from the caller (PRINCIPAL v3 line 77).\n'
+            'If git is unavailable the dispatch fails closed rather than falling back\n'
+            'to a caller-supplied value. Passing --artifact-ref is now an error.'
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -4993,8 +4999,12 @@ def main():
     _g = _p.add_mutually_exclusive_group()
     _g.add_argument('--prompt', help='Prompt text (identity-safe: prefer --prompt-file or stdin)')
     _g.add_argument('--prompt-file', help='Read the prompt from this file')
-    _p.add_argument('--artifact-ref', required=True,
-                    help='Commit SHA / PR# / file path to bind the capture envelope to (required)')
+    # --artifact-ref is deliberately ABSENT. PRINCIPAL v3 line 77 requires that
+    # the dispatch schema MUST NOT accept artifact-ref as caller input; the
+    # capture instrument stamps it from the vendor worktree's git-reported SHA.
+    # Declaring it here — even as an ignored argument — would keep the schema
+    # advertising a forgeable binding and would fail a code-shape check.
+    # argparse rejects it as an unrecognized argument; the epilog says why.
     _p.add_argument('--to', default='peer', help='Capture recipient role (default: peer)')
     _p.add_argument('--timeout', type=int, default=300, help='Hard subprocess timeout in seconds (default: 300)')
     _p.add_argument('--budget', type=float, default=0.0, help='Budget ceiling in USD (default: 0.0 = free-tier)')
@@ -7227,7 +7237,7 @@ def handle_dispatch_command(args) -> int:
     code, payload = dispatch_cli(
         args.vendor,
         prompt,
-        getattr(args, 'artifact_ref', None),
+        None,  # artifact_ref is vendor-derived; never sourced from the caller
         to_role=getattr(args, 'to', 'peer'),
         timeout_s=getattr(args, 'timeout', 300),
         budget_usd=getattr(args, 'budget', 0.0),

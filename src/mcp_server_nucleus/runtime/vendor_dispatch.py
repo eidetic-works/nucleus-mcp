@@ -54,17 +54,24 @@ logger = logging.getLogger("nucleus.vendor_dispatch")
 FLAG = "NUCLEUS_CROSS_VENDOR"
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
-# v3 anchor precondition: when ON, artifact_ref is vendor-derived (stamped from
-# the worktree's git HEAD SHA), NOT accepted as caller input. This closes the
-# crit-4 v3 gap: "the dispatch/relay tool schema MUST NOT accept artifact-ref
-# as caller input; the capture instrument stamps it from the vendor worktree's
-# git-reported SHA."
-ARTIFACT_REF_VENDOR_DERIVED_FLAG = "NUCLEUS_ARTIFACT_REF_VENDOR_DERIVED"
-
-
-def _artifact_ref_vendor_derived() -> bool:
-    """True when artifact_ref must be vendor-derived (stamped from worktree SHA)."""
-    return os.environ.get(ARTIFACT_REF_VENDOR_DERIVED_FLAG, "").strip().lower() in _TRUTHY
+# v3 anchor precondition, UNCONDITIONAL as of 2026-07-31. PRINCIPAL v3 line 77:
+#   "the artifact-ref must be VENDOR-DERIVED, checkable in CODE-SHAPE: on the
+#    anchored path the dispatch/relay tool schema MUST NOT accept artifact-ref
+#    as caller input; the capture instrument stamps it from the vendor
+#    worktree's git-reported SHA."
+#
+# This was previously gated on an env var (NUCLEUS_ARTIFACT_REF_VENDOR_DERIVED).
+# A guarantee that depends on a setting being ON is not a code-shape property:
+# it holds only where someone remembered to export it, and silently does not
+# hold in CI, on a fresh clone, or for any caller who never heard of the flag.
+# With the flag off, caller-supplied artifact_ref flowed straight into the
+# envelope that G1 crit-4 treats as PROOF an increment was cross-vendor
+# coordinated — i.e. the causal edge was forgeable by whoever was being
+# measured. The flag has therefore been REMOVED rather than defaulted to on;
+# a default is still configuration, and the rule says code-shape.
+#
+# Do not reintroduce a flag here. If stamping must be bypassed for a test,
+# monkeypatch _read_worktree_head_sha, which fails closed by design.
 
 
 def _read_worktree_head_sha() -> Optional[str]:
@@ -903,30 +910,30 @@ def dispatch_and_capture(
         changed_paths = [p for p in expect_paths if pre.get(p) != post.get(p)]
         effect = "files_touched" if changed_paths else "no_files_touched"
 
-    # v3: when vendor-derived mode is ON, stamp artifact_ref from the
-    # worktree's git HEAD SHA — NOT from caller input. The caller's
-    # artifact_ref is ignored. If git is unavailable, the capture fails
-    # closed (no artifact_ref = no qualifying increment).
-    if _artifact_ref_vendor_derived():
-        stamped_sha = _read_worktree_head_sha()
-        if stamped_sha:
-            artifact_ref = stamped_sha
-            logger.info("artifact_ref vendor-derived: %s", stamped_sha[:12])
-        else:
-            # Fail closed: no git SHA = no qualifying increment
-            out = result.to_dict()
-            out.update({
-                "prompt_digest": _prompt_digest(prompt),
-                "artifact_ref": None,
-                "artifact_ref_source": "vendor_derived_failed",
-                "to": to_role,
-                "mode": canon,
-                "effect": effect,
-                "changed_paths": changed_paths,
-                "capture": {"relay": None, "engram": None,
-                            "error": "worktree_sha_unavailable"},
-            })
-            return out
+    # v3, UNCONDITIONAL: stamp artifact_ref from the worktree's git HEAD SHA —
+    # NEVER from caller input. Any caller-supplied value is discarded here.
+    # If git is unavailable the capture FAILS CLOSED (no artifact_ref = no
+    # qualifying increment); it must never fall back to the caller's value,
+    # because that is precisely the forgeable path PRINCIPAL line 77 forbids.
+    stamped_sha = _read_worktree_head_sha()
+    if stamped_sha:
+        artifact_ref = stamped_sha
+        logger.info("artifact_ref vendor-derived: %s", stamped_sha[:12])
+    else:
+        # Fail closed: no git SHA = no qualifying increment
+        out = result.to_dict()
+        out.update({
+            "prompt_digest": _prompt_digest(prompt),
+            "artifact_ref": None,
+            "artifact_ref_source": "vendor_derived_failed",
+            "to": to_role,
+            "mode": canon,
+            "effect": effect,
+            "changed_paths": changed_paths,
+            "capture": {"relay": None, "engram": None,
+                        "error": "worktree_sha_unavailable"},
+        })
+        return out
 
     digest = _prompt_digest(prompt)
     capture = _capture(spec, result, digest, artifact_ref, to_role,
@@ -938,8 +945,11 @@ def dispatch_and_capture(
         "mode": canon, "effect": effect, "changed_paths": changed_paths,
         "capture": capture,
     })
-    if _artifact_ref_vendor_derived():
-        out["artifact_ref_source"] = "vendor_derived"
+    # Always stamped, so always attributed. The census filters on this value
+    # (cross_repo_census: only artifact_ref_source == "vendor_derived"
+    # qualifies), so emitting it unconditionally is what makes a capture
+    # countable at all.
+    out["artifact_ref_source"] = "vendor_derived"
     return out
 
 
