@@ -229,6 +229,30 @@ def register_session(
             # os.getppid() is the kernel-authenticated live registrant.
             payload["pid"] = os.getppid()
         elif payload["pid"] not in _caller_lineage():
+            # THIRD STATE. `_walk_ppid_ancestry` stops at `ppid <= 1` and never
+            # appends init, so pid 1 can NEVER be in any caller lineage. When a
+            # caller supplies pid 1 it is almost always because os.getppid()
+            # collapsed to init — the registering process was ORPHANED (its
+            # parent exited and the kernel reparented it). That is "lineage
+            # unknowable", not "sender forged", and the two must not be
+            # reported identically.
+            #
+            # Measured 2026-07-31: a full suite launched with `nohup ... &`
+            # outlived its shell, so six tests in test_relay_sender_anchor.py
+            # failed with the forgery message while passing 13/13 in the
+            # foreground. Six bugs were nearly filed against working code
+            # because the harness changed the thing it measured.
+            #
+            # STILL FAILS CLOSED — an unanchorable caller must not be granted
+            # an anchor. Only the diagnosis changes.
+            if payload["pid"] <= 1:
+                raise ValueError(
+                    "identity-anchor: caller is ORPHANED (pid resolved to init/1, "
+                    "so its parent has exited) — process lineage is UNKNOWABLE, "
+                    "not forged. Failing closed. If this came from a test or a "
+                    "batch job, run it under a live parent process rather than "
+                    "detached."
+                )
             raise ValueError(
                 f"identity-anchor: pid {payload['pid']} is not in the registering process lineage"
             )
