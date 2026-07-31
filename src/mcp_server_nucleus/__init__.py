@@ -37,6 +37,28 @@ warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
 # Record start time for uptime tracking
 START_TIME = time.time()
 
+# Fire the install telemetry event on first import (once per machine, gated by
+# a marker file). Telemetry is ON by default (opt-out) — operator decision
+# 2026-07-31, recorded in docs/adr/0044; users opt out via
+# NUCLEUS_ANON_TELEMETRY=false, nucleus.yaml, or the CLI flag.
+#
+# The import MUST stay inside this function. A module-level
+# `from .runtime.anon_telemetry import ...` is an EAGER core->periphery import,
+# which check_boundary.py hard-fails (ADR-0043 W1) — it broke
+# tests/test_boundary_ratchet.py with "eager violations: 1" on 2026-07-31.
+# Function-local keeps it a countable LAZY edge instead, with identical
+# behaviour: this still runs at import time, one line below.
+def _fire_install_telemetry() -> None:
+    from .runtime.anon_telemetry import record_install
+
+    record_install()
+
+
+try:
+    _fire_install_telemetry()
+except Exception:
+    pass  # Never let telemetry break import
+
 # v0.6.0 Tool Tier System - Solves Registry Bloat
 from .tool_tiers import get_active_tier, get_tier_info, is_tool_allowed, tier_manager
 

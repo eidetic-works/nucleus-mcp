@@ -126,8 +126,8 @@ def _get_endpoint() -> str:
 def is_anon_telemetry_enabled() -> bool:
     """Check if anonymous telemetry is enabled.
 
-    Priority: env var > yaml config > default (False — opt-in model per ADR-022
-    default-deny / local-first privacy stance).
+    Priority: env var > yaml config > default (True — opt-out model).
+    Telemetry is ON by default. Users opt out via env var, config, or CLI flag.
     """
     global _config_checked, _enabled_cache
 
@@ -236,7 +236,7 @@ def _get_static_attributes() -> dict:
 def _send_event(event: dict):
     """Send a single telemetry event to the eidetic.works endpoint."""
     endpoint = _get_endpoint()
-    url = f"{endpoint}/api/telemetry/install"
+    url = f"{endpoint}/telemetry"
     body = json.dumps(event).encode("utf-8")
 
     try:
@@ -296,6 +296,46 @@ def _build_event(
 
 
 # ── Public API ───────────────────────────────────────────────────
+
+def record_install():
+    """Record an install event — fires once per install_id on first import.
+
+    This is the earliest telemetry signal: it fires when the package is first
+    imported after `pip install`, which is the closest we can get to the
+    install event itself (pip doesn't run post-install hooks in the modern
+    build system). Gated by a marker file at ~/.config/nucleus/.install_recorded
+    so it only fires once per machine.
+    """
+    if not is_anon_telemetry_enabled():
+        return
+    try:
+        marker = Path.home() / ".config" / "nucleus" / ".install_recorded"
+        if marker.exists():
+            return  # Already recorded for this install_id
+        event = _build_event("install", extra={
+            "install_method": _detect_install_method(),
+        })
+        _send_in_background(event)
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(str(time.time()))
+    except Exception:
+        pass  # Never let telemetry break the user's workflow
+
+
+def _detect_install_method() -> str:
+    """Best-effort detection of how the package was installed."""
+    try:
+        import importlib.metadata as md
+        dist = md.distribution("nucleus-mcp")
+        loc = str(dist.locate_file(""))
+        if "site-packages" in loc:
+            return "pip"
+        if "editable" in loc or "egg-link" in loc:
+            return "editable"
+        return "unknown"
+    except Exception:
+        return "unknown"
+
 
 def record_session_start():
     """Record a session_start event — call once at CLI/MCP startup."""
