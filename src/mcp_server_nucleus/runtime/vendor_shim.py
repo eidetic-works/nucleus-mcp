@@ -426,6 +426,16 @@ def handle_messages(payload: Dict[str, Any]) -> Tuple[int, Any, bool]:
 class _Handler(BaseHTTPRequestHandler):
     server_version = "nucleus-vendor-shim/1.0"
 
+    # Socket read timeout. Without it, `self.rfile.read(n)` blocks FOREVER when a
+    # client sends a Content-Length larger than the bytes it actually transmits —
+    # ThreadingHTTPServer sets no default, so the handler thread leaks and the
+    # connection never closes. Found 2026-08-01 by gemini-3.1-pro-high reviewing
+    # this file THROUGH THIS SHIM, ~30 minutes after it was written.
+    timeout = 30
+
+    # Refuse absurd bodies outright rather than trying to buffer them.
+    MAX_BODY = 64 * 1024 * 1024
+
     def log_message(self, fmt: str, *args: Any) -> None:      # noqa: A003
         logger.debug("http: " + fmt, *args)
 
@@ -464,7 +474,24 @@ class _Handler(BaseHTTPRequestHandler):
 
         try:
             n = int(self.headers.get("Content-Length") or 0)
-            payload = json.loads(self.rfile.read(n) or b"{}")
+            if n < 0 or n > self.MAX_BODY:
+                self._send(413, _err(413, "invalid_request_error",
+                                     f"Content-Length {n} outside 0..{self.MAX_BODY}")[1])
+                return
+            raw = self.rfile.read(n) if n else b"{}"
+            # A short read means the client declared more than it sent. Say so
+            # rather than parsing a truncated body into a plausible-looking
+            # request — the socket timeout above stops the hang, this stops the
+            # silent misparse.
+            if n and len(raw) != n:
+                self._send(400, _err(400, "invalid_request_error",
+                                     f"body truncated: declared {n} bytes, got {len(raw)}")[1])
+                return
+            payload = json.loads(raw or b"{}")
+        except TimeoutError:
+            self._send(408, _err(408, "invalid_request_error",
+                                 "timed out reading request body")[1])
+            return
         except Exception:
             self._send(400, _err(400, "invalid_request_error", "body is not valid JSON")[1])
             return
