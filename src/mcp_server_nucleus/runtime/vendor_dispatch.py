@@ -367,9 +367,22 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         read_flags=("--dangerously-skip-permissions",),
         write_flags=("--dangerously-skip-permissions",),
         default_model="gemini-3.1-pro-high",
+        # Mirrors `agy models` (the authoritative subcommand) as of agy 1.1.1,
+        # 2026-08-01. The 3.6-flash tier was MISSING here while agy offered it,
+        # so callers could not select agy's newest models at all.
+        #
+        # Refresh this tuple from `agy models` — NOT by grepping the agy binary.
+        # Strings are concatenated in the Mach-O ("gemini-3.6-flash-highgemini-"),
+        # so exact-substring grep reports 0 hits for ids that are in fact valid
+        # and wrongly indicts them as dead. That misread happened here once.
+        # NOTE: models[0] MUST stay == default_model — test_vendor_spec_fields_exact
+        # pins that coupling. New ids append after it, they do not reorder it.
         models=(
             "gemini-3.1-pro-high",
             "gemini-3.1-pro-low",
+            "gemini-3.6-flash-high",
+            "gemini-3.6-flash-medium",
+            "gemini-3.6-flash-low",
             "gemini-3.5-flash-high",
             "gemini-3.5-flash-medium",
             "gemini-3.5-flash-low",
