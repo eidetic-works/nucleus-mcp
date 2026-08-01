@@ -749,6 +749,22 @@ class VendorCLIExecutor:
                 out = (out + "\n" + err).strip() if out else err.strip()
             out, nredacted = _redact_secrets(out)   # secret-hygiene backstop
             status = _classify_completed(proc.returncode, out)
+            # NEAR-MISS WARNING. A dispatch that finishes at 290s of a 300s
+            # ceiling is indistinguishable from one that finished at 30s — both
+            # report `ok` — yet the first will DIE the next time the machine is
+            # busy. Measured 2026-08-01: agy ran a real analysis brief in 107.7s
+            # in isolation and timed out at 300s under load, while five
+            # workflows x four lanes competed. The ceiling was never the binding
+            # constraint; contention was, and nothing surfaced how close each
+            # success had been. Emit the ratio so a run can be seen trending
+            # toward the wall before it hits it.
+            if self.timeout_s and duration > 0.6 * self.timeout_s:
+                logger.warning(
+                    "vendor %s/%s NEAR TIMEOUT: %.1fs of %ds ceiling (%.0f%%) — "
+                    "raise NUCLEUS_VENDOR_TIMEOUT_S or reduce concurrency",
+                    self.vendor, self.model, duration, self.timeout_s,
+                    100.0 * duration / self.timeout_s,
+                )
             return VendorResult(
                 self.vendor, self.spec.model, proc.returncode, status, out, duration,
                 model_id=self.model, redacted=nredacted,
