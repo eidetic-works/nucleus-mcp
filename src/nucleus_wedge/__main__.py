@@ -50,6 +50,12 @@ def _build_parser() -> argparse.ArgumentParser:
     recall_p.add_argument("--tags", action="append", default=None, help="Repeatable structured filter on tag substring (e.g. --tags role:main --tags domain:tb-endpoint).")
     recall_p.add_argument("--since", help="ISO-8601 lower bound on created_at, or relative window (Nd/Nh/Nm).")
 
+    remember_p = sub.add_parser("remember", help="Append one engram to .brain/engrams/history.jsonl.")
+    remember_p.add_argument("--content", required=True, help="Engram body (required).")
+    remember_p.add_argument("--kind", default="note", help="Engram kind (default: note).")
+    remember_p.add_argument("--tags", default=None, help="ONE comma-joined string, e.g. 'role:main,domain:tb-endpoint'. NOT repeatable — deliberately unlike recall's --tags, because session_end_activity_digest.sh passes a single joined string.")
+    remember_p.add_argument("--brain-path", help="Explicit .brain path (overrides env + cwd resolution).")
+
     return parser
 
 
@@ -108,6 +114,15 @@ def main(argv: list[str] | None = None) -> int:
             kind=args.kind,
             tags=args.tags,
             since=since_norm,
+        )
+
+    if args.cmd == "remember":
+        from nucleus_wedge.remember_cmd import do_remember
+        return do_remember(
+            content=args.content,
+            kind=args.kind,
+            tags=args.tags,
+            brain_path_arg=args.brain_path,
         )
 
     parser.print_help()
