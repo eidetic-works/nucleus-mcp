@@ -277,6 +277,13 @@ class VendorSpec:
     default_model: str = ""     # selectable model id used when caller omits model
     models: tuple = ()          # allowlist of accepted+advertised selectable ids
     model_flag: str = ""        # CLI flag carrying the model (e.g. "--model"); "" ⇒ none
+    # Hard prompt ceiling in characters, 0 ⇒ unmeasured/unbounded. MEASURED, not
+    # guessed: devin returns rc=-13 (SIGPIPE) at ~4.5s for prompts above ~64KB —
+    # 60,033 chars succeeded, 70,009 died, repeatably. That is a pipe-buffer
+    # limit, and without this guard it surfaces as an opaque "vendor produced no
+    # output" several layers up. agy handled 120,018 chars fine, so the ceiling
+    # is per-vendor rather than universal. Re-measure before raising either.
+    max_prompt_chars: int = 0
 
     @property
     def uses_prompt_file(self) -> bool:
@@ -418,6 +425,7 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         default_model="glm-5.2",
         models=("glm-5.2", "swe-1.7"),
         model_flag="--model",
+        max_prompt_chars=60000,   # measured: SIGPIPE above ~64KB
     ),
     # devin-swe → SWE-1.7 model on devin CLI. Same binary, different model.
     # Free tier alongside glm-5.2. Used for SWE-bench-style coding tasks.
@@ -434,6 +442,7 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         default_model="swe-1.7",
         models=("swe-1.7",),
         model_flag="--model",
+        max_prompt_chars=60000,   # measured: SIGPIPE above ~64KB
     ),
     # claude → Claude Code CLI (host). Single-vendor native-fallback mode for
     # `nucleus build` when the dual-vendor adversarial path (devin+agy) is not
@@ -705,6 +714,22 @@ class VendorCLIExecutor:
                 self.vendor, self.spec.model, None, "not_found",
                 f"vendor CLI {self.spec.binary!r} not found on PATH", 0.0,
                 model_id=self.model,
+            )
+
+        # PROMPT CEILING. Measured 2026-08-01: devin dies with rc=-13 (SIGPIPE)
+        # at ~4.5s for prompts over ~64KB — 60,033 chars ok, 70,009 dead,
+        # repeatably — while agy handled 120,018 fine. Left unguarded this
+        # surfaces several layers up as "vendor produced no output", which reads
+        # like a model failure rather than a size limit and sent me hunting the
+        # wrong thing. Refuse up front and SAY the number.
+        cap = self.spec.max_prompt_chars
+        if cap and len(self.prompt) > cap:
+            return VendorResult(
+                self.vendor, self.spec.model, None, "prompt_too_large",
+                f"prompt is {len(self.prompt):,} chars but {self.vendor} caps at "
+                f"{cap:,} (measured: SIGPIPE above ~64KB). Use a vendor without "
+                f"this ceiling (agy handled 120,018 chars) or shorten the prompt.",
+                0.0, model_id=self.model,
             )
 
         prompt_file: Optional[str] = None

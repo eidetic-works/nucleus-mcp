@@ -4975,6 +4975,44 @@ def main():
     _p.add_argument('--undo', action='store_true', help='Remove quarantine')
 
     # --- DISPATCH COMMAND (cross-vendor CLI one-shot + capture; flag-gated) ---
+    shim_parser = subparsers.add_parser(
+        'vendor-shim',
+        help='🔌 Serve the Anthropic Messages API from the free vendor CLIs (GLM/Gemini)',
+        epilog=(
+            "Runs Claude Code's own harness on a non-Claude model, with NO Claude\n"
+            'wrapper agent in the path.\n'
+            '\n'
+            '  nucleus vendor-shim --port 8787 &\n'
+            '  export ANTHROPIC_BASE_URL=http://127.0.0.1:8787\n'
+            '  export ANTHROPIC_AUTH_TOKEN="$NUCLEUS_VENDOR_SHIM_SECRET"\n'
+            '  export ANTHROPIC_MODEL=nucleus/devin-glm-5.2\n'
+            '  claude -p "review src/foo.py for silent failure paths"\n'
+            '\n'
+            'Per-tier routing (one CC session, mixed models):\n'
+            '  ANTHROPIC_DEFAULT_SONNET_MODEL=nucleus/devin-glm-5.2\n'
+            '  ANTHROPIC_DEFAULT_HAIKU_MODEL=nucleus/agy-gemini-3.1-pro-high\n'
+            '\n'
+            'Env:\n'
+            '  NUCLEUS_VENDOR_SHIM_SECRET     shared secret; unset = no auth (local only)\n'
+            '  NUCLEUS_VENDOR_SHIM_MODE       read|write for the vendor CLI (default read)\n'
+            '  NUCLEUS_VENDOR_SHIM_TIMEOUT_S  per-call ceiling (default 1800)\n'
+            '\n'
+            'SUPPORTED: text stages at full fidelity (the vendor is itself an agent and\n'
+            'uses its OWN tools), and schema stages — vendor JSON is synthesised into a\n'
+            'real tool_use block, so agent(..., {schema}) works.\n'
+            'NOT SUPPORTED: a Claude-Code-orchestrated multi-turn tool loop. CC cannot\n'
+            "drive Read/Grep/Bash on this backend under its own permission layer. A stage\n"
+            'needing CC tools must stay on a Claude model.\n'
+            '\n'
+            'Fails CLOSED: a vendor failure returns 502 and NEVER falls back to Anthropic.\n'
+            'A fallback would return a real answer from a model you did not ask for.'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    shim_parser.add_argument('--port', type=int, default=8787, help='listen port (default 8787)')
+    shim_parser.add_argument('--host', default='127.0.0.1', help='bind host (default 127.0.0.1)')
+    shim_parser.add_argument('--verbose', action='store_true', help='debug logging')
+
     dispatch_parser = subparsers.add_parser(
         'dispatch',
         help='🚀 Dispatch a one-shot cross-vendor CLI call (agy/devin) and capture the envelope',
@@ -5974,6 +6012,17 @@ def main():
 
         elif cli_command == 'engram':
             sys.exit(handle_engram_command(args))
+        elif cli_command == 'vendor-shim':
+            # Lazy import: starting an HTTP server must not be a cost paid by
+            # every other CLI verb, and this keeps the core->periphery edge lazy
+            # per ADR-0043 W1 (check_boundary.py hard-fails on an eager one).
+            from .runtime.vendor_shim import serve as _shim_serve
+            import logging as _logging
+            _logging.basicConfig(
+                level=_logging.DEBUG if getattr(args, 'verbose', False) else _logging.INFO,
+                format='%(asctime)s %(levelname)s %(message)s',
+            )
+            sys.exit(_shim_serve(port=args.port, host=args.host) or 0)
         elif cli_command == 'dispatch':
             sys.exit(handle_dispatch_command(args))
         elif cli_command == 'lane':
