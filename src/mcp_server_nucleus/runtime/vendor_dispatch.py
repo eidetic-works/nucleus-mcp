@@ -74,20 +74,27 @@ _TRUTHY = frozenset({"1", "true", "yes", "on"})
 # monkeypatch _read_worktree_head_sha, which fails closed by design.
 
 
-def _read_worktree_head_sha() -> Optional[str]:
-    """Read the current HEAD commit SHA from the worktree.
+def _read_worktree_head_sha(cwd: Optional[str] = None) -> Optional[str]:
+    """Read the HEAD commit SHA of the worktree the vendor runs in.
 
     Returns the 40-char SHA, or None if git is unavailable or not a git repo.
-    This is the vendor-derived artifact_ref: after the vendor runs, the
-    worktree's HEAD is the increment the vendor produced (or the base commit
-    if the vendor didn't commit — which correctly yields no qualifying
-    increment per crit-4 (d)).
+
+    IMPORTANT — this alone is NOT a vendor-derived ref. It reports whatever
+    HEAD is in *cwd*, and the vendor subprocess inherits this same cwd, so the
+    dispatching caller controls the value by choosing a directory. The earlier
+    docstring claimed the base commit "correctly yields no qualifying increment
+    per crit-4 (d)" and deferred the whole safety argument to a predicate that
+    is not enforced here. It isn't, and wasn't.
+
+    What makes a ref vendor-derived is the BEFORE/AFTER comparison in
+    :func:`dispatch_and_capture`: the SHA qualifies only if HEAD *moved* while
+    the vendor ran. See the rationale block there.
     """
     import subprocess
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, timeout=5, cwd=cwd,
         )
         if result.returncode == 0:
             sha = result.stdout.strip()
@@ -913,6 +920,7 @@ def dispatch_and_capture(
     canon = normalize_mode(mode)
 
     pre = _snapshot_paths(expect_paths)              # {} when None ⇒ ZERO fs work
+    pre_sha = _read_worktree_head_sha()              # BEFORE — see stamping block
     result = VendorCLIExecutor(
         vendor, prompt, timeout_s=timeout_s, budget_usd=budget_usd,
         model=model, mode=canon,
@@ -928,10 +936,60 @@ def dispatch_and_capture(
     # If git is unavailable the capture FAILS CLOSED (no artifact_ref = no
     # qualifying increment); it must never fall back to the caller's value,
     # because that is precisely the forgeable path PRINCIPAL line 77 forbids.
-    stamped_sha = _read_worktree_head_sha()
+    #
+    # v3.1 (2026-08-01) — CLOSES THE cd-CHOSEN-SHA HOLE.
+    #
+    # Removing `--artifact-ref` closed the path where a caller TYPES the SHA.
+    # It did not close the path where a caller CHOOSES it: this stamp read
+    # ambient HEAD in the dispatching process's cwd, and the vendor subprocess
+    # inherits that same cwd, so `cd <any repo>` selected the value. Every
+    # read-only dispatch stamped that repo's HEAD and scored as a qualifying
+    # increment. Cheapest attack on crit-3, needing no commit, no edit and no
+    # repo-mint: cd into an `outside`-labelled repo and loop 25 free dispatches.
+    #
+    # PRINCIPAL v3 line 77 requires the ref be stamped "from the vendor
+    # worktree's git-reported SHA" — i.e. it must name an increment the VENDOR
+    # produced. Ambient HEAD names whatever was already there. So:
+    #
+    #   qualifying  <=>  mode is write  AND  HEAD MOVED while the vendor ran
+    #
+    # A read-mode dispatch produces no increment by definition. A write-mode
+    # dispatch that commits nothing leaves HEAD where it was. Neither can mint
+    # a causal edge any more. This is a bug fix, not an amendment: it makes the
+    # instrument do what the criterion already says, and it can only ever STOP
+    # counting envelopes that never qualified — it cannot make a
+    # previously-non-qualifying envelope qualify.
+    #
+    # Non-qualifying dispatches STILL CAPTURE — relay and engram are
+    # observability, and agents depend on the vendor's output being relayed.
+    # Only the SOURCE LABEL changes, and the census counts solely on that
+    # (`_is_vendor_derived_artifact_ref`). Suppressing capture instead was the
+    # first cut here and it broke 9 tests by silently dropping the relay for
+    # every read-mode dispatch — the common case. Labelling closes the hole;
+    # silence would have closed the pathway.
+    post_sha = _read_worktree_head_sha()
+    head_moved = bool(post_sha and pre_sha and post_sha != pre_sha)
+    qualifies = bool(post_sha) and canon == "write" and head_moved
+    nonqualifying_reason = (
+        None if qualifies
+        else "read_mode_no_increment" if canon != "write"
+        else "head_unchanged"
+    )
+
+    stamped_sha = post_sha
     if stamped_sha:
         artifact_ref = stamped_sha
-        logger.info("artifact_ref vendor-derived: %s", stamped_sha[:12])
+        if qualifies:
+            logger.info(
+                "artifact_ref vendor-derived: %s (head moved %s..%s)",
+                stamped_sha[:12], (pre_sha or "?")[:12], stamped_sha[:12],
+            )
+        else:
+            logger.info(
+                "artifact_ref NON-qualifying (%s): head %s..%s mode=%s",
+                nonqualifying_reason, (pre_sha or "?")[:12],
+                stamped_sha[:12], canon,
+            )
     else:
         # Fail closed: no git SHA = no qualifying increment
         out = result.to_dict()
@@ -958,11 +1016,22 @@ def dispatch_and_capture(
         "mode": canon, "effect": effect, "changed_paths": changed_paths,
         "capture": capture,
     })
-    # Always stamped, so always attributed. The census filters on this value
-    # (cross_repo_census: only artifact_ref_source == "vendor_derived"
-    # qualifies), so emitting it unconditionally is what makes a capture
-    # countable at all.
-    out["artifact_ref_source"] = "vendor_derived"
+    # The census filters on this value (cross_repo_census:
+    # _is_vendor_derived_artifact_ref — only "vendor_derived" qualifies), so it
+    # is the single field that decides whether a capture is COUNTABLE.
+    #
+    # It is NOT unconditional. "vendor_derived" is claimed only when HEAD moved
+    # during a write-mode dispatch — i.e. the vendor actually produced the
+    # increment the ref names. Everything else is stamped, relayed and captured
+    # exactly as before, but under "no_vendor_increment" with the reason
+    # recorded, so it is visible and uncountable rather than invisible.
+    out["artifact_ref_source"] = (
+        "vendor_derived" if qualifies else "no_vendor_increment"
+    )
+    if not qualifies:
+        out["artifact_ref_nonqualifying_reason"] = nonqualifying_reason
+    out["head_before"] = pre_sha
+    out["head_after"] = post_sha
     return out
 
 
