@@ -142,8 +142,28 @@ def _is_vendor_derived_artifact_ref(envelope: Dict[str, Any]) -> bool:
     code-shape — NOT caller input). ``vendor_derived`` qualifies;
     ``caller_input`` and ``absent`` do NOT.
     """
-    src = envelope.get("artifact_ref_source")
-    return src == ARTIFACT_REF_VENDOR_DERIVED
+    # Read the BODY first, then fall back to top level.
+    #
+    # This function used to read ONLY `envelope.get("artifact_ref_source")` —
+    # i.e. the top level — while every field the capture writes lives inside the
+    # JSON-string `body`, exactly as _envelope_artifact_refs already handles.
+    # Combined with the capture never emitting the field at all (fixed the same
+    # day), that made this predicate return False for EVERY envelope ever
+    # written: 1,021 on disk, zero qualifying. Not gameable — dead. The gate
+    # could not pass regardless of how much genuine cross-vendor work happened,
+    # and the zero had been misread as "not enough real usage yet".
+    #
+    # Top-level is retained as a fallback so any externally-shaped or
+    # pre-parsed snapshot that does carry it at the root still counts.
+    body = envelope.get("body")
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except (ValueError, TypeError):
+            body = None
+    if isinstance(body, dict) and "artifact_ref_source" in body:
+        return body.get("artifact_ref_source") == ARTIFACT_REF_VENDOR_DERIVED
+    return envelope.get("artifact_ref_source") == ARTIFACT_REF_VENDOR_DERIVED
 
 
 def _envelope_artifact_refs(envelope: Dict[str, Any]) -> List[str]:

@@ -845,6 +845,7 @@ def _capture(
     *,
     force_fs: bool,
     effect: str = "unknown",
+    artifact_ref_source: str = "no_vendor_increment",
 ) -> Dict[str, Any]:
     """Write the relay capture envelope + a vendor-tagged engram.
 
@@ -872,6 +873,16 @@ def _capture(
             "effect": effect,
             "duration": round(result.duration, 3),
             "artifact_refs": [artifact_ref],
+            # THE FIELD THE CENSUS COUNTS ON. Absent until 2026-08-02, and its
+            # absence made G1 crit-3/crit-4 structurally unpassable: the census
+            # requires artifact_ref_source == "vendor_derived" to count an
+            # envelope as a causal edge, and no capture had ever written it.
+            # Measured before the fix: 1,021 cross_vendor envelopes on disk,
+            # ZERO qualifying — not gameable, DEAD. The zero had been read as
+            # "not enough real cross-vendor work yet"; it was structural.
+            # A criterion whose instrument cannot emit a passing value is the
+            # required-check-that-cannot-report pattern, at the governance layer.
+            "artifact_ref_source": artifact_ref_source,
         },
         ensure_ascii=False,
     )
@@ -1049,7 +1060,9 @@ def dispatch_and_capture(
 
     digest = _prompt_digest(prompt)
     capture = _capture(spec, result, digest, artifact_ref, to_role,
-                       force_fs=force_fs, effect=effect)
+                       force_fs=force_fs, effect=effect,
+                       artifact_ref_source=(
+                           "vendor_derived" if qualifies else "no_vendor_increment"))
 
     out = result.to_dict()
     out.update({
