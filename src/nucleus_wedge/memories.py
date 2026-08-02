@@ -355,7 +355,19 @@ def recall_activity_health(
     recent activity engram timestamp and bucket into:
       - fresh        (<24h)
       - stale        (24-168h / 1-7d)
-      - silent-fail  (>168h / 7d)
+      - silent-fail  (wrote before, then stopped for >168h / 7d)
+      - never-ran    (no digest has EVER been written for this role)
+      - unparseable  (a timestamp exists but cannot be read)
+
+    ``never-ran`` is not a failure. A role reports it because no session has
+    ever run under it — `devin`, `codex`, `agy` have never written a digest,
+    and calling that "silent-fail" made 7 of 8 roles alarm on every audit.
+    An alarm that is almost always firing is one nobody reads, which is the
+    exact failure mode this tool exists to catch. Only a role that HAS
+    written and then went quiet is a fault; that distinction is the whole
+    signal. `unparseable` is likewise split out rather than coerced to a
+    fault: an unreadable timestamp is a bug in the writer, not silence in
+    the role, and the two need different fixes.
     """
     from nucleus_wedge.role_normalize import canonical_roles
     from nucleus_wedge.recall_cmd import _ensure_populated
@@ -380,7 +392,7 @@ def recall_activity_health(
                     "role": r,
                     "last_digest_at": None,
                     "age_hours": None,
-                    "status": "silent-fail",
+                    "status": "never-ran",
                 })
                 continue
             try:
@@ -391,7 +403,7 @@ def recall_activity_health(
             except ValueError:
                 age_h = None
             if age_h is None:
-                status = "silent-fail"
+                status = "unparseable"
             elif age_h < 24:
                 status = "fresh"
             elif age_h < 168:

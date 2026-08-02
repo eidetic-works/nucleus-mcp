@@ -7,7 +7,8 @@ ADR-0033 v3 additions:
     while preserving full backward compat with ``recall(query='X')`` calls.
   - ``recall_activity(role, domain, since, limit)`` thin wrapper over the
     structured query path.
-  - ``recall_activity_health(role)`` audit tool: fresh / stale / silent-fail.
+  - ``recall_activity_health(role)`` audit tool: fresh / stale / silent-fail
+    / never-ran / unparseable.
 """
 from __future__ import annotations
 
@@ -133,7 +134,9 @@ def build_server() -> FastMCP:
 
         Returns:
             ``{roles: [{role, last_digest_at, age_hours, status}]}``
-            status ∈ {``fresh`` (<24h), ``stale`` (24-168h), ``silent-fail`` (>168h or never)}.
+            status ∈ {``fresh`` (<24h), ``stale`` (24-168h), ``silent-fail``
+            (wrote, then quiet >168h), ``never-ran`` (no digest ever — not a
+            fault), ``unparseable`` (timestamp unreadable — a writer bug)}.
         """
         from nucleus_wedge.memories import recall_activity_health as _health
         return _health(role=role)
