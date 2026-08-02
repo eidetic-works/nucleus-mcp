@@ -846,7 +846,58 @@ class Reasoner(ABC):
         ...
 
 
-_SHA_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
+# A hex token only becomes a git anchor when the text actually claims it IS a
+# commit. `\b[0-9a-f]{7,40}\b` alone matched session UUIDs, unix timestamps and
+# content hashes, and every one produced a CRITICAL commit_exists anchor that
+# git could not satisfy — so the claim came back REFUTED. Measured on 150 real
+# turns: 65% REFUTED, all of them false. REFUTED has to mean "someone asserted
+# X and X is false", never "I found a hex string and it wasn't a commit".
+#
+# Under-anchoring is safe: an unanchored claim falls through to the
+# `manual-review` anchor and surfaces as UNVERIFIABLE, which is the honest
+# answer. A false REFUTED is not safe — it asserts the opposite of the truth.
+# `#` is in the lookbehind because `#1a2b3c4` is a CSS colour or an issue
+# number, never a commit — and "pushed the new CSS, background #1a2b3c4" would
+# otherwise sail past the cue gate and be refuted. Uppercase is accepted (git
+# resolves `A1B2C3D` fine) and normalised before probing.
+_SHA_RE = re.compile(r"(?<![0-9a-zA-Z#-])([0-9a-fA-F]{7,40})(?![0-9a-zA-Z-])")
+
+# Cue words that mark a hex token as a commit reference. Deliberately narrow:
+# `main`, `origin` and `branch` are NOT here — they appear constantly in prose
+# about repos with no commit being claimed, and every spurious cue costs a
+# false refutation.
+_SHA_CUE_RE = re.compile(
+    r"\b(?:commits?|sha1?|shas|revs?|revisions?|HEAD|merged?|cherry-?pick(?:ed)?|"
+    r"git|ancestor|rebase[ds]?|reverted?|landed|pushed)\b",
+    re.IGNORECASE,
+)
+# The `a1b2c3d..e4f5a6b` range form is its own cue. A bare `..` is NOT: it
+# matches an ellipsis ("wait.. what about 1a2b3c4?") and a relative path
+# ("../backup/1a2b3c4"), both of which produced false refutations.
+_SHA_RANGE_RE = re.compile(r"[0-9a-fA-F]{7,40}\.{2,3}[0-9a-fA-F]{7,40}")
+
+_SHA_CUE_WINDOW = 48
+# An all-digit token is a timestamp or a ticket far more often than a short
+# SHA, so it needs its cue close by rather than anywhere in the window.
+_SHA_DIGIT_CUE_WINDOW = 20
+
+
+def _cue_near(text: str, start: int, end: int, window: int) -> bool:
+    """Is a commit cue within `window` chars of [start:end)?
+
+    The window is snapped OUTWARD to whitespace. Slicing at a raw offset cuts
+    through words, and a chopped cue fails its own `\\b` — so
+    "cherry-picked the fix for the UI bug that was in a1b2c3d" lost its anchor
+    because the slice began mid-word at "herry-picked".
+    """
+    lo, hi = max(0, start - window), min(len(text), end + window)
+    while lo > 0 and not text[lo - 1].isspace():
+        lo -= 1
+    while hi < len(text) and not text[hi].isspace():
+        hi += 1
+    span = text[lo:hi]
+    return bool(_SHA_CUE_RE.search(span) or _SHA_RANGE_RE.search(span))
+
 _URL_RE = re.compile(r"https?://[^\s'\"<>()\[\]]+")
 
 
@@ -889,7 +940,15 @@ class RuleReasoner(Reasoner):
 
         seen_shas = set()
         for match in _SHA_RE.finditer(text_without_urls):
-            sha = match.group(0)
+            sha = match.group(1).lower()
+            # The token has to be claimed AS a commit by nearby text. An
+            # all-digit run is a timestamp or a ticket far more often than a
+            # short SHA (`mission-1784956382` was refuted as a missing commit),
+            # so it must earn its anchor with a much closer cue rather than
+            # being rejected outright — `git commit 1234567` is still real.
+            window = _SHA_DIGIT_CUE_WINDOW if sha.isdigit() else _SHA_CUE_WINDOW
+            if not _cue_near(text_without_urls, match.start(), match.end(), window):
+                continue
             if sha in seen_shas:
                 continue
             seen_shas.add(sha)
