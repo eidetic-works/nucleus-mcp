@@ -858,8 +858,16 @@ def run_census(
 
     fail_closed_reasons: List[str] = []
     if not anchor_regime_ok:
+        # NAME the component that failed. This message used to say
+        # "(relay_sender_anchor or engram_anchor OFF)" and omit the third
+        # requirement entirely — so when artifact_ref_vendor_derived was the
+        # failing one (which, until 2026-08-02, it ALWAYS was), the diagnostic
+        # pointed at two flags that were fine. A gate that misnames its own
+        # failure sends every reader to the wrong place.
+        _off = [k for k in ("relay_sender_anchor", "engram_anchor",
+                            "artifact_ref_vendor_derived") if not regime.get(k)]
         fail_closed_reasons.append(
-            "anchor regime not satisfied (relay_sender_anchor or engram_anchor OFF)"
+            f"anchor regime not satisfied (OFF: {', '.join(_off) or 'unknown'})"
         )
     if not stringency["stringent"]:
         fail_closed_reasons.append(f"degenerate thresholds: {stringency['fails']}")
@@ -1023,6 +1031,23 @@ def _cmd_capture(args: argparse.Namespace) -> int:
         anchor_regime={
             "relay_sender_anchor": os.environ.get("NUCLEUS_RELAY_SENDER_ANCHOR", "").strip().lower() in {"1", "true", "on", "yes"},
             "engram_anchor": os.environ.get("NUCLEUS_ENGRAM_ANCHOR", "").strip().lower() in {"1", "true", "on", "yes"},
+            # CODE-SHAPE, not configuration — so it is asserted here, not read
+            # from an env var. `NUCLEUS_ARTIFACT_REF_VENDOR_DERIVED` was REMOVED
+            # on 2026-07-31 precisely because a guarantee that depends on a
+            # setting being ON is not a code-shape property: the dispatch tool
+            # schema no longer accepts artifact-ref as caller input at all, and
+            # the capture instrument always stamps it.
+            #
+            # But this dict was left reading only the two env flags, so
+            # capture_snapshot wrote artifact_ref_vendor_derived=false into every
+            # manifest, run_census (line ~765) requires it, and EVERY
+            # CLI-captured snapshot was rejected fail-closed — regardless of the
+            # environment, because nothing could turn on a flag that no longer
+            # exists. Removing the flag to make the guarantee unconditional
+            # silently made the census permanently unpassable. Found 2026-08-02
+            # by gemini-3.1-pro-high via the ambient review hook, on this file,
+            # minutes after it was edited.
+            "artifact_ref_vendor_derived": True,
         },
     )
     print(json.dumps(manifest, indent=2, default=str))
