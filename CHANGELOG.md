@@ -5,6 +5,25 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.1] - 2026-08-01 — "Telemetry pipeline fix + install event"
+
+### Fixed
+- **Anonymous telemetry endpoint** — sender was posting to `/api/telemetry/install`
+  (a Pages Function that returned 200 but didn't store anything). Now posts to
+  `/telemetry` (the Cloudflare Worker backed by Upstash Redis). External installs
+  will now phone home correctly.
+- **Telemetry default** — docstring said "opt-in (default False)" but code
+  defaulted to True. Fixed docstring to match reality: opt-OUT, default ON.
+
+### Added
+- **`record_install()` event** — fires once per machine on first import after
+  `pip install`. Gated by marker file at `~/.config/nucleus/.install_recorded`.
+  Captures: install_id, nucleus version, python version, OS, install method.
+  This is the earliest telemetry signal — closes the gap between "pip install"
+  and "first command run".
+- **Install event wired into `__init__.py`** — fires automatically on first
+  import. No user action required. Respects opt-out (env var, config, CLI flag).
+
 ## [1.16.0] - 2026-07-21 — "Plan review loop + Agent LEGO discipline"
 
 ### Added
