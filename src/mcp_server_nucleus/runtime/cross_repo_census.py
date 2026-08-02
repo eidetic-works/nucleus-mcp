@@ -229,6 +229,63 @@ def _read_classification(brain_path: Path) -> Dict[str, Any]:
     return {"repos": {}, "taxonomy_version": 0}
 
 
+# Where the RATIFIED classification hash lives. This must be a TRACKED path —
+# the point is that changing the classification requires a commit someone can
+# see in a diff, which is what "tamper-evident" means.
+CLASSIFICATION_COMMITMENT = Path("docs") / "census" / "classification_hash.txt"
+
+
+def verify_classification(
+    classification: Dict[str, Any], brain_path: Path
+) -> Dict[str, Any]:
+    """Compare the on-disk classification against a COMMITTED hash.
+
+    ``_read_classification`` reads ``classification.json`` from the live
+    worktree and uses it verbatim, and ``capture_snapshot`` then recorded
+    ``classification_hash = _hash_json(classification)`` — a hash **of the thing
+    it had just read**. That is a checksum of whatever you were handed, not a
+    check that you were handed the right thing: edit the file and the manifest
+    hash matches the edit perfectly. The docstring nonetheless described it as
+    "versioned, hash-committed ... tamper-evident relabel" (PRINCIPAL.md:79,
+    G0 item 3), so the false assurance was load-bearing.
+
+    ``relabel`` and ``repo-mint`` are both named in the G0 crit-5 anti-gaming
+    corpus as attacks that must be PROVABLY unable to move the gated PASS.
+    Neither was prevented: ``.brain/*`` is gitignored, so no committed copy of
+    the classification exists to compare against, and ``_detect_spine_repos``
+    admits any sibling directory containing a ``.brain/``. ``mkdir
+    ../fake_repo/.brain`` plus one classification entry minted an "outside"
+    spine unit.
+
+    Returns ``{status, expected, actual, commitment_path}`` where status is:
+      ``verified``     — committed hash exists and matches
+      ``tampered``     — committed hash exists and does NOT match
+      ``uncommitted``  — no committed hash exists to compare against
+
+    Only ``verified`` may be treated as tamper-evident. Both other states are
+    fail-closed conditions for gating; they are NOT a free pass, and they are
+    NOT silence.
+
+    Found 2026-08-02 by gemini-3.1-pro-high through the vendor shim.
+    """
+    actual = _hash_json(classification)
+    repo_root = brain_path.parent
+    commitment = repo_root / CLASSIFICATION_COMMITMENT
+    if not commitment.is_file():
+        return {"status": "uncommitted", "expected": None, "actual": actual,
+                "commitment_path": str(CLASSIFICATION_COMMITMENT)}
+    try:
+        expected = commitment.read_text(encoding="utf-8").strip().split()[0]
+    except Exception:
+        expected = ""
+    return {
+        "status": "verified" if expected and expected == actual else "tampered",
+        "expected": expected or None,
+        "actual": actual,
+        "commitment_path": str(CLASSIFICATION_COMMITMENT),
+    }
+
+
 def _detect_spine_repos(brain_path: Path) -> Dict[str, Dict[str, Any]]:
     """Detect repos on the spine (nucleus-initialized, have a ``.brain``).
 
@@ -320,6 +377,10 @@ def capture_snapshot(
         encoding="utf-8",
     )
     classification_hash = _hash_json(classification)
+    # A hash of what we just read proves nothing about WHERE it came from.
+    # Record the verification result alongside it so a reader can tell a
+    # ratified classification from an edited one. See verify_classification.
+    classification_verification = verify_classification(classification, brain_path)
 
     # 3. Spine repo registry + partition labels.
     spine_repos = _detect_spine_repos(brain_path)
@@ -375,6 +436,7 @@ def capture_snapshot(
         "principal_source_tag": PRINCIPAL_SOURCE_TAG,
         "anchor_regime": regime,
         "classification_hash": classification_hash,
+        "classification_verification": classification_verification,
         "snapshot_content_hash": content_hash,
         "relay_envelope_count": relay_count,
         "repo_count": len(repos_registry),
@@ -891,12 +953,29 @@ def run_census(
     )
     criterion_ii_pass = outside_count >= absolute_floor
 
-    preconditions_ok = anchor_regime_ok and stringency["stringent"]
+    # A classification that is not provably the ratified one cannot support a
+    # PASS. `relabel` is named in the G0 crit-5 anti-gaming corpus, and the
+    # partition label is what decides `outside` vs `substrate` for every unit —
+    # so an unverified classification means the whole numerator is unattested.
+    # `uncommitted` fails closed exactly like `tampered`: the absence of a
+    # commitment is not evidence of integrity, it is the absence of evidence.
+    _clsv = (manifest.get("classification_verification") or {}) if isinstance(manifest, dict) else {}
+    classification_verified = _clsv.get("status") == "verified"
+
+    preconditions_ok = (
+        anchor_regime_ok and stringency["stringent"] and classification_verified
+    )
     crit4_pass = bool(
         preconditions_ok and criterion_i_pass and criterion_ii_pass
     )
 
     fail_closed_reasons: List[str] = []
+    if not classification_verified:
+        fail_closed_reasons.append(
+            f"classification not verified (status={_clsv.get('status', 'absent')!r}; "
+            f"commit its hash to {_clsv.get('commitment_path', CLASSIFICATION_COMMITMENT)} "
+            f"to make relabels tamper-evident)"
+        )
     if not anchor_regime_ok:
         # NAME the component that failed. This message used to say
         # "(relay_sender_anchor or engram_anchor OFF)" and omit the third
