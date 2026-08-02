@@ -813,7 +813,29 @@ def run_census(
                 repo_c_pass = True
             if d_pass:
                 repo_d_pass = True
-        bcd_pass = bool(b["b_pass"] and repo_c_pass and repo_d_pass)
+        # (c) AND (d) must hold on the SAME increment, not on any two.
+        #
+        # This used to be `b_pass and repo_c_pass and repo_d_pass`, where the two
+        # repo-level flags are set independently while walking increments. That
+        # let increment A satisfy (c) and a DIFFERENT increment B satisfy (d),
+        # and the repo counted as a qualifying unit although no single increment
+        # satisfied both. PRINCIPAL crit-4(c) is explicit — "there exists an
+        # increment (see (d)) bound to >=K cross-vendor relay envelopes" — the
+        # coordinated increment must BE the non-trivial one.
+        #
+        # The permissive form pairs a trivial-but-coordinated commit with a
+        # substantial-but-uncoordinated one: coordination-theater plus
+        # commit-churn, two attacks the G0 crit-5 anti-gaming corpus is required
+        # to make unable to move the gated PASS. The correct per-increment
+        # conjunction was ALREADY computed above as `cd_pass` and simply not
+        # used by the gate.
+        #
+        # Found 2026-08-02 by gemini-3.1-pro-high via the ambient review hook.
+        # Unlike the two instrument failures fixed the same day (which made the
+        # gate unpassable), this one made it too PERMISSIVE — a soundness hole,
+        # not a liveness one.
+        repo_cd_pass = any(v["cd_pass"] for v in inc_verdicts)
+        bcd_pass = bool(b["b_pass"] and repo_cd_pass)
         per_repo[repo_id] = {
             "a_partition": a,
             "b_spine": b,
