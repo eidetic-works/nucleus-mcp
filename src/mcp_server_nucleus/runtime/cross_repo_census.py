@@ -610,13 +610,31 @@ def _predicate_c(
     min_two_vendors = distinct_vendor_count >= 2
     meets_K = K_bound >= K
 
-    # Anti-dominance: no single vendor surface supplies > X% of the K bound.
+    # Anti-dominance: no single GENUINE vendor surface supplies > X% of the
+    # GENUINE bound envelopes.
+    #
+    # The denominator must exclude exactly what the numerator loop excludes.
+    # It used to be `n / K_bound`, where K_bound counts ALL qualifying envelopes
+    # including test_fixture/unknown/mixed — the very surfaces the loop skips.
+    # Numerator and denominator over different domains means padding with
+    # non-genuine envelopes deflates every real vendor's share:
+    #
+    #   5 vendor_A + 1 vendor_B + 4 unknown  ->  A holds 5/6 = 83% of genuine
+    #   traffic, but 5/10 = 50% computed, so it passes an X=0.60 cap.
+    #
+    # single-vendor-dominance is named explicitly in the G0 crit-5 anti-gaming
+    # corpus as an attack that must be provably unable to move the gated PASS.
+    # It could. Found 2026-08-02 by gemini-3.1-pro-high through the vendor shim.
+    genuine_bound = sum(
+        n for s, n in surfaces.items()
+        if s not in ("test_fixture", "unknown", "mixed")
+    )
     dominance_violation: Optional[str] = None
-    if K_bound > 0:
+    if genuine_bound > 0:
         for s, n in surfaces.items():
             if s in ("test_fixture", "unknown", "mixed"):
                 continue
-            share = n / K_bound
+            share = n / genuine_bound
             if share > X:
                 dominance_violation = s
                 break
