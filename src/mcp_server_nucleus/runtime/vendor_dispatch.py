@@ -812,6 +812,16 @@ class VendorCLIExecutor:
             err = _as_text(proc.stderr)
             if proc.returncode != 0 and err:
                 out = (out + "\n" + err).strip() if out else err.strip()
+            # SURFACE STDERR ON EMPTY STDOUT (2026-08-04, flywheel #92).
+            # When rc=0 but stdout is blank, the vendor silently failed (rate
+            # limit, OAuth expiry, internal error swallowed). The old code
+            # classified this as "empty_output" and discarded stderr — so the
+            # error message several layers up was the unhelpful "vendor did not
+            # produce output" with no clue WHY. Including stderr in the output
+            # for empty-stdout runs makes the error visible without changing
+            # the status classification (still "empty_output", still a failure).
+            if proc.returncode == 0 and not out.strip() and err.strip():
+                out = err.strip()
             out, nredacted = _redact_secrets(out)   # secret-hygiene backstop
             status = _classify_completed(proc.returncode, out)
             # NEAR-MISS WARNING. A dispatch that finishes at 290s of a 300s

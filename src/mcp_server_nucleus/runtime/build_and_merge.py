@@ -83,12 +83,8 @@ def _create_branch(branch_name: str) -> bool:
         subprocess.run(["git", "checkout", "-b", branch_name], check=True,
                        capture_output=True, text=True)
         return True
-    except (subprocess.CalledProcessError, OSError) as exc:
-        # CalledProcessError = git exited non-zero (stderr on exc).
-        # OSError (incl. FileNotFoundError) = git binary not installed / not
-        # executable. Both are graceful failures, not crashes.
-        detail = getattr(exc, "stderr", str(exc))
-        print(f"[build_and_merge] git checkout -b failed: {detail}", file=sys.stderr)
+    except subprocess.CalledProcessError as exc:
+        print(f"[build_and_merge] git checkout -b failed: {exc.stderr}", file=sys.stderr)
         return False
 
 
@@ -103,9 +99,8 @@ def _commit_changed_files(changed_files: List[str], message: str) -> bool:
         subprocess.run(["git", "commit", "-m", message], check=True,
                        capture_output=True, text=True)
         return True
-    except (subprocess.CalledProcessError, OSError) as exc:
-        detail = getattr(exc, "stderr", str(exc))
-        print(f"[build_and_merge] git commit failed: {detail}", file=sys.stderr)
+    except subprocess.CalledProcessError as exc:
+        print(f"[build_and_merge] git commit failed: {exc.stderr}", file=sys.stderr)
         return False
 
 
@@ -115,9 +110,8 @@ def _push_branch(branch_name: str) -> bool:
         subprocess.run(["git", "push", "-u", "origin", branch_name], check=True,
                        capture_output=True, text=True)
         return True
-    except (subprocess.CalledProcessError, OSError) as exc:
-        detail = getattr(exc, "stderr", str(exc))
-        print(f"[build_and_merge] git push failed: {detail}", file=sys.stderr)
+    except subprocess.CalledProcessError as exc:
+        print(f"[build_and_merge] git push failed: {exc.stderr}", file=sys.stderr)
         return False
 
 
@@ -130,12 +124,8 @@ def _create_pr(branch_name: str, title: str, body: str, base: str) -> Optional[i
              "--title", title, "--body", body],
             check=True, capture_output=True, text=True,
         )
-    except (subprocess.CalledProcessError, OSError) as exc:
-        # CalledProcessError = gh exited non-zero (stderr on exc).
-        # OSError (incl. FileNotFoundError) = gh binary not installed / not
-        # executable. Both are graceful failures, not crashes.
-        detail = getattr(exc, "stderr", str(exc))
-        print(f"[build_and_merge] gh pr create failed: {detail}", file=sys.stderr)
+    except subprocess.CalledProcessError as exc:
+        print(f"[build_and_merge] gh pr create failed: {exc.stderr}", file=sys.stderr)
         return None
     # gh pr create prints the PR URL to stdout, e.g.:
     #   https://github.com/owner/repo/pull/42

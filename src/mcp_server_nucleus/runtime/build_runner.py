@@ -339,7 +339,22 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
         return False, f"plan_review_loop returned non-JSON: {exc}", None, _MODE_DUAL_VENDOR
 
     if not res.get("success") or res.get("error"):
-        return False, f"plan_review_loop failed: {res.get('error') or res}", None, _MODE_DUAL_VENDOR
+        # SINGLE-VENDOR FALLBACK (2026-08-04, flywheel #92).
+        # When the dual-vendor plan review fails (agy rate limit, OAuth expiry,
+        # empty output, etc.), fall back to single-vendor mode using devin
+        # instead of aborting the entire build. This keeps nucleus build --merge
+        # usable when one vendor is down. The plan produced is labeled
+        # SINGLE_VENDOR_PLAN (not APPROVED) so the merge gate knows it skipped
+        # the adversarial review round.
+        plan_error = res.get("error") or str(res)
+        logger.warning(
+            "dual-vendor plan review failed (%s) — falling back to single-vendor", 
+            plan_error[:200]
+        )
+        ok, msg, fp = _run_single_vendor_plan_stage(task_prompt)
+        if ok:
+            return ok, f"SINGLE_VENDOR_FALLBACK: {msg}", fp, _MODE_SINGLE_VENDOR
+        return False, f"plan_review_loop failed: {plan_error} (single-vendor fallback also failed: {msg})", None, _MODE_DUAL_VENDOR
 
     data = res.get("data") or {}
     plan_id = data.get("plan_id")

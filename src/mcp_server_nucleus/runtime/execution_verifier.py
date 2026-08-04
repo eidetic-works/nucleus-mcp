@@ -377,38 +377,40 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
     # Committed during session
     if pre_head:
         files.update(_run_git("log", "--name-only", "--format=", f"{pre_head}..HEAD"))
-    # Untracked but not gitignored (newly-created files never staged/committed).
-    # Scope check (fw-1785843850): enumerate ALL untracked files unconditionally
-    # produced false-positives — a build that touched one real file had its
-    # VERIFY tier-2 fail because ~100 PRE-EXISTING untracked files (backup
-    # dirs, model weights, doc summaries) sitting in the working tree long
-    # before the build started were swept in. The original fix this block
-    # absorbed (newly-created untracked files must stay visible to
-    # verification) is preserved: when pre_head is available we filter the
-    # untracked set to only files that did NOT exist in the tree at pre_head
-    # (genuinely NEW since the build started) via `git cat-file -e`. When
-    # pre_head is empty there is no comparison point, so we keep the
-    # unconditional enumeration (the function's pre-existing behavior) —
-    # without pre_head every untracked file is plausibly build-related.
+    # Untracked but not gitignored (newly-created files never staged/committed)
+    # SCOPE UNTRACKED FILES (2026-08-04, flywheel #79).
+    # The old code scooped up ALL untracked files via `ls-files --others
+    # --exclude-standard`, including build artifacts, temp files, and unrelated
+    # work that happened to be in the working tree. This polluted the diff and
+    # caused Tier 1 (syntax check) and Tier 3 (test execution) to fail on files
+    # that weren't part of the actual change.
+    # Fix: only include untracked files that match known source-code extensions
+    # or are in directories that look like source code (src/, tests/, scripts/,
+    # lib/, etc.). This filters out .coverage, .secrets-map.json, state files,
+    # backup files, and other cruft while still catching genuinely new source
+    # files created by the vendor.
+    _SOURCE_EXTS = {
+        ".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".sh", ".bash",
+        ".go", ".rs", ".java", ".kt", ".swift", ".rb", ".php", ".c",
+        ".cpp", ".h", ".hpp", ".css", ".scss", ".html", ".htm",
+        ".md", ".yaml", ".yml", ".toml", ".json", ".xml", ".sql",
+        ".astro", ".vue", ".svelte",
+    }
+    _SOURCE_DIRS = {"src", "tests", "test", "scripts", "lib", "cmd", "pkg",
+                    "internal", "app", "components", "pages", "layouts"}
     untracked = _run_git("ls-files", "--others", "--exclude-standard")
-    if pre_head:
-        genuinely_new = []
-        for relpath in untracked:
-            # git cat-file -e exits 0 if the path exists at pre_head, non-zero
-            # otherwise. A path that already existed (tracked OR untracked) at
-            # pre_head is NOT a build artifact and is excluded. cat-file -e on
-            # an untracked-at-pre_head path fails the same as for a never-tracked
-            # one — both mean "not in the pre_head tree" — which is exactly the
-            # signal we want: the file is new since pre_head.
-            r = subprocess.run(
-                ["git", "cat-file", "-e", f"{pre_head}:{relpath}"],
-                capture_output=True, timeout=5, cwd=str(project_root),
-            )
-            if r.returncode != 0:
-                genuinely_new.append(relpath)
-        files.update(genuinely_new)
-    else:
-        files.update(untracked)
+    for fpath in untracked:
+        p = Path(fpath)
+        # Include if it has a source-code extension
+        if p.suffix.lower() in _SOURCE_EXTS:
+            files.add(fpath)
+            continue
+        # Include if it's in a source-code directory
+        parts = p.parts
+        if any(d in _SOURCE_DIRS for d in parts[:-1]):
+            files.add(fpath)
+            continue
+        # Exclude everything else (build artifacts, state files, temp files, etc.)
 
     return sorted(files)
 
