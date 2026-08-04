@@ -888,7 +888,15 @@ def record_feedback(
     Args:
         brain_path (Path): Path to brain directory.
         notification_type (str): Type of notification.
-        score (int): Feedback score (1-5 or 0/1 for Y/N).
+        score (int): Feedback score on a 1-5 scale. (The 0/1 Y/N reading
+            this function's docstring used to also advertise was never
+            disambiguated by any caller and, worse, collided with the
+            1-5 scale: score=1 means "worst" on the 1-5 rubric but was
+            being treated as a positive "yes" — silently inflating the
+            high-impact/Value-Ratio metric on the worst possible rating.
+            No production or test caller actually sends a Y/N value
+            today; if a Y/N notification type is ever added, it needs
+            its own explicit scale parameter, not integer overlap.)
         response_time_seconds (int, optional): Time to respond in seconds.
 
     Returns:
@@ -897,24 +905,24 @@ def record_feedback(
     # Feedback log also needs locking if simultaneous
     with get_lock("feedback", brain_path).section():
         feedback = load_feedback(brain_path)
-        
+
         entry = {
             "timestamp": datetime.now().isoformat(),
             "notification_type": notification_type,
-            "score": score,  # 1-5 or 0/1 for Y/N
+            "score": score,
             "response_time_seconds": response_time_seconds
         }
-        
+
         feedback.append(entry)
         save_feedback(brain_path, feedback)
-    
+
     # Also record interaction
     record_interaction(brain_path)
-    
-    # If positive feedback (4-5 or 1 for Y/N), mark as high impact
-    if score >= 4 or score == 1:
+
+    # Positive feedback (4-5 on the 1-5 scale) marks high impact.
+    if score >= 4:
         mark_high_impact_closure(brain_path)
-    
+
     return entry
 
 
@@ -1004,25 +1012,26 @@ def auto_archive_stale(brain_path: Path) -> int:
     Returns:
         int: Count of archived items.
     """
-    ledger = load_ledger(brain_path)
-    archived_count = 0
-    
-    for comm in ledger["commitments"]:
-        if comm["status"] == "open":
-            # Ensure age is set
-            created = datetime.fromisoformat(comm["created"])
-            age_days = (datetime.now() - created).days
-            
-            if age_days > 30:
-                comm["status"] = "closed"
-                comm["closed_at"] = datetime.now().isoformat()
-                comm["closed_method"] = "auto_archived"
-                archived_count += 1
-    
-    if archived_count > 0:
-        save_ledger(brain_path, ledger)
-        
-    return archived_count
+    with get_lock("ledger", brain_path).section():
+        ledger = load_ledger(brain_path)
+        archived_count = 0
+
+        for comm in ledger["commitments"]:
+            if comm["status"] == "open":
+                # Ensure age is set
+                created = datetime.fromisoformat(comm["created"])
+                age_days = (datetime.now() - created).days
+
+                if age_days > 30:
+                    comm["status"] = "closed"
+                    comm["closed_at"] = datetime.now().isoformat()
+                    comm["closed_method"] = "auto_archived"
+                    archived_count += 1
+
+        if archived_count > 0:
+            save_ledger(brain_path, ledger)
+
+        return archived_count
 
 
 # ============================================================

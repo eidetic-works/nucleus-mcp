@@ -126,12 +126,19 @@ def run_ground(project_root: str = None, python_path: str = None,
         pass  # best-effort
 
     # Emit ground_verified event (Three Frontiers: GROUND signal)
+    # Reuse the receipt's own `verified` value rather than re-deriving it.
+    # The receipt defines verified = (len(tiers_failed)==0 and len(tiers_passed)>0)
+    # (see execution_verifier.py). Previously this event re-derived it as just
+    # len(tiers_failed)==0, dropping the tiers_passed>0 clause — so an all-skipped
+    # run (no tiers failed, none passed) emitted verified:True in the event stream
+    # while the receipt correctly said False. Reference the receipt's value so the
+    # two can never diverge.
     try:
         from .event_ops import _emit_event
         _emit_event("ground_verified", "execution_verifier", {
             "receipt_id": result.get("receipt_id", ""),
             "tier_reached": result.get("tier_reached", 0),
-            "verified": len(result.get("tiers_failed", [])) == 0,
+            "verified": result.get("verified", False),
             "tiers_passed": result.get("tiers_passed", []),
             "tiers_failed": result.get("tiers_failed", []),
         })

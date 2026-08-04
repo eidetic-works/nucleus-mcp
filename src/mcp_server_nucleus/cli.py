@@ -1011,6 +1011,107 @@ def _auto_guard(tool_name: str, tool_input: dict) -> str:
     return ""
 
 
+def expand_at_files(user_input: str, track_file=None, brain_context_for=None, print_fn=print) -> str:
+    """Expand @file references in user input. Like Cursor's @-mentions.
+
+    Patterns:
+      @path/to/file.py      → reads and attaches full file
+      @path/to/file.py:42   → reads and attaches lines around line 42
+      @src/**/*.py           → glob and list matching files (no content)
+
+    ``track_file`` and ``brain_context_for`` are optional injectable
+    callbacks (defaults to no-ops) so this can be exercised directly in
+    tests without the surrounding chat-session closure state.
+    """
+    import re as _re
+    if track_file is None:
+        track_file = lambda op, path: None
+    if brain_context_for is None:
+        brain_context_for = lambda path: None
+
+    # Find all @references (not @mentions like @user)
+    _at_pattern = _re.compile(r'@([\w./\-*]+(?::\d+)?)')
+    matches = _at_pattern.findall(user_input)
+    if not matches:
+        return user_input
+
+    attachments = []
+    for ref in matches:
+        # Split line number: @file.py:42 → file.py, 42
+        if ":" in ref and ref.rsplit(":", 1)[1].isdigit():
+            fpath, line_str = ref.rsplit(":", 1)
+            target_line = int(line_str)
+        else:
+            fpath = ref
+            target_line = None
+
+        p = Path(fpath).expanduser()
+
+        # Glob pattern (contains *)
+        if "*" in fpath:
+            try:
+                glob_matches = sorted(Path(".").glob(fpath))[:20]
+                if glob_matches:
+                    file_list = "\n".join(f"  {m}" for m in glob_matches)
+                    attachments.append(f"[Files matching @{fpath}]\n{file_list}")
+            except Exception:
+                pass
+            continue
+
+        # Single file
+        if not p.exists():
+            # Try relative to cwd
+            p = Path.cwd() / fpath
+        if not p.exists():
+            continue
+
+        try:
+            text = p.read_text()
+            lines = text.split("\n")
+            track_file("read", str(p))
+
+            if target_line:
+                # Show ~20 lines around target
+                start = max(0, target_line - 10)
+                end = min(len(lines), target_line + 10)
+                selected = lines[start:end]
+                numbered = [f"{start + i + 1:>5}│ {l}" for i, l in enumerate(selected)]
+                attachments.append(
+                    f"[File: {p.name}:{target_line} (lines {start+1}-{end})]\n" +
+                    "\n".join(numbered)
+                )
+                print_fn(f"   📎 Attached: {p.name}:{target_line} ({len(selected)} lines)")
+            else:
+                # Full file (cap at 200 lines for context efficiency)
+                if len(lines) > 200:
+                    numbered = [f"{i+1:>5}│ {l}" for i, l in enumerate(lines[:200])]
+                    attachments.append(
+                        f"[File: {p.name} ({len(lines)} lines, showing first 200)]\n" +
+                        "\n".join(numbered)
+                    )
+                    print_fn(f"   📎 Attached: {p.name} (first 200 of {len(lines)} lines)")
+                else:
+                    numbered = [f"{i+1:>5}│ {l}" for i, l in enumerate(lines)]
+                    attachments.append(
+                        f"[File: {p.name} ({len(lines)} lines)]\n" +
+                        "\n".join(numbered)
+                    )
+                    print_fn(f"   📎 Attached: {p.name} ({len(lines)} lines)")
+
+            # Also attach brain context
+            brain_ctx = brain_context_for(str(p))
+            if brain_ctx:
+                attachments.append(brain_ctx)
+                print_fn(f"   📎 🧠 brain context for {p.name}")
+        except Exception:
+            pass
+
+    if not attachments:
+        return user_input
+
+    return user_input + "\n\n" + "\n\n".join(attachments)
+
+
 def _run_chat(tier_name: str = "local_free", model_override: str = None, system_prompt: str = None, batch: bool = False, prompt: str = None, provider: str = None, output_format: str = "text", brother_context: str = None):
     """Interactive multi-turn chat. Works from any install location.
 
@@ -2112,95 +2213,8 @@ def _run_chat(tier_name: str = "local_free", model_override: str = None, system_
     # Ctrl+C at prompt → exit (caught in main loop)
 
     def _expand_at_files(user_input: str) -> str:
-        """Expand @file references in user input. Like Cursor's @-mentions.
-
-        Patterns:
-          @path/to/file.py      → reads and attaches full file
-          @path/to/file.py:42   → reads and attaches lines around line 42
-          @src/**/*.py           → glob and list matching files (no content)
-        """
-        import re as _re
-        # Find all @references (not @mentions like @user)
-        _at_pattern = _re.compile(r'@([\w./\-*]+(?::\d+)?)')
-        matches = _at_pattern.findall(user_input)
-        if not matches:
-            return user_input
-
-        attachments = []
-        for ref in matches:
-            # Split line number: @file.py:42 → file.py, 42
-            if ":" in ref and ref.rsplit(":", 1)[1].isdigit():
-                fpath, line_str = ref.rsplit(":", 1)
-                target_line = int(line_str)
-            else:
-                fpath = ref
-                target_line = None
-
-            p = Path(fpath).expanduser()
-
-            # Glob pattern (contains *)
-            if "*" in fpath:
-                try:
-                    glob_matches = sorted(Path(".").glob(fpath))[:20]
-                    if glob_matches:
-                        file_list = "\n".join(f"  {m}" for m in glob_matches)
-                        attachments.append(f"[Files matching @{fpath}]\n{file_list}")
-                except Exception:
-                    pass
-                continue
-
-            # Single file
-            if not p.exists():
-                # Try relative to cwd
-                p = Path.cwd() / fpath
-            if not p.exists():
-                continue
-
-            try:
-                text = p.read_text()
-                lines = text.split("\n")
-                _track_file("read", str(p))
-
-                if target_line:
-                    # Show ~20 lines around target
-                    start = max(0, target_line - 10)
-                    end = min(len(lines), target_line + 10)
-                    selected = lines[start:end]
-                    numbered = [f"{start + i + 1:>5}│ {l}" for i, l in enumerate(selected)]
-                    attachments.append(
-                        f"[File: {p.name}:{target_line} (lines {start+1}-{end})]\n" +
-                        "\n".join(numbered)
-                    )
-                    print(f"   📎 Attached: {p.name}:{target_line} ({len(selected)} lines)")
-                else:
-                    # Full file (cap at 200 lines for context efficiency)
-                    if len(lines) > 200:
-                        numbered = [f"{i+1:>5}│ {l}" for i, l in enumerate(lines[:200])]
-                        attachments.append(
-                            f"[File: {p.name} ({len(lines)} lines, showing first 200)]\n" +
-                            "\n".join(numbered)
-                        )
-                        print(f"   📎 Attached: {p.name} (first 200 of {len(lines)} lines)")
-                    else:
-                        numbered = [f"{i+1:>5}│ {l}" for i, l in enumerate(lines)]
-                        attachments.append(
-                            f"[File: {p.name} ({len(lines)} lines)]\n" +
-                            "\n".join(numbered)
-                        )
-                        print(f"   📎 Attached: {p.name} ({len(lines)} lines)")
-
-                # Also attach brain context
-                brain_ctx = _brain_context_for(str(p))
-                if brain_ctx:
-                    attachments.append(brain_ctx)
-                    print(f"   📎 🧠 brain context for {p.name}")
-            except Exception:
-                pass
-
-        if not attachments:
-            return user_input
-
-        return user_input + "\n\n" + "\n\n".join(attachments)
+        """Expand @file references in user input. Like Cursor's @-mentions."""
+        return expand_at_files(user_input, track_file=_track_file, brain_context_for=_brain_context_for)
 
     def _build_prompt(user_input: str) -> str:
         """String-concatenated prompt (Gemini path)."""
@@ -5513,6 +5527,34 @@ def main():
         'task',
         help='Task prompt for the build pipeline (quote multi-word prompts)',
     )
+    build_parser.add_argument(
+        '--merge',
+        action='store_true',
+        default=False,
+        help='On verdict PASS, commit → push → open PR → hand to merge_gate_authorize. '
+             'Sequences System A (build_runner) into System B (merge_gate).',
+    )
+    build_parser.add_argument(
+        '--repo',
+        default='eidetic-works/mcp-server-nucleus',
+        help='Target repo for the merge gate (owner/name). Default: %(default)s',
+    )
+    build_parser.add_argument(
+        '--review-vendor',
+        default='devin',
+        help='Review dispatch vendor for the merge gate. Default: %(default)s',
+    )
+    build_parser.add_argument(
+        '--base-branch',
+        default='main',
+        help='Base branch for the PR. Default: %(default)s',
+    )
+    build_parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        default=False,
+        help='Dry-run the merge gate (no live gh/git effects from the gate side)',
+    )
 
     args = parser.parse_args()
     cli_command = args.cli_command
@@ -5651,7 +5693,7 @@ def main():
             _handle_recipe_command(args)
 
         elif cli_command == 'channels':
-            handle_channels_command(args)
+            sys.exit(handle_channels_command(args))
 
         elif cli_command == 'setup':
             # Auto-detect brain path
@@ -5904,7 +5946,7 @@ def main():
                 sys.exit(2)
 
         elif cli_command == 'summon':
-            handle_summon_command(args)
+            sys.exit(handle_summon_command(args))
 
         elif cli_command == 'features':
             handle_features_command(args)
@@ -6441,6 +6483,8 @@ def handle_verify_command(args):
 
     if args.json_output:
         print(json.dumps(receipt, indent=2, default=str))
+        if not receipt.get("verified", False):
+            sys.exit(1)
         return
 
     verified = receipt.get("verified", False)
@@ -7306,7 +7350,22 @@ def handle_build_command(args) -> int:
     → verdict card. Delegates to ``runtime.build_runner.run_build_pipeline``
     (lazy-imported to keep CLI module load light) and exits with its return
     code (``0`` = success, non-zero = failure/abort).
+
+    When ``--merge`` is passed, delegates instead to
+    ``runtime.build_and_merge.run_build_and_merge_pipeline``, which sequences
+    System A (build_runner) into System B (merge_gate): on a verdict PASS,
+    commits → pushes → opens a PR → hands the PR number to
+    ``merge_gate_authorize.py authorize``.
     """
+    if getattr(args, 'merge', False):
+        from .runtime.build_and_merge import run_build_and_merge_pipeline
+        return run_build_and_merge_pipeline(
+            args.task,
+            repo=getattr(args, 'repo', 'eidetic-works/mcp-server-nucleus'),
+            review_vendor=getattr(args, 'review_vendor', 'devin'),
+            base_branch=getattr(args, 'base_branch', 'main'),
+            dry_run=getattr(args, 'dry_run', False),
+        )
     from .runtime.build_runner import run_build_pipeline
     return run_build_pipeline(args.task)
 
@@ -8581,7 +8640,7 @@ def handle_mount_command(args):
         if args.transport == 'stdio':
             if not args.command:
                 print("❌ Error: --command is required for stdio transport")
-                return
+                sys.exit(1)
             config["command"] = args.command
             config["args"] = args.args or []
             
@@ -9413,6 +9472,7 @@ def handle_loop_command(args):
         print(f"❌ Error getting loop status: {e}")
         print()
         print("Make sure NUCLEUS_BRAIN_PATH is set correctly.")
+        sys.exit(1)
 
 
 def handle_end_of_day_command(args):
@@ -10055,7 +10115,7 @@ def handle_secure_command(args):
     brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
     if not brain_path:
         print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
+        sys.exit(1)
 
     print("🔐 Nucleus Security Hardening\n")
 
@@ -10132,7 +10192,7 @@ def handle_sovereign_command(args):
     brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
     if not brain_path:
         print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
+        sys.exit(1)
 
     report = generate_sovereign_status(brain_path)
 
@@ -10181,7 +10241,7 @@ def handle_trace_command(args):
         trace = get_trace(brain_path, args.trace_id)
         if not trace:
             print(f"❌ Trace not found: {args.trace_id}")
-            return
+            sys.exit(1)
 
         if hasattr(args, 'json') and args.json:
             print(json.dumps(trace, indent=2, default=str))
@@ -10216,7 +10276,7 @@ def handle_dashboard_command(args):
     brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
     if not brain_path:
         print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
+        sys.exit(1)
 
     if getattr(args, 'hr', False) or getattr(args, 'ascii', False):
         from .runtime.dashboard_ops import _brain_enhanced_dashboard_impl
@@ -10253,7 +10313,7 @@ def handle_deploy_command(args):
     brain_path = Path(args.brain) if hasattr(args, 'brain') and args.brain else _find_brain_path()
     if not brain_path:
         print("❌ No .brain directory found. Run `nucleus init` first.")
-        return
+        sys.exit(1)
 
     if not hasattr(args, 'jurisdiction') or not args.jurisdiction:
         print("")
@@ -10344,7 +10404,7 @@ def handle_dogfood_command(args):
         )
         if result.get("error"):
             print(f"❌ {result['error']}")
-            return
+            sys.exit(1)
 
         entry = result["entry"]
         summary = result["summary"]
@@ -11121,6 +11181,7 @@ def handle_config_command(args):
             print(f"\n   Config saved to {config_file}")
         except Exception as e:
             print(f"❌ Failed to save config: {e}")
+            sys.exit(1)
 
         # Reset cached state so next command picks up change
         try:

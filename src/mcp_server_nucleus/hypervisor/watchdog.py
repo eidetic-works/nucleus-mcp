@@ -78,7 +78,7 @@ class SecurityEventHandler(FileSystemEventHandler):
         if path in self.watchdog.shadow_cache:
             try:
                 # 1. Unlock to allow writing (with authorization secret)
-                self.locker.unlock(path, secret=self.locker._internal_secret)
+                self.locker.unlock(path)  # unlock() takes no secret; _internal_secret never existed
                 
                 # 2. Write with POSIX flock
                 data = self.watchdog.shadow_cache[path]
@@ -94,7 +94,8 @@ class SecurityEventHandler(FileSystemEventHandler):
                         f.write(data)
                 logger.info(f"✅ Reverted {path} from RAM Shadow Cache.")
             except Exception as e:
-                logger.error(f"Failed to revert {path}: {e}")
+                logger.error(f"CRITICAL: Failed to revert breached file {path}: {e}")
+                raise RuntimeError(f"Security breach revert failed for {path}") from e
             finally:
                 # 3. Immediately re-lock
                 self.locker.lock(path)

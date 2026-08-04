@@ -69,11 +69,8 @@ class ExecutorDaemon:
     def _claim_task(self, task_id: str) -> bool:
         """Atomically claim a task."""
         ops = self._task_ops()
-        try:
-            ops._claim_task(task_id, self.agent_id)
-            return True
-        except Exception:
-            return False
+        result = ops._claim_task(task_id, self.agent_id)
+        return bool(result.get("success"))
 
     def _build_prompt(self, task: dict) -> str:
         """Build the prompt for the vendor CLI."""
@@ -518,6 +515,7 @@ class ExecutorDaemon:
             flush=True,
         )
 
+        consecutive_failures = 0
         while True:
             try:
                 task = self._find_claimable_task()
@@ -525,9 +523,17 @@ class ExecutorDaemon:
                     self._process_task(task)
                 else:
                     time.sleep(self.poll_interval)
+                consecutive_failures = 0
             except KeyboardInterrupt:
                 print("[executor] shutting down", flush=True)
                 break
             except Exception as exc:
-                print(f"[executor] error: {exc}", flush=True)
+                consecutive_failures += 1
+                print(f"[executor] error ({consecutive_failures}): {exc}", flush=True)
+                if consecutive_failures >= 10:
+                    self._escalate(
+                        "__executor__",
+                        f"executor exiting after {consecutive_failures} consecutive failures: {exc}",
+                    )
+                    raise
                 time.sleep(self.poll_interval)

@@ -104,6 +104,42 @@ def _read_worktree_head_sha(cwd: Optional[str] = None) -> Optional[str]:
         pass
     return None
 
+
+def _count_behind_upstream(cwd: Optional[str] = None) -> Optional[int]:
+    """Count commits the worktree HEAD is behind its configured upstream.
+
+    Returns the integer commit count (0 == up to date), or ``None`` when it
+    could not be determined: no upstream tracking branch configured, not a git
+    repo, git unavailable, or any subprocess error. Mirrors the
+    fault-isolation contract of :func:`_read_worktree_head_sha` — this is a
+    best-effort diagnostic signal and must NEVER raise into the caller.
+
+    Background (2026-08-04 incident): a scout dispatch and a build dispatch
+    both operated on a local worktree 22 commits behind ``origin/main``. The
+    scout "found" a bug already fixed upstream; the build "fixed" it again
+    against the stale copy — a diff that, applied to real ``origin/main``,
+    would have SILENTLY REVERTED merged fixes. This function is the signal that
+    was missing: how far behind is the checkout the vendor is about to read or
+    mutate. The caller logs a warning when the count is > 0.
+    """
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD..@{u}"],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if result.returncode == 0:
+            count = result.stdout.strip()
+            if count.isdigit():
+                return int(count)
+        # Non-zero return code covers the "no upstream configured" case
+        # (`fatal: no upstream configured for branch '...'`) and any other
+        # git refusal — both map to "unknown", not a crash.
+    except Exception:
+        pass
+    return None
+
+
 CROSS_VENDOR_DISABLED_MSG = (
     "cross-vendor dispatch is disabled. Set NUCLEUS_CROSS_VENDOR=1 to enable, "
     "e.g.  NUCLEUS_CROSS_VENDOR=1 nucleus dispatch agy --prompt-file prompt.txt "
@@ -209,7 +245,11 @@ def is_multi_vendor_available() -> bool:
 # the next, and a real plan draft then exceeded the 300s hard kill repeatedly
 # (partial=0 bytes). Env-tunable so a slow-vendor window does not require a code
 # change. Default is unchanged at 300s. Read at import time.
-_DEFAULT_VENDOR_TIMEOUT_S = int(os.environ.get("NUCLEUS_VENDOR_TIMEOUT_S", "300"))
+# 1 hour. Was 300s, which HARD-KILLED completed vendor work at the finish line:
+# agy reviews measured 260.5s (87% of the old ceiling) and two consecutive runs
+# died at exactly 300.0s with "partial=0 bytes" — every token paid for, nothing
+# kept. A ceiling that discards finished output is worse than a slow lane.
+_DEFAULT_VENDOR_TIMEOUT_S = int(os.environ.get("NUCLEUS_VENDOR_TIMEOUT_S", "3600"))
 
 # ── Vendor registry ───────────────────────────────────────────────────────────
 VENDOR_MODES = ("read", "write")
@@ -973,6 +1013,23 @@ def dispatch_and_capture(
 
     pre = _snapshot_paths(expect_paths)              # {} when None ⇒ ZERO fs work
     pre_sha = _read_worktree_head_sha()              # BEFORE — see stamping block
+    # Stale-checkout guard (2026-08-04 incident): best-effort count of how many
+    # commits the worktree HEAD is behind its configured upstream. A non-zero
+    # count means the vendor is about to read or mutate code that is behind the
+    # real upstream — a dispatch against such a checkout can "find" already-
+    # fixed bugs or "fix" them again, producing a diff that silently reverts
+    # merged upstream work. This is a SIGNAL, never a gate: it must never turn
+    # a working dispatch into a broken one.
+    behind_upstream = _count_behind_upstream()
+    if behind_upstream and behind_upstream > 0:
+        logger.warning(
+            "dispatch_and_capture: worktree HEAD is %d commit(s) behind its "
+            "configured upstream — the vendor may be operating on stale code "
+            "relative to upstream; a build diff against this checkout could "
+            "silently revert already-merged upstream fixes. "
+            "(local_head_behind_upstream=%d)",
+            behind_upstream, behind_upstream,
+        )
     result = VendorCLIExecutor(
         vendor, prompt, timeout_s=timeout_s, budget_usd=budget_usd,
         model=model, mode=canon,
@@ -1056,6 +1113,8 @@ def dispatch_and_capture(
             "capture": {"relay": None, "engram": None,
                         "error": "worktree_sha_unavailable"},
         })
+        out["timeout_s"] = timeout_s
+        out["local_head_behind_upstream"] = behind_upstream
         return out
 
     digest = _prompt_digest(prompt)
@@ -1086,6 +1145,8 @@ def dispatch_and_capture(
         out["artifact_ref_nonqualifying_reason"] = nonqualifying_reason
     out["head_before"] = pre_sha
     out["head_after"] = post_sha
+    out["timeout_s"] = timeout_s
+    out["local_head_behind_upstream"] = behind_upstream
     return out
 
 
@@ -1122,11 +1183,27 @@ def dispatch_cli(
             "error": "no_prompt",
             "message": "provide --prompt, --prompt-file, or pipe the prompt on stdin",
         }
-    if not artifact_ref:
-        return 2, {
-            "error": "no_artifact_ref",
-            "message": "--artifact-ref is required (commit SHA / PR# / file path)",
-        }
+    # NO artifact_ref PRECONDITION HERE — this guard made `nucleus dispatch`
+    # impossible to call.
+    #
+    # It is a leftover from the pre-v3 design, where the caller supplied the ref.
+    # Under PRINCIPAL v3 the CLI deliberately does NOT expose --artifact-ref
+    # (cli.py says so explicitly: a caller-supplied ref is forgeable, so the
+    # capture instrument stamps it from the vendor worktree's git HEAD instead).
+    # So `artifact_ref` is ALWAYS None on this path, this check ALWAYS fired,
+    # and the CLI returned:
+    #
+    #     "--artifact-ref is required (commit SHA / PR# / file path)"
+    #
+    # naming a flag argparse is designed to REJECT. A remedy that cannot be
+    # followed — the same shape as advising `chmod` for a chflags lock. Verified
+    # uncallable with git fully unlocked, so this was not a git-derivation
+    # failure: the guard rejected the input before the stamping code could run.
+    #
+    # Failing closed still happens, in the right place: dispatch_and_capture
+    # stamps from git HEAD and returns artifact_ref_source="vendor_derived_failed"
+    # with capture suppressed if git is unavailable. That is the check that
+    # belongs here, and it already exists downstream.
 
     out = dispatch_and_capture(
         vendor, prompt, artifact_ref,

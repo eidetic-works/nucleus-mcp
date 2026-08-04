@@ -592,6 +592,35 @@ def main():
     except Exception as e:
         log_debug(f"session_started emission failed: {e}")
 
+    # Fire anonymous telemetry session_start (MCP server mode)
+    try:
+        from .runtime.anon_telemetry import record_session_start
+        record_session_start()
+        log_debug("📡 anon telemetry session_start sent")
+    except Exception as e:
+        log_debug(f"anon telemetry session_start failed: {e}")
+
+    # Start a heartbeat thread — sends a telemetry ping every 30 minutes
+    # so we know the MCP server is alive and being used
+    try:
+        import threading as _threading
+        from .runtime.anon_telemetry import record_anon_command
+
+        def _heartbeat_loop():
+            while True:
+                try:
+                    import time as _time
+                    _time.sleep(1800)  # 30 minutes
+                    record_anon_command("heartbeat", "mcp_server", 0)
+                except Exception:
+                    break
+
+        _hb = _threading.Thread(target=_heartbeat_loop, daemon=True)
+        _hb.start()
+        log_debug("📡 anon telemetry heartbeat thread started (30min interval)")
+    except Exception as e:
+        log_debug(f"anon telemetry heartbeat failed: {e}")
+
     try:
         log_debug(f"Entering mcp.run() (Version {__version__})")
         mcp.run()
@@ -603,3 +632,11 @@ def main():
         with open(log_path, "a", encoding='utf-8') as f:
             traceback.print_exc(file=f)
         raise
+    finally:
+        # Flush pending telemetry events before process exits
+        try:
+            from .runtime.anon_telemetry import shutdown_anon_telemetry
+            shutdown_anon_telemetry(timeout=3.0)
+            log_debug("📡 anon telemetry flushed on shutdown")
+        except Exception:
+            pass

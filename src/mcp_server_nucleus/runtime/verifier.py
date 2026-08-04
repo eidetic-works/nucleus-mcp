@@ -96,6 +96,7 @@ def _mandatory_anchors_enabled() -> bool:
 _CLASS_PATTERNS: Dict[str, List[str]] = {
     "DEPLOYED-LIVE": [r"\blive\b", r"\bin production\b", r"\bproduction\b", r"\bdeployed\b", r"\bprod\b"],
     "CODE-EXISTS": [r"\bbuilt\b", r"\bcommit\w*\b", r"\bmerged\b", r"\blanded\b", r"\bpushed\b", r"\bimplemented\b"],
+    "FILE-EXISTS": [r"\bfile\b.*\bexists\b", r"\bexists\b.*\bfile\b", r"\bverify\b.*\.(?:md|py|ts|js|json|yaml|yml|toml|txt|sh)\b", r"\bcheck\b.*\.(?:md|py|ts|js|json|yaml|yml|toml|txt|sh)\b", r"\bconfirm\b.*\.(?:md|py|ts|js|json|yaml|yml|toml|txt|sh)\b"],
     "BEHAVIOR-CORRECT": [r"\breturns?\b", r"\brenders?\b", r"\bcorrectly?\b", r"\bequals?\b", r"\bshows?\b", r"\bdisplays?\b", r"\bscoped?\b", r"\bitems\b", r"\bcount\b"],
     "SIDE-EFFECT": [r"\bemail\b", r"\bwebhook\b", r"\bfired\b", r"\bsent\b", r"\bnotification\b", r"\btriggered\b"],
     "LIVENESS": [r"\bcrons?\b", r"\bdaemon\b", r"\brunning\b", r"\bscheduled?\b", r"\bheartbeat\b"],
@@ -119,6 +120,7 @@ _CLASS_MANDATORY: Dict[str, set] = {
     "CODE-EXISTS": {("git", "is_ancestor")},
     "DEPLOYED-LIVE": {("http", "json_get")},        # build-identity / deployed-SHA token
     "BEHAVIOR-CORRECT": {("http", "json_get")},     # value predicate on the live output
+    "FILE-EXISTS": {("fs", "file_exists")},         # filesystem check (D1: file-existence class)
 }
 
 
@@ -148,8 +150,37 @@ def _confirmable_under_doctrine(classes: "frozenset[str]", passing_anchors: List
     mandatory anchor (or the ⊤ element) makes this False — such a claim can
     never be CONFIRMED on deterministic anchors alone. This is the mechanical
     form of the Adjacent-Fact Test: adjacent anchors never yield CONFIRMED.
+
+    DIRECT-MATCH EXEMPTION (B1 / ADR-0047 tuning): the join-UP rule assumes the
+    classifier is accurate. In practice a class can join in SPURIOUSLY from a
+    token that has nothing to do with the claim's real semantics — most
+    commonly BUSINESS-STATE's ``\\busers?\\b`` firing on the ``/Users/...``
+    segment of a file-existence claim's path. A spurious manual-only class
+    would otherwise cap a genuinely-confirmed claim to PARTIAL (observed in the
+    G4 50-task scale test: 0 CONFIRMED despite every fs:file_exists anchor
+    passing).
+
+    The exemption: if ANY plausible class has its mandatory (kind, op) DIRECTLY
+    satisfied by a passing anchor (a non-adjacent, direct match — e.g.
+    FILE-EXISTS + a passing ``fs:file_exists``), the claim is confirmable and
+    spurious manual-only class joins no longer block it. The adjacent-only cap
+    is preserved: a passing ``git:commit_exists`` for a CODE-EXISTS claim
+    (whose mandatory is ``is_ancestor``) is NOT a direct match, so it still
+    caps to PARTIAL.
     """
     present = {(a.kind, (a.spec or {}).get("op")) for a in passing_anchors}
+
+    # Direct-match exemption: a class whose mandatory anchor is among the
+    # passing anchors is directly satisfied. If at least one class is, the
+    # claim is confirmable regardless of spurious manual-only joins.
+    for cls in classes:
+        required = _CLASS_MANDATORY.get(cls)
+        if required and not present.isdisjoint(required):
+            return True  # direct (non-adjacent) match for this class -> CONFIRMED legal
+
+    # No class is directly satisfied — fall back to the strict join-UP rule.
+    # A class with no deterministic mandatory anchor (manual-only / ⊤), or one
+    # whose mandatory anchor is simply absent (adjacent-only), blocks CONFIRMED.
     for cls in classes:
         required = _CLASS_MANDATORY.get(cls)
         if not required:
@@ -688,8 +719,12 @@ class ProbeEngine:
     def file_exists(self, path: str) -> Evidence:
         anchor_id = f"fs:file_exists:{path}"
         try:
-            ok = Path(path).exists()
-            return Evidence(anchor_id, ok, f"{path} {'exists' if ok else 'does not exist'}", None)
+            p = Path(path)
+            # D1: resolve relative paths against default_repo (the repo root)
+            if not p.is_absolute() and self.default_repo:
+                p = Path(self.default_repo) / p
+            ok = p.exists()
+            return Evidence(anchor_id, ok, f"{p} {'exists' if ok else 'does not exist'}", None)
         except Exception as exc:  # pragma: no cover - defensive
             return Evidence(anchor_id, None, f"error: {exc}", None)
 
@@ -820,6 +855,59 @@ class ProbeEngine:
                 cmd = spec.get("cmd", [])
                 cwd = spec.get("cwd") or spec.get("repo") or self.default_repo
                 return self._retag(anchor, self.run_shell(cmd, cwd=cwd))
+
+            if kind == "shell_executed":
+                # B3 (ADR-0047): query the shell-execution witness.
+                cmd_query = spec.get("cmd_query") or spec.get("cmd") or ""
+                if isinstance(cmd_query, list):
+                    cmd_query = " ".join(str(c) for c in cmd_query)
+                if not cmd_query:
+                    return Evidence(anchor.anchor_id, None, "shell_executed: no cmd_query specified", None)
+                try:
+                    from .agent_os.witness_shell import query_shell_exec
+                    brain_path = spec.get("brain_path") or os.environ.get("NUCLEUS_BRAIN_PATH")
+                    found = query_shell_exec(str(cmd_query), brain_path=brain_path)
+                    if found:
+                        return Evidence(anchor.anchor_id, True, f"shell_executed: command '{cmd_query}' found in witness log", None)
+                    return Evidence(anchor.anchor_id, False, f"shell_executed: command '{cmd_query}' not in witness log", None)
+                except Exception as exc:
+                    return Evidence(anchor.anchor_id, None, f"shell_executed: witness query failed: {exc}", None)
+
+            if kind == "deployment_executed":
+                # D2 (ADR-0047): query the deployment witness.
+                url = spec.get("url") or ""
+                commit_sha = spec.get("commit_sha") or spec.get("sha") or ""
+                if not url and not commit_sha:
+                    return Evidence(anchor.anchor_id, None, "deployment_executed: no url or commit_sha specified", None)
+                try:
+                    from .agent_os.witness_deployment import query_deployment
+                    brain_path = spec.get("brain_path") or os.environ.get("NUCLEUS_BRAIN_PATH")
+                    found = query_deployment(url=url or None, commit_sha=commit_sha or None, brain_path=brain_path)
+                    if found:
+                        return Evidence(anchor.anchor_id, True, f"deployment_executed: deployment matching url='{url}' sha='{commit_sha}' found in witness log", None)
+                    return Evidence(anchor.anchor_id, False, f"deployment_executed: no matching deployment in witness log", None)
+                except Exception as exc:
+                    return Evidence(anchor.anchor_id, None, f"deployment_executed: witness query failed: {exc}", None)
+
+            if kind == "tests_passed":
+                # D3 (ADR-0047): query the test-result witness.
+                test_run_id = spec.get("test_run_id") or spec.get("run_id") or ""
+                require_all_passed = spec.get("require_all_passed", True)
+                if not test_run_id:
+                    return Evidence(anchor.anchor_id, None, "tests_passed: no test_run_id specified", None)
+                try:
+                    from .agent_os.witness_test_results import query_test_result
+                    brain_path = spec.get("brain_path") or os.environ.get("NUCLEUS_BRAIN_PATH")
+                    found = query_test_result(
+                        test_run_id=test_run_id,
+                        brain_path=brain_path,
+                        require_all_passed=bool(require_all_passed),
+                    )
+                    if found:
+                        return Evidence(anchor.anchor_id, True, f"tests_passed: test run '{test_run_id}' found in witness log (all passed)", None)
+                    return Evidence(anchor.anchor_id, False, f"tests_passed: test run '{test_run_id}' not found or not all passed", None)
+                except Exception as exc:
+                    return Evidence(anchor.anchor_id, None, f"tests_passed: witness query failed: {exc}", None)
 
             if kind == "manual":
                 return Evidence(anchor.anchor_id, None, anchor.description or "no deterministic anchor; manual review required", None)
@@ -1002,6 +1090,28 @@ class RuleReasoner(Reasoner):
                     description=f"{url} responds 200",
                     critical=True,
                 ))
+
+        # D1: file-existence detection. When the claim mentions a filename
+        # (with a known extension), add an fs:file_exists anchor. This lets
+        # "Verify that DECISIONS.md exists" get a real anchor instead of
+        # UNVERIFIABLE. The path is resolved relative to default_repo.
+        if not anchors:
+            for fm in re.finditer(
+                r'\b([\w./-]+\.(?:md|py|ts|js|json|yaml|yml|toml|txt|sh|cfg|ini|rs|go|rb))\b',
+                text, re.IGNORECASE,
+            ):
+                path = fm.group(1)
+                # Skip paths that look like URLs (already handled above)
+                if path.startswith("http://") or path.startswith("https://"):
+                    continue
+                anchors.append(Anchor(
+                    anchor_id=f"fs-exists-{path}",
+                    kind="fs",
+                    spec={"op": "file_exists", "path": path},
+                    description=f"file {path} exists on disk",
+                    critical=True,
+                ))
+                break  # one file per claim (the first mentioned)
 
         if not anchors:
             anchors.append(Anchor(

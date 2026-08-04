@@ -54,16 +54,16 @@ def _check_network() -> bool:
 
 def _check_ollama() -> bool:
     try:
-        subprocess.run(["ollama", "list"], capture_output=True, timeout=5)
-        return True
+        res = subprocess.run(["ollama", "list"], capture_output=True, timeout=5)
+        return res.returncode == 0
     except Exception:
         return False
 
 
 def _check_docker() -> bool:
     try:
-        subprocess.run(["docker", "info"], capture_output=True, timeout=3)
-        return True
+        res = subprocess.run(["docker", "info"], capture_output=True, timeout=3)
+        return res.returncode == 0
     except Exception:
         return False
 

@@ -20,7 +20,13 @@ ALLOWED_DOMAINS = [
 def is_domain_allowed(url: str) -> bool:
     try:
         parsed = urllib.parse.urlparse(url)
-        domain = parsed.netloc.lower()
+        # .hostname (not .netloc) — netloc is the raw "user:pass@host:port"
+        # string, so a legal URL with an explicit port (pypi.org:443) or
+        # userinfo was rejected by exact/endswith matching against it.
+        # .hostname already strips port + userinfo and lowercases.
+        domain = parsed.hostname or ""
+        if domain.endswith("."):
+            domain = domain[:-1]
         if not domain:
             return False
         # Exact match or subdomain

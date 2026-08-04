@@ -6,6 +6,71 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
+
+# ── NEVER-LOCK POLICY ────────────────────────────────────────────────────────
+# One list, one rule, instead of a growing pile of special cases.
+#
+# Every incident today was the same: the hypervisor locked something a LIVE
+# process needed to write, and the resulting error named the wrong thing, so
+# the real cause stayed invisible:
+#
+#   .git/**            git could not create index.lock -> commit and push both
+#                      dead. The error names a lock FILE, never the immutable
+#                      FLAG. Unlocked 3,576+ paths FOUR separate times today.
+#   .brain/plans/**    `nucleus build` crashed writing its own state.tmp. The
+#                      operator sees "plan review timed out after 1200s" — but
+#                      the review had FINISHED; only the write failed.
+#   .brain/relay/**    vendor capture silently failed, so dispatches ran with
+#   .brain/engrams/**  NO audit record — invisible to every ledger, which is
+#                      the one thing nucleus_delegate exists to prevent.
+#   *.lock / *.tmp     lock/temp files are by definition mid-transaction.
+#
+# The principle: LOCK FINISHED ARTIFACTS, NEVER LIVE WORKING STATE. A lock on
+# something a process is actively writing is not protection, it is a crash —
+# and a crash reported as something else entirely.
+#
+# Silent-write-failure is the aggravating factor. ruff --fix, py_compile,
+# open() and pip each "succeeded" against locked paths today while changing
+# nothing. A tool that does not check its own write cannot tell you.
+#
+# Extend with NUCLEUS_NEVER_LOCK (colon-separated path segments). This list is
+# a floor, not a ceiling: adding to it is cheap, and a wrongly-locked live path
+# has cost hours today.
+_NEVER_LOCK_SEGMENTS = {
+    ".git",             # every recoverable version of everything else
+    "plans",            # nucleus build / plan_review_loop scratch
+    "relay",            # inter-agent envelopes, written continuously
+    "engrams",          # memory appends
+    "ledger",           # change ledger appends
+    "sessions",         # live session state
+    "telemetry",        # relay_metrics.jsonl: appended on EVERY dispatch
+    "locks",
+    "tmp",
+    ".venv",
+    "__pycache__",      # py_compile writes here; blocking it fakes syntax errors
+    "node_modules",
+}
+_NEVER_LOCK_SUFFIXES = (".lock", ".tmp", ".pid", ".sock")
+
+
+def _never_lock_reason(path: str):
+    """Return a human reason if `path` must never be locked, else None."""
+    ap = os.path.abspath(path)
+    parts = ap.split(os.sep)
+
+    if ap.endswith(_NEVER_LOCK_SUFFIXES):
+        return "a transaction/temp file"
+
+    extra = {s for s in os.environ.get("NUCLEUS_NEVER_LOCK", "").split(":") if s}
+    for seg in _NEVER_LOCK_SEGMENTS | extra:
+        if seg in parts:
+            # ".brain/plans" and ".git" are meaningful; a source file that merely
+            # happens to sit in a dir called "tmp" is caught too, and that is the
+            # safe direction to err.
+            return f"live working state (matched {seg!r})"
+    return None
+
+
 class Locker:
     """
     The Nucleus Hypervisor Locking Primitive (Layer 4).
@@ -37,7 +102,13 @@ class Locker:
         if not os.path.exists(path):
             logger.error(f"Cannot lock non-existent path: {path}")
             return False
-            
+
+        # Policy lives in _never_lock_reason() above — one list, one rule.
+        refusal = _never_lock_reason(path)
+        if refusal:
+            logger.warning(f"⛔ REFUSED to lock {refusal}: {path}")
+            return False
+
         logger.info(f"🔒 Locking: {path}")
 
         # Apply metadata BEFORE making immutable
@@ -56,15 +127,15 @@ class Locker:
             import shutil
             if shutil.which("attrib"):
                 return self._run_cmd(["attrib", "+r", path])
-            logger.warning("Windows 'attrib' command not found. Skipping lock.")
-            return True # Graceful skip
-            
+            logger.warning("Windows 'attrib' command not found. Lock NOT applied.")
+            return False
+
         import sys
         if sys.platform == 'linux':
             import shutil
             if not shutil.which("chattr"):
-                logger.warning("Locker: 'chattr' not found on Linux. Skipping immutable lock.")
-                return True
+                logger.warning("Locker: 'chattr' not found on Linux. Lock NOT applied.")
+                return False
             # Linux requires sudo for chattr immutable flags. 
             # Non-interactive sudo must be allowed for the agent user or it will prompt/fail.
             if os.path.isdir(path):
@@ -75,8 +146,8 @@ class Locker:
         # Check if chflags exists (macOS/BSD)
         import shutil
         if not shutil.which("chflags"):
-            logger.warning("Locker: 'chflags' not found. Skipping immutable lock.")
-            return True
+            logger.warning("Locker: 'chflags' not found. Lock NOT applied.")
+            return False
 
         if os.path.isdir(path):
             return self._run_cmd(["chflags", "-R", "uchg", path])
@@ -97,13 +168,13 @@ class Locker:
             import shutil
             if shutil.which("attrib"):
                 return self._run_cmd(["attrib", "-r", path])
-            return True
+            return False
 
         import sys
         if sys.platform == 'linux':
             import shutil
             if not shutil.which("chattr"):
-                return True
+                return False
             if os.path.isdir(path):
                 return self._run_cmd(["sudo", "chattr", "-R", "-i", path])
             else:
@@ -111,7 +182,7 @@ class Locker:
 
         import shutil
         if not shutil.which("chflags"):
-            return True
+            return False
 
         if os.path.isdir(path):
             return self._run_cmd(["chflags", "-R", "nouchg", path])

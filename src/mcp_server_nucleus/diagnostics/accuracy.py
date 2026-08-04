@@ -44,9 +44,9 @@ def verify_nucleus_accuracy() -> dict:
 
     db = _db_path()
     if not db.exists():
-        print(f"local DB not found at {db} — architectural verification only")
-        accuracy = 100.0
-        logic = "Deterministic SQLite Indexing"
+        print(f"local DB not found at {db} — cannot verify, database missing")
+        accuracy = 0.0
+        logic = f"DB missing at {db} — no roundtrip performed"
     else:
         conn = sqlite3.connect(str(db), timeout=5.0)
         cursor = conn.cursor()

@@ -51,9 +51,20 @@ def read_csr(brain_path: Path) -> Dict[str, Any]:
     try:
         return json.loads(p.read_text())
     except (json.JSONDecodeError, OSError):
-        # Corrupted → reset to founding state. Better than crashing the caller;
-        # a corrupted CSR file is a disposable cache, not a sacred ledger.
+        # Corrupted → preserve the evidence before resetting. CSR is the
+        # trust scalar read before closing a session (per CLAUDE.md); a
+        # corruption event is itself the strongest possible signal that
+        # something broke, so silently presenting a perfect 1.0 with no
+        # trace of the corrupted history is exactly backwards. Back the
+        # corrupt file up for forensics, then reset so the caller still
+        # gets a usable (if reset) state instead of crashing.
+        try:
+            backup = p.with_suffix(f".corrupt-{int(datetime.now(timezone.utc).timestamp())}.json")
+            backup.write_text(p.read_text())
+        except OSError:
+            pass
         state = _default_state()
+        state["corrupted_and_reset"] = True
         p.write_text(json.dumps(state, indent=2))
         return state
 

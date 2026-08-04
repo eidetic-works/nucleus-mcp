@@ -134,7 +134,10 @@ class ControlWatcher:
             priority="normal",
             sender="lane_control",
         )
-        return str(result.get("message_id", result))
+        mid = result.get("message_id") or result.get("id")
+        if not mid or result.get("sent") is False:
+            raise RuntimeError(f"relay_post failed for {task_id}: {result.get('error', result)}")
+        return str(mid)
 
     def dispatch(self) -> Dict[str, Any]:
         """Dispatch ready tasks to executor lanes.
@@ -212,7 +215,11 @@ class ControlWatcher:
 
                 # Dispatch to the first available lane
                 lane = self.config.lanes[0]
-                relay_id = self._post_relay(item.task_id, lane, item.description)
+                try:
+                    relay_id = self._post_relay(item.task_id, lane, item.description)
+                except Exception as exc:
+                    skipped[item.task_id] = f"relay-failed: {exc}"
+                    continue
                 dispatches[item.task_id] = {
                     "at": datetime.now(timezone.utc).isoformat(),
                     "fingerprint": fingerprint,

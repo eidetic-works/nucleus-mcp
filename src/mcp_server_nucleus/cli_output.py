@@ -198,7 +198,7 @@ def parse_runtime_response(response: Any) -> tuple:
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError:
-            return (True, response, None)
+            return (False, None, f"Runtime error / non-JSON response: {response}")
     elif isinstance(response, dict):
         parsed = response
     else:

@@ -121,6 +121,7 @@ def check_event_log() -> Dict[str, Any]:
         
         # Count events and check recency
         count = 0
+        corrupted = 0
         last_event_time = None
         
         with open(events_path, "r", encoding="utf-8") as f:
@@ -132,13 +133,25 @@ def check_event_log() -> Dict[str, Any]:
                         if "timestamp" in event:
                             last_event_time = event["timestamp"]
                     except json.JSONDecodeError:
-                        pass
+                        corrupted += 1
+        
+        # A corrupted event log must not read as healthy/empty. Mirror the
+        # sibling check_engram_ledger: count corrupted lines and downgrade
+        # status based on the corruption ratio. A fully corrupted log is
+        # UNHEALTHY, not healthy with count=0.
+        status = HealthStatus.HEALTHY
+        if corrupted > 0:
+            if count == 0:
+                status = HealthStatus.UNHEALTHY
+            else:
+                status = HealthStatus.DEGRADED if corrupted < count * 0.1 else HealthStatus.UNHEALTHY
         
         return {
             "component": "event_log",
-            "status": HealthStatus.HEALTHY,
+            "status": status,
             "exists": True,
             "count": count,
+            "corrupted_lines": corrupted,
             "last_event": last_event_time,
         }
     except Exception as e:
@@ -221,11 +234,17 @@ def check_circuit_breakers() -> Dict[str, Any]:
             "open_count": len(open_breakers),
             "open_names": open_breakers,
         }
+    except ImportError:
+        return {
+            "component": "circuit_breakers",
+            "status": HealthStatus.DEGRADED,
+            "message": "Circuit breaker module not available",
+        }
     except Exception as e:
         return {
             "component": "circuit_breakers",
-            "status": HealthStatus.HEALTHY,
-            "message": "Circuit breaker module not loaded yet",
+            "status": HealthStatus.UNHEALTHY,
+            "error": str(e),
         }
 
 
@@ -244,11 +263,17 @@ def check_engram_cache() -> Dict[str, Any]:
             "contexts": stats["contexts"],
             "load_count": stats["load_count"],
         }
+    except ImportError:
+        return {
+            "component": "engram_cache",
+            "status": HealthStatus.DEGRADED,
+            "message": "Engram cache module not available",
+        }
     except Exception as e:
         return {
             "component": "engram_cache",
-            "status": HealthStatus.HEALTHY,
-            "message": "Cache not initialized yet",
+            "status": HealthStatus.UNHEALTHY,
+            "error": str(e),
         }
 
 def check_founder_readiness() -> Dict[str, Any]:

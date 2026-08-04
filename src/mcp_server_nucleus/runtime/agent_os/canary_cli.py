@@ -243,7 +243,7 @@ def canary(
         else:
             print(f"  exported {len(drift_turns)} drifted turns to {export_path}")
 
-    return 0
+    return 1 if drift_count > 0 else 0
 
 
 def main(argv: Optional[list] = None) -> int:
