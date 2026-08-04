@@ -5522,6 +5522,19 @@ def main():
     build_parser = subparsers.add_parser(
         'build',
         help='Run the build pipeline: plan review → vendor execution → verification → verdict',
+        epilog=(
+            'Examples:\n'
+            '  nucleus build "add a --json flag to nucleus status"\n'
+            '  nucleus build --merge "fix the off-by-one in scripts/deploy_blog.sh"\n'
+            '  nucleus build --merge --repo owner/other-repo "..." --review-vendor agy\n'
+            '  nucleus build --merge --dry-run "..."   # no live gh/git effects\n'
+            '\n'
+            "task is a required positional argument — quote multi-word prompts.\n"
+            '--repo only targets the merge gate\'s PR/merge; it does NOT change the\n'
+            'build phase\'s working directory (the build always runs in the cwd\n'
+            'nucleus was invoked from).'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     build_parser.add_argument(
         'task',

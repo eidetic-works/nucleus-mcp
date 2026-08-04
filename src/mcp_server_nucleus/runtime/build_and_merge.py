@@ -83,8 +83,12 @@ def _create_branch(branch_name: str) -> bool:
         subprocess.run(["git", "checkout", "-b", branch_name], check=True,
                        capture_output=True, text=True)
         return True
-    except subprocess.CalledProcessError as exc:
-        print(f"[build_and_merge] git checkout -b failed: {exc.stderr}", file=sys.stderr)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        # CalledProcessError = git exited non-zero (stderr on exc).
+        # OSError (incl. FileNotFoundError) = git binary not installed / not
+        # executable. Both are graceful failures, not crashes.
+        detail = getattr(exc, "stderr", str(exc))
+        print(f"[build_and_merge] git checkout -b failed: {detail}", file=sys.stderr)
         return False
 
 
@@ -99,8 +103,9 @@ def _commit_changed_files(changed_files: List[str], message: str) -> bool:
         subprocess.run(["git", "commit", "-m", message], check=True,
                        capture_output=True, text=True)
         return True
-    except subprocess.CalledProcessError as exc:
-        print(f"[build_and_merge] git commit failed: {exc.stderr}", file=sys.stderr)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        detail = getattr(exc, "stderr", str(exc))
+        print(f"[build_and_merge] git commit failed: {detail}", file=sys.stderr)
         return False
 
 
@@ -110,8 +115,9 @@ def _push_branch(branch_name: str) -> bool:
         subprocess.run(["git", "push", "-u", "origin", branch_name], check=True,
                        capture_output=True, text=True)
         return True
-    except subprocess.CalledProcessError as exc:
-        print(f"[build_and_merge] git push failed: {exc.stderr}", file=sys.stderr)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        detail = getattr(exc, "stderr", str(exc))
+        print(f"[build_and_merge] git push failed: {detail}", file=sys.stderr)
         return False
 
 
@@ -124,8 +130,12 @@ def _create_pr(branch_name: str, title: str, body: str, base: str) -> Optional[i
              "--title", title, "--body", body],
             check=True, capture_output=True, text=True,
         )
-    except subprocess.CalledProcessError as exc:
-        print(f"[build_and_merge] gh pr create failed: {exc.stderr}", file=sys.stderr)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        # CalledProcessError = gh exited non-zero (stderr on exc).
+        # OSError (incl. FileNotFoundError) = gh binary not installed / not
+        # executable. Both are graceful failures, not crashes.
+        detail = getattr(exc, "stderr", str(exc))
+        print(f"[build_and_merge] gh pr create failed: {detail}", file=sys.stderr)
         return None
     # gh pr create prints the PR URL to stdout, e.g.:
     #   https://github.com/owner/repo/pull/42
@@ -199,6 +209,25 @@ def _build_verify_receipt(task_prompt: str, verify_details: Dict[str, Any],
     return json.dumps(receipt, indent=2, default=str)
 
 
+def _cwd_origin_repo() -> Optional[str]:
+    """Best-effort ``owner/name`` parsed from `git remote get-url origin` run
+    in the current working directory. Returns None on any failure (not a git
+    repo, no origin remote, git unavailable) — never raises."""
+    try:
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            return None
+        url = result.stdout.strip()
+    except Exception:
+        return None
+    import re
+    m = re.search(r"[:/]([\w.-]+/[\w.-]+?)(?:\.git)?$", url)
+    return m.group(1) if m else None
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def run_build_and_merge_pipeline(
@@ -222,6 +251,25 @@ def run_build_and_merge_pipeline(
     if not task_prompt or not task_prompt.strip():
         print("build --merge: empty task prompt", flush=True)
         return 2
+
+    # fw-1785863543: --repo only ever targeted the merge gate's PR/merge
+    # step — it never changed the build phase's working directory, so
+    # `nucleus build --merge --repo other/repo "..."` silently built against
+    # the CURRENT cwd's repo while the merge gate pointed at `other/repo`.
+    # Making --repo actually switch directories is a bigger behavior change
+    # than this shim should make unasked; the safe minimal fix is to warn
+    # loudly the moment the mismatch is knowable, before any stage runs.
+    cwd_repo = _cwd_origin_repo()
+    if cwd_repo and repo and cwd_repo != repo:
+        print(
+            f"[build --merge] WARNING: --repo={repo!r} targets the merge "
+            f"gate only. The build phase runs in the current working "
+            f"directory, whose origin is {cwd_repo!r} — the build will "
+            f"read/write files in {cwd_repo!r}, NOT {repo!r}. cd into the "
+            f"target repo before running `nucleus build --merge` if that "
+            f"is not what you want.",
+            file=sys.stderr, flush=True,
+        )
 
     # Lazy import System A's stage functions (see module-level comment about
     # merge_gate.py's sys.modules eviction).

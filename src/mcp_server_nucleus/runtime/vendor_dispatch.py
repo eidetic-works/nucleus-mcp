@@ -140,6 +140,52 @@ def _count_behind_upstream(cwd: Optional[str] = None) -> Optional[int]:
     return None
 
 
+def _rebase_or_merge_in_progress(cwd: Optional[str] = None) -> Optional[str]:
+    """Detect an unrelated, already-in-progress rebase/merge/cherry-pick in
+    the worktree the dispatch is about to run in. Returns a short label
+    (``"rebase"``, ``"merge"``, ``"cherry-pick"``) or None. Best-effort,
+    never raises — mirrors the fault-isolation contract of
+    :func:`_count_behind_upstream`.
+
+    Background (2026-08-04 incident, fw-1785838722): a vendor dispatch
+    subprocess sharing the MCP server process's cwd walked into a stale,
+    abandoned interactive rebase left in ``.git/rebase-merge/`` since a prior,
+    unrelated session and staged a pile of unrelated files trying to resolve
+    a conflict that was not its business to touch. Nothing previously warned
+    the caller their shared working tree was mid-rebase before dispatching.
+    """
+    import subprocess
+
+    def _git_path_exists(name: str, is_dir: bool) -> bool:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-path", name],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if result.returncode != 0:
+            return False
+        # `--git-path` prints a path relative to the cwd it ran in when that
+        # cwd is inside a repo — resolve it against `cwd`, not this process's
+        # own cwd, or every check silently misses (fixed absolute-path repos
+        # aside).
+        p = Path(result.stdout.strip())
+        if not p.is_absolute():
+            p = Path(cwd or ".") / p
+        return p.is_dir() if is_dir else p.is_file()
+
+    try:
+        if _git_path_exists("rebase-merge", is_dir=True):
+            return "rebase"
+        if _git_path_exists("rebase-apply", is_dir=True):
+            return "rebase"
+        if _git_path_exists("MERGE_HEAD", is_dir=False):
+            return "merge"
+        if _git_path_exists("CHERRY_PICK_HEAD", is_dir=False):
+            return "cherry-pick"
+    except Exception:
+        pass
+    return None
+
+
 CROSS_VENDOR_DISABLED_MSG = (
     "cross-vendor dispatch is disabled. Set NUCLEUS_CROSS_VENDOR=1 to enable, "
     "e.g.  NUCLEUS_CROSS_VENDOR=1 nucleus dispatch agy --prompt-file prompt.txt "
@@ -1039,6 +1085,15 @@ def dispatch_and_capture(
             "silently revert already-merged upstream fixes. "
             "(local_head_behind_upstream=%d)",
             behind_upstream, behind_upstream,
+        )
+    in_progress = _rebase_or_merge_in_progress()
+    if in_progress:
+        logger.warning(
+            "dispatch_and_capture: worktree has an in-progress %s — the "
+            "vendor subprocess shares this cwd and may misread unrelated "
+            "conflict markers/state as something to resolve, staging files "
+            "outside this dispatch's scope. (git_operation_in_progress=%s)",
+            in_progress, in_progress,
         )
     result = VendorCLIExecutor(
         vendor, prompt, timeout_s=timeout_s, budget_usd=budget_usd,

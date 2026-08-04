@@ -55,8 +55,17 @@ class Flywheel:
     production callers can let it auto-resolve from env.
     """
 
-    def __init__(self, brain_path: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        brain_path: Optional[Path] = None,
+        github_repo: Optional[str] = None,
+    ) -> None:
         self.brain_path = Path(brain_path) if brain_path else _default_brain_path()
+        # Explicit per-instance override for the GitHub issue target repo.
+        # None → resolve from NUCLEUS_FLYWHEEL_REPO env at call time, then
+        # fall back to the public default (works for anyone; internal users
+        # set the env to eidetic-works/mcp-server-nucleus for the private repo).
+        self.github_repo = github_repo
         _ensure_flywheel_dir(self.brain_path)
 
     # ── CSR ────────────────────────────────────────────────────────────────
@@ -182,7 +191,23 @@ class Flywheel:
     def _try_gh_issue(
         self, step: str, error: str, logs: str, ticket_id: str
     ) -> str:
-        """Attempt to create a GitHub issue via gh CLI. Queue if unavailable."""
+        """Attempt to create a GitHub issue via gh CLI. Queue if unavailable.
+
+        Target repo resolution (first wins):
+            1. per-instance ``Flywheel(github_repo=...)`` override
+            2. ``NUCLEUS_FLYWHEEL_REPO`` env var
+            3. default ``eidetic-works/nucleus-mcp`` (public — works for anyone)
+
+        Internal users set ``NUCLEUS_FLYWHEEL_REPO=eidetic-works/mcp-server-nucleus``
+        to route to the private repo. Labels are restricted to ones that exist
+        on both repos (``nucleus-bug``); ``flywheel-auto`` was dropped because
+        it is not a valid label on either repo.
+        """
+        target_repo = (
+            self.github_repo
+            or os.environ.get("NUCLEUS_FLYWHEEL_REPO", "")
+            or "eidetic-works/nucleus-mcp"
+        )
         title = f"[flywheel] {step}: {error[:60]}"
         body = (
             f"**Ticket:** `{ticket_id}`\n\n"
@@ -202,7 +227,8 @@ class Flywheel:
                 "ticket_id": ticket_id,
                 "title": title,
                 "body": body,
-                "labels": ["nucleus-bug", "flywheel-auto"],
+                "labels": ["nucleus-bug"],
+                "repo": target_repo,
                 "queued_at": _now_iso(),
             },
         )
@@ -213,12 +239,14 @@ class Flywheel:
                     "gh",
                     "issue",
                     "create",
+                    "--repo",
+                    target_repo,
                     "--title",
                     title,
                     "--body",
                     body,
                     "--label",
-                    "nucleus-bug,flywheel-auto",
+                    "nucleus-bug",
                 ],
                 capture_output=True,
                 text=True,
