@@ -46,16 +46,43 @@ class BrainLock:
         os.makedirs(os.path.dirname(self.lock_file), exist_ok=True)
 
     def _is_stale(self) -> bool:
-        """Check if lock file holds a PID for a dead process."""
+        """Check if lock file holds a PID for a dead process.
+
+        Three-valued result — "could not check" is NOT "clean":
+            True  -> stale: a PID was recorded and that process is gone.
+            False -> held: a PID was recorded and that process is alive
+                    (or the file is missing entirely, which means no lock
+                    to break — the caller's acquire() path handles the
+                    missing-file case by simply opening a fresh lock).
+            None  -> INSUFFICIENT: the lock file exists but holds no PID yet
+                    (a concurrent open('w') that has not written its PID).
+                    Treat as HELD — never steal a lock we could not verify
+                    was stale. Returning None lets callers/tests distinguish
+                    "unreadable" from "verified stale" without changing the
+                    truthiness contract (None is falsy, so `if _is_stale():`
+                    still means "verified stale").
+        """
         try:
             with open(self.lock_file, 'r') as f:
-                pid = int(f.read().strip())
+                raw = f.read().strip()
+        except FileNotFoundError:
+            return False  # no file -> no lock to break; acquire() opens fresh
+        if not raw:
+            # 0-byte / whitespace-only: a concurrent open('w') that has not
+            # written its PID yet. The owner may be alive — we cannot tell.
+            # Fail closed: do NOT report this as stale.
+            return None
+        try:
+            pid = int(raw)
+        except ValueError:
+            # Corrupt (non-numeric) content: owner may still be writing.
+            # Fail closed rather than steal a possibly-held lock.
+            return None
+        try:
             os.kill(pid, 0)  # signal 0 = check if alive
             return False
-        except (ValueError, FileNotFoundError):
-            return True  # corrupt or missing
         except ProcessLookupError:
-            return True  # PID dead
+            return True  # PID recorded and that process is gone
         except PermissionError:
             return False  # alive, different user
 

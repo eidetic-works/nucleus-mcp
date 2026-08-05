@@ -5,6 +5,38 @@ All notable changes to Nucleus MCP / Sovereign Agent OS will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — "Per-user dashboard + live funnel"
+
+### Added
+- **Per-user telemetry dashboard** — worker now stores full per-user event history
+  (not just aggregate counters). Each install_id gets:
+  - Profile hash (first_seen, last_seen, country, city, region, timezone, python, os, version)
+  - Per-command invocation counts (command → count)
+  - Recent 200 events list (command, category, duration_ms, session_id, error_type)
+  - Daily activity heatmap (date → event count)
+  - Auto-assigned pseudonym (deterministic: Adjective + Animal from install_id hash)
+- **Geo enrichment** — every event now captures city, region, timezone from
+  Cloudflare edge (MaxMind GeoIP). No IP stored.
+- **HTML dashboard** at `eidetic.works/dashboard` — full funnel visualization:
+  - Funnel bars (views → clones → downloads → real users → telemetry)
+  - Key metrics cards (stars, forks, humans, CI noise, telemetry)
+  - Real vs CI table with HUMAN/AMBIGUOUS/CI badges
+  - Per-user cards with pseudonym, location, commands, recent events
+  - Known BigQuery users table for correlation
+  - Dark theme, auto-refresh 60s
+- **`GET /telemetry/users`** — per-user dashboard API (`?limit=20&events=0`)
+- **`GET /telemetry/users/:id`** — single-user detail with full event history
+- **`POST /telemetry/users/:id/pseudonym`** — manually name a user
+- **`GET /telemetry/known-users`** — pre-telemetry BigQuery user list (9 users)
+- **`GET/POST /telemetry/funnel`** — store/retrieve BigQuery+GitHub funnel summary
+- **Funnel script integration** — daily `pypi_full_funnel.py` pushes live
+  BigQuery + GitHub data to the worker for the dashboard
+
+### Changed
+- Worker now captures `request.cf.city`, `request.cf.region`, `request.cf.timezone`
+  in addition to `request.cf.country`
+- Dashboard reads live funnel data from Upstash (no more hardcoded numbers)
+
 ## [1.16.1] - 2026-08-01 — "Telemetry pipeline fix + install event"
 
 ### Fixed

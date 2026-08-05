@@ -104,6 +104,88 @@ def _read_worktree_head_sha(cwd: Optional[str] = None) -> Optional[str]:
         pass
     return None
 
+
+def _count_behind_upstream(cwd: Optional[str] = None) -> Optional[int]:
+    """Count commits the worktree HEAD is behind its configured upstream.
+
+    Returns the integer commit count (0 == up to date), or ``None`` when it
+    could not be determined: no upstream tracking branch configured, not a git
+    repo, git unavailable, or any subprocess error. Mirrors the
+    fault-isolation contract of :func:`_read_worktree_head_sha` — this is a
+    best-effort diagnostic signal and must NEVER raise into the caller.
+
+    Background (2026-08-04 incident): a scout dispatch and a build dispatch
+    both operated on a local worktree 22 commits behind ``origin/main``. The
+    scout "found" a bug already fixed upstream; the build "fixed" it again
+    against the stale copy — a diff that, applied to real ``origin/main``,
+    would have SILENTLY REVERTED merged fixes. This function is the signal that
+    was missing: how far behind is the checkout the vendor is about to read or
+    mutate. The caller logs a warning when the count is > 0.
+    """
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD..@{u}"],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if result.returncode == 0:
+            count = result.stdout.strip()
+            if count.isdigit():
+                return int(count)
+        # Non-zero return code covers the "no upstream configured" case
+        # (`fatal: no upstream configured for branch '...'`) and any other
+        # git refusal — both map to "unknown", not a crash.
+    except Exception:
+        pass
+    return None
+
+
+def _rebase_or_merge_in_progress(cwd: Optional[str] = None) -> Optional[str]:
+    """Detect an unrelated, already-in-progress rebase/merge/cherry-pick in
+    the worktree the dispatch is about to run in. Returns a short label
+    (``"rebase"``, ``"merge"``, ``"cherry-pick"``) or None. Best-effort,
+    never raises — mirrors the fault-isolation contract of
+    :func:`_count_behind_upstream`.
+
+    Background (2026-08-04 incident, fw-1785838722): a vendor dispatch
+    subprocess sharing the MCP server process's cwd walked into a stale,
+    abandoned interactive rebase left in ``.git/rebase-merge/`` since a prior,
+    unrelated session and staged a pile of unrelated files trying to resolve
+    a conflict that was not its business to touch. Nothing previously warned
+    the caller their shared working tree was mid-rebase before dispatching.
+    """
+    import subprocess
+
+    def _git_path_exists(name: str, is_dir: bool) -> bool:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-path", name],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if result.returncode != 0:
+            return False
+        # `--git-path` prints a path relative to the cwd it ran in when that
+        # cwd is inside a repo — resolve it against `cwd`, not this process's
+        # own cwd, or every check silently misses (fixed absolute-path repos
+        # aside).
+        p = Path(result.stdout.strip())
+        if not p.is_absolute():
+            p = Path(cwd or ".") / p
+        return p.is_dir() if is_dir else p.is_file()
+
+    try:
+        if _git_path_exists("rebase-merge", is_dir=True):
+            return "rebase"
+        if _git_path_exists("rebase-apply", is_dir=True):
+            return "rebase"
+        if _git_path_exists("MERGE_HEAD", is_dir=False):
+            return "merge"
+        if _git_path_exists("CHERRY_PICK_HEAD", is_dir=False):
+            return "cherry-pick"
+    except Exception:
+        pass
+    return None
+
+
 CROSS_VENDOR_DISABLED_MSG = (
     "cross-vendor dispatch is disabled. Set NUCLEUS_CROSS_VENDOR=1 to enable, "
     "e.g.  NUCLEUS_CROSS_VENDOR=1 nucleus dispatch agy --prompt-file prompt.txt "
@@ -209,7 +291,11 @@ def is_multi_vendor_available() -> bool:
 # the next, and a real plan draft then exceeded the 300s hard kill repeatedly
 # (partial=0 bytes). Env-tunable so a slow-vendor window does not require a code
 # change. Default is unchanged at 300s. Read at import time.
-_DEFAULT_VENDOR_TIMEOUT_S = int(os.environ.get("NUCLEUS_VENDOR_TIMEOUT_S", "300"))
+# 1 hour. Was 300s, which HARD-KILLED completed vendor work at the finish line:
+# agy reviews measured 260.5s (87% of the old ceiling) and two consecutive runs
+# died at exactly 300.0s with "partial=0 bytes" — every token paid for, nothing
+# kept. A ceiling that discards finished output is worse than a slow lane.
+_DEFAULT_VENDOR_TIMEOUT_S = int(os.environ.get("NUCLEUS_VENDOR_TIMEOUT_S", "3600"))
 
 # ── Vendor registry ───────────────────────────────────────────────────────────
 VENDOR_MODES = ("read", "write")
@@ -772,6 +858,16 @@ class VendorCLIExecutor:
             err = _as_text(proc.stderr)
             if proc.returncode != 0 and err:
                 out = (out + "\n" + err).strip() if out else err.strip()
+            # SURFACE STDERR ON EMPTY STDOUT (2026-08-04, flywheel #92).
+            # When rc=0 but stdout is blank, the vendor silently failed (rate
+            # limit, OAuth expiry, internal error swallowed). The old code
+            # classified this as "empty_output" and discarded stderr — so the
+            # error message several layers up was the unhelpful "vendor did not
+            # produce output" with no clue WHY. Including stderr in the output
+            # for empty-stdout runs makes the error visible without changing
+            # the status classification (still "empty_output", still a failure).
+            if proc.returncode == 0 and not out.strip() and err.strip():
+                out = err.strip()
             out, nredacted = _redact_secrets(out)   # secret-hygiene backstop
             status = _classify_completed(proc.returncode, out)
             # NEAR-MISS WARNING. A dispatch that finishes at 290s of a 300s
@@ -858,7 +954,40 @@ def _capture(
     The body keeps the ``"model"`` (family) key for census stability and adds
     ``"model_id"`` (the selectable id that ran) and ``"effect"`` (the
     expect_paths verdict: ``unknown`` / ``files_touched`` / ``no_files_touched``).
+    crit-4 v2.1: the body gains an un-forgeable causal-edge signature. We stamp
+    ``ts`` + ``result_sha256`` (SHA-256 over the FULL result, pre-truncation — the
+    body only carries ``result[:3000]``, so the signed hash, not the truncated
+    text, is the binding) and HMAC-sign the exact field set with the brain's
+    machine key. The signature travels inside the JSON-string body that
+    ``relay_post`` stores verbatim, so it reaches the FS envelope with ZERO
+    changes to relay/core.py and zero new trust in the relay transport. Signing
+    is fault-isolated: on any failure (no brain, IO error) we stamp
+    ``dispatch_sig=null`` — the dispatch/capture never break, the envelope simply
+    will not count in the census (fail-closed at the census, not at dispatch).
     """
+    artifact_refs = [artifact_ref]
+    ts = int(time.time())
+    # Bind the FULL result (pre-truncation), not the truncated body text.
+    result_sha256 = hashlib.sha256((result.result or "").encode("utf-8")).hexdigest()
+
+    dispatch_sig: Optional[str] = None
+    try:
+        # periphery→periphery, lazy (ADR-0043 pattern; keeps the boundary green).
+        from .auth.signature_guard import get_signature_guard
+
+        dispatch_sig = get_signature_guard().sign_vendor_dispatch(
+            vendor=spec.vendor,
+            model=spec.model,
+            prompt_digest=prompt_digest,
+            artifact_refs=artifact_refs,
+            result_sha256=result_sha256,
+            status=result.status,
+            ts=ts,
+        )
+    except Exception as exc:  # noqa: BLE001 — signing must never break dispatch
+        logger.warning("vendor capture dispatch signing failed: %s", exc)
+        dispatch_sig = None
+
     body = json.dumps(
         {
             "vendor": spec.vendor,
@@ -866,6 +995,7 @@ def _capture(
             "model_id": result.model_id,
             "prompt_digest": prompt_digest,
             "result": result.result[:3000],
+            "result_sha256": result_sha256,
             "rc": result.rc,
             "status": result.status,
             "produced_output": result.produced_output,
@@ -883,6 +1013,9 @@ def _capture(
             # A criterion whose instrument cannot emit a passing value is the
             # required-check-that-cannot-report pattern, at the governance layer.
             "artifact_ref_source": artifact_ref_source,
+            "ts": ts,
+            "artifact_refs": artifact_refs,
+            "dispatch_sig": dispatch_sig,
         },
         ensure_ascii=False,
     )
@@ -973,6 +1106,32 @@ def dispatch_and_capture(
 
     pre = _snapshot_paths(expect_paths)              # {} when None ⇒ ZERO fs work
     pre_sha = _read_worktree_head_sha()              # BEFORE — see stamping block
+    # Stale-checkout guard (2026-08-04 incident): best-effort count of how many
+    # commits the worktree HEAD is behind its configured upstream. A non-zero
+    # count means the vendor is about to read or mutate code that is behind the
+    # real upstream — a dispatch against such a checkout can "find" already-
+    # fixed bugs or "fix" them again, producing a diff that silently reverts
+    # merged upstream work. This is a SIGNAL, never a gate: it must never turn
+    # a working dispatch into a broken one.
+    behind_upstream = _count_behind_upstream()
+    if behind_upstream and behind_upstream > 0:
+        logger.warning(
+            "dispatch_and_capture: worktree HEAD is %d commit(s) behind its "
+            "configured upstream — the vendor may be operating on stale code "
+            "relative to upstream; a build diff against this checkout could "
+            "silently revert already-merged upstream fixes. "
+            "(local_head_behind_upstream=%d)",
+            behind_upstream, behind_upstream,
+        )
+    in_progress = _rebase_or_merge_in_progress()
+    if in_progress:
+        logger.warning(
+            "dispatch_and_capture: worktree has an in-progress %s — the "
+            "vendor subprocess shares this cwd and may misread unrelated "
+            "conflict markers/state as something to resolve, staging files "
+            "outside this dispatch's scope. (git_operation_in_progress=%s)",
+            in_progress, in_progress,
+        )
     result = VendorCLIExecutor(
         vendor, prompt, timeout_s=timeout_s, budget_usd=budget_usd,
         model=model, mode=canon,
@@ -1056,6 +1215,8 @@ def dispatch_and_capture(
             "capture": {"relay": None, "engram": None,
                         "error": "worktree_sha_unavailable"},
         })
+        out["timeout_s"] = timeout_s
+        out["local_head_behind_upstream"] = behind_upstream
         return out
 
     digest = _prompt_digest(prompt)
@@ -1086,6 +1247,8 @@ def dispatch_and_capture(
         out["artifact_ref_nonqualifying_reason"] = nonqualifying_reason
     out["head_before"] = pre_sha
     out["head_after"] = post_sha
+    out["timeout_s"] = timeout_s
+    out["local_head_behind_upstream"] = behind_upstream
     return out
 
 
@@ -1122,11 +1285,27 @@ def dispatch_cli(
             "error": "no_prompt",
             "message": "provide --prompt, --prompt-file, or pipe the prompt on stdin",
         }
-    if not artifact_ref:
-        return 2, {
-            "error": "no_artifact_ref",
-            "message": "--artifact-ref is required (commit SHA / PR# / file path)",
-        }
+    # NO artifact_ref PRECONDITION HERE — this guard made `nucleus dispatch`
+    # impossible to call.
+    #
+    # It is a leftover from the pre-v3 design, where the caller supplied the ref.
+    # Under PRINCIPAL v3 the CLI deliberately does NOT expose --artifact-ref
+    # (cli.py says so explicitly: a caller-supplied ref is forgeable, so the
+    # capture instrument stamps it from the vendor worktree's git HEAD instead).
+    # So `artifact_ref` is ALWAYS None on this path, this check ALWAYS fired,
+    # and the CLI returned:
+    #
+    #     "--artifact-ref is required (commit SHA / PR# / file path)"
+    #
+    # naming a flag argparse is designed to REJECT. A remedy that cannot be
+    # followed — the same shape as advising `chmod` for a chflags lock. Verified
+    # uncallable with git fully unlocked, so this was not a git-derivation
+    # failure: the guard rejected the input before the stamping code could run.
+    #
+    # Failing closed still happens, in the right place: dispatch_and_capture
+    # stamps from git HEAD and returns artifact_ref_source="vendor_derived_failed"
+    # with capture suppressed if git is unavailable. That is the check that
+    # belongs here, and it already exists downstream.
 
     out = dispatch_and_capture(
         vendor, prompt, artifact_ref,

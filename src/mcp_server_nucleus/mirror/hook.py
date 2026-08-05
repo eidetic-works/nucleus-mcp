@@ -253,8 +253,14 @@ def _process_autonomous_wake(
                     pass
     except Exception:
         # NEVER let autonomous wake errors bubble up + break the hook.
-        # PR #480 hook-break-broke-all-sessions precedent.
-        pass
+        # PR #480 hook-break-broke-all-sessions precedent — but silence is
+        # not the same as safety: a corrupt config or import error means
+        # autonomous wakes stop firing for every offline role, forever,
+        # with zero signal. Keep the fail-safe exit contract, log the loss.
+        logger.exception(
+            "_process_autonomous_wake: autonomous wake failed for role=%s — "
+            "wakes will NOT fire this cycle for any offline role", current_role,
+        )
 
 
 def _fetch_bearer_for_role(role: str) -> str:

@@ -87,7 +87,14 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         t1_sigs = _tier1_syntax_check(changed, project_root, remaining())
         signals.extend(t1_sigs)
         if t1_sigs:
-            if all(s["passed"] for s in t1_sigs):
+            # A signal marked INSUFFICIENT is neither a pass nor a fail: the
+            # check could not be RUN, so it says nothing about the file. It is
+            # excluded from the verdict rather than counted as a failure.
+            # See _tier1_syntax_check — py_compile under a chflags-locked
+            # directory cannot write __pycache__, and the old all() read that
+            # as a syntax error, blocking commits over files it never parsed.
+            decidable = [s for s in t1_sigs if not s.get("insufficient")]
+            if all(s["passed"] for s in decidable):
                 tiers_passed.append(1)
             else:
                 tiers_failed.append(1)
@@ -370,8 +377,38 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
     # Committed during session
     if pre_head:
         files.update(_run_git("log", "--name-only", "--format=", f"{pre_head}..HEAD"))
-    # Untracked but not gitignored (newly-created files never staged/committed)
-    files.update(_run_git("ls-files", "--others", "--exclude-standard"))
+    # Untracked but not gitignored (newly-created files never staged/committed).
+    # Scope check (fw-1785843850): enumerate ALL untracked files unconditionally
+    # produced false-positives — a build that touched one real file had its
+    # VERIFY tier-2 fail because ~100 PRE-EXISTING untracked files (backup
+    # dirs, model weights, doc summaries) sitting in the working tree long
+    # before the build started were swept in. The original fix this block
+    # absorbed (newly-created untracked files must stay visible to
+    # verification) is preserved: when pre_head is available we filter the
+    # untracked set to only files that did NOT exist in the tree at pre_head
+    # (genuinely NEW since the build started) via `git cat-file -e`. When
+    # pre_head is empty there is no comparison point, so we keep the
+    # unconditional enumeration (the function's pre-existing behavior) —
+    # without pre_head every untracked file is plausibly build-related.
+    untracked = _run_git("ls-files", "--others", "--exclude-standard")
+    if pre_head:
+        genuinely_new = []
+        for relpath in untracked:
+            # git cat-file -e exits 0 if the path exists at pre_head, non-zero
+            # otherwise. A path that already existed (tracked OR untracked) at
+            # pre_head is NOT a build artifact and is excluded. cat-file -e on
+            # an untracked-at-pre_head path fails the same as for a never-tracked
+            # one — both mean "not in the pre_head tree" — which is exactly the
+            # signal we want: the file is new since pre_head.
+            r = subprocess.run(
+                ["git", "cat-file", "-e", f"{pre_head}:{relpath}"],
+                capture_output=True, timeout=5, cwd=str(project_root),
+            )
+            if r.returncode != 0:
+                genuinely_new.append(relpath)
+        files.update(genuinely_new)
+    else:
+        files.update(untracked)
 
     return sorted(files)
 
@@ -422,6 +459,31 @@ def _tier1_syntax_check(changed_files: list[str], project_root: Path,
             cmd = [c.replace("{file}", str(fpath)) for c in cmd_template]
             sig = _run_check(cmd, check_name, relpath, timeout=5)
             sig["tier"] = 1
+            # "Could not check" is NOT "check failed".
+            #
+            # py_compile writes __pycache__ NEXT TO the source. Under a
+            # hypervisor-locked (chflags uchg) directory that write raises
+            # PermissionError and the file is never parsed. The old code
+            # reported it as "GROUND: Syntax verification failed. Commit
+            # blocked." — naming a syntax error in a file whose syntax was
+            # never examined. It blocked three commits in one day, every time
+            # pointing at a perfectly valid file, and the suggested remedy
+            # ("fix syntax errors above") could not possibly work.
+            #
+            # This is the pass/fail collapse the substrate exists to name: an
+            # unknown coerced into a verdict. INSUFFICIENT is the honest value,
+            # and it is excluded from the tier verdict rather than blocking.
+            if not sig.get("passed"):
+                err = str(sig.get("error") or "")
+                if ("Operation not permitted" in err or "Permission denied" in err
+                        or "Errno 1" in err or "Errno 13" in err):
+                    sig["insufficient"] = True
+                    sig["state"] = "INSUFFICIENT"
+                    sig["error"] = (
+                        f"could not RUN {check_name} (write blocked — likely a "
+                        f"locked directory). Syntax NOT verified. This is not a "
+                        f"failure: {err}"
+                    )
             signals.append(sig)
 
         # JSON: load it

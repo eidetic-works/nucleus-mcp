@@ -47,23 +47,58 @@ class ProviderAttempt:
     error: str             # "" on success, error message on failure
 
 
+def _oauth_file_ready(path) -> bool:
+    """A credentials file is only ready if it exists and isn't empty/corrupt."""
+    try:
+        if path.stat().st_size == 0:
+            return False
+        import json
+        with open(path) as f:
+            json.load(f)
+        return True
+    except (OSError, ValueError):
+        return False
+
+
 def _provider_available(provider: str) -> bool:
     """Check if a provider's credentials are present without constructing it."""
     if provider in ("antigravity", "antigravity_oauth"):
         from pathlib import Path
-        return (Path.home() / ".tb" / "oauth_antigravity.json").exists()
+        return _oauth_file_ready(Path.home() / ".tb" / "oauth_antigravity.json")
     if provider in ("grok", "grok_oauth"):
         from pathlib import Path
-        return (Path.home() / ".tb" / "oauth_grok.json").exists()
+        return _oauth_file_ready(Path.home() / ".tb" / "oauth_grok.json")
     if provider == "groq":
         return bool(os.environ.get("NUCLEUS_GROQ_API_KEY"))
     if provider == "gemini":
         return bool(os.environ.get("GEMINI_API_KEY"))
     if provider in ("claude_oauth", "claude_max", "oauth"):
         from pathlib import Path
-        return (Path.home() / ".tb" / "oauth_bespoq_cowork.json").exists()
+        return _oauth_file_ready(Path.home() / ".tb" / "oauth_bespoq_cowork.json")
     if provider == "anthropic":
         return bool(os.environ.get("NUCLEUS_ANTHROPIC_API_KEY"))
+    if provider in ("local", "ollama", "local_ollama"):
+        # Local provider is available when Ollama is running at the configured endpoint.
+        # Check the endpoint is reachable (quick TCP probe, 1s timeout).
+        import socket
+        endpoint = os.environ.get(
+            "NUCLEUS_LOCAL_ENDPOINT", "http://localhost:11434"
+        )
+        # Parse host:port from the URL
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(endpoint)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 11434
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.0)
+            try:
+                sock.connect((host, port))
+                return True
+            finally:
+                sock.close()
+        except (OSError, ValueError):
+            return False
     return False
 
 
@@ -71,14 +106,22 @@ def _priority_order(capability: str) -> List[str]:
     """Return the provider priority list for a capability hint.
 
     The order encodes the MEMBRANE §1 policy: cheapest-capable-first.
+    The ``local`` provider (Ollama) is included when
+    ``NUCLEUS_AGENT_OS_LOCAL_MODEL`` is set — this is the run-back mechanism
+    for the forge loop (Stage 3): a fine-tuned model loaded into the gateway.
+    Without the env var, ``local`` is skipped (no model configured).
     """
-    base = ["antigravity", "groq", "gemini", "claude_oauth", "anthropic"]
+    has_local_model = bool(os.environ.get("NUCLEUS_AGENT_OS_LOCAL_MODEL"))
+    local = ["local"] if has_local_model else []
+
+    base = local + ["antigravity", "groq", "gemini", "claude_oauth", "anthropic"]
     if capability == CAP_CHEAP:
-        # Cheap tasks: prefer Groq (fastest) then Antigravity then Gemini.
-        return ["groq", "antigravity", "gemini", "claude_oauth", "anthropic"]
+        # Cheap tasks: prefer local (free) then Groq (fastest) then Antigravity.
+        return local + ["groq", "antigravity", "gemini", "claude_oauth", "anthropic"]
     if capability == CAP_REASONING:
         # Reasoning tasks: prefer frontier (Claude) then Antigravity (Gemini Pro).
-        return ["claude_oauth", "antigravity", "gemini", "groq", "anthropic"]
+        # Local model is still cheapest if configured — put it first.
+        return local + ["claude_oauth", "antigravity", "gemini", "groq", "anthropic"]
     return base
 
 

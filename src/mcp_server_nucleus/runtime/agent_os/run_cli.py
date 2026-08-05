@@ -97,6 +97,10 @@ def run(
     print(g.text or "<empty response>")
 
     alive = bool(g.event_id) and result.recalled_from_memory and bool(turn_id)
+    live_requested = os.environ.get(boot_mod.STUB_FLAG, "1") in ("0", "false", "False")
+    if live_requested and g.stubbed:
+        alive = False
+        print("\n[agent-os run] live provider requested but call was stubbed — not alive")
     print(f"\n[agent-os run] cell alive (3 proofs fired): {alive}")
     return 0 if alive else 1
 

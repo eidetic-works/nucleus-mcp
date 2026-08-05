@@ -119,3 +119,39 @@ nucleus dogfood log 9 --pay --faster 3 --notes "Engrams saved 20min"
 # Show experiment dashboard
 nucleus dogfood status
 ```
+
+## 🔨 build
+
+```bash
+# Run the build pipeline: plan → execute → verify → verdict
+nucleus build "implement feature X in module Y"
+
+# Build + merge: on a PASS verdict, commit → push → open PR → hand to merge gate
+nucleus build "implement feature X in module Y" --merge
+
+# Merge with explicit repo (default: eidetic-works/mcp-server-nucleus)
+nucleus build "fix bug Z" --merge --repo eidetic-works/mcp-server-nucleus
+
+# Merge with explicit review vendor (default: devin)
+nucleus build "fix bug Z" --merge --review-vendor devin
+
+# Dry-run the merge gate (no witness signing, no merge execution)
+nucleus build "fix bug Z" --merge --dry-run
+```
+
+**Pipeline:** `plan` (dual-vendor adversarial plan review) → `execute`
+(cross-vendor build dispatch) → `verify` (multi-tier check) → `verdict` card
++ exit code. Without `--merge`, the pipeline stops at the verdict.
+
+**With `--merge`:** on a PASS verdict, the shim commits the changed files on a
+fresh branch, pushes, opens a PR via `gh pr create`, and hands the PR number to
+`merge_gate_authorize.py authorize`. On a non-PASS verdict, the shim refuses
+before touching git/GitHub at all — no branch, no commit, no push, no PR.
+
+Two steroid seams thread System A (build_runner) output into System B
+(merge_gate): `NUCLEUS_BUILD_PLAN_CONTEXT` (plan text prepended to the gate's
+diff-review prompt) and `NUCLEUS_BUILD_VERIFY_RECEIPT_PATH` (verify receipt
+appended to the gate's audit metadata).
+
+**Implementation:** `src/mcp_server_nucleus/runtime/build_and_merge.py`.
+**Protocol:** `docs/protocols/sequence_not_merge.md` (ADR-0048).

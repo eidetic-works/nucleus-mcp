@@ -115,7 +115,7 @@ def run_demo(
     delta_str = ", ".join(delta_actions) if delta_actions else "none"
     print(f"## THE DELTA: {delta_str}")
 
-    return 0
+    return 0 if delta_actions else 1
 
 def main(argv: Optional[list] = None) -> int:
     """Argparse entrypoint for ``nucleus agent-os demo``."""

@@ -124,10 +124,10 @@ def loop(
 
     # ── Canary drift check (reuses canary_cli — no reimplementation). ────────
     print("\n=== CANARY DRIFT CHECK ===")
-    canary_cli.canary(brain_path=brain_path)
+    canary_code = canary_cli.canary(brain_path=brain_path)
 
-    # Exit 0 if every cell was alive; 1 if any failed; 2 reserved for flag-off.
-    return 0 if not failures else 1
+    # Exit 0 if every cell was alive and no canary drift; 1 otherwise.
+    return 0 if not failures and not canary_code else 1
 
 
 def main(argv: Optional[list] = None) -> int:

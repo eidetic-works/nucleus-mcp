@@ -115,6 +115,8 @@ def _trust_factor(row: dict) -> float:
             return _TRUST_BOOST
     for field in ("source", "tags"):
         val = row.get(field)
+        if isinstance(val, (list, tuple, set)):
+            val = " ".join(str(x) for x in val)
         if isinstance(val, str):
             low = val.lower()
             if any(m in low for m in _TRUST_TAG_MARKERS):

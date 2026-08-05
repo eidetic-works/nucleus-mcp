@@ -30,8 +30,8 @@ class Injector:
             # Ideally use a comment-preserving parser, but simple JSON is safer for machine-control.
             return json.loads(self.vscode_settings_path.read_text())
         except Exception as e:
-            logger.warning(f"Failed to read settings.json: {e}")
-            return {}
+            logger.error(f"Failed to read settings.json: {e}")
+            raise RuntimeError(f"Cannot manipulate corrupted settings.json: {e}") from e
 
     def _write_settings(self, settings: Dict[str, Any]) -> bool:
         try:

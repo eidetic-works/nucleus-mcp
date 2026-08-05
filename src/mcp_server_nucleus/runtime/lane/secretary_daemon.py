@@ -124,10 +124,11 @@ class SecretaryDaemon:
             test_files.extend(glob.glob(str(repo / pattern), recursive=True))
 
         if not test_files:
-            # No specific tests found — run GROUND verification
+            # No task-specific tests found — cannot confirm without one.
             return {
-                "pass": True,
-                "output": "No task-specific tests found — GROUND verification only",
+                "pass": False,
+                "status": "INSUFFICIENT",
+                "output": "No task-specific tests found — cannot confirm test pass",
                 "tests_run": 0,
             }
 

@@ -99,10 +99,15 @@ def unlock_resource_impl(path: str, token_id: str = None) -> str:
         return f"❌ UNLOCK DENIED: {error}"
 
     locker = get_locker()
-    if locker.unlock(path, secret=locker._internal_secret):
+    # Was `locker.unlock(path, secret=locker._internal_secret)` — two errors in
+    # one line: Locker has no `_internal_secret`, and unlock() takes no
+    # `secret` kwarg. So the sanctioned unlock ALWAYS raised AttributeError,
+    # and every file the hypervisor locked was locked permanently. A lock with
+    # no working unlock is not governance, it is a one-way door.
+    if locker.unlock(path):
         return f"🔓 UNLOCKED: {path}"
     else:
-        return f"❌ FAILED to unlock: {path} (Secret mismatch)"
+        return f"❌ FAILED to unlock: {path}"
 
 
 def set_hypervisor_mode_impl(mode: str) -> str:
@@ -234,7 +239,7 @@ def hypervisor_status_impl() -> str:
     watchdog = get_watchdog()
 
     status.append(f"📍 Workspace: {workspace_root}")
-    status.append(f"👁️  Watchdog: {'Active' if watchdog.observer.is_alive() else 'Inactive'}")
+    status.append(f"👁️  Watchdog: {'Active' if watchdog.observer and watchdog.observer.is_alive() else 'Inactive'}")
     status.append(f"🔒 Protected Paths: {len(watchdog.protected_paths)}")
     for p in watchdog.protected_paths:
         status.append(f"   - {p}")

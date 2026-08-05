@@ -6,7 +6,8 @@ legacy claude_code) for longer than ``--threshold-min`` minutes while unread
 relays exist somewhere.
 
 Output: JSON to stdout with per-bucket youngest-mtime, unread counts, and a
-``stalled: bool`` verdict. Exit 0 = healthy, 1 = stall detected.
+``stalled: bool`` verdict. Exit 0 = healthy, 1 = stall detected, 2 =
+indeterminate (all live relay buckets absent — could not check).
 
 Brain resolution order: ``$NUCLEUS_BRAIN`` wins; then ``--brain-path``;
 then ``$NUCLEUS_BRAIN_PATH`` for backwards compat; final fallback is
@@ -101,8 +102,8 @@ def resolve_brain_path(cli_value: str | None) -> Path:
     return _default_brain_path(strict=False)
 
 
-def scan_bucket(bucket_dir: Path) -> tuple[float | None, float | None, int, int]:
-    """Return (youngest_mtime_any, youngest_unread_created_at, total, unread).
+def scan_bucket(bucket_dir: Path) -> tuple[float | None, float | None, int, int, bool]:
+    """Return (youngest_mtime_any, youngest_unread_created_at, total, unread, present).
 
     ``youngest_unread_created_at`` uses the relay's ``created_at`` field (the
     original landing time). mtime is unreliable for unread — ``relay_ack``
@@ -110,10 +111,16 @@ def scan_bucket(bucket_dir: Path) -> tuple[float | None, float | None, int, int]
     looks "fresh" by mtime. Unread files haven't been acked, so mtime and
     created_at should match, but using created_at is the principled choice.
 
+    ``present`` is False when the bucket directory does not exist (absent)
+    and True when it exists (including if empty). A guard whose success case
+    looks identical to its failure case manufactures confidence: an absent
+    bucket is "could not check", not "0 unread = healthy". Callers must
+    consult ``present`` to distinguish the two.
+
     Malformed JSON counts as unread (safer — surfaces the error).
     """
     if not bucket_dir.is_dir():
-        return (None, None, 0, 0)
+        return (None, None, 0, 0, False)
     youngest_any: float | None = None
     youngest_unread: float | None = None
     total = 0
@@ -145,7 +152,7 @@ def scan_bucket(bucket_dir: Path) -> tuple[float | None, float | None, int, int]
             unread += 1
             if youngest_unread is None or st.st_mtime > youngest_unread:
                 youngest_unread = st.st_mtime
-    return (youngest_any, youngest_unread, total, unread)
+    return (youngest_any, youngest_unread, total, unread, True)
 
 
 def _iter_relays(relay_root: Path):
@@ -243,9 +250,12 @@ def main(argv: list[str] | None = None) -> int:
     total_unread = 0
     stalled_buckets: list[str] = []
     clock_drift_buckets: list[str] = []
+    absent_buckets: list[str] = []
 
     for name in LIVE_BUCKETS:
-        youngest_any, youngest_unread, total, unread = scan_bucket(relay_root / name)
+        youngest_any, youngest_unread, total, unread, present = scan_bucket(relay_root / name)
+        if not present:
+            absent_buckets.append(name)
         unread_age_min = age_min(now, youngest_unread)
         if youngest_unread is not None and (now - youngest_unread) < 0:
             clock_drift_buckets.append(name)
@@ -260,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             "total": total,
             "unread": unread,
             "stalled": bucket_stalled,
+            "present": present,
         }
         if bucket_stalled:
             stalled_buckets.append(name)
@@ -268,6 +279,12 @@ def main(argv: list[str] | None = None) -> int:
     ack_then_stalls = find_ack_then_stalls(relay_root, now, args.ack_stall_threshold_min)
     refuse_without_reason = find_refuse_without_reason(relay_root)
     silent_mode_detected = bool(ack_then_stalls or refuse_without_reason)
+
+    # Indeterminate: ALL live buckets are absent (relay root missing or
+    # misconfigured). The watchdog could not check anything, so "0 unread"
+    # is NOT a verified healthy verdict. Distinct from both "healthy" (exit
+    # 0) and "stall detected" (exit 1). Exit 2 = could not check.
+    indeterminate = len(absent_buckets) == len(LIVE_BUCKETS)
 
     report = {
         "timestamp": int(now),
@@ -280,6 +297,8 @@ def main(argv: list[str] | None = None) -> int:
         "ack_then_stalls": ack_then_stalls,
         "refuse_without_reason": refuse_without_reason,
         "silent_mode_detected": silent_mode_detected,
+        "indeterminate": indeterminate,
+        "absent_buckets": absent_buckets,
         "per_bucket": per_bucket,
     }
     if stalled_buckets:
@@ -287,9 +306,19 @@ def main(argv: list[str] | None = None) -> int:
             stalled_buckets,
             key=lambda n: per_bucket[n]["youngest_unread_age_min"] or 0,
         )
+    if indeterminate:
+        report["indeterminate_reason"] = (
+            f"all {len(LIVE_BUCKETS)} live relay buckets absent — "
+            f"relay root {relay_root} is missing or misconfigured; "
+            f"\"no stall\" is NOT a verified healthy result"
+        )
 
     print(json.dumps(report, indent=2))
-    return 1 if stalled_buckets else 0
+    if stalled_buckets:
+        return 1
+    if indeterminate:
+        return 2
+    return 0
 
 
 if __name__ == "__main__":

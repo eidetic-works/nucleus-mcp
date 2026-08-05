@@ -92,10 +92,16 @@ def generate_week_report(brain_path: Path, week: Optional[int] = None) -> Path:
             "|------|------|-------|-------|",
         ]
         for t in tickets[-20:]:
-            ts = t.get("at", "")[:19]
-            step = t.get("step", "?")[:40]
-            phase = t.get("phase", "")[:20]
-            err = (t.get("error", "") or "")[:80].replace("|", "-")
+            # fw-1785863295: `error` (and, defensively, the other fields) may
+            # not be a str — a caller bug upstream (e.g. a trailing comma
+            # turning `error=(...)` into a 1-tuple) can serialize a list/dict
+            # into the ticket. str() coercion here means one malformed
+            # ticket degrades to a stringified rendering instead of crashing
+            # week_report generation for every ticket in the file.
+            ts = str(t.get("at", ""))[:19]
+            step = str(t.get("step", "?"))[:40]
+            phase = str(t.get("phase", ""))[:20]
+            err = str(t.get("error", "") or "")[:80].replace("|", "-")
             lines.append(f"| {ts} | {step} | {phase} | {err} |")
         lines.append("")
 

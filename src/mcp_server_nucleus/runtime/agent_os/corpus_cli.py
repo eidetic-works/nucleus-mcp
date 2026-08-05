@@ -75,7 +75,7 @@ def _read_turns(path: Path) -> list[dict]:
     turns: list[dict] = []
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError:  # noqa: BLE001 — unreadable file, treat as empty
+    except FileNotFoundError:
         return []
     for line in text.splitlines():
         s = line.strip()

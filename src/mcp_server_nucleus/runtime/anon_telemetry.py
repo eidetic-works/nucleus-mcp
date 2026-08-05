@@ -305,19 +305,51 @@ def record_install():
     install event itself (pip doesn't run post-install hooks in the modern
     build system). Gated by a marker file at ~/.config/nucleus/.install_recorded
     so it only fires once per machine.
+
+    Also detects version upgrades: if the marker exists but the recorded
+    version differs from the current version, fires an "upgrade" event.
     """
     if not is_anon_telemetry_enabled():
         return
     try:
         marker = Path.home() / ".config" / "nucleus" / ".install_recorded"
+        version_marker = Path.home() / ".config" / "nucleus" / ".install_version"
+        current_version = _get_nucleus_version()
+
         if marker.exists():
+            # Already recorded — check for version upgrade
+            try:
+                old_version = version_marker.read_text(encoding="utf-8").strip() if version_marker.exists() else ""
+                if old_version and old_version != current_version and current_version != "unknown":
+                    # Version changed — fire upgrade event
+                    event = _build_event("upgrade", extra={
+                        "install_method": _detect_install_method(),
+                        "previous_version": old_version,
+                    })
+                    _send_in_background(event)
+                # Always update the version marker, even if no upgrade event fired.
+                # This handles the case where .install_version doesn't exist yet
+                # (existing users who installed before this feature was added).
+                # Their first upgrade won't fire an event, but the next one will.
+                if current_version and current_version != "unknown":
+                    version_marker.parent.mkdir(parents=True, exist_ok=True)
+                    version_marker.write_text(current_version, encoding="utf-8")
+            except Exception:
+                pass
             return  # Already recorded for this install_id
+
         event = _build_event("install", extra={
             "install_method": _detect_install_method(),
         })
         _send_in_background(event)
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text(str(time.time()))
+        # Record the version for future upgrade detection
+        try:
+            version_marker.parent.mkdir(parents=True, exist_ok=True)
+            version_marker.write_text(current_version, encoding="utf-8")
+        except Exception:
+            pass
     except Exception:
         pass  # Never let telemetry break the user's workflow
 

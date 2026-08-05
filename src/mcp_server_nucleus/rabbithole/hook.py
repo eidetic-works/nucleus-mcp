@@ -397,10 +397,12 @@ def main() -> None:
         finally:
             conn.close()
 
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Fail-safe: swallow every exception — the hook must never break
-        # the user's tool calls.
-        pass
+        # the user's tool calls. stdout is reserved for the JSON output
+        # contract, so the signal goes to stderr instead of being dropped
+        # entirely — a dead rabbithole guard should be visible somewhere.
+        print(f"[rabbithole hook] non-fatal error: {exc!r}", file=sys.stderr)
 
 
 if __name__ == "__main__":

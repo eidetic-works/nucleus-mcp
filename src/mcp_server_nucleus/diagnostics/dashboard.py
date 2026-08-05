@@ -51,14 +51,16 @@ def verify_files_exist(hud_root: Path) -> bool:
 def verify_content(hud_root: Path) -> bool:
     logger.info("Step 2: verify content...")
     card = hud_root / "app" / "components" / "marketplace" / "AgentCard.tsx"
-    if card.exists():
-        content = card.read_text()
-        if "interface Agent" not in content:
-            logger.error("AgentCard missing interface definition")
-            return False
-        if "export default function AgentCard" not in content:
-            logger.error("AgentCard missing export default")
-            return False
+    if not card.exists():
+        logger.error(f"AgentCard.tsx not found at {card}")
+        return False
+    content = card.read_text()
+    if "interface Agent" not in content:
+        logger.error("AgentCard missing interface definition")
+        return False
+    if "export default function AgentCard" not in content:
+        logger.error("AgentCard missing export default")
+        return False
     logger.info("content checks passed.")
     return True
 

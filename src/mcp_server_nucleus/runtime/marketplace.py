@@ -20,6 +20,7 @@ logger = logging.getLogger("nucleus.marketplace")
 
 # Strict format: alphanumerics and dashes only, ending in @nucleus
 _ADDRESS_RE = re.compile(r"^[a-z0-9\-]+@nucleus$")
+_re_bare_name = re.compile(r"^[a-z0-9\-]+$")
 
 
 def _get_registry_dir(brain_path: Optional[Path] = None) -> Path:
@@ -102,8 +103,20 @@ def register_tool(card_data: Dict[str, Any], brain_path: Optional[Path] = None) 
 
 
 def lookup_by_address(address: str, brain_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
-    """Look up a capability card by its permanent address."""
-    if not isinstance(address, str) or not _ADDRESS_RE.match(address):
+    """Look up a capability card by its permanent address.
+
+    A bare local name is normalised to `<name>@nucleus`. Without this,
+    `marketplace_promote` and `marketplace_quarantine` could NEVER succeed
+    with their own default: `caller="admin"` fails this regex, returns None,
+    and the caller is reported unverified no matter what is in the registry.
+    Both surfaces were unusable unless every caller happened to know to write
+    the suffix that the default itself omits.
+    """
+    if not isinstance(address, str) or not address:
+        return None
+    if "@" not in address and _re_bare_name.match(address):
+        address = f"{address}@nucleus"
+    if not _ADDRESS_RE.match(address):
         return None
 
     registry_dir = _get_registry_dir(brain_path)

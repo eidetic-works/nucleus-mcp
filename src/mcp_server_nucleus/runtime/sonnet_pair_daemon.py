@@ -312,6 +312,9 @@ async def poll_loop(lane: str, charter_path: Path, pair_sender: str,
             for path in list_pending(lane):
                 env = parse_envelope(path)
                 if env is None:
+                    if path.exists() and path.stat().st_size == 0:
+                        LOG.warning("0-byte envelope %s (mid-write?); keeping in inbox for retry", path.name)
+                        continue
                     archive(path, lane)
                     continue
                 try:
@@ -424,6 +427,9 @@ async def poll_loop_operator_assistant(pair_session_id: str,
             for path in list_pending_ops():
                 env = parse_envelope(path)
                 if env is None:
+                    if path.exists() and path.stat().st_size == 0:
+                        LOG.warning("0-byte envelope %s (mid-write?); keeping in inbox for retry", path.name)
+                        continue
                     _archive_ops(path)
                     continue
                 try:

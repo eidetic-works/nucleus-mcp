@@ -76,6 +76,23 @@ def verified_record_enabled() -> bool:
     return os.environ.get(VERIFIED_RECORD_FLAG, "").strip().lower() in _TRUTHY
 
 
+def _ensure_mandatory_anchors_on():
+    """Turn on the mandatory-anchor doctrine when the Agent OS boots.
+
+    Per ADR-0047 Workstream B1: the doctrine is DRAFT but the flag was OFF by
+    default. With it OFF, adjacent anchors can CONFIRM — the exact false-positive
+    pattern the doctrine was written to prevent. Turning it ON caps adjacent
+    anchors to PARTIAL, which is honest.
+
+    This is a one-way ratchet: once the Agent OS boots, the doctrine is ON.
+    Tests that need it OFF can set ``NUCLEUS_VERIFIER_MANDATORY_ANCHORS=0``
+    explicitly AFTER this function runs (the verifier reads the env live).
+    """
+    key = "NUCLEUS_VERIFIER_MANDATORY_ANCHORS"
+    if os.environ.get(key, "").strip().lower() not in _TRUTHY:
+        os.environ[key] = "1"
+
+
 def _stub_forced() -> bool:
     return os.environ.get(STUB_FLAG, "").strip().lower() in _TRUTHY
 
@@ -461,6 +478,10 @@ def boot_cell(
         raise RuntimeError(
             f"{BOOT_FLAG} is OFF — the cell does not boot. Set {BOOT_FLAG}=1 to run."
         )
+
+    # B1 (ADR-0047): turn on the mandatory-anchor doctrine when the OS boots.
+    # Adjacent anchors cap to PARTIAL, not CONFIRMED — honest by default.
+    _ensure_mandatory_anchors_on()
 
     brain_path = brain_path or os.environ.get("NUCLEUS_BRAIN_PATH")
     _ensure_brain_scaffold(brain_path)
