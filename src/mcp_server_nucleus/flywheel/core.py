@@ -87,11 +87,19 @@ class Flywheel:
         error: str,
         logs: str = "",
         phase: str = "",
+        fix_description: str = "",
     ) -> Dict[str, Any]:
         """The 6-action accountability helper.
 
         Returns a dict summarizing which actions fired. All actions are
         best-effort; one failing does not block the others.
+
+        ``fix_description`` is an optional structured fix prompt — a concrete,
+        actionable task description that a build pipeline or human can execute
+        to resolve the failure. Unlike ``error`` (which is diagnostic), this
+        is prescriptive: "Fix the sort in slots.py status_dashboard to cast
+        slot IDs to int before comparison." When empty (default), the ticket
+        only carries the error and awaits human triage to attach a fix.
         """
         when = _now_iso()
         fw_dir = _ensure_flywheel_dir(self.brain_path)
@@ -114,6 +122,7 @@ class Flywheel:
                     "phase": phase,
                     "error": error,
                     "logs": logs[:2000],  # cap payload
+                    "fix_description": fix_description,
                 },
             )
             report["actions"]["memory_note"] = "ok"
@@ -180,6 +189,7 @@ class Flywheel:
                     "title": f"[flywheel] {step}: {error[:60]}",
                     "priority": "founder-escalation",
                     "status": "open",
+                    "fix_description": fix_description,
                 },
             )
             report["actions"]["task_register"] = "ok"
@@ -271,10 +281,14 @@ def file_ticket(
     error: str,
     logs: str = "",
     phase: str = "",
+    fix_description: str = "",
     brain_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Shortcut: instantiate Flywheel and file a ticket."""
-    return Flywheel(brain_path).file_ticket(step=step, error=error, logs=logs, phase=phase)
+    return Flywheel(brain_path).file_ticket(
+        step=step, error=error, logs=logs, phase=phase,
+        fix_description=fix_description,
+    )
 
 
 def record_survived(
