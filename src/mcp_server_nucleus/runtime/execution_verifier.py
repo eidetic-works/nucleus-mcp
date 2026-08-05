@@ -354,6 +354,32 @@ def detect_runtime_checks(project_root: Path) -> list[dict]:
 # File extraction
 # ---------------------------------------------------------------------------
 
+def _get_submodule_paths(project_root: Path) -> set[str]:
+    """Return submodule directory paths from .gitmodules.
+
+    Submodule pointer changes (mode 160000) appear in ``git diff --name-only``
+    as just the submodule directory name (e.g. ``nucleus-mcp``). These are
+    gitlink pointer bumps, NOT file edits. Counting them as changed files
+    produces false-positive Tier 0 passes when the build touched nothing
+    real but the submodule pointer moved (fw-1785907505).
+    """
+    paths: set[str] = set()
+    try:
+        r = subprocess.run(
+            ["git", "config", "--file", ".gitmodules", "--get-regexp", "path"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(project_root),
+        )
+        for line in r.stdout.strip().splitlines():
+            if line.strip():
+                parts = line.split()
+                if len(parts) >= 2:
+                    paths.add(parts[-1].strip())
+    except Exception:
+        pass
+    return paths
+
+
 def _get_changed_files(git_diff_text: str, pre_head: str,
                        project_root: Path) -> list[str]:
     """Extract changed file paths from git state."""
@@ -370,13 +396,22 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
         except Exception:
             return []
 
+    # Submodule pointer changes (mode 160000) are NOT file edits — exclude
+    # them so Tier 0 (diff nonempty) doesn't false-positive on a build that
+    # touched nothing real but the submodule pointer moved (fw-1785907505).
+    submodule_paths = _get_submodule_paths(project_root)
+
+    def _filter_submodules(paths: list[str]) -> list[str]:
+        return [p for p in paths if p not in submodule_paths]
+
     # Unstaged
-    files.update(_run_git("diff", "--name-only"))
+    files.update(_filter_submodules(_run_git("diff", "--name-only")))
     # Staged
-    files.update(_run_git("diff", "--cached", "--name-only"))
+    files.update(_filter_submodules(_run_git("diff", "--cached", "--name-only")))
     # Committed during session
     if pre_head:
-        files.update(_run_git("log", "--name-only", "--format=", f"{pre_head}..HEAD"))
+        files.update(_filter_submodules(
+            _run_git("log", "--name-only", "--format=", f"{pre_head}..HEAD")))
     # Untracked but not gitignored (newly-created files never staged/committed).
     # Scope check (fw-1785843850): enumerate ALL untracked files unconditionally
     # produced false-positives — a build that touched one real file had its

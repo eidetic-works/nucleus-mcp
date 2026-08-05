@@ -306,11 +306,12 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     # reviewer_vendor, so overriding reviewer_vendor alone still sends an
     # invalid model to devin. Passing None here makes vendor_dispatch fall
     # back to devin's own default model (glm-5.2).
-    # max_rounds=3: the tool's own default is 5, but 3 rounds is what has
-    # actually converged in live use (both APPROVED and MAX_ROUNDS_EXHAUSTED
-    # outcomes seen at round 3); keeping the cap here bounds real wall-clock
-    # against the poll timeout above rather than letting a slow plan run
-    # past this process's own budget.
+    # max_rounds: ENV-SELECTABLE. Default raised from 3 to 5 after
+    # fw-1785862863 — a well-scoped 6-step deploy_blog.sh task hit
+    # MAX_ROUNDS_EXHAUSTED at round 3. The tool's own default is 5; the
+    # original pin to 3 was too tight. Override via NUCLEUS_PLAN_MAX_ROUNDS
+    # for tight-wall-clock runs.
+    max_rounds = int(os.environ.get("NUCLEUS_PLAN_MAX_ROUNDS", "5"))
     # ENV-SELECTABLE, deliberately not hardcoded. The "devin" pin above was
     # adopted after agy appeared to fail self-review 3/3 — but those failures
     # were an expired agy OAuth token (discovered ~30 min later), not a
@@ -330,7 +331,7 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
         "prompt": task_prompt,
         "reviewer_vendor": reviewer_vendor,
         "reviewer_model": reviewer_model,
-        "max_rounds": 3,
+        "max_rounds": max_rounds,
     }
     raw = execute_plan_review_loop(params, _make_response)
     try:
