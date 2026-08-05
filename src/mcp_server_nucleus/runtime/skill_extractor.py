@@ -202,8 +202,8 @@ def _heuristic_quality(turn: dict) -> str:
 
 # -- Embedding (optional, inlined from brain_rag.py) --
 
-OLLAMA_URL = "http://localhost:11434"
-EMBED_MODEL = "qwen3-embedding:0.6b"
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+EMBED_MODEL = os.environ.get("TB_EMBED_MODEL", "qwen3-embedding:0.6b")
 
 
 def _try_embed(text: str) -> Optional[List[float]]:
