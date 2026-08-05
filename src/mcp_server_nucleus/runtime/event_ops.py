@@ -196,18 +196,69 @@ def _read_events(limit: int = 10) -> List[Dict[str, Any]]:
     try:
         brain = get_brain_path()
         events_path = brain / "ledger" / "events.jsonl"
-        
+
         if not events_path.exists():
             return []
-            
+
         events = []
         with open(events_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
-                    events.append(json.loads(line))
-        
+                    try:
+                        events.append(json.loads(line))
+                    except (json.JSONDecodeError, ValueError):
+                        # Skip corrupted lines (multi-line JSON fragments, etc.)
+                        continue
+
         return events[-limit:]
     except Exception as e:
         import sys
         sys.stderr.write(f"Error reading events: {e}\n"); sys.stderr.flush()
         return []
+
+
+def _repair_events_jsonl() -> Dict[str, Any]:
+    """Repair a corrupted events.jsonl file.
+
+    Reads the file line-by-line, attempts json.loads on each line, and
+    rewrites the file with only valid single-line JSON objects. Corrupted
+    or multi-line JSON fragments are skipped.
+
+    Returns a summary dict with counts of kept/skipped lines.
+    """
+    try:
+        brain = get_brain_path()
+        events_path = brain / "ledger" / "events.jsonl"
+
+        if not events_path.exists():
+            return {"status": "ok", "message": "events.jsonl does not exist; nothing to repair", "kept": 0, "skipped": 0}
+
+        kept: List[Dict[str, Any]] = []
+        skipped = 0
+
+        with open(events_path, "r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    obj = json.loads(stripped)
+                    kept.append(obj)
+                except (json.JSONDecodeError, ValueError):
+                    skipped += 1
+
+        # Rewrite with clean single-line JSON (no indent, one object per line)
+        with open(events_path, "w", encoding="utf-8") as f:
+            for obj in kept:
+                f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+
+        logger.info(f"Repaired events.jsonl: kept={len(kept)}, skipped={skipped}")
+        return {
+            "status": "ok",
+            "message": f"Repaired events.jsonl: kept {len(kept)} valid lines, skipped {skipped} corrupted lines",
+            "kept": len(kept),
+            "skipped": skipped,
+        }
+    except Exception as e:
+        logger.error(f"Failed to repair events.jsonl: {e}")
+        return {"status": "error", "message": f"Failed to repair events.jsonl: {str(e)}", "kept": 0, "skipped": 0}

@@ -23,6 +23,26 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 def _get_api_key() -> Optional[str]:
+    """Resolve the Gemini API key via the unified secret resolver first.
+
+    Resolution order:
+      1. Unified secret resolver (``resolver get GEMINI_API_KEY``)
+      2. Environment variable ``GEMINI_API_KEY``
+    """
+    # 1. Try the unified secret resolver at ~/resolver/
+    try:
+        result = subprocess.run(
+            ["resolver", "get", "GEMINI_API_KEY"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass  # Resolver not installed or timed out — fall through to env var
+
+    # 2. Fall back to environment variable
     return os.environ.get("GEMINI_API_KEY")
 
 def brain_synthesize_status_report(
@@ -44,7 +64,14 @@ def brain_synthesize_status_report(
         
     api_key = _get_api_key()
     if not api_key:
-        return {"status": "error", "message": "GEMINI_API_KEY not found"}
+        return {
+            "status": "error",
+            "message": (
+                "GEMINI_API_KEY not found. "
+                "Fix: run `resolver set GEMINI_API_KEY <your-key>` "
+                "or `export GEMINI_API_KEY=<your-key>`"
+            ),
+        }
 
     root_path = Path(project_root)
     

@@ -508,6 +508,15 @@ def pulse_record(hub: str, action: str, **metadata) -> None:
     if store:
         store.record(hub, action, metadata if metadata else None)
 
+def capture_pulse(hub: str = "session", action: str = "pulse", **metadata) -> None:
+    """Capture a pulse event — alias/wrapper for pulse_record.
+
+    This exists so that callers (e.g. god_combos.pulse_and_polish) can import
+    ``capture_pulse`` from this module. It delegates to pulse_record, which is
+    safe to call even if Pulse is disabled (no-op when store is unavailable).
+    """
+    pulse_record(hub, action, **metadata)
+
 def pulse_view() -> Dict:
     """Quick-view pulse summary."""
     store = get_pulse_store()
