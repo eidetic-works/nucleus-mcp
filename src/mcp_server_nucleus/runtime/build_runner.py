@@ -93,6 +93,85 @@ def _git_head() -> str:
         return ""
 
 
+def _gather_rag_context(task_prompt: str) -> str:
+    """Gather conversation + codebase RAG context for a headless build agent.
+
+    Phase 7 §4: headless agents (build_runner, vendor_dispatch) had no RAG
+    context — they planned and executed blind, with no knowledge of prior
+    decisions, failures, or conversation history. This function gives them
+    the same grounding that ``nucleus_ground`` gives interactive agents.
+
+    Returns a formatted context block to prepend to the plan prompt, or
+    an empty string if RAG is unavailable (graceful degradation — the
+    build proceeds without context rather than failing).
+    """
+    try:
+        from .common import get_brain_path
+        import sys
+        brain_path = get_brain_path()
+        if brain_path is None:
+            brain_path = str(Path.cwd() / ".brain")
+        brain_path = str(brain_path)
+        # Add the repo root to sys.path so providers.brain_rag is importable
+        repo_root = str(Path(brain_path).parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from providers.brain_rag import search_brain, _read_brain_owner
+        import providers.brain_rag as br
+
+        # Use Ollama if available, otherwise skip dense search
+        ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+        br.OLLAMA_URL = ollama_url
+
+        project = _read_brain_owner(Path(brain_path))
+
+        # Gather conversation context (what agents discussed)
+        conv_results = search_brain(
+            task_prompt,
+            brain_path=str(brain_path),
+            scope="conversation",
+            topk=3,
+            project=project,
+            project_filter="demote",
+        )
+
+        # Gather codebase context (relevant code patterns)
+        code_results = search_brain(
+            task_prompt,
+            brain_path=str(brain_path),
+            scope="code",
+            topk=2,
+            project=project,
+            project_filter="demote",
+        )
+
+        parts = []
+        if conv_results:
+            parts.append("PRIOR CONVERSATION CONTEXT (what agents discussed about this topic):")
+            for r in conv_results[:3]:
+                role = r.get("agent_role", "") or "unknown"
+                age = r.get("time_band", "") or "undated"
+                content = (r.get("content", "") or "")[:200]
+                parts.append(f"  [{role}] [{age}] {content}")
+            parts.append("")
+
+        if code_results:
+            parts.append("RELEVANT CODEBASE PATTERNS:")
+            for r in code_results[:2]:
+                src = (r.get("source", "") or "")[:60]
+                content = (r.get("content", "") or "")[:150]
+                parts.append(f"  {src}: {content}")
+            parts.append("")
+
+        if parts:
+            return "\n".join(parts) + "\n"
+        return ""
+    except Exception as e:
+        import traceback
+        logger.warning("RAG context gathering failed (proceeding without context): %s\n%s", e, traceback.format_exc())
+        return ""
+
+
 def _brain_path() -> Path:
     """Resolve the ``.brain`` directory (lazy core import to stay stdlib-clean)."""
     from .common import get_brain_path
@@ -222,6 +301,14 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
     plan_dir = _brain_path() / "plans" / plan_id
     plan_dir.mkdir(parents=True, exist_ok=True)
 
+    # RAG context injection (Phase 7 §4): ground the headless plan agent in
+    # prior conversation context so it doesn't repeat work or miss decisions.
+    # Without this, the build agent plans blind — it has no idea what was
+    # tried before, what failed, or what was already decided. This is the
+    # "context rot" fix: the harness assists the headless agent the same way
+    # it assists an interactive agent via nucleus_ground.
+    rag_context = _gather_rag_context(task_prompt)
+
     # Prompt the claude vendor to emit the EXACT checkbox format
     # _parse_task_checkboxes expects, so the execute stage can parse the
     # resulting final_plan.md unchanged.
@@ -235,6 +322,7 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
         "The tasks must each be executable by a coding agent in write mode "
         "(file edits / shell commands) and together must accomplish the "
         "build task.\n\n"
+        f"{rag_context}"
         f"BUILD TASK:\n{task_prompt}"
     )
     res = dispatch_and_capture(
