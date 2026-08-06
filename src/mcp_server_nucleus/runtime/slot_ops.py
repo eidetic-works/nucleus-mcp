@@ -8,6 +8,14 @@ Moves complex orchestration logic out of __init__.py.
 import json
 import time
 import uuid
+
+
+def _prio_key(p):
+    """Normalize priority to int for safe sorting (fw-1776702433 xvendor catch)."""
+    try:
+        return int(p)
+    except (ValueError, TypeError):
+        return 999
 from typing import Dict, List
 
 # Relative imports
@@ -205,7 +213,7 @@ def _brain_status_dashboard_impl(refresh: bool = False) -> str:
         if pending_tasks:
              lines.append("╟──────────────────────────────────────────────────────────────╢")
              # Show top 5 pending
-             top_pending = sorted(pending_tasks, key=lambda x: (str(type(x.get("priority", 99))), x.get("priority", 99)))[:5]
+             top_pending = sorted(pending_tasks, key=lambda x: _prio_key(x.get("priority", 99)))[:5]
              for i, t in enumerate(top_pending):
                  prio = f"P{t.get('priority',3)}"
                  desc = (t.get("description") or "")[:45]

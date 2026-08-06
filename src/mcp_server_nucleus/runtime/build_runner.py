@@ -311,7 +311,11 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     # MAX_ROUNDS_EXHAUSTED at round 3. The tool's own default is 5; the
     # original pin to 3 was too tight. Override via NUCLEUS_PLAN_MAX_ROUNDS
     # for tight-wall-clock runs.
-    max_rounds = int(os.environ.get("NUCLEUS_PLAN_MAX_ROUNDS", "5"))
+    max_rounds = 5
+    try:
+        max_rounds = max(1, int(os.environ.get("NUCLEUS_PLAN_MAX_ROUNDS", "5")))
+    except (ValueError, TypeError):
+        pass
     # ENV-SELECTABLE, deliberately not hardcoded. The "devin" pin above was
     # adopted after agy appeared to fail self-review 3/3 — but those failures
     # were an expired agy OAuth token (discovered ~30 min later), not a

@@ -248,9 +248,14 @@ def _repair_events_jsonl() -> Dict[str, Any]:
                     skipped += 1
 
         # Rewrite with clean single-line JSON (no indent, one object per line)
-        with open(events_path, "w", encoding="utf-8") as f:
+        # xvendor catch (agy): atomic write via temp file + os.replace to avoid
+        # corruption if process is killed mid-write
+        import os
+        tmp_path = str(events_path) + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
             for obj in kept:
                 f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+        os.replace(tmp_path, str(events_path))
 
         logger.info(f"Repaired events.jsonl: kept={len(kept)}, skipped={skipped}")
         return {
