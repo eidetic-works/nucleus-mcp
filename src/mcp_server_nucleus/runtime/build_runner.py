@@ -231,6 +231,64 @@ def _mark_plan_orphaned(plan_id: str) -> None:
     logger.warning("plan %s marked ORPHANED (process exiting while IN_PROGRESS)", plan_id)
 
 
+def _mark_stale_plans_error(plan_ids: List[str], reason: str = "") -> int:
+    """Mark a batch of stale plans as ERROR in their respective state.json files.
+
+    Called when a build run discovers plans left IN_PROGRESS from a prior
+    crashed/timed-out run (e.g. on startup sweep). Distinct from
+    :func:`_mark_plan_orphaned` which marks a single plan on process exit;
+    this handles a sweep of multiple stale plans discovered after the fact.
+
+    Skips plans already in a terminal status (APPROVED, SINGLE_VENDOR_PLAN,
+    ORPHANED, ERROR) so it is idempotent across repeated sweeps. Returns the
+    count of plans actually transitioned to ERROR.
+    """
+    terminal = {"APPROVED", "SINGLE_VENDOR_PLAN", "ORPHANED", "ERROR"}
+    transitioned = 0
+    for plan_id in plan_ids:
+        if not plan_id:
+            continue
+        state = _read_state(plan_id)
+        if not state:
+            continue
+        if state.get("status") in terminal:
+            continue
+        state["status"] = "ERROR"
+        state["error_at"] = int(time.time())
+        if reason:
+            state["error_reason"] = reason
+        _write_state(plan_id, state)
+        transitioned += 1
+        logger.warning(
+            "plan %s marked ERROR (stale sweep%s)",
+            plan_id,
+            f": {reason}" if reason else "",
+        )
+    return transitioned
+
+
+def _find_stale_plans() -> List[str]:
+    """Scan ``.brain/plans/*/state.json`` for plans left IN_PROGRESS.
+
+    A plan is stale if its ``state.json`` reports ``status == "IN_PROGRESS"``
+    — meaning a prior ``run_build_pipeline`` (or ``execute_plan_review_loop``)
+    crashed or timed out before reaching a terminal status. Called at the
+    start of every build run so the new run cleans up the prior run's
+    orphans before creating its own plan.
+    """
+    plans_dir = _brain_path() / "plans"
+    if not plans_dir.is_dir():
+        return []
+    stale: List[str] = []
+    for entry in plans_dir.iterdir():
+        if not entry.is_dir():
+            continue
+        state = _read_state(entry.name)
+        if state.get("status") == "IN_PROGRESS":
+            stale.append(entry.name)
+    return stale
+
+
 def _resolve_final_plan_path(plan_id: str, state: Dict[str, Any]) -> Optional[Path]:
     """Resolve the approved plan markdown path.
 
@@ -1018,6 +1076,15 @@ def run_build_pipeline(task_prompt: str) -> int:
     if not task_prompt or not task_prompt.strip():
         print("build: empty task prompt", flush=True)
         return 2
+
+    # ── STALE-PLAN SWEEP ──────────────────────────────────────────────────────
+    # Clean up plans left IN_PROGRESS by a prior crashed/timed-out run before
+    # this run creates its own plan. Idempotent — skips already-terminal plans.
+    stale = _find_stale_plans()
+    if stale:
+        n = _mark_stale_plans_error(stale, reason="stale on new build run")
+        if n:
+            print(f"build: marked {n} stale plan(s) ERROR", flush=True)
 
     # ── PLAN ─────────────────────────────────────────────────────────────────
     ok, msg, final_plan_path, execution_mode = _run_plan_stage(task_prompt)
