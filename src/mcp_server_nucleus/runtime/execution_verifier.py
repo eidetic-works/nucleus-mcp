@@ -411,10 +411,20 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
     files.update(_filter_submodules(_run_git("diff", "--name-only")))
     # Staged
     files.update(_filter_submodules(_run_git("diff", "--cached", "--name-only")))
-    # Committed during session
+    # Changes since pre_head (working tree vs pre_head commit).
+    # CONCURRENT COMMIT CONTAMINATION FIX (fw-1786034381): the old code used
+    # `git log --name-only pre_head..HEAD` which captures ALL commits between
+    # pre_head and HEAD — including commits from OTHER concurrent sessions.
+    # This caused false FAILED verdicts when a single-task build's diff was
+    # contaminated by unrelated files from other sessions' commits.
+    # `git diff --name-only pre_head` compares pre_head to the WORKING TREE
+    # (not HEAD), so it only sees changes in THIS session's working tree:
+    #   - vendor edits (unstaged/staged) ✓
+    #   - vendor commits (working tree reflects new HEAD) ✓
+    #   - other sessions' commits (NOT in this working tree) ✗ correctly excluded
     if pre_head:
         files.update(_filter_submodules(
-            _run_git("log", "--name-only", "--format=", f"{pre_head}..HEAD")))
+            _run_git("diff", "--name-only", pre_head)))
     # Untracked but not gitignored (newly-created files never staged/committed).
     # Scope check (fw-1785843850): enumerate ALL untracked files unconditionally
     # produced false-positives — a build that touched one real file had its
