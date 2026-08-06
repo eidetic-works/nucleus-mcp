@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -372,9 +373,11 @@ def _get_submodule_paths(project_root: Path) -> set[str]:
         )
         for line in r.stdout.strip().splitlines():
             if line.strip():
-                parts = line.split()
+                # xvendor catch (agy): split(maxsplit=1) to handle submodule
+                # paths containing spaces (e.g. 'vendor/my submodule')
+                parts = line.split(maxsplit=1)
                 if len(parts) >= 2:
-                    paths.add(parts[-1].strip())
+                    paths.add(os.path.normpath(parts[-1].strip()))
     except Exception:
         pass
     return paths
