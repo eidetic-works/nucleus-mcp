@@ -301,13 +301,9 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
     plan_dir = _brain_path() / "plans" / plan_id
     plan_dir.mkdir(parents=True, exist_ok=True)
 
-    # RAG context injection (Phase 7 §4): ground the headless plan agent in
-    # prior conversation context so it doesn't repeat work or miss decisions.
-    # Without this, the build agent plans blind — it has no idea what was
-    # tried before, what failed, or what was already decided. This is the
-    # "context rot" fix: the harness assists the headless agent the same way
-    # it assists an interactive agent via nucleus_ground.
-    rag_context = _gather_rag_context(task_prompt)
+    # RAG context is now injected upstream in _run_plan_stage (default ON
+    # for both single-vendor and dual-vendor paths). task_prompt already
+    # contains the RAG context if it was available.
 
     # Prompt the claude vendor to emit the EXACT checkbox format
     # _parse_task_checkboxes expects, so the execute stage can parse the
@@ -322,7 +318,6 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
         "The tasks must each be executable by a coding agent in write mode "
         "(file edits / shell commands) and together must accomplish the "
         "build task.\n\n"
-        f"{rag_context}"
         f"BUILD TASK:\n{task_prompt}"
     )
     res = dispatch_and_capture(
@@ -374,7 +369,22 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     ``claude`` plan dispatch (status ``SINGLE_VENDOR_PLAN``, no review round).
     *execution_mode* is ``"dual-vendor"`` or ``"single-vendor"`` and threads
     through to the execute + verdict stages.
+
+    RAG context injection (Phase 7 §4) is the DEFAULT for both paths —
+    non-interactive one-shot builds benefit most from prior context because
+    there's no human in the loop to catch "you already built this" errors.
+    The injection is graceful: if RAG is unavailable, the build proceeds
+    without context. Override with ``NUCLEUS_BUILD_RAG_CONTEXT=off``.
     """
+    # RAG context injection — default ON for all plan paths.
+    # Non-interactive one-shot builds need this most: no human catches
+    # "you already built this" or "that was already decided" mid-run.
+    rag_enabled = os.environ.get("NUCLEUS_BUILD_RAG_CONTEXT", "on").lower() not in ("off", "0", "false")
+    if rag_enabled:
+        rag_context = _gather_rag_context(task_prompt)
+        if rag_context:
+            task_prompt = f"{rag_context}\n{task_prompt}"
+
     if not is_multi_vendor_available():
         ok, msg, fp = _run_single_vendor_plan_stage(task_prompt)
         return ok, msg, fp, _MODE_SINGLE_VENDOR
@@ -588,6 +598,17 @@ def _run_execute_stage(
         results.append({"task_num": task_num, "task_desc": task_desc, "result": res, "vendor": vendor})
         # Fail-stop predicate: status == "ok" AND produced_output is True.
         if not (res.get("status") == "ok" and res.get("produced_output") is True):
+            # Dynamic model fallback (Phase 7 §5): before fail-stopping,
+            # try the next model in the fallback chain. The health registry
+            # already recorded the failure via _record_dispatch_health in
+            # vendor_dispatch.py, so the fallback chain will skip the
+            # failed model and try the next-best one for this task type.
+            fallback = _try_model_fallback(
+                vendor, task_desc, final_plan_path, results, task_num,
+            )
+            if fallback is not None:
+                # Fallback succeeded — continue to next task
+                continue
             return (
                 False,
                 f"fail-stop at task {task_num}: status={res.get('status')!r} "
@@ -599,6 +620,86 @@ def _run_execute_stage(
 
     post_head = _git_head()
     return True, f"executed {len(tasks)} task(s) via {vendor}", pre_head, post_head, results
+
+
+def _try_model_fallback(
+    failed_vendor: str,
+    task_desc: str,
+    final_plan_path: Path,
+    results: List[Dict[str, Any]],
+    task_num: int,
+    max_attempts: int = 3,
+) -> Optional[Dict[str, Any]]:
+    """Try the next model in the fallback chain after a dispatch failure.
+
+    Phase 7 §5: instead of fail-stopping on the first vendor failure, query
+    the model_registry for the next-best available model and retry. The
+    health registry already recorded the failure (via _record_dispatch_health
+    in vendor_dispatch.py), so the fallback chain will skip the failed model.
+
+    Returns the successful result dict if a fallback model succeeded, or
+    None if all fallback attempts also failed (caller fail-stops).
+
+    max_attempts caps the total fallback tries to avoid infinite loops.
+    """
+    try:
+        from .model_registry import next_model_after_failure, discover_models
+    except ImportError:
+        logger.debug("model_registry not available for fallback")
+        return None
+
+    # Determine task type from the task description (simple heuristic)
+    task_type = "code_executor"  # execute stage is always code execution
+
+    discovered = discover_models()
+    if not discovered:
+        return None
+
+    # Get the failed model id from the last result
+    last_result = results[-1].get("result", {}) if results else {}
+    failed_model = last_result.get("model_id", "")
+
+    for attempt in range(max_attempts):
+        next_model = next_model_after_failure(
+            failed_vendor, failed_model, task_type, discovered,
+        )
+        if next_model is None:
+            logger.info("fallback: no more models to try after %d attempts", attempt)
+            return None
+
+        logger.info(
+            "fallback attempt %d: %s:%s (score=%.3f) for task %d",
+            attempt + 1, next_model.vendor, next_model.model_id,
+            next_model.score, task_num,
+        )
+
+        res = dispatch_and_capture(
+            next_model.vendor, task_desc,
+            artifact_ref=str(final_plan_path),
+            mode="write",
+            model=next_model.model_id,
+        )
+        results.append({
+            "task_num": task_num,
+            "task_desc": task_desc,
+            "result": res,
+            "vendor": next_model.vendor,
+            "model_id": next_model.model_id,
+            "fallback_attempt": attempt + 1,
+        })
+
+        if res.get("status") == "ok" and res.get("produced_output") is True:
+            logger.info(
+                "fallback succeeded: %s:%s for task %d",
+                next_model.vendor, next_model.model_id, task_num,
+            )
+            return res
+
+        # Update for next iteration — this model also failed
+        failed_vendor = next_model.vendor
+        failed_model = next_model.model_id
+
+    return None
 
 
 # ── VERIFY stage ─────────────────────────────────────────────────────────────
