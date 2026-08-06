@@ -1063,6 +1063,48 @@ def _capture(
     return {"relay": relay_res, "engram": engram_res}
 
 
+def _record_dispatch_health(spec: "VendorSpec", result: "VendorResult") -> None:
+    """Record one dispatch outcome into the per-process ``ModelHealthRegistry``.
+
+    This is the seam that feeds Layer 1 of ``model_registry``: every dispatch
+    funnels through :func:`dispatch_and_capture`, so recording here is the one
+    place the registry learns real outcomes (success → cooldown cleared;
+    failure → classified + cooldown set). Without it the registry's
+    ``is_available`` / ``availability_score`` are static and the dynamic
+    fallback chain (Layer 5) has no signal to route around a quota'd model.
+
+    Fault-isolated by contract: the health registry is observability-only, so
+    any failure here (missing module, broken singleton, bad key) is logged at
+    debug and swallowed — it must NEVER turn a successful dispatch into a failed
+    one. Records on the SELECTABLE model id when one was resolved, else the
+    vendor's ``default_model``, else the model family name.
+
+    ``VendorResult`` does not expose stderr, but ``model_registry.classify_failure``
+    keys off stderr patterns. We bridge by passing ``f"status={result.status}"``
+    so a ``timed_out`` status is classified as ``F_TIMEOUT`` (the
+    ``_TIMEOUT_PATTERNS`` regex matches ``timed_out``) rather than silently
+    falling through to ``F_UNKNOWN``. Empty/error/not_found stay ``F_UNKNOWN``,
+    which is correct — they have no quota/rate/auth signature.
+    """
+    try:
+        from .model_registry import get_registry
+        model_key = result.model_id or spec.default_model or result.model
+        if not model_key:
+            return
+        registry = get_registry()
+        if result.status == "ok" and result.produced_output:
+            registry.record_success(spec.vendor, model_key)
+        else:
+            registry.record_failure(
+                spec.vendor, model_key,
+                stderr=f"status={result.status}",
+                rc=result.rc if result.rc is not None else 1,
+                stdout_empty=not result.produced_output,
+            )
+    except Exception as exc:  # noqa: BLE001 — observability must never break dispatch
+        logger.debug("dispatch health record failed: %s", exc)
+
+
 def dispatch_and_capture(
     vendor: str,
     prompt: str,
@@ -1136,6 +1178,11 @@ def dispatch_and_capture(
         vendor, prompt, timeout_s=timeout_s, budget_usd=budget_usd,
         model=model, mode=canon,
     ).run()
+    # Feed the per-process ModelHealthRegistry (model_registry Layer 1) so
+    # cooldowns / availability_score track real dispatch outcomes. Recorded
+    # BEFORE the git-stamping early-return so a model failure is captured even
+    # when git is unavailable downstream. Fault-isolated inside the helper.
+    _record_dispatch_health(spec, result)
     effect, changed_paths = "unknown", []
     if expect_paths:                                 # only when caller opted in (issue #682: was `if pre:` which fails on empty dict)
         post = _snapshot_paths(expect_paths)
