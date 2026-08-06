@@ -472,14 +472,12 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
         max_rounds = max(1, int(os.environ.get("NUCLEUS_PLAN_MAX_ROUNDS", "5")))
     except (ValueError, TypeError):
         pass
-    # ENV-SELECTABLE, deliberately not hardcoded. The "devin" pin above was
-    # adopted after agy appeared to fail self-review 3/3 — but those failures
-    # were an expired agy OAuth token (discovered ~30 min later), not a
-    # self-review defect. The cause was misattributed and then frozen into
-    # source. When devin's own quota later ran out ("/upgrade to access this
-    # model") the pin became a single point of failure: 13 of 33 plan runs in
-    # 30 hours died as "vendor did not produce output". Vendor availability is
-    # a moving target; pinning it in source is itself the bug.
+    # fw-1786036802: author and reviewer vendors default to DIFFERENT values
+    # to prevent self-review. The plan_review_loop tool's own defaults are both
+    # "agy", which ran self-review (same vendor reviewing its own plan). Now
+    # the build_runner explicitly sets author=devin, reviewer=agy by default,
+    # and the tool's own same-vendor guard is no longer dead code.
+    author_vendor = os.environ.get("NUCLEUS_PLAN_REVIEW_AUTHOR_VENDOR", "devin").strip() or "devin"
     reviewer_vendor = os.environ.get("NUCLEUS_PLAN_REVIEWER", "agy").strip() or "agy"
     # Auto-default reviewer_model to None when the reviewer vendor differs
     # from the author vendor — the tool's _DEFAULT_REVIEWER_MODEL is
@@ -489,6 +487,7 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     reviewer_model = None  # vendor_dispatch picks the right default per vendor
     params = {
         "prompt": task_prompt,
+        "author_vendor": author_vendor,
         "reviewer_vendor": reviewer_vendor,
         "reviewer_model": reviewer_model,
         "max_rounds": max_rounds,
@@ -569,6 +568,13 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
                 if fp is None:
                     return False, "APPROVED but final_plan_path missing on disk", None, _MODE_DUAL_VENDOR
                 return True, "APPROVED", fp, _MODE_DUAL_VENDOR
+            if status == "SINGLE_VENDOR_PLAN":
+                # fw-1786036802: tool produced a single-vendor fallback plan
+                # (same vendor default). Use the tool's final_plan_path.
+                fp = _resolve_final_plan_path(plan_id, state)
+                if fp is None:
+                    return False, "SINGLE_VENDOR_PLAN but final_plan_path missing on disk", None, _MODE_SINGLE_VENDOR
+                return True, "SINGLE_VENDOR_PLAN", fp, _MODE_SINGLE_VENDOR
             if status in _ABORT_STATUSES:
                 return False, f"plan review aborted: status={status}", None, _MODE_DUAL_VENDOR
             time.sleep(_PLAN_POLL_INTERVAL_S)
