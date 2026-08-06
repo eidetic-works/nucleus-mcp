@@ -1080,12 +1080,35 @@ def _record_dispatch_health(spec: "VendorSpec", result: "VendorResult") -> None:
     vendor's ``default_model``, else the model family name.
 
     ``VendorResult`` does not expose stderr, but ``model_registry.classify_failure``
-    keys off stderr patterns. We bridge by passing ``f"status={result.status}"``
-    so a ``timed_out`` status is classified as ``F_TIMEOUT`` (the
-    ``_TIMEOUT_PATTERNS`` regex matches ``timed_out``) rather than silently
-    falling through to ``F_UNKNOWN``. Empty/error/not_found stay ``F_UNKNOWN``,
-    which is correct — they have no quota/rate/auth signature.
+    keys off stderr patterns. We bridge by passing the real execution output
+    (``result.result``) as the stderr text so quota/rate/auth signatures in the
+    vendor's actual output are classified correctly, and folding ``status=...``
+    onto it so a ``timed_out`` status (which has no stderr of its own) is still
+    classified as ``F_TIMEOUT`` via the ``_TIMEOUT_PATTERNS`` regex. Empty/error
+    output with no recognizable signature stays ``F_UNKNOWN``, which is correct
+    — it has no quota/rate/auth signature.
+
+    LOCAL PRECONDITION EXCLUSIONS: ``not_found`` (vendor binary missing on
+    PATH), ``budget_rejected`` (negative ``budget_usd``), and
+    ``prompt_too_large`` (prompt over the vendor's ``max_prompt_chars`` cap)
+    are rejected by :meth:`VendorCLIExecutor.run` BEFORE the model is ever
+    invoked. They say nothing about the model's health — a missing binary or
+    an oversized prompt is a caller/environment problem, not a quota, rate,
+    auth, or timeout signal from the model. Recording them as failures would
+    push a healthy model into cooldown (and, after three ``prompt_too_large``
+    rejections, into an *inferred-quota* cooldown via the
+    ``consecutive_empty`` heuristic) for reasons that have nothing to do with
+    the model. They are therefore excluded from recording entirely: neither a
+    success nor a failure is stamped, so the model's cooldown / availability
+    score is unaffected by pre-dispatch rejections.
     """
+    # Pre-dispatch rejections — the model never ran, so its health state must
+    # not move. See the docstring's LOCAL PRECONDITION EXCLUSIONS block.
+    _PRECONDITION_STATUS_EXCLUSIONS = frozenset(
+        {"not_found", "budget_rejected", "prompt_too_large"}
+    )
+    if result.status in _PRECONDITION_STATUS_EXCLUSIONS:
+        return
     try:
         from .model_registry import get_registry
         model_key = result.model_id or spec.default_model or result.model
@@ -1095,9 +1118,20 @@ def _record_dispatch_health(spec: "VendorSpec", result: "VendorResult") -> None:
         if result.status == "ok" and result.produced_output:
             registry.record_success(spec.vendor, model_key)
         else:
+            # Pull the real execution output from result.result so
+            # classify_failure can match quota/rate/auth/timeout signatures
+            # in the actual vendor output. A bare status string carries no
+            # quota/rate/auth signal and would leave every failure as
+            # F_UNKNOWN. We still fold the status in so timed_out (which has
+            # no stderr of its own) is classified via _TIMEOUT_PATTERNS.
+            stderr_text = (result.result or "").strip()
+            if not stderr_text:
+                stderr_text = f"status={result.status}"
+            else:
+                stderr_text = f"{stderr_text}\nstatus={result.status}"
             registry.record_failure(
                 spec.vendor, model_key,
-                stderr=f"status={result.status}",
+                stderr=stderr_text,
                 rc=result.rc if result.rc is not None else 1,
                 stdout_empty=not result.produced_output,
             )
@@ -1181,8 +1215,14 @@ def dispatch_and_capture(
     # Feed the per-process ModelHealthRegistry (model_registry Layer 1) so
     # cooldowns / availability_score track real dispatch outcomes. Recorded
     # BEFORE the git-stamping early-return so a model failure is captured even
-    # when git is unavailable downstream. Fault-isolated inside the helper.
-    _record_dispatch_health(spec, result)
+    # when git is unavailable downstream. Strict fault isolation at the call
+    # site (defense in depth on top of the helper's own try/except): the
+    # registry is observability-only, so any failure here is logged and
+    # swallowed — it must NEVER turn a successful dispatch into a failed one.
+    try:
+        _record_dispatch_health(spec, result)
+    except Exception as exc:  # noqa: BLE001 — observability must never break dispatch
+        logger.debug("dispatch health record failed at call site: %s", exc)
     effect, changed_paths = "unknown", []
     if expect_paths:                                 # only when caller opted in (issue #682: was `if pre:` which fails on empty dict)
         post = _snapshot_paths(expect_paths)
