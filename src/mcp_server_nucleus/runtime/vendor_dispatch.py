@@ -1196,8 +1196,13 @@ def dispatch_and_capture(
                 stamped_sha[:12], (pre_sha or "?")[:12], stamped_sha[:12],
             )
         else:
+            # fw-1785908471: "NON-qualifying (head_unchanged)" was misleading
+            # in dry-run context — the vendor may have produced output but
+            # the worktree head didn't move because dry-run skips commits.
+            # Clarify that this is an observation, not a failure verdict.
             logger.info(
-                "artifact_ref NON-qualifying (%s): head %s..%s mode=%s",
+                "artifact_ref not qualified as vendor increment (%s): "
+                "head %s..%s mode=%s — this is informational, not a failure",
                 nonqualifying_reason, (pre_sha or "?")[:12],
                 stamped_sha[:12], canon,
             )
