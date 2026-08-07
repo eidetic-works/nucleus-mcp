@@ -150,6 +150,58 @@ def _create_pr(branch_name: str, title: str, body: str, base: str) -> Optional[i
     return None
 
 
+def _check_gh_auth() -> bool:
+    """Best-effort check that the ``gh`` CLI is installed and authenticated.
+    Returns True on exit 0, False on non-zero exit / ``TimeoutExpired`` /
+    ``OSError`` (incl. FileNotFoundError when gh is not installed). Never
+    raises — safe to call as a preflight before any gh operation."""
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    return result.returncode == 0
+
+
+def _check_origin_reachable() -> bool:
+    """Best-effort check that the ``origin`` git remote is reachable over the
+    network. Runs ``git ls-remote --heads origin`` with a 5s timeout. Returns
+    True on exit 0, False on non-zero exit / ``TimeoutExpired`` / ``OSError``
+    (incl. FileNotFoundError when git is not installed, or network/auth
+    failure reaching the remote). Never raises — safe to call as a preflight
+    before any operation that needs to push or open a PR against origin."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", "--heads", "origin"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    return result.returncode == 0
+
+
+def _auth_preflight() -> bool:
+    """Orchestrate both auth/network preflight probes before any git/gh
+    operation that needs them. Calls ``_check_gh_auth`` and
+    ``_check_origin_reachable``; on either failure, prints the
+    remediation command(s) to stderr and returns False. Returns True only
+    when both pass. Never raises — both probes are exception-safe."""
+    ok = True
+    if not _check_gh_auth():
+        print("[build_and_merge] gh CLI not authenticated — run: gh auth login",
+              file=sys.stderr)
+        ok = False
+    if not _check_origin_reachable():
+        print("[build_and_merge] origin remote not reachable — check network "
+              "and that a remote is configured. Inspect with: git remote -v  "
+              "| add one with: git remote add origin <url>",
+              file=sys.stderr)
+        ok = False
+    return ok
+
+
 def _run_authorize(pr_number: int, repo: str, review_vendor: str,
                    dry_run: bool) -> int:
     """Shell out to ``merge_gate_authorize.py authorize <PR>``. Returns the
@@ -270,6 +322,16 @@ def run_build_and_merge_pipeline(
             f"is not what you want.",
             file=sys.stderr, flush=True,
         )
+
+    # Auth/network preflight — refuse before any stage runs if gh CLI is not
+    # authenticated or the origin remote is unreachable. Skipped entirely in
+    # dry-run mode (no git/gh operations will be attempted anyway).
+    if not dry_run:
+        if not _auth_preflight():
+            print("[build_and_merge] auth/network preflight failed — "
+                  "see remediation above; aborting before build stages.",
+                  file=sys.stderr, flush=True)
+            return 2
 
     # Lazy import System A's stage functions (see module-level comment about
     # merge_gate.py's sys.modules eviction).
