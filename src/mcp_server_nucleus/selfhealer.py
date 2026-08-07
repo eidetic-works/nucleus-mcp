@@ -26,7 +26,7 @@ import subprocess
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import types
 
 from .runtime.common import get_brain_path, make_response
@@ -161,6 +161,76 @@ def _get_recent_history() -> Dict[str, Any]:
     except Exception:
         pass
     return history
+
+
+def _collect_recent_commits(repo_path: Path, max_count: int = 15,
+                            since_hours: int = 48) -> Optional[List[Dict[str, Any]]]:
+    """Collect recent commits with their changed files.
+
+    Runs two ``git log`` subprocess calls (one for metadata, one for
+    name-only file lists), parses the null-separated output, merges
+    sha→files, and returns the items list. Returns ``None`` on any
+    failure (non-git dir, timeout, git missing, parse error).
+
+    Args:
+        repo_path: Path to the git repository to inspect.
+        max_count: Maximum number of commits to collect.
+        since_hours: Only collect commits from the last N hours.
+
+    Returns:
+        List of dicts (each with sha + files keys) or ``None`` on failure.
+    """
+    try:
+        since_arg = f"--since={since_hours} hours ago"
+        # 1) commit metadata: sha, subject, author, date — null-separated records
+        meta = subprocess.run(
+            ["git", "log", since_arg, f"-{max_count}",
+             "--format=%H%x00%s%x00%an%x00%ad"],
+            timeout=5, capture_output=True, text=True, cwd=str(repo_path))
+        if meta.returncode != 0:
+            return None
+        # 2) changed files per commit — null-separated, records separated by blank
+        files = subprocess.run(
+            ["git", "log", since_arg, f"-{max_count}",
+             "--name-only", "--format=%H%x00"],
+            timeout=5, capture_output=True, text=True, cwd=str(repo_path))
+        if files.returncode != 0:
+            return None
+
+        # Parse metadata: each record is sha\0subject\0author\0date\n
+        sha_to_meta: Dict[str, Dict[str, Any]] = {}
+        for record in meta.stdout.split("\n"):
+            if not record.strip():
+                continue
+            parts = record.split("\x00")
+            if len(parts) < 4:
+                return None
+            sha, subject, author, date = parts[0], parts[1], parts[2], parts[3]
+            sha_to_meta[sha] = {
+                "sha": sha, "subject": subject,
+                "author": author, "date": date, "files": [],
+            }
+
+        # Parse files: records are sha\0\nfile1\nfile2\n... repeated
+        sha_to_files: Dict[str, List[str]] = {}
+        cur_sha: Optional[str] = None
+        for line in files.stdout.split("\n"):
+            if "\x00" in line:
+                cur_sha = line.split("\x00")[0] or None
+                if cur_sha and cur_sha not in sha_to_files:
+                    sha_to_files[cur_sha] = []
+                continue
+            if cur_sha and line.strip():
+                sha_to_files[cur_sha].append(line.strip())
+
+        # Merge sha→files into metadata items, preserving git log order
+        items: List[Dict[str, Any]] = []
+        for sha, info in sha_to_meta.items():
+            info["files"] = sha_to_files.get(sha, [])
+            items.append(info)
+        return items
+    except Exception:
+        return None
 
 
 def get_full_context(exc: Exception, brain_path: Path, command: str = "",
