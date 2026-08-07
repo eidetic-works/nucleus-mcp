@@ -324,6 +324,46 @@ def _parse_task_checkboxes(final_plan_path: Path) -> List[Tuple[int, str]]:
     return tasks
 
 
+# ── Single-vendor lane selection ─────────────────────────────────────────────
+
+# Cost order for the single-vendor (degraded) path: FREE lanes first, the paid
+# `claude` lane only when every free lane is missing. See fw-1786104704 — the
+# previous order preferred claude and treated devin/agy as the fallback "if
+# claude is not installed", which never fires in practice because claude is the
+# CLI running the session. Net effect was that any degraded build billed the
+# paid tier for its entire execute stage while a healthy free vendor idled.
+_SINGLE_VENDOR_ORDER = ("devin", "agy", "claude")
+
+
+def _pick_single_vendor(stage: str) -> Optional[str]:
+    """Pick the cheapest available CLI for a single-vendor dispatch.
+
+    Honours the ``NUCLEUS_SINGLE_VENDOR`` override when that vendor is on
+    PATH; otherwise walks :data:`_SINGLE_VENDOR_ORDER` (free before paid).
+    Returns ``None`` when no known CLI is installed.
+    """
+    forced = os.environ.get("NUCLEUS_SINGLE_VENDOR", "").strip()
+    if forced:
+        if shutil.which(forced):
+            logger.info("single-vendor %s: using %s (NUCLEUS_SINGLE_VENDOR)",
+                        stage, forced)
+            return forced
+        logger.warning(
+            "NUCLEUS_SINGLE_VENDOR=%s not found on PATH, falling back to "
+            "cost order %s", forced, "/".join(_SINGLE_VENDOR_ORDER))
+    for vendor in _SINGLE_VENDOR_ORDER:
+        if shutil.which(vendor):
+            if vendor == "claude":
+                logger.warning(
+                    "single-vendor %s: no free vendor on PATH, falling back to "
+                    "PAID claude", stage)
+            else:
+                logger.info("single-vendor %s: using free vendor %s",
+                            stage, vendor)
+            return vendor
+    return None
+
+
 # ── PLAN stage ───────────────────────────────────────────────────────────────
 
 def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
@@ -335,17 +375,15 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
     uses, so the plan text is a real captured vendor result, not a
     passthrough. Returns ``(ok, message, final_plan_path)``.
     """
-    # Detect available CLI for plan dispatch — prefer claude, fall back to
-    # devin/agy so single-vendor mode works even if only one CLI is installed.
-    if shutil.which("claude"):
-        plan_vendor = "claude"
-    elif shutil.which("devin"):
-        plan_vendor = "devin"
-        logger.info("claude CLI not found, using devin for single-vendor plan")
-    elif shutil.which("agy"):
-        plan_vendor = "agy"
-        logger.info("claude CLI not found, using agy for single-vendor plan")
-    else:
+    # Detect available CLI for plan dispatch. ARBITRAGE ORDER (fw-1786104704):
+    # FREE vendors first, paid `claude` only as last resort. The old order
+    # preferred claude and fell back to devin/agy "if claude is not installed"
+    # — but claude is always on PATH (it is the CLI running the session), so
+    # the free branches were dead code and every degraded build silently
+    # billed the paid tier while a healthy free lane sat idle.
+    # Override with NUCLEUS_SINGLE_VENDOR (devin|agy|claude).
+    plan_vendor = _pick_single_vendor("plan")
+    if plan_vendor is None:
         return (
             False,
             "no coding agent CLI found on PATH. Install one of: "
@@ -608,18 +646,12 @@ def _run_execute_stage(
     last. On fail-stop *post_head* equals *pre_head* (no further dispatch ran).
     """
     if execution_mode == _MODE_SINGLE_VENDOR:
-        # Detect available CLIs instead of hard-requiring claude. If claude
-        # is missing, check for devin/agy as fallbacks so a stranger's first
-        # run doesn't hit a wall with a cryptic error.
-        if shutil.which("claude"):
-            vendor = "claude"
-        elif shutil.which("devin"):
-            vendor = "devin"
-            logger.info("claude CLI not found, falling back to devin for single-vendor execute")
-        elif shutil.which("agy"):
-            vendor = "agy"
-            logger.info("claude CLI not found, falling back to agy for single-vendor execute")
-        else:
+        # Cost-ordered lane selection (fw-1786104704): free vendors before the
+        # paid claude lane. This is the stage that actually spends money — a
+        # degraded build dispatches EVERY task here, so preferring claude meant
+        # a single dead free vendor turned the whole execute stage paid.
+        vendor = _pick_single_vendor("execute")
+        if vendor is None:
             return (
                 False,
                 "no coding agent CLI found on PATH. Install one of: "
