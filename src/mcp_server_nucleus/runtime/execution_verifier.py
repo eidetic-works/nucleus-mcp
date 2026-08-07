@@ -764,23 +764,32 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
                 timeout=min(30, budget_s),
                 cwd=str(project_root),
             )
-            signals.append({
+            combined = (r.stdout or "") + (r.stderr or "")
+            sig = {
                 "tier": 3,
                 "check": "pytest",
                 "file": test_file,
                 "passed": r.returncode == 0,
-                "output": (r.stdout + r.stderr).strip()[-300:],
+                "output": combined.strip()[-300:],
                 "duration_s": round(time.monotonic() - t0, 1),
-            })
+                "python": python,
+            }
+            if re.search(r"no module named pytest", combined, re.IGNORECASE):
+                sig["passed"] = False
+                sig["unrunnable"] = True
+                sig["reason"] = "pytest_not_available"
+            signals.append(sig)
         except subprocess.TimeoutExpired:
             signals.append({
                 "tier": 3, "check": "pytest", "file": test_file,
                 "passed": False, "error": "timeout",
+                "python": python,
             })
         except Exception as e:
             signals.append({
                 "tier": 3, "check": "pytest", "file": test_file,
                 "passed": False, "error": str(e)[:200],
+                "python": python,
             })
 
     return signals
@@ -1078,6 +1087,27 @@ def _find_venv_python(relpath: str, project_root: Path) -> str | None:
         if current == root or current == current.parent:
             break
         current = current.parent
+
+    # Worktree fallback: when project_root is a linked worktree, the venv
+    # typically lives in the main checkout. Resolve it via the git common dir.
+    try:
+        r = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            capture_output=True, text=True, cwd=str(project_root),
+            timeout=5,
+        )
+        if r.returncode == 0:
+            common_dir = Path(r.stdout.strip()).resolve()
+            if common_dir.name == ".git":
+                main_checkout = common_dir.parent
+            else:
+                main_checkout = common_dir
+            main_venv_python = main_checkout / ".venv" / "bin" / "python"
+            if main_venv_python.exists():
+                return str(main_venv_python)
+    except Exception:
+        pass
+
     return None
 
 

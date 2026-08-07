@@ -1096,10 +1096,44 @@ def _render_verdict_card(
     else:
         print("    (none)", flush=True)
     print("  VERIFICATION STATUS:", flush=True)
-    print(f"    Tier 0 (diff nonempty) : {tier0.get('status', 'SKIPPED')}", flush=True)
-    print(f"    Tier 1 (syntax)        : {tier1.get('status', 'SKIPPED')}", flush=True)
-    print(f"    Tier 2 (imports)       : {tier2.get('status', 'SKIPPED')}", flush=True)
-    print(f"    Tier 3 (tests)         : {tier3.get('status', 'SKIPPED')}", flush=True)
+
+    def _print_tier_line(tier_num: int, desc: str, tier: Dict[str, Any]) -> None:
+        """Print one VERIFICATION STATUS tier line.
+
+        PASSED/SKIPPED → bare status, byte-identical to the original
+        hardcoded lines. FAILED → Tier 3 surfaces ``unrunnable`` (pytest
+        missing) as ``FAILED (UNRUNNABLE — pytest not available in
+        <python>)``; every FAILED tier also prints an indented tail (last
+        200 chars) of each signal's ``output`` (falling back to ``error``
+        when ``output`` is absent).
+        """
+        label = f"Tier {tier_num} ({desc})"
+        prefix = f"    {label.ljust(22)} : "
+        status = tier.get("status", "SKIPPED")
+        if status in ("PASSED", "SKIPPED"):
+            print(f"{prefix}{status}", flush=True)
+            return
+        # FAILED — Tier 3 unrunnable gets a named verdict.
+        signals = tier.get("signals") or []
+        if tier_num == 3 and any(s.get("unrunnable") for s in signals):
+            py = next(
+                (s.get("python", "(unknown)") for s in signals if s.get("unrunnable")),
+                "(unknown)",
+            )
+            print(f"{prefix}FAILED (UNRUNNABLE — pytest not available in {py})", flush=True)
+        else:
+            print(f"{prefix}{status}", flush=True)
+        # Indented tail (last 200 chars) of each signal's output, falling
+        # back to ``error`` when ``output`` is absent.
+        for sig in signals:
+            tail = (sig.get("output") or sig.get("error") or "").strip()
+            if tail:
+                print(f"        {tail[-200:]}", flush=True)
+
+    _print_tier_line(0, "diff nonempty", tier0)
+    _print_tier_line(1, "syntax", tier1)
+    _print_tier_line(2, "imports", tier2)
+    _print_tier_line(3, "tests", tier3)
     print(f"  VERIFICATION            : {verify_details.get('passed_count', 0)} PASSED, {verify_details.get('failed_count', 0)} FAILED, {verify_details.get('skipped_count', 0)} SKIPPED — {verify_details.get('summary_status', 'UNKNOWN')}", flush=True)
     print("─" * 72, flush=True)
 
