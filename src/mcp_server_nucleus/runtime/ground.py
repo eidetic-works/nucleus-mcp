@@ -104,6 +104,8 @@ def run_ground(project_root: str = None, python_path: str = None,
         "execution_verification_timeout_s": timeout_s,
         "execution_verification_tiers": tier_list,
         "python_path": python,
+        # Tier 0 counts explicitly staged submodule pointer bumps (fw-1786069497)
+        "_verification_context": "pre_commit",
     }
 
     # Run verification

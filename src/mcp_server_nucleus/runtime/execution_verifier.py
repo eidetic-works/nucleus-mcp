@@ -45,6 +45,9 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
     budget = config.get("execution_verification_timeout_s", 30)
     enabled_tiers = set(config.get("execution_verification_tiers", [0, 1, 2, 3]))
     task = config.get("_current_task", {})
+    # Which call site is verifying. Defaults to "build" so every existing
+    # caller keeps the build-path file selection with zero config changes.
+    verification_context = config.get("_verification_context", "build")
 
     t0 = time.monotonic()
     signals = []
@@ -66,7 +69,8 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
         skip_reasons[str(tier)] = why
 
     # Get clean file paths
-    changed = _get_changed_files(git_diff_text, pre_head, project_root)
+    changed = _get_changed_files(git_diff_text, pre_head, project_root,
+                                 context=verification_context)
 
     def remaining():
         return max(0, budget - (time.monotonic() - t0))
@@ -383,9 +387,54 @@ def _get_submodule_paths(project_root: Path) -> set[str]:
     return paths
 
 
+_CHANGED_FILES_CONTEXTS = ("build", "pre_commit")
+
+
 def _get_changed_files(git_diff_text: str, pre_head: str,
-                       project_root: Path) -> list[str]:
-    """Extract changed file paths from git state."""
+                       project_root: Path, *,
+                       context: str = "build") -> list[str]:
+    """Extract changed file paths from git state.
+
+    Unions four sources: unstaged (``git diff``), staged
+    (``git diff --cached``), working tree vs ``pre_head`` (``git diff
+    <pre_head>``, only when ``pre_head`` is set), and untracked-but-not-
+    ignored files (``git ls-files --others --exclude-standard``, narrowed to
+    genuinely-new paths when ``pre_head`` is set). ``git_diff_text`` is
+    accepted for signature compatibility with ``verify_execution`` and is NOT
+    read — git is queried directly.
+
+    ``context`` names the CALLER, because the two callers want opposite
+    submodule-pointer handling:
+
+    ``"build"`` (default)
+        ``build_runner._run_verify_stage``. Submodule paths are filtered out
+        of *every* source. A gitlink bump (mode 160000) is a pointer move, not
+        a file edit, and nothing in a build is deliberate — the vendor agent
+        may bump a pointer as a side effect. INVARIANT (fw-1785907505): a
+        build whose only diff is a submodule-pointer bump yields ``[]`` here
+        and therefore still FAILS Tier 0 (diff nonempty). Do not relax the
+        filter in this context; the false-positive PROVEN verdict it prevents
+        is the whole reason the filter exists.
+
+    ``"pre_commit"``
+        ``ground.run_ground`` → ``verify_execution``. STAGED submodule paths
+        are retained (fw-1786069497): a staged pointer bump was explicitly
+        ``git add``ed, so it IS the change being committed. Filtering it left
+        Tier 0 with an empty set and blocked legitimate submodule-sync commits
+        behind a misleading "Syntax verification failed". Only the staged
+        source is exempted — the unstaged and ``pre_head`` sources stay
+        filtered in BOTH contexts, so an *unstaged* pointer bump still cannot
+        satisfy Tier 0 anywhere.
+
+    Raises ``ValueError`` for any other ``context``. Returns ``[]`` when git
+    is unavailable or nothing changed.
+    """
+    if context not in _CHANGED_FILES_CONTEXTS:
+        raise ValueError(
+            f"_get_changed_files: unknown context {context!r} "
+            f"(expected one of {', '.join(map(repr, _CHANGED_FILES_CONTEXTS))})"
+        )
+
     files = set()
 
     def _run_git(*args):
@@ -409,8 +458,12 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
 
     # Unstaged
     files.update(_filter_submodules(_run_git("diff", "--name-only")))
-    # Staged
-    files.update(_filter_submodules(_run_git("diff", "--cached", "--name-only")))
+    # Staged. In the pre_commit context a staged submodule-pointer bump is a
+    # deliberate, explicitly-`git add`ed change — the very thing being
+    # committed — so it must count toward Tier 0 rather than be filtered away
+    # (fw-1786069497). Under "build" nothing is explicit, so the filter stays.
+    staged = _run_git("diff", "--cached", "--name-only")
+    files.update(staged if context == "pre_commit" else _filter_submodules(staged))
     # Changes since pre_head (working tree vs pre_head commit).
     # CONCURRENT COMMIT CONTAMINATION FIX (fw-1786034381): the old code used
     # `git log --name-only pre_head..HEAD` which captures ALL commits between
