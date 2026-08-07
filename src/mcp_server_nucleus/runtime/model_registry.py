@@ -286,12 +286,21 @@ TASK_STRENGTH: Dict[str, Dict[str, float]] = {
         "swe-1.7": 0.60,
         "gemini-3.5-flash-low": 0.40,
     },
+    # OPERATOR ROUTING RULE (2026-08-07): on the agy lane, default to the
+    # GEMINI models (pro-high, flash-3.6-high) — NOT agy's claude models.
+    # agy's claude quota is shallow and its OAuth is re-authed often, so
+    # scoring claude-opus/sonnet above glm-5.2 sent the default path straight
+    # into quota exhaustion + auth churn. They stay in the table as
+    # last-resort entries (scored below every devin model) rather than being
+    # deleted, so the fallback chain can still reach them if everything else
+    # is cold. Do not restore them above glm-5.2.
     "plan_reviewer": {
         "gemini-3.1-pro-high": 0.95,
         "glm-5.2": 0.80,
         "gemini-3.6-flash-high": 0.65,
-        "claude-opus-4-6-thinking": 0.90,
-        "claude-sonnet-4-6": 0.75,
+        "swe-1.7": 0.55,
+        "claude-opus-4-6-thinking": 0.45,
+        "claude-sonnet-4-6": 0.40,
     },
     "code_executor": {
         "glm-5.2": 0.90,
@@ -305,11 +314,14 @@ TASK_STRENGTH: Dict[str, Dict[str, float]] = {
         "glm-5.2": 0.80,
         "gemini-3.1-pro-high": 0.70,
     },
+    # Same operator routing rule as plan_reviewer: agy-gemini first, devin
+    # next, agy-claude last resort only.
     "adversarial_review": {
         "gemini-3.1-pro-high": 0.95,
-        "claude-opus-4-6-thinking": 0.90,
         "glm-5.2": 0.80,
         "gemini-3.6-flash-high": 0.65,
+        "swe-1.7": 0.55,
+        "claude-opus-4-6-thinking": 0.45,
     },
 }
 
