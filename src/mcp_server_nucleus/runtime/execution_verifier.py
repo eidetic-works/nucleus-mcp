@@ -17,6 +17,12 @@ Each tier is independent. If a tier can't run, it's skipped (not failed).
 Total budget: configurable, default 30s.
 
 This is the canonical engine. scripts/execution_verifier.py re-exports from here.
+
+A Tier 3 signal may carry `unrunnable=True` with
+`reason="pytest_not_available"` when the resolved interpreter cannot import
+pytest. In that case `passed` stays `False`, because an unrunnable tier must
+never read as green. This distinction exists so a reader can tell "the tests
+failed" apart from "the tests never ran".
 """
 
 from __future__ import annotations
