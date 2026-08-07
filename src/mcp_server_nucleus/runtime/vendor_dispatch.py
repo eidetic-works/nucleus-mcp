@@ -54,6 +54,58 @@ logger = logging.getLogger("nucleus.vendor_dispatch")
 FLAG = "NUCLEUS_CROSS_VENDOR"
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
+# Prepended to every dispatch prompt. MUST stay under 900 chars: devin dies
+# with rc=-13 (SIGPIPE) above ~64 KB of prompt, and the preamble competes with
+# the task body for that budget — every byte here is a byte the task cannot
+# spend. Trim ruthlessly; if a non-negotiable needs prose, it belongs in the
+# docstring above, not here.
+# Addressed to the VENDOR, about how the vendor must behave. The generated
+# first draft described this module's own design invariants instead
+# (flag-gated, artifact_ref, identity-safe delivery) -- structurally perfect,
+# semantically useless: "FLAG-GATED, DEFAULT OFF" tells a coding agent nothing
+# about what it may edit. Every byte here competes with the real task inside
+# devin's ~64KB SIGPIPE ceiling, so this stays terse and behavioral only.
+_VENDOR_PREAMBLE = (
+    "Four non-negotiables for this task:\n"
+    "1. FILE SCOPE IS ABSOLUTE. Edit ONLY the files this task names. If it "
+    "says 'X ONLY', touching any other file is a failure, not a judgement "
+    "call -- even to add a helper, a test, or an import.\n"
+    "2. NO GIT STATE CHANGES. Never run git commit, reset, stash, checkout, "
+    "or any branch switch. This working tree is shared with other agents "
+    "running concurrently; their uncommitted work is in it right now.\n"
+    "3. REFUSE RATHER THAN WIDEN. If the task cannot be done within the "
+    "stated file scope, say so explicitly in your output and stop. A clear "
+    "refusal is more useful than a change nobody asked for.\n"
+    "4. REPORT HONESTLY. State plainly what you did and did NOT do, and "
+    "anything you could not verify. Do not describe intended work as done."
+)
+
+
+def _resolve_preamble() -> str:
+    """Resolve the dispatch preamble at call time.
+
+    Precedence (first match wins):
+
+    1. ``NUCLEUS_VENDOR_PREAMBLE_DISABLED`` truthy -> ``""`` (preamble off).
+       Lets a caller suppress the preamble without editing code — useful for
+       prompt-budget-tight dispatches where every byte is borrowed from the
+       task body.
+    2. ``NUCLEUS_VENDOR_PREAMBLE`` non-empty -> that value verbatim. A caller
+       who needs a different non-negotiables set (or none of the four) can
+       override without forking the module.
+    3. Otherwise -> :data:`_VENDOR_PREAMBLE` (the compiled-in default).
+
+    Read at call time, not import time, so a caller can flip the env between
+    dispatches in the same process.
+    """
+    if os.environ.get("NUCLEUS_VENDOR_PREAMBLE_DISABLED", "").strip().lower() in _TRUTHY:
+        return ""
+    override = os.environ.get("NUCLEUS_VENDOR_PREAMBLE", "")
+    if override.strip():
+        return override
+    return _VENDOR_PREAMBLE
+
+
 # v3 anchor precondition, UNCONDITIONAL as of 2026-07-31. PRINCIPAL v3 line 77:
 #   "the artifact-ref must be VENDOR-DERIVED, checkable in CODE-SHAPE: on the
 #    anchored path the dispatch/relay tool schema MUST NOT accept artifact-ref
@@ -750,7 +802,13 @@ class VendorCLIExecutor:
             )
         self.spec = VENDOR_SPECS[vendor]
         self.vendor = vendor
-        self.prompt = prompt or ""
+        # Prepend the dispatch preamble (non-negotiables) to every prompt by
+        # default. _resolve_preamble() reads env at call time so a caller can
+        # suppress (NUCLEUS_VENDOR_PREAMBLE_DISABLED) or override
+        # (NUCLEUS_VENDOR_PREAMBLE) between dispatches in the same process.
+        preamble = _resolve_preamble()
+        base_prompt = prompt or ""
+        self.prompt = (preamble + "\n\n" + base_prompt) if preamble else base_prompt
         # A timeout of 0 means NO timeout — let the agent run as long as it needs.
         # A timeout of at least 1s — the hard bound is the Python subprocess
         # timeout, independent of any CLI-internal --print-timeout.
