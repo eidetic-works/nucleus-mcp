@@ -1034,6 +1034,7 @@ def _render_verdict_card(
     verification_passed: bool,
     verify_details: Dict[str, Any],
     execution_mode: str = _MODE_DUAL_VENDOR,
+    single_vendor: Optional[str] = None,
 ) -> int:
     """VERDICT stage — format + print the verdict card, return exit code.
 
@@ -1064,7 +1065,8 @@ def _render_verdict_card(
     tier3 = verify_details.get("tier3", {})
 
     if execution_mode == _MODE_SINGLE_VENDOR:
-        mode_label = "single-vendor (claude only, no adversarial review)"
+        vendor_name = single_vendor or (results[0]["vendor"] if results else "claude")
+        mode_label = f"single-vendor ({vendor_name} only, no adversarial review)"
         confidence_label = "SINGLE-VENDOR UNREVIEWED"
         # Single-vendor runs do NOT show 'PROVEN' — the tasks ran but were
         # never adversarially reviewed. Honest weaker tier.
@@ -1142,6 +1144,14 @@ def run_build_pipeline(task_prompt: str) -> int:
     verification_passed, verify_details = _run_verify_stage(task_prompt, pre_head, post_head)
 
     # ── VERDICT ──────────────────────────────────────────────────────────────
+    # In single-vendor mode, derive the vendor name from the first execute
+    # result so the verdict card labels the run with the actual vendor that
+    # ran it (not just the default "claude" fallback).
+    single_vendor = (
+        results[0]["vendor"]
+        if execution_mode == _MODE_SINGLE_VENDOR and results
+        else None
+    )
     return _render_verdict_card(
         task_prompt=task_prompt,
         final_plan_path=final_plan_path,
@@ -1151,4 +1161,5 @@ def run_build_pipeline(task_prompt: str) -> int:
         verification_passed=verification_passed,
         verify_details=verify_details,
         execution_mode=execution_mode,
+        single_vendor=single_vendor,
     )
