@@ -13,7 +13,9 @@ Backfill 3-branch rule (idempotent — checks if column exists before adding):
 """
 from __future__ import annotations
 
+import hashlib
 import logging
+import os
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -191,13 +193,84 @@ def _project_row(row: dict, brain_path: Path | None = None) -> tuple | None:
     return (text, tags_col, created_at, "", source, kind, legacy_context or "")
 
 
+# Key prefixes whose rows are machine status transitions, not knowledge. They
+# stay in history.jsonl — it is an append-only audit ledger and they belong
+# there — but they are excluded from the RECALL INDEX, where they only displace
+# signal. Measured medians: task_chg_ 42 chars ("Task X changed: ESCALATED ->
+# in_progress"), session_ 32 ("Session started - ? tasks loaded"), ground_ 44,
+# align_ 26, delta_ 27. task_wip_ (142) is excluded for a different reason: it
+# restates the task_new_ text verbatim, so the pair occupies two result slots
+# for one fact — observed live, where three of five slots went to task_new_50130
+# / task_wip_50524 / task_wip_52875, all the same sentence.
+#
+# This is a DENY list, not an allow list, so an unrecognised prefix is INDEXED
+# by default. A new writer that nobody added here stays searchable; the failure
+# mode of the opposite choice is silent invisibility.
+_INDEX_EXCLUDED_PREFIXES = (
+    "task_chg_", "session_", "ground_", "align_", "delta_", "task_wip_",
+)
+
+
+def _index_excluded(key: str) -> bool:
+    """True when *key* is machine chatter that should not enter the recall index."""
+    return bool(key) and key.startswith(_INDEX_EXCLUDED_PREFIXES)
+
+
+def _dedupe_and_filter(raw_rows):
+    """Drop chatter and byte-identical repeats, preserving order.
+
+    Deduplication is by CONTENT HASH, not by key. Keying looked like the
+    obvious choice — history.jsonl is append-only and a key recurs as its
+    record is revised — but measuring it refuted that: of 1,504 repeated keys,
+    1,332 carry DISTINCT values. "Last append wins" would have silently
+    discarded 1,332 real revisions. Identical bytes cannot be a distinct fact,
+    so hashing the value is safe by construction where keying is not.
+
+    It is also strictly more effective. 10,551 of 19,749 rows are byte-identical
+    to another row (only 9,198 distinct contents exist); one templated string
+    appears 3,042 times. And 312 contents appear under DIFFERENT keys — the
+    case that put three copies of one sentence into a five-result recall, which
+    key-based dedup cannot see at all.
+
+    The FIRST occurrence is kept, so the earliest timestamp survives and
+    provenance points at when a fact actually first appeared.
+
+    Returns ``(rows, stats)``. Nothing is deleted from the store — this shapes
+    only what is projected into the index, so unsetting the env flag and
+    rebuilding fully restores the previous behavior.
+    """
+    keep_chatter = os.environ.get("NUCLEUS_WEDGE_INDEX_CHATTER", "").strip() in {"1", "true", "yes"}
+    seen_hashes: set[str] = set()
+    kept: list = []
+    stats = {"seen": 0, "chatter": 0, "duplicate": 0}
+    for row in raw_rows:
+        stats["seen"] += 1
+        if not keep_chatter and _index_excluded(row.get("key") or ""):
+            stats["chatter"] += 1
+            continue
+        value = str((row.get("snapshot") or {}).get("value") or row.get("value") or "")
+        if value:
+            digest = hashlib.sha1(value.encode("utf-8", "replace")).hexdigest()
+            if digest in seen_hashes:
+                stats["duplicate"] += 1
+                continue
+            seen_hashes.add(digest)
+        kept.append(row)
+    return kept, stats
+
+
 def build_memories_index(brain_path: Path | None = None) -> Path:
     """Rebuild history-projected rows. Auto-memory rows are preserved."""
     db = ensure_schema(brain_path)
     resolved_brain = Store.brain_path(brain_path)
     store = Store(resolved_brain)
+    kept, stats = _dedupe_and_filter(store.rows())
+    logger.info(
+        "wedge index: %d rows -> %d indexed (%d chatter, %d duplicate keys)",
+        stats["seen"], len(kept), stats["chatter"], stats["duplicate"],
+    )
     rows = [
-        r for r in (_project_row(row, resolved_brain) for row in store.rows())
+        r for r in (_project_row(row, resolved_brain) for row in kept)
         if r is not None
     ]
     conn = _connect(db)
