@@ -16,10 +16,38 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sqlite3
 import sys
 from pathlib import Path
 from typing import Optional
+
+from nucleus_wedge import bm25
+
+# Upper bound on rows pulled from SQLite before bm25 ranking. Large enough that
+# a normal query ranks over real breadth, small enough that a stop-word query
+# against a 20k-row store stays a bounded read.
+_CANDIDATE_POOL = 400
+
+_TERM_RE = re.compile(r"[a-z0-9_.]+")
+
+# Dropped from the OR-set because they match nearly every row and so contribute
+# only cost. Deliberately SHORT: an over-eager stop list silently deletes the
+# user's actual search terms, which is the failure this whole change is fixing.
+_STOPWORDS = frozenset({
+    "the", "a", "an", "and", "or", "of", "to", "in", "is", "it", "for", "on",
+    "that", "this", "with", "was", "are", "be", "as", "at", "by", "from",
+})
+
+
+def _query_terms(query: str) -> list[str]:
+    """Lowercase search terms from *query*, stop-words and 1-char tokens removed.
+
+    Returns ``[]`` when the query is entirely stop-words — callers must treat
+    that as "no usable terms" and fall back, NOT as "match everything".
+    """
+    toks = _TERM_RE.findall((query or "").lower())
+    return [t for t in toks if len(t) > 1 and t not in _STOPWORDS]
 
 from nucleus_wedge.memories import (
     _connect,
@@ -140,9 +168,37 @@ def _do_recall_query(
     params: list[object] = []
     q = (query or "").strip()
     if q:
-        like = f"%{q.lower()}%"
-        sql_parts.append("AND (LOWER(text) LIKE ? OR LOWER(tags) LIKE ?)")
-        params.extend([like, like])
+        # PER-TERM OR, not whole-phrase LIKE (fw-1786153512).
+        #
+        # This previously matched the ENTIRE query string as one contiguous
+        # substring: `LIKE '%scope enforcement build_runner%'`. That requires
+        # the words to appear verbatim, in that order, adjacent — so the more
+        # descriptive the query, the closer the result count got to zero.
+        # Measured before this change: 'scope' -> 5, 'scope enforcement' -> 2,
+        # 'scope enforcement build_runner' -> 0, while the legacy BM25 path
+        # ranked that same third query and returned 5 good hits. Zero is
+        # indistinguishable from "nothing is known", and agents are FORCED
+        # onto this path by nucleus_first_pretool.sh.
+        #
+        # Now: any term may match (OR), and bm25 ranking below decides order,
+        # so rows matching more terms surface first. Recall widens; precision
+        # is recovered by ranking rather than by refusing to return anything.
+        terms = [t for t in _query_terms(q) if t]
+        if terms:
+            clauses = " OR ".join(
+                ["(LOWER(text) LIKE ? OR LOWER(tags) LIKE ?)"] * len(terms)
+            )
+            sql_parts.append(f"AND ({clauses})")
+            for t in terms:
+                like = f"%{t}%"
+                params.extend([like, like])
+        else:
+            # Query was all stop-words/punctuation. Fall back to the old
+            # whole-string behavior rather than dropping the filter entirely,
+            # which would silently turn a search into "return everything".
+            like = f"%{q.lower()}%"
+            sql_parts.append("AND (LOWER(text) LIKE ? OR LOWER(tags) LIKE ?)")
+            params.extend([like, like])
     if kind:
         sql_parts.append("AND kind = ?")
         params.append(kind)
@@ -156,13 +212,25 @@ def _do_recall_query(
     if source_filter:
         sql_parts.append("AND source LIKE ?")
         params.append(source_filter)
+    # Widen the SQL fetch into a candidate POOL, then rank. With per-term OR
+    # above, `LIMIT 5` in SQL would hand back the 5 most RECENT rows matching
+    # any single term — recency masquerading as relevance. Fetch a pool and let
+    # bm25 pick. The pool is recency-ordered, so it biases toward recent rows
+    # when a query matches more than the cap; that is a deliberate trade for a
+    # bounded query, not an accident.
+    pool = max(int(limit), min(_CANDIDATE_POOL, int(limit) * 40)) if q else int(limit)
     sql_parts.append("ORDER BY created_at DESC LIMIT ?")
-    params.append(limit)
+    params.append(pool)
     sql = " ".join(sql_parts)
     with _connect(db) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(sql, params).fetchall()
     legacy_rows = [dict(r) for r in rows]
+    if q and len(legacy_rows) > limit:
+        legacy_rows = bm25.rank_candidates(
+            legacy_rows, query=q, limit=limit,
+            text_key="text", ts_key="created_at", kind_key="kind",
+        )
 
     # Flag-OFF (default): byte-for-byte the pre-batch-4 path — return the legacy
     # memories.db result unchanged; nothing from the SoR layer is imported.
