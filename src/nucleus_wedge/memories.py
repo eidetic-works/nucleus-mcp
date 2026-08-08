@@ -126,11 +126,21 @@ def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
 
 
 def _ensure_kind_columns(conn: sqlite3.Connection) -> None:
-    """Idempotent migration: add `kind` + `legacy_context` columns if absent."""
+    """Idempotent migration: add `kind`, `legacy_context`, and origin columns.
+
+    ``origin_repo`` / ``origin_session`` are NULL for every row written before
+    fw-1786153512 defect 3, and NULL means UNKNOWN — not "no repo". Filters
+    must treat unknown origin permissively, or turning on a repo filter would
+    silently hide the entire pre-existing corpus.
+    """
     if not _column_exists(conn, "memories", "kind"):
         conn.execute("ALTER TABLE memories ADD COLUMN kind TEXT")
     if not _column_exists(conn, "memories", "legacy_context"):
         conn.execute("ALTER TABLE memories ADD COLUMN legacy_context TEXT")
+    if not _column_exists(conn, "memories", "origin_repo"):
+        conn.execute("ALTER TABLE memories ADD COLUMN origin_repo TEXT")
+    if not _column_exists(conn, "memories", "origin_session"):
+        conn.execute("ALTER TABLE memories ADD COLUMN origin_session TEXT")
 
 
 def ensure_schema(brain_path: Path | None = None) -> Path:
@@ -190,7 +200,9 @@ def _project_row(row: dict, brain_path: Path | None = None) -> tuple | None:
     created_at = snap.get("timestamp") or row.get("timestamp") or ""
     source_agent = snap.get("source_agent") or ""
     source = f"{HISTORY_SOURCE_PREFIX}:{source_agent}" if source_agent else HISTORY_SOURCE_PREFIX
-    return (text, tags_col, created_at, "", source, kind, legacy_context or "")
+    origin = snap.get("origin") or {}
+    return (text, tags_col, created_at, "", source, kind, legacy_context or "",
+            origin.get("repo"), origin.get("session"))
 
 
 # Key prefixes whose rows are machine status transitions, not knowledge. They
@@ -281,8 +293,9 @@ def build_memories_index(brain_path: Path | None = None) -> Path:
         )
         conn.executemany(
             "INSERT INTO memories "
-            "(text, tags, created_at, optional_date, source, kind, legacy_context) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(text, tags, created_at, optional_date, source, kind, legacy_context, "
+            "origin_repo, origin_session) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             rows,
         )
         conn.commit()
@@ -329,7 +342,7 @@ def _project_memory_file(path: Path) -> tuple | None:
     text = "\n\n".join(parts)
     created_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
     # auto_memory rows: kind = mem_type (e.g., "feedback"); legacy_context = "".
-    return (text, mem_type, created_at, "", AUTO_MEMORY_SOURCE, mem_type, "")
+    return (text, mem_type, created_at, "", AUTO_MEMORY_SOURCE, mem_type, "", None, None)
 
 
 def build_auto_memory_index(
@@ -350,8 +363,9 @@ def build_auto_memory_index(
         conn.execute("DELETE FROM memories WHERE source = ?", (AUTO_MEMORY_SOURCE,))
         conn.executemany(
             "INSERT INTO memories "
-            "(text, tags, created_at, optional_date, source, kind, legacy_context) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(text, tags, created_at, optional_date, source, kind, legacy_context, "
+            "origin_repo, origin_session) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             rows,
         )
         conn.commit()

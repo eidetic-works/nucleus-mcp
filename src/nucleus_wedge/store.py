@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -136,6 +137,48 @@ def verify_record(snapshot: dict, brain_path: Path | None = None) -> bool:
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# Resolved once per process. Deriving the repo means a `git rev-parse`
+# subprocess, and this store takes ~19k appends — paying that per write would
+# make remember() dominated by process spawns.
+_ORIGIN_CACHE: dict | None = None
+
+
+def _origin() -> dict:
+    """Best-effort ``{repo, session}`` for the current writer.
+
+    ``repo`` is the basename of the git top-level containing the CWD, so
+    memories written from different repos into a shared brain stay
+    distinguishable. ``session`` comes from the harness session id when it is
+    exported.
+
+    Every field is optional and any failure yields ``None`` rather than raising
+    — origin is metadata about a memory, and failing to determine it must never
+    prevent the memory from being written.
+    """
+    global _ORIGIN_CACHE
+    if _ORIGIN_CACHE is not None:
+        return dict(_ORIGIN_CACHE)
+
+    repo = None
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            repo = Path(out.stdout.strip()).name
+    except Exception:  # noqa: BLE001 — origin is never worth failing a write over
+        repo = None
+
+    session = (
+        os.environ.get("CLAUDE_SESSION_ID")
+        or os.environ.get("NUCLEUS_SESSION_ID")
+        or None
+    )
+    _ORIGIN_CACHE = {"repo": repo, "session": session}
+    return dict(_ORIGIN_CACHE)
 
 
 def _normalize_tags(tags: list[str] | None) -> list[str] | None:
@@ -253,6 +296,15 @@ class Store:
                 "timestamp": ts,
                 "deleted": False,
                 "signature": None,
+                # Where this memory came from (fw-1786153512 defect 3). Until
+                # now the only attribution was source_agent, which records WHO
+                # wrote ("auto_hook", "devin") and never WHERE FROM — so every
+                # agent in every repo wrote into one undifferentiated pool and
+                # recall could not express "what did agents in THIS repo learn".
+                # Rows written before this exist with no origin at all; readers
+                # must treat a missing origin as UNKNOWN and therefore
+                # permissive, never as a reason to exclude.
+                "origin": _origin(),
             },
         }
         if _provenance_anchor_flag_on():

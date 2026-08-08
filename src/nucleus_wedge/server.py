@@ -60,6 +60,7 @@ def build_server() -> FastMCP:
         kind: Optional[str] = None,
         tags: Optional[list[str]] = None,
         since: Optional[str] = None,
+        repo: Optional[str] = None,
     ) -> list[dict]:
         """Recall memories, ranked by BM25, optionally narrowed by filters.
 
@@ -84,6 +85,11 @@ def build_server() -> FastMCP:
                   ``['role:main', 'domain:tb-endpoint']``).
             since: Optional ISO-8601 lower bound on timestamp, or relative window
                    ``Nd``/``Nh``/``Nm``.
+            repo: Optional origin-repo filter, e.g. ``"ai-mvp-backend"``. Rows
+                  whose origin was never recorded (everything written before
+                  origin tracking) are INCLUDED — unknown origin means unknown,
+                  not "other repo", and excluding it would hide the historical
+                  corpus behind a filter that looks precise.
 
         Returns:
             Ranked list of result dicts.
@@ -118,6 +124,7 @@ def build_server() -> FastMCP:
             since=since_norm,
             source_filter=None,
             brain_path_arg=None,
+            repo=repo,
         )
 
     @mcp.tool()

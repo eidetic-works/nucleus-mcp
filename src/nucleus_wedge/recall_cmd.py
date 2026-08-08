@@ -156,6 +156,7 @@ def _do_recall_query(
     since: Optional[str],
     source_filter: Optional[str],
     brain_path_arg: Optional[str],
+    repo: Optional[str] = None,
 ) -> list[dict]:
     """Execute one structured recall query and return rows as a list of dicts.
 
@@ -163,7 +164,8 @@ def _do_recall_query(
     """
     db = _ensure_populated(brain_path_arg)
     sql_parts: list[str] = [
-        "SELECT text, tags, created_at, source, kind FROM memories WHERE 1=1"
+        "SELECT text, tags, created_at, source, kind, origin_repo, origin_session "
+        "FROM memories WHERE 1=1"
     ]
     params: list[object] = []
     q = (query or "").strip()
@@ -212,6 +214,15 @@ def _do_recall_query(
     if source_filter:
         sql_parts.append("AND source LIKE ?")
         params.append(source_filter)
+    if repo:
+        # UNKNOWN ORIGIN IS INCLUDED, DELIBERATELY. Every row written before
+        # fw-1786153512 defect 3 has origin_repo NULL, which means "we did not
+        # record where this came from" — not "this came from somewhere else".
+        # Excluding NULL would make repo='x' hide the entire historical corpus
+        # while looking like a precise filter, which is the same shape as the
+        # empty-declared-scope trap in build_runner._scope_violations.
+        sql_parts.append("AND (origin_repo = ? OR origin_repo IS NULL)")
+        params.append(repo)
     # Widen the SQL fetch into a candidate POOL, then rank. With per-term OR
     # above, `LIMIT 5` in SQL would hand back the 5 most RECENT rows matching
     # any single term — recency masquerading as relevance. Fetch a pool and let
