@@ -1184,6 +1184,18 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     test checks, each reduced to a 3-state ``(passed, details)`` verdict
     via :func:`_evaluate_tier`.
 
+    Provenance isolation (fw-1786116954): the changed-file set from
+    ``_get_changed_files`` includes ``git diff --name-only pre_head``, which
+    compares pre_head to the WORKING TREE. When another agent or the operator
+    commits to the same working tree while a build is running, those commits
+    ARE in the working tree and get incorrectly attributed as build output.
+    To prevent this, the declared scope (from ``_declared_scope``) is used to
+    split changed files into ``attributed_files`` (within declared scope) and
+    ``unattributed_files`` (outside). Only attributed files are verified by
+    tiers 1–3; unattributed files are reported in the details but do not
+    participate in verification. When the declared scope is empty
+    (permissive — no paths declared), all files are attributed.
+
     Tier 2 is Python-only: when no ``.py`` files are present it is reported
     SKIPPED without invoking the import checker. For all tiers, an empty
     signal list (e.g. no syntax-checkable files, no importable candidates
@@ -1227,10 +1239,30 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     from .ground import detect_project_root
 
     project_root = detect_project_root()
-    changed_files = execution_verifier._get_changed_files("", pre_head, project_root)
+    all_changed_files = execution_verifier._get_changed_files("", pre_head, project_root)
+
+    # ── Provenance isolation (fw-1786116954) ──────────────────────────────
+    # Split changed files into attributed (within declared scope) and
+    # unattributed (concurrent commits from the same working tree). Only
+    # attributed files are verified; unattributed files are reported but
+    # do not participate in tier 1–3 verification. An empty declared scope
+    # is permissive — all files are attributed.
+    declared = _declared_scope(task_prompt)
+    if declared:
+        attributed_files = [f for f in all_changed_files if f in declared]
+        unattributed_files = [f for f in all_changed_files if f not in declared]
+    else:
+        attributed_files = all_changed_files
+        unattributed_files = []
+
+    # Tier 0 checks the ATTRIBUTED set, not the raw diff. A build that
+    # produced no attributed files but has unattributed ones (concurrent
+    # commits) is still a tier-0 failure — the build itself changed nothing.
+    changed_files = attributed_files
 
     details: Dict[str, Any] = {
         "changed_files": changed_files,
+        "unattributed_files": unattributed_files,
         "tier1": {"status": "SKIPPED", "signals": []},
         "tier2": {"status": "SKIPPED", "signals": []},
         "tier3": {"status": "SKIPPED", "signals": []},
@@ -1387,6 +1419,7 @@ def _render_verdict_card(
     all_tasks_succeeded = succeeded == claimed and claimed > 0
 
     changed_files = verify_details.get("changed_files", [])
+    unattributed_files = verify_details.get("unattributed_files", [])
     tier0 = verify_details.get("tier0", {})
     tier1 = verify_details.get("tier1", {})
     tier2 = verify_details.get("tier2", {})
@@ -1423,6 +1456,10 @@ def _render_verdict_card(
             print(f"    - {f}", flush=True)
     else:
         print("    (none)", flush=True)
+    if unattributed_files:
+        print(f"  UNATTRIBUTED ({len(unattributed_files)}) — concurrent commits, NOT build output:", flush=True)
+        for f in unattributed_files:
+            print(f"    - {f}", flush=True)
     print("  VERIFICATION STATUS:", flush=True)
 
     def _print_tier_line(tier_num: int, desc: str, tier: Dict[str, Any]) -> None:
