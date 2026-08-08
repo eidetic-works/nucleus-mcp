@@ -350,13 +350,29 @@ def process_event_for_engram(event_type: str, event_data: Dict[str, Any]) -> Opt
 
 
 def _create_auto_engram(event_type: str, event_data: Dict[str, Any], brain_path: Path) -> Optional[Dict]:
-    """Create an auto-engram from an event via the ADUN pipeline."""
+    """Create an auto-engram from an event via the ADUN pipeline.
+
+    fw-1786166399: if any required template field is missing from event_data,
+    return None — a hook that has no value to record should not record a
+    sentence saying it did. The old _SafeDict returned '?' for missing keys,
+    producing 3,042+ byte-identical garbage rows like 'Session started — ?
+    tasks loaded' that were actively misleading (shaped like proof, containing
+    none).
+    """
     config = TRIGGER_EVENTS[event_type]
 
     # Build description from template + event data
-    description = _fill_template(config["template"], event_data)
+    description, had_missing = _fill_template(config["template"], event_data)
 
     if not description or len(description) < 10:
+        return None
+
+    # fw-1786166399: reject templates with unfilled placeholders
+    if had_missing:
+        logger.debug(
+            "auto-engram skipped (unfilled template fields): event=%s desc=%r",
+            event_type, description[:80],
+        )
         return None
 
     # Generate a deterministic-ish key
@@ -376,11 +392,13 @@ def _create_auto_engram(event_type: str, event_data: Dict[str, Any], brain_path:
     )
 
 
-def _fill_template(template: str, data: Dict) -> str:
+def _fill_template(template: str, data: Dict) -> tuple:
     """
     Fill a template string with data fields.
 
-    Robust: if a field is missing, uses "?" instead of crashing.
+    fw-1786166399: returns (filled_str, had_missing) so the caller can
+    reject engrams with unfilled placeholders instead of writing garbage.
+    If a field is missing, uses "?" instead of crashing so we can detect it.
     Falls back to raw data stringification if template completely fails.
     """
     # Try template with safe defaults
@@ -388,17 +406,27 @@ def _fill_template(template: str, data: Dict) -> str:
         # Create a safe dict that returns "?" for missing keys
         safe_data = _SafeDict(data)
         filled = template.format_map(safe_data)
-        return filled
+        had_missing = "?" in filled and any(
+            field not in data or data[field] is None
+            for field in _extract_format_fields(template)
+        )
+        return filled, had_missing
     except Exception:
         pass
 
     # Fallback: extract common description fields
     for field in ("description", "message", "detail", "summary", "task", "reason"):
         if field in data and data[field]:
-            return str(data[field])[:200]
+            return str(data[field])[:200], False
 
     # Last resort
-    return json.dumps(data)[:200]
+    return json.dumps(data)[:200], False
+
+
+def _extract_format_fields(template: str) -> list:
+    """Extract field names from a str.format template like '{foo} {bar}'."""
+    import re
+    return re.findall(r"\{(\w+)", template)
 
 
 class _SafeDict(dict):
@@ -438,7 +466,7 @@ def _record_to_training_archive(event_type: str, event_data: Dict[str, Any], bra
     try:
         from .archive_pipeline import ArchivePipeline
         config = TRIGGER_EVENTS[event_type]
-        description = _fill_template(config["template"], event_data)
+        description, _had_missing = _fill_template(config["template"], event_data)
         archive = ArchivePipeline(brain_path=brain)
         archive.record_turn(
             brother="code",
