@@ -73,6 +73,16 @@ _SINGLE_VENDOR_PLAN_STATUS = "SINGLE_VENDOR_PLAN"
 _MODE_DUAL_VENDOR = "dual-vendor"
 _MODE_SINGLE_VENDOR = "single-vendor"
 
+# Scope-path token matcher. The (?:.../)+ group guarantees at least one ``/``
+# (so bare ``foo.py`` does not match — only paths like ``src/foo.py``); the
+# negative lookahead (?![\w.]) ensures the extension is the end of the token
+# (so ``foo.yaml.bak`` does not match as ``foo.yaml``).
+_SCOPE_PATH_RE = re.compile(
+    r'(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.(?:py|sh|md|json|toml|yaml|yml)(?![\w.])',
+    re.IGNORECASE,
+)
+_SCOPE_EXTS = frozenset({"py", "sh", "md", "json", "toml", "yaml", "yml"})
+
 # ── Small state helpers ──────────────────────────────────────────────────────
 
 def _make_response(success: bool, data: Optional[dict] = None,
@@ -91,6 +101,39 @@ def _git_head() -> str:
     except Exception as exc:  # noqa: BLE001 — best-effort; caller aborts on empty
         logger.warning("git rev-parse HEAD failed: %s", exc)
         return ""
+
+
+def _working_tree_files() -> set[str]:
+    """Set of modified + untracked files in the working tree (not commit diff).
+
+    Runs ``git status --porcelain`` and parses each line: the path starts at
+    index 3. Renames (``R``/``C``) carry the form ``old -> new`` — the RHS is
+    taken as the current path. Surrounding quotes (used by git when paths
+    contain special characters) are stripped. Paths are repo-root-relative.
+
+    Returns an empty set on any git error (best-effort, matches ``_git_head``).
+    """
+    try:
+        out = subprocess.check_output(
+            ["git", "status", "--porcelain"], text=True, stderr=subprocess.DEVNULL,
+        )
+    except Exception as exc:  # noqa: BLE001 — best-effort
+        logger.warning("git status --porcelain failed: %s", exc)
+        return set()
+
+    files: set[str] = set()
+    for line in out.splitlines():
+        if len(line) < 3:
+            continue
+        path = line[3:]
+        # Renames/copies: "old -> new" — keep the new (RHS) path.
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if len(path) >= 2 and path[0] == '"' and path[-1] == '"':
+            path = path[1:-1]
+        if path:
+            files.add(path)
+    return files
 
 
 def _gather_rag_context(task_prompt: str) -> str:
@@ -625,6 +668,157 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
         signal.signal(signal.SIGINT, old_sigint)
 
 
+# ── Scope enforcement ─────────────────────────────────────────────────────────
+
+def _declared_scope(task_prompt: str) -> set[str]:
+    """Extract the set of file paths declared in a task prompt.
+
+    Scans *task_prompt* for path-like tokens — substrings containing at least
+    one ``/`` and ending in one of the whitelisted extensions (``.py``, ``.sh``,
+    ``.md``, ``.json``, ``.toml``, ``.yaml``, ``.yml``) — using ``_SCOPE_PATH_RE``.
+
+    Returns an empty set when no such paths are found. An empty result is
+    *permissive*, not *restrictive*: it signals that the prompt declared no
+    explicit file scope, so callers must NOT treat it as "scope is empty /
+    nothing may be touched." An empty set means "no constraint was declared,"
+    i.e. fall back to the caller's default (typically unrestricted) policy.
+    """
+    return set(_SCOPE_PATH_RE.findall(task_prompt or ""))
+
+
+def _scope_violations(changed_files, declared) -> list[str]:
+    """Return the subset of *changed_files* outside the *declared* scope.
+
+    *declared* is the set returned by :func:`_declared_scope`. Consistent
+    with that function's contract, an **empty** *declared* set is
+    *permissive* — it means no explicit file scope was declared, so every
+    changed file is allowed and this returns ``[]``. Callers must NOT
+    interpret an empty result here as "everything violates."
+
+    When *declared* is non-empty, any changed path that does not match a
+    declared path is a violation. Matching is ROOT-VS-MIRROR TOLERANT: this
+    repo carries the same module under two roots (``mcp-server-nucleus/src/...``
+    and ``nucleus-mcp/src/...``), and prompts name one while ``git status``
+    reports the other. Two paths match when one is a whole-component suffix
+    of the other, so ``runtime/build_runner.py`` declared in a prompt covers
+    ``mcp-server-nucleus/src/mcp_server_nucleus/runtime/build_runner.py``.
+    That direction of error is deliberate: a scope check that fires on a
+    legitimate mirror edit would be turned off within a day.
+
+    The returned list is de-duplicated and sorted for stable output.
+    """
+    if not declared:
+        return []
+
+    norm_declared = [_norm_scope_path(p) for p in declared]
+    violations: set[str] = set()
+    for f in changed_files or ():
+        if f is None:
+            continue
+        norm = _norm_scope_path(f)
+        if not any(_paths_equivalent(norm, d) for d in norm_declared):
+            violations.add(f)
+    return sorted(violations)
+
+
+# The same package is vendored under two roots in this repo. A path under
+# either root names the same logical file, so both reduce to a common form
+# before comparison — otherwise every legitimate mirror edit reads as a
+# violation and the check gets switched off.
+_SCOPE_MIRROR_ROOTS = ("mcp-server-nucleus/src/", "nucleus-mcp/src/",
+                       "mcp-server-nucleus/", "nucleus-mcp/")
+
+
+def _norm_scope_path(path: str) -> str:
+    """Normalize a path for scope comparison.
+
+    Strips ``./`` prefixes and any mirror-root prefix. Uses an explicit
+    prefix loop rather than ``lstrip("./")`` — ``lstrip`` takes a CHARACTER
+    SET, so ``".claude/x.md".lstrip("./")`` yields ``"claude/x.md"``,
+    silently corrupting every dotfile path.
+    """
+    p = (path or "").strip()
+    while p.startswith("./"):
+        p = p[2:]
+    p = p.strip("/")
+    for root in _SCOPE_MIRROR_ROOTS:
+        if p.startswith(root):
+            return p[len(root):]
+    return p
+
+
+def _paths_equivalent(a: str, b: str) -> bool:
+    """True when *a* and *b* name the same file under either repo root.
+
+    Component-wise suffix match in both directions, so a prompt may name a
+    path at any depth and still match the working-tree path git reports.
+    """
+    if a == b:
+        return True
+    pa, pb = a.split("/"), b.split("/")
+    shorter, longer = (pa, pb) if len(pa) <= len(pb) else (pb, pa)
+    return longer[-len(shorter):] == shorter
+
+
+_SCOPE_MODES = ("off", "warn", "fail")
+
+
+def _scope_mode() -> str:
+    """Read ``NUCLEUS_SCOPE_ENFORCEMENT``: ``off`` | ``warn`` (default) | ``fail``.
+
+    Defaults to ``warn`` because this check has never run in the wild. A
+    post-condition whose false-positive rate is unmeasured must not be able
+    to fail a build on its first day; ``warn`` collects the evidence that
+    would justify promoting it to ``fail``.
+    """
+    raw = os.environ.get("NUCLEUS_SCOPE_ENFORCEMENT", "").strip().lower()
+    if raw in _SCOPE_MODES:
+        return raw
+    if raw:
+        logger.warning("ignoring NUCLEUS_SCOPE_ENFORCEMENT=%r (expected one of %s)",
+                       raw, "/".join(_SCOPE_MODES))
+    return "warn"
+
+
+def _enforce_scope(
+    before_files: set,
+    declared: set,
+    task_num: int,
+    mode: Optional[str] = None,
+) -> Tuple[set, bool, str]:
+    """Post-condition on one dispatch: did it touch files outside *declared*?
+
+    *before_files* is the working-tree file set snapshotted BEFORE the
+    dispatch. This re-snapshots now and treats the delta as what this
+    dispatch touched, so pre-existing dirty files (this tree is shared with
+    concurrent agents) are never blamed on the vendor.
+
+    Returns ``(after_files, blocked, message)``. *after_files* is the fresh
+    snapshot and MUST be threaded into the next call as *before_files*.
+    *blocked* is True only in ``fail`` mode with real violations.
+    """
+    after_files = _working_tree_files()
+    mode = mode or _scope_mode()
+    if mode == "off" or not declared:
+        return after_files, False, ""
+
+    touched = after_files - (before_files or set())
+    violations = _scope_violations(sorted(touched), declared)
+    if not violations:
+        return after_files, False, ""
+
+    msg = (
+        f"task {task_num} touched {len(violations)} file(s) outside its declared "
+        f"scope: {', '.join(violations[:10])}"
+        + (" …" if len(violations) > 10 else "")
+    )
+    if mode == "fail":
+        logger.error("scope violation (fail): %s", msg)
+        return after_files, True, msg
+    logger.warning("scope violation (warn): %s", msg)
+    return after_files, False, msg
+
+
 # ── EXECUTE stage ────────────────────────────────────────────────────────────
 
 def _run_execute_stage(
@@ -684,6 +878,9 @@ def _run_execute_stage(
         return False, f"no unchecked Task N: checkboxes found in {final_plan_path}", pre_head, pre_head, []
 
     results: List[Dict[str, Any]] = []
+    scope_mode = _scope_mode()
+    # Snapshot once before the loop; _enforce_scope returns the next snapshot.
+    scope_before = _working_tree_files() if scope_mode != "off" else set()
     for task_num, task_desc in tasks:
         logger.info("dispatching task %d (%s): %s", task_num, vendor, task_desc)
         res = dispatch_and_capture(
@@ -692,6 +889,24 @@ def _run_execute_stage(
             mode="write",
         )
         results.append({"task_num": task_num, "task_desc": task_desc, "result": res, "vendor": vendor})
+
+        # Scope post-condition (fw-1786125011). The preamble ASKS a vendor to
+        # stay in scope; this CHECKS it. Declared scope comes from the task
+        # text, falling back to the overall prompt when the task names no
+        # paths — an empty declared set is permissive, never restrictive.
+        if scope_mode != "off":
+            declared = _declared_scope(task_desc) or _declared_scope(task_prompt)
+            scope_before, scope_blocked, scope_msg = _enforce_scope(
+                scope_before, declared, task_num, mode=scope_mode,
+            )
+            if scope_msg:
+                results[-1]["scope_violation"] = scope_msg
+            if scope_blocked:
+                return (
+                    False,
+                    f"scope violation at task {task_num}: {scope_msg}",
+                    pre_head, pre_head, results,
+                )
         # Fail-stop predicate: status == "ok" AND produced_output is True.
         if not (res.get("status") == "ok" and res.get("produced_output") is True):
             # Dynamic model fallback (Phase 7 §5): before fail-stopping,
