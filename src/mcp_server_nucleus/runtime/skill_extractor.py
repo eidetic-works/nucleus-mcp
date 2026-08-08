@@ -9,6 +9,7 @@ Zero new dependencies. Ollama embeddings optional (keyword fallback).
 
 import re
 import math
+import os
 import socket
 import json
 import logging
