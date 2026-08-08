@@ -79,6 +79,59 @@ class Flywheel:
         """Read current CSR state."""
         return read_csr(self.brain_path)
 
+    # ── Ticket backlog with closure signal (fw-1786151012) ───────────────────
+
+    def list_pending_tickets(self, include_closed: bool = False) -> list:
+        """Read pending_issues.jsonl and annotate each ticket with closure status.
+
+        fw-1786151012: the backlog file carries no status field, so ~37% of
+        tickets that are already fixed (have a matching survived claim in
+        csr.json or a non-empty fix_description) look equally open. This
+        method cross-references csr.json's recent_claims by 'phase:step'
+        label and checks fix_description to add a ``closure_status`` field:
+
+        - ``"open"`` — no fix_description and no matching survived claim
+        - ``"fixed"`` — has a non-empty fix_description
+        - ``"survived"`` — has a matching survived claim in csr.json
+
+        Pass ``include_closed=True`` to return all tickets; default skips
+        closed ones so callers see only actionable work.
+        """
+        fw_dir = self.brain_path / "flywheel"
+        pending_path = fw_dir / "pending_issues.jsonl"
+        if not pending_path.exists():
+            return []
+        # Build a set of survived step labels from csr.json
+        csr = read_csr(self.brain_path)
+        survived_labels = {
+            claim["step"] for claim in csr.get("recent_claims", [])
+            if claim.get("survived")
+        }
+        tickets = []
+        with open(pending_path) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    t = json.loads(line)
+                except (json.JSONDecodeError, ValueError):
+                    continue
+                # Determine closure status
+                has_fix = bool(t.get("fix_description", "").strip())
+                label = f"{t.get('phase','')}:{t.get('step','')}" if t.get("phase") else t.get("step", "")
+                has_survived = label in survived_labels
+                if has_fix:
+                    t["closure_status"] = "fixed"
+                elif has_survived:
+                    t["closure_status"] = "survived"
+                else:
+                    t["closure_status"] = "open"
+                if not include_closed and t["closure_status"] != "open":
+                    continue
+                tickets.append(t)
+        return tickets
+
     # ── Tickets ────────────────────────────────────────────────────────────
 
     def file_ticket(
