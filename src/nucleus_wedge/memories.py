@@ -49,6 +49,20 @@ _BRACKET_TAG_RE = re.compile(r"^(?P<kind>\S+)\s*\[#(?P<tags>[^\]]*)\]\s*$")
 
 logger = logging.getLogger("nucleus_wedge.memories")
 
+# Roles that run as Claude Code sessions and therefore CAN fire the SessionEnd
+# hook that writes activity digests. A role outside this set (devin, codex, agy
+# — vendor lanes dispatched as subprocesses) has no session to end, so its
+# never-ran is correct forever and must not be read as breakage.
+#
+# This does NOT promote never-ran to a fault; see recall_activity_health's
+# docstring for why that would be wrong. It only records which silences are
+# EXPLAINED. Observed live (fw-1786196883): 6 of 8 roles never-ran, and the
+# single label could not distinguish "has no session by design" from "its hook
+# is broken" — so six roles sat at zero indefinitely, all looking equally fine.
+_SESSION_BACKED_ROLES = frozenset({
+    "coordinator", "worker", "reviewer", "gq", "operator_assistant",
+})
+
 # Primary-store concurrency posture (mirrors runtime/db.py SQLiteBackend._get_conn):
 # WAL lets concurrent readers coexist with one writer, busy_timeout makes writers
 # wait on a lock instead of raising immediately, synchronous=NORMAL is durable
@@ -480,6 +494,14 @@ def recall_activity_health(
                     "last_digest_at": None,
                     "age_hours": None,
                     "status": "never-ran",
+                    # never-ran stays never-ran — the docstring's reasoning
+                    # holds and is not being overturned here. What it could not
+                    # express is WHY a role is silent, and those two whys need
+                    # opposite responses (fw-1786196883). A vendor lane has no
+                    # Claude Code session, so it cannot fire a SessionEnd hook
+                    # and its zero is correct forever. A session-backed role at
+                    # zero is a wiring failure wearing the same label.
+                    "expected_to_write": r in _SESSION_BACKED_ROLES,
                 })
                 continue
             try:
