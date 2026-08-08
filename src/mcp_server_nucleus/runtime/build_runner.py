@@ -310,26 +310,86 @@ def _mark_stale_plans_error(plan_ids: List[str], reason: str = "") -> int:
     return transitioned
 
 
-def _find_stale_plans() -> List[str]:
-    """Scan ``.brain/plans/*/state.json`` for plans left IN_PROGRESS.
+#: A plan with no live owner is only presumed dead after this long without an
+#: update. Generous on purpose: sweeping early kills healthy work, while
+#: sweeping late merely delays cleanup of something already broken.
+_STALE_AFTER_S = 1800  # 30 minutes
 
-    A plan is stale if its ``state.json`` reports ``status == "IN_PROGRESS"``
-    — meaning a prior ``run_build_pipeline`` (or ``execute_plan_review_loop``)
-    crashed or timed out before reaching a terminal status. Called at the
-    start of every build run so the new run cleans up the prior run's
-    orphans before creating its own plan.
+
+def _process_alive(pid: Optional[int]) -> bool:
+    """Is ``pid`` a live process? ``False`` for None, junk, or a dead pid."""
+    try:
+        os.kill(int(pid), 0)
+    except (TypeError, ValueError, ProcessLookupError):
+        return False
+    except PermissionError:
+        return True  # exists, owned by someone else
+    return True
+
+
+def _find_stale_plans() -> List[str]:
+    """Scan ``.brain/plans/*/state.json`` for plans genuinely left behind.
+
+    ``status == "IN_PROGRESS"`` is NOT sufficient. That set is the dead plans
+    UNION the live ones, and the first version of this function swept all of
+    it — so the second build to start silently marked a concurrently-running
+    build's healthy plan ERROR. The victim reported "PLAN stage failed — plan
+    review aborted: status=ERROR" and pointed the reader at the plan-review
+    subsystem, which was not involved at all. Builds could not run in parallel.
+
+    Liveness is now established two ways, cheapest first:
+
+    ``owner_pid`` alive
+        The plan records the pid that owns it. If that process still exists,
+        the plan is being worked on. Decisive.
+    no owner, recently updated
+        Plans written before ``owner_pid`` existed carry no owner. Falling
+        back to "sweep it" would reintroduce the bug for exactly those, so
+        they are given ``_STALE_AFTER_S`` of quiet before being presumed dead.
+
+    A plan is returned only when BOTH say it is gone.
     """
     plans_dir = _brain_path() / "plans"
     if not plans_dir.is_dir():
         return []
+    now = time.time()
     stale: List[str] = []
     for entry in plans_dir.iterdir():
         if not entry.is_dir():
             continue
         state = _read_state(entry.name)
-        if state.get("status") == "IN_PROGRESS":
-            stale.append(entry.name)
+        if state.get("status") != "IN_PROGRESS":
+            continue
+        if _process_alive(state.get("owner_pid")):
+            continue
+        if now - _state_mtime(entry.name, state) < _STALE_AFTER_S:
+            continue
+        stale.append(entry.name)
     return stale
+
+
+def _state_mtime(plan_id: str, state: Dict[str, Any]) -> float:
+    """Best-effort "when was this plan last touched", as a unix timestamp.
+
+    Prefers the state file's mtime, which every write updates regardless of
+    which key changed. Falls back to ``updated_at``/``created_at``, then to 0
+    so an unreadable timestamp means "old" rather than "forever young" — an
+    unparseable date must not make a plan permanently unsweepable.
+    """
+    try:
+        return (_brain_path() / "plans" / plan_id / "state.json").stat().st_mtime
+    except OSError:
+        pass
+    for key in ("updated_at", "created_at"):
+        raw = state.get(key)
+        if not raw:
+            continue
+        try:
+            from datetime import datetime
+            return datetime.fromisoformat(str(raw).replace("Z", "+00:00")).timestamp()
+        except (TypeError, ValueError):
+            continue
+    return 0.0
 
 
 def _resolve_final_plan_path(plan_id: str, state: Dict[str, Any]) -> Optional[Path]:
@@ -637,6 +697,21 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     deadline = time.monotonic() + _PLAN_POLL_TIMEOUT_S
     last_status: Optional[str] = None
     _active_plan_id = plan_id
+
+    # Claim ownership so a CONCURRENT build's stale sweep can tell this plan is
+    # alive. Without an owner the sweep can only guess from status, and
+    # IN_PROGRESS covers live plans as well as dead ones — which is precisely
+    # how a healthy parallel build used to get marked ERROR by whichever run
+    # started second. Best-effort: a plan that fails to record its owner falls
+    # back to the sweep's age threshold rather than losing protection outright.
+    try:
+        _claim = _read_state(plan_id)
+        if _claim:
+            _claim["owner_pid"] = os.getpid()
+            _write_state(plan_id, _claim)
+    except Exception as exc:  # pragma: no cover — never block the build on this
+        logger.debug("could not record owner_pid for plan %s: %s", plan_id, exc)
+
     try:
         while time.monotonic() < deadline:
             state = _read_state(plan_id)
