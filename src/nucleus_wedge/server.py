@@ -12,6 +12,7 @@ ADR-0033 v3 additions:
 """
 from __future__ import annotations
 
+import os
 import sys
 from typing import Optional
 
@@ -60,13 +61,18 @@ def build_server() -> FastMCP:
         tags: Optional[list[str]] = None,
         since: Optional[str] = None,
     ) -> list[dict]:
-        """Recall history rows. Backward-compat dual surface (ADR-0033 v3 §A).
+        """Recall memories, ranked by BM25, optionally narrowed by filters.
 
-        - If only ``query`` is provided (legacy call), BM25 over history is used
-          for ranking — preserves the pre-Phase-0.5 behavior.
-        - If any structured filter (``kind`` / ``tags`` / ``since``) is provided,
-          the SQLite projection is queried with composed AND clauses, and
-          ``query`` becomes optional (empty allowed).
+        All calls read ONE corpus: the ``memories.db`` projection over
+        ``history.jsonl`` (deduped by content hash, machine chatter excluded
+        from the index but never from the store). Structured filters
+        (``kind`` / ``tags`` / ``since``) narrow that same corpus rather than
+        selecting a different one, so passing a filter can only ever reduce the
+        result set — it cannot change which memories were searchable.
+
+        Until fw-1786153512 this was two corpora behind one name: filtered calls
+        hit the projection, unfiltered calls scanned raw history. Set
+        ``NUCLEUS_WEDGE_LEGACY_RECALL=1`` to restore the old raw-history scan.
 
         Args:
             query: Natural-language query string (optional when structured filters
@@ -82,22 +88,37 @@ def build_server() -> FastMCP:
         Returns:
             Ranked list of result dicts.
         """
-        has_structured = bool(kind or tags or since)
-        if has_structured:
-            from nucleus_wedge.recall_cmd import _do_recall_query
-            from nucleus_wedge.memories import _parse_since
-            since_norm = _parse_since(since) if since else None
-            return _do_recall_query(
-                query=query,
-                limit=limit,
-                kind=kind,
-                tags=tags,
-                since=since_norm,
-                source_filter=None,
-                brain_path_arg=None,
-            )
-        # Legacy BM25 path — ``query`` required.
-        return bm25.search(store, query=query, limit=limit, kind=kind, since=since)
+        # ONE corpus, one ranking, whether or not a filter was passed
+        # (fw-1786153512 defect 2). These were two different corpora behind one
+        # tool name: the filtered branch queried the memories.db projection
+        # (5,351 rows — deduped, chatter excluded) while the unfiltered branch
+        # scanned raw history.jsonl (19,805 rows). Same question, different
+        # answer, decided by whether you happened to pass `since`.
+        #
+        # It mattered most in the direction nobody would guess: the UNFILTERED
+        # call is the common one, and the one nucleus_first_pretool.sh forces
+        # agents into, so all of that traffic was hitting the noisy corpus while
+        # only filtered calls got the curated one. Unifying on the projection
+        # hands dedup and chatter-exclusion to the default path.
+        #
+        # NUCLEUS_WEDGE_LEGACY_RECALL=1 restores the raw-history scan, so this
+        # is reversible without a revert if the projection ever misbehaves.
+        from nucleus_wedge.recall_cmd import _do_recall_query
+        from nucleus_wedge.memories import _parse_since
+
+        if os.environ.get("NUCLEUS_WEDGE_LEGACY_RECALL", "").strip() in {"1", "true", "yes"}:
+            return bm25.search(store, query=query, limit=limit, kind=kind, since=since)
+
+        since_norm = _parse_since(since) if since else None
+        return _do_recall_query(
+            query=query,
+            limit=limit,
+            kind=kind,
+            tags=tags,
+            since=since_norm,
+            source_filter=None,
+            brain_path_arg=None,
+        )
 
     @mcp.tool()
     def recall_activity(
