@@ -732,32 +732,34 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
             continue
         p = Path(relpath)
         name = p.name
+        stem = p.stem
         if name.startswith("test_"):
             # Changed file IS a test — run it directly
             if (project_root / relpath).exists():
                 test_files.add(relpath)
             continue
 
-        # Check same directory
-        candidate = p.parent / f"test_{name}"
-        if (project_root / candidate).exists():
-            test_files.add(str(candidate))
-
-        # Check tests/ sibling
-        candidate = p.parent / "tests" / f"test_{name}"
-        if (project_root / candidate).exists():
-            test_files.add(str(candidate))
-
-        # Check project-level tests/
-        candidate = Path("tests") / f"test_{name}"
-        if (project_root / candidate).exists():
-            test_files.add(str(candidate))
+        candidate_dirs = [p.parent, p.parent / "tests", Path("tests")]
+        for d in candidate_dirs:
+            real_dir = project_root / d
+            if not real_dir.is_dir():
+                continue
+            exact = d / f"test_{name}"
+            if (project_root / exact).exists():
+                test_files.add(str(exact))
+            for match in real_dir.glob(f"test_{stem}*.py"):
+                test_files.add(str(d / match.name))
 
     if not test_files:
         return []
 
+    exact_basenames = {f"test_{Path(f).name}" for f in changed_files if f.endswith(".py")}
+
+    def _sort_key(path_str):
+        return (0 if Path(path_str).name in exact_basenames else 1, path_str)
+
     t0 = time.monotonic()
-    for test_file in sorted(test_files)[:3]:  # cap at 3 test files
+    for test_file in sorted(test_files, key=_sort_key)[:3]:  # cap at 3 test files
         if time.monotonic() - t0 > budget_s:
             break
 
