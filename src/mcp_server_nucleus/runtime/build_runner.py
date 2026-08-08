@@ -83,6 +83,17 @@ _SCOPE_PATH_RE = re.compile(
 )
 _SCOPE_EXTS = frozenset({"py", "sh", "md", "json", "toml", "yaml", "yml"})
 
+# Cues marking a segment as a PROHIBITION rather than a declaration. Paths in
+# such a segment are subtracted from the declared scope instead of added to it
+# — see _declared_scope. Deliberately phrase-level, not word-level: bare "not"
+# appears in plenty of ordinary instructions and would over-trigger.
+_SCOPE_NEGATIVE_RE = re.compile(
+    r"deny[\s-]*list|do\s+not\s+(?:touch|modify|change|edit|alter)"
+    r"|don't\s+(?:touch|modify|change|edit|alter)|never\s+(?:touch|modify|edit)"
+    r"|leave\s+\S+\s+(?:alone|untouched)|must\s+not\s+(?:touch|modify|change)",
+    re.IGNORECASE,
+)
+
 # ── Small state helpers ──────────────────────────────────────────────────────
 
 def _make_response(success: bool, data: Optional[dict] = None,
@@ -757,8 +768,35 @@ def _declared_scope(task_prompt: str) -> set[str]:
     explicit file scope, so callers must NOT treat it as "scope is empty /
     nothing may be touched." An empty set means "no constraint was declared,"
     i.e. fall back to the caller's default (typically unrestricted) policy.
+
+    **Polarity matters.** Harvesting every path token regardless of the words
+    around it meant a prompt reading ``In A ONLY. DENY-LIST: do not touch B``
+    declared BOTH A and B as in-scope, so editing B raised no violation. The
+    sentence written to tighten the constraint was the one that loosened it —
+    and the build skill instructs authors to write exactly that sentence, so
+    the more carefully a prompt was scoped, the weaker the guard became.
+
+    Each segment is therefore classified before its paths are harvested: a
+    segment carrying a negative cue contributes to the DENIED set, everything
+    else to the ALLOWED set, and denied paths are subtracted at the end. A
+    path named on both sides resolves to denied, because an explicit
+    prohibition is the more specific statement.
     """
-    return set(_SCOPE_PATH_RE.findall(task_prompt or ""))
+    text = task_prompt or ""
+    allowed: set[str] = set()
+    denied: set[str] = set()
+    # Split on line breaks and sentence boundaries. ". " cannot split a path:
+    # the dot in "brain_rag.py" is followed by "p", never by a space.
+    for line in text.splitlines():
+        for segment in re.split(r"(?<=\.)\s+|;\s+", line):
+            if not segment.strip():
+                continue
+            found = _SCOPE_PATH_RE.findall(segment)
+            if not found:
+                continue
+            target = denied if _SCOPE_NEGATIVE_RE.search(segment) else allowed
+            target.update(found)
+    return allowed - denied
 
 
 def _scope_violations(changed_files, declared) -> list[str]:
