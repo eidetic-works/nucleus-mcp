@@ -20,10 +20,19 @@ Broadcast messages (no ``to_session_id``) still surface to every session.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import pathlib
 import sys
 from typing import Optional
+
+# hook.py called logger.exception() at the bottom of _process_autonomous_wake
+# without ever defining `logger`, so the handler raised NameError instead of
+# logging. The comment above that call reads "silence is not the same as
+# safety ... log the loss" -- and the logging call was the thing that failed,
+# so the loss was never logged. An error handler that raises is worse than no
+# handler: it replaces the real exception with its own.
+logger = logging.getLogger("nucleus.mirror.hook")
 
 from mcp_server_nucleus.paths import brain_path
 
@@ -51,6 +60,7 @@ def _read_session_id() -> Optional[str]:
             return None
         payload = json.loads(raw)
     except Exception:
+        logger.debug("Swallowed exception in _read_session_id", exc_info=True)
         return None
     # Class-wide guard: json.loads succeeds on any valid JSON value (list, str,
     # int, bool, None) — calling .get() on non-dict raises AttributeError that
@@ -84,6 +94,7 @@ def _collect_unread_relays(session_id: Optional[str], inbox: pathlib.Path) -> li
             try:
                 m = json.loads(p.read_text())
             except Exception:
+                logger.debug("Swallowed exception in _collect_unread_relays", exc_info=True)
                 continue
             if m.get("read"):
                 continue
@@ -186,6 +197,7 @@ def _process_autonomous_wake(
                 try:
                     m = json.loads(relay_path.read_text())
                 except Exception:
+                    logger.debug("Swallowed exception in _process_autonomous_wake", exc_info=True)
                     continue
                 if m.get("read"):
                     continue
@@ -229,6 +241,7 @@ def _process_autonomous_wake(
                     session_id=config.session_id,
                 )
             except Exception:
+                logger.debug("Swallowed exception in _process_autonomous_wake", exc_info=True)
                 discovery_context = {}
 
             try:
@@ -250,6 +263,7 @@ def _process_autonomous_wake(
                         brain_root=brain_root,
                     )
                 except Exception:
+                    logger.debug("Swallowed exception in _process_autonomous_wake", exc_info=True)
                     pass
     except Exception:
         # NEVER let autonomous wake errors bubble up + break the hook.
@@ -269,6 +283,7 @@ def _fetch_bearer_for_role(role: str) -> str:
         from mcp_server_nucleus.oauth.exchange import get_access_token
         return get_access_token(role)
     except Exception:
+        logger.debug("Swallowed exception in _fetch_bearer_for_role", exc_info=True)
         return ""
 
 

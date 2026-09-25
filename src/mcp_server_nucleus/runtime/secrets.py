@@ -10,6 +10,8 @@ Local dev: Falls back to environment variables.
 The google-cloud-secret-manager package is a lazy/optional dependency —
 the system works without it installed.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 import threading
@@ -95,6 +97,7 @@ def get_secret(
                 _cache[cache_key] = value
         return value
     except Exception as e:
+        logger.debug("Swallowed exception in get_secret", exc_info=True)
         warnings.warn(
             f"Failed to fetch '{name}' from GCP Secret Manager: {e}. "
             f"Falling back to empty string.",

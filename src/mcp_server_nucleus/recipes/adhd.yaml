@@ -1,7 +1,7 @@
 name: "ADHD Brain"
 description: "Zero-maintenance memory for neurodivergent builders. Passive capture, Monday morning context, no daily upkeep required."
 version: "1.0.0"
-author: "eidetic-works"
+author: "nucleus"
 persona: "Developer with ADHD or working-memory challenges"
 tags:
   - adhd

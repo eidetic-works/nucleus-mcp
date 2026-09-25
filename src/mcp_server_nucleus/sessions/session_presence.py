@@ -122,6 +122,7 @@ def _cleanup_on_exit() -> None:
         try:
             unregister_session_pid(role)
         except Exception:
+            logger.debug("Swallowed exception in _cleanup_on_exit", exc_info=True)
             pass
 
 
@@ -138,6 +139,7 @@ try:  # pragma: no cover - signal install
 except Exception:
     # Non-main-thread or restricted environment — atexit still covers
     # the graceful-exit case.
+    logger.debug("Swallowed exception in <module>", exc_info=True)
     pass
 
 

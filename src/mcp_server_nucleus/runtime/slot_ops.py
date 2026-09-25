@@ -4,6 +4,8 @@ Nucleus Runtime - Slot Operations (Legacy Sprint & Dashboard)
 Core logic for slot management, legacy sprinting (V3.0), and dashboard.
 Moves complex orchestration logic out of __init__.py.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import time
@@ -114,6 +116,7 @@ def _brain_slot_complete_impl(slot_id: str, task_id: str, outcome: str = "succes
         try:
              commitment_ledger.close_commitment_with_outcome(brain, task_id, outcome)
         except Exception:
+             logger.debug("Swallowed exception in _brain_slot_complete_impl", exc_info=True)
              pass # Ignore if no commitment
              
         return f"Slot {resolved_id} completed task {task_id} ({outcome})"
@@ -351,7 +354,7 @@ def _brain_autopilot_sprint_impl(slots: List[str] = None, mode: str = "auto",
                 })
             
             # Sort by priority then score
-            runnable_tasks.sort(key=lambda x: (x["task"].get("priority", 99), -x["score"]))
+            runnable_tasks.sort(key=lambda x: (_prio_key(x["task"].get("priority", 99)), -x["score"]))
             
             if runnable_tasks:
                 best = runnable_tasks[0]

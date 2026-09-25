@@ -24,6 +24,7 @@ def can_discover_tools() -> bool:
         _ = registry.find_tools(query="test")
         return True
     except Exception:
+        logger.debug("Swallowed exception in can_discover_tools", exc_info=True)
         return False
 
 def can_route_messages() -> bool:
@@ -33,6 +34,7 @@ def can_route_messages() -> bool:
         _ = list_inbox("cowork", limit=1)
         return True
     except Exception:
+        logger.debug("Swallowed exception in can_route_messages", exc_info=True)
         return False
 
 def can_rebuild_memory_index() -> bool:
@@ -48,6 +50,7 @@ def can_triage_alerts() -> bool:
         _ = _list_tasks(limit=1)
         return True
     except Exception:
+        logger.debug("Swallowed exception in can_triage_alerts", exc_info=True)
         return False
 
 def are_endpoints_monitored() -> bool:
@@ -118,6 +121,7 @@ def run_autonomous_maintenance() -> Dict[str, Any]:
         stale_count = registry.mark_stale()
         results["registry_stale_prune"] = {"status": "success", "count": stale_count}
     except Exception as e:
+        logger.debug("Swallowed exception in run_autonomous_maintenance", exc_info=True)
         results["registry_stale_prune"] = {"status": "error", "error": str(e)}
         
     # 2. Apply Reputation Decay (from Atom 2)
@@ -128,6 +132,7 @@ def run_autonomous_maintenance() -> Dict[str, Any]:
         signals.apply_decay()
         results["reputation_decay"] = {"status": "success"}
     except Exception as e:
+        logger.debug("Swallowed exception in run_autonomous_maintenance", exc_info=True)
         results["reputation_decay"] = {"status": "error", "error": str(e)}
         
     # More maintenance can be added here (dedup, alert triage, etc.)

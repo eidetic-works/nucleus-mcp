@@ -283,6 +283,7 @@ class AlertManager:
                     try:
                         cb(alert)
                     except Exception:
+                        logger.debug("Swallowed exception in check", exc_info=True)
                         pass
 
         return triggered
@@ -391,6 +392,7 @@ class ErrorTelemetry:
                 insight=f"Error in {error.domain.value} domain",
             )
         except Exception:
+            logger.debug("Swallowed exception in _emit_error_delta", exc_info=True)
             pass  # Delta pipeline failure must never block error recording
 
     def _persist_error(self, error: StructuredError):
@@ -400,6 +402,7 @@ class ErrorTelemetry:
             with open(self._log_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(error.to_dict(), ensure_ascii=False) + "\n")
         except Exception:
+            logger.debug("Swallowed exception in _persist_error", exc_info=True)
             pass  # Can't log errors about logging errors
 
     def get_stats(self) -> Dict[str, Any]:

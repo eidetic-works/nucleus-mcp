@@ -339,6 +339,7 @@ def verify_license(token: str, public_key_pem: bytes) -> Optional[dict]:
     try:
         header = json.loads(_b64url_decode(header_b64).decode("utf-8"))
     except Exception:
+        logger.debug("Swallowed exception in verify_license", exc_info=True)
         return None
     if not isinstance(header, dict):
         return None
@@ -349,6 +350,7 @@ def verify_license(token: str, public_key_pem: bytes) -> Optional[dict]:
     try:
         claims = json.loads(_b64url_decode(claims_b64).decode("utf-8"))
     except Exception:
+        logger.debug("Swallowed exception in verify_license", exc_info=True)
         return None
     if not isinstance(claims, dict):
         return None
@@ -357,6 +359,7 @@ def verify_license(token: str, public_key_pem: bytes) -> Optional[dict]:
     try:
         signature = _b64url_decode(sig_b64)
     except Exception:
+        logger.debug("Swallowed exception in verify_license", exc_info=True)
         return None
 
     # Verify signature (constant-time via cryptography lib)

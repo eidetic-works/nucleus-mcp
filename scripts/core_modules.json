@@ -1,0 +1,31 @@
+{
+  "_comment": "nucleus-core module set (ADR-0043 W1 boundary ratchet). The 25 modules that form the eager import-time transitive closure of the four carve anchors (runtime.common; memory facade+SoR; the relay substrate; the entrypoint/registration skeleton), per the module X-ray audit. Everything else in the package is 'periphery'. check_boundary.py forbids eager core->periphery imports and ratchets the lazy ones down. Packages are named without __init__.",
+  "core_modules": [
+    "mcp_server_nucleus",
+    "mcp_server_nucleus.__main__",
+    "mcp_server_nucleus.core.tool_registration_impl",
+    "mcp_server_nucleus.memory",
+    "mcp_server_nucleus.memory.facade",
+    "mcp_server_nucleus.memory.sor",
+    "mcp_server_nucleus.runtime.common",
+    "mcp_server_nucleus.runtime.project",
+    "mcp_server_nucleus.runtime.providers",
+    "mcp_server_nucleus.runtime.relay",
+    "mcp_server_nucleus.runtime.relay.bridge",
+    "mcp_server_nucleus.runtime.relay.briefing",
+    "mcp_server_nucleus.runtime.relay.core",
+    "mcp_server_nucleus.runtime.relay.daemon",
+    "mcp_server_nucleus.runtime.relay.instrumentation",
+    "mcp_server_nucleus.runtime.relay.paths",
+    "mcp_server_nucleus.runtime.relay.pending",
+    "mcp_server_nucleus.runtime.relay.session",
+    "mcp_server_nucleus.runtime.relay.watcher",
+    "mcp_server_nucleus.runtime.relay_engram_projection",
+    "mcp_server_nucleus.runtime.relay_inbox_canonical",
+    "mcp_server_nucleus.runtime.relay_notify",
+    "mcp_server_nucleus.runtime.relay_ops",
+    "mcp_server_nucleus.runtime.relay_transport",
+    "mcp_server_nucleus.server",
+    "mcp_server_nucleus.tool_tiers"
+  ]
+}

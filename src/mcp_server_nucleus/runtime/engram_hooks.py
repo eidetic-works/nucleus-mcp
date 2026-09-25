@@ -412,6 +412,7 @@ def _fill_template(template: str, data: Dict) -> tuple:
         )
         return filled, had_missing
     except Exception:
+        logger.debug("Swallowed exception in _fill_template", exc_info=True)
         pass
 
     # Fallback: extract common description fields
@@ -515,6 +516,7 @@ def _record_to_training_archive(event_type: str, event_data: Dict[str, Any], bra
                     context=file_path,
                 )
     except Exception:
+        logger.debug("Swallowed exception in _record_to_training_archive", exc_info=True)
         pass  # Never block the hook pipeline
 
 
@@ -564,6 +566,7 @@ def _record_metric(
             f.write(json.dumps(metric, ensure_ascii=False) + "\n")
 
     except Exception:
+        logger.debug("Swallowed exception in _record_metric", exc_info=True)
         pass  # Metrics must NEVER break anything
 
 

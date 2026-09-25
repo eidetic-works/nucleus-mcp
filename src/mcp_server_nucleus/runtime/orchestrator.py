@@ -201,8 +201,14 @@ class SwarmsOrchestrator:
             finally:
                 loop.close()
         
-        thread = threading.Thread(target=run_mission_in_thread, daemon=True)
-        thread.start()
+        # Carries the caller's tenant contextvar into the thread. A plain
+        # threading.Thread starts with a fresh Context, so get_brain_path()
+        # inside the mission loop would resolve some other tenant's brain
+        # (ledger TN-4). The copy is taken here, in the request context.
+        from .common import start_tenant_thread
+        thread = start_tenant_thread(
+            run_mission_in_thread, name=f"mission-{mission_id}"
+        )
         logger.info(f"🚀 Mission {mission_id} thread started")
         
         return {"mission_id": mission_id, "status": "started"}
@@ -233,6 +239,7 @@ class SwarmsOrchestrator:
                 run_swarm_vendor_persona as _run_vendor,
             )
         except Exception:  # noqa: BLE001
+            logger.debug("Swallowed exception in _run_mission_loop", exc_info=True)
             _cv_enabled = lambda: False  # noqa: E731
             _VENDOR_PERSONAS = frozenset()
             _run_vendor = None

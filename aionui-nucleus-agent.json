@@ -1,0 +1,18 @@
+{
+  "name": "nucleus",
+  "displayName": "Nucleus",
+  "description": "Nucleus Renaissance run engine — read/write repo tasks with review bundle and sandbox isolation.",
+  "version": "0.1.0",
+  "command": "nucleus-acp",
+  "args": ["--stdio"],
+  "env": {
+    "NUCLEUS_DEFAULT_RUNNER": "devin",
+    "NUCLEUS_DEFAULT_TRUST_MODE": "permissive",
+    "NUCLEUS_BRAIN_PATH": ".brain",
+    "NUCLEUS_CROSS_VENDOR": "1"
+  },
+  "capabilities": {
+    "agentSpecific": true,
+    "supportsPersistentSessions": true
+  }
+}

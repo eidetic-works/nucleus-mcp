@@ -202,6 +202,7 @@ class RateLimiter:
                 from .prometheus import inc_rate_limit_hit
                 inc_rate_limit_hit()
             except Exception:
+                logger.debug("Swallowed exception in check_or_raise", exc_info=True)
                 pass
             raise RateLimitError(retry_after)
     

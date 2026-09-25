@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from typing import Dict, Any, List
 from .. import commitment_ledger
 from pathlib import Path
@@ -133,6 +135,7 @@ class EphemeralAgent:
             # Store token for later use in _execute_tool
             self._current_ipc_token = token
         except Exception:
+            logger.debug("Swallowed exception in _emit_decision", exc_info=True)
             self._current_ipc_token = None
         
         # Persist to decision log
@@ -146,6 +149,7 @@ class EphemeralAgent:
             with open(decisions_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(decision.to_dict(), ensure_ascii=False) + "\n")
         except Exception:
+            logger.debug("Swallowed exception in _emit_decision", exc_info=True)
             pass  # Non-blocking persistence
         
         return decision
@@ -179,6 +183,7 @@ class EphemeralAgent:
              brain_path = get_brain_path_internal()
              commitment_ledger.record_interaction(brain_path)
         except Exception:
+             logger.debug("Swallowed exception in run", exc_info=True)
              pass 
 
         log = []
@@ -197,6 +202,7 @@ class EphemeralAgent:
             )
             log.append(f"📸 State snapshot: {before_snapshot.snapshot_id} (pre-run)")
         except Exception:
+            logger.debug("Swallowed exception in run", exc_info=True)
             pass
         
         # Execute the agent
@@ -233,6 +239,7 @@ class EphemeralAgent:
                 self._context_manager.persist_snapshot(before_snapshot)
                 self._context_manager.persist_snapshot(after_snapshot)
         except Exception:
+            logger.debug("Swallowed exception in run", exc_info=True)
             pass
         
         # v0.6.1: Complete execution tracking and budget monitoring
@@ -302,6 +309,7 @@ class EphemeralAgent:
                         log.append("🧠 Context Gate: No hyper-relevant engrams found for this intent.")
                         
                 except Exception as ctx_e:
+                    logger.debug("Swallowed exception in _run_llm", exc_info=True)
                     log.append(f"⚠️ Context injection failed: {ctx_e}")
 
             # Also inject learned patterns from past failures
@@ -311,6 +319,7 @@ class EphemeralAgent:
             if intent_result.has_requirements():
                 log.append(f"🎯 Intent: required_tools={intent_result.required_tools}")
         except Exception as e:
+            logger.debug("Swallowed exception in _run_llm", exc_info=True)
             log.append(f"⚠️ Intent analysis skipped: {e}")
         
         # Reset tools called tracker
@@ -481,6 +490,7 @@ CRITICAL RULES (MDR_002):
 
                              log.append(f"💾 Mission persisted to {mission_dir}")
                          except Exception as persist_error:
+                             logger.debug("Swallowed exception in _run_llm", exc_info=True)
                              log.append(f"⚠️ Persistence warning: {persist_error}")
 
                          # Archive pipeline: record this as a loop turn for third brother training data
@@ -502,6 +512,7 @@ CRITICAL RULES (MDR_002):
                              )
                              log.append("📊 Loop turn archived for training")
                          except Exception:
+                             logger.debug("Swallowed exception in _run_llm", exc_info=True)
                              pass  # Non-blocking archive
                          
                          break
@@ -570,11 +581,13 @@ CRITICAL RULES (MDR_002):
                              output_file.write_text(findings)
                              log.append(f"💾 Orphan output saved to {output_file}")
                          except Exception as persist_error:
+                             logger.debug("Swallowed exception in _run_llm", exc_info=True)
                              log.append(f"⚠️ Failed to save orphan output: {persist_error}")
                          
                          break
 
             except Exception as e:
+                logger.debug("Swallowed exception in _run_llm", exc_info=True)
                 log.append(f"LLM Error: {e}")
                 break
                 
@@ -663,6 +676,7 @@ CRITICAL RULES (MDR_002):
                 # Clear token after use (single-use)
                 self._current_ipc_token = None
             except Exception:
+                logger.debug("Swallowed exception in _execute_tool", exc_info=True)
                 pass  # Non-blocking security layer
         
         # Find the capability that owns this tool

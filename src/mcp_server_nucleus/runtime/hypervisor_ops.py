@@ -25,8 +25,12 @@ _injector_inst = None
 _watchdog_inst = None
 
 # Backward-compatible module-level exports (used by tests on main)
-_brain_path = Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".")).resolve()
-_workspace_root = _brain_path.parent
+# (removed) _brain_path / _workspace_root were module-level constants that
+# froze NUCLEUS_BRAIN_PATH at IMPORT time and were referenced nowhere. Every
+# live site in this file already resolves the env at call time -- see the
+# same expression inline below. Keeping them meant an import of this module
+# baked in whatever brain path happened to be set, which no test fixture can
+# undo because the write happens during collection.
 
 def get_locker():
     global _locker_inst

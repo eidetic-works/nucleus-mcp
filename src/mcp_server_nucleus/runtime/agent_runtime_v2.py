@@ -9,6 +9,8 @@ Implements:
 
 Part of Phase 68: Agent Runtime V2 Enhancement
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 import json
@@ -30,7 +32,12 @@ from .rate_limiter import TokenBucket, RateLimitError
 # CONFIGURATION
 # ============================================================
 
-BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
+def _default_brain_path() -> Path:
+    """Resolve NUCLEUS_BRAIN_PATH at CALL time, not import time.
+    See factory._default_brain_path for why a module-level constant here
+    is a session-wide leak rather than a convenience.
+    """
+    return Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
 
 # Agent spawn rate limits
 AGENT_SPAWN_CAPACITY = float(os.environ.get("NUCLEUS_AGENT_SPAWN_CAPACITY", "10"))
@@ -218,7 +225,7 @@ class AgentCostTracker:
         self._records: List[AgentCostRecord] = []
         self._active_records: Dict[str, AgentCostRecord] = {}
         self._lock = threading.Lock()
-        self._persist_path = persist_path or (BRAIN_PATH / "metrics" / "agent_costs.jsonl")
+        self._persist_path = persist_path or (_default_brain_path() / "metrics" / "agent_costs.jsonl")
         self._totals = {
             "total_executions": 0,
             "total_input_tokens": 0,
@@ -278,6 +285,7 @@ class AgentCostTracker:
             with open(self._persist_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(record.to_dict(), ensure_ascii=False) + "\n")
         except Exception:
+            logger.debug("Swallowed exception in _persist", exc_info=True)
             pass
     
     def get_summary(self) -> Dict[str, Any]:

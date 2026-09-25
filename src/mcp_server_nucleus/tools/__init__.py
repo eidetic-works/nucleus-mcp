@@ -22,9 +22,13 @@ Module Whitelisting (Phase 1):
     If unset or empty, ALL modules are loaded (default).
 """
 
+import logging
 import os
 import sys
 from importlib import import_module
+from typing import Dict, List
+
+logger = logging.getLogger("nucleus.tools")
 
 # Pruned 2026-06-11 sweep #006 (treatment program): align/skills/flywheel/
 # delegate/board were hard-DEAD-IN-CODE (no production callers, no hook
@@ -54,6 +58,7 @@ _ALL_MODULE_NAMES = {
     "plan": "plan",  # plan→task→mission bridge (import/execute/list)
     "agent_os_boot": "agent_os_boot",  # E1: external agent boot path (Stage 4 platform)
     "grounding": "grounding",  # Phase 7 §2: C' harness — RAG context orientation
+    "runs": "runs",  # Renaissance run engine facade
 }
 
 _FACADE_SUBMODULES = frozenset(_ALL_MODULE_NAMES.values())
@@ -104,6 +109,43 @@ def _get_active_modules():
     return [import_module("." + sub, __name__) for sub in submodules]
 
 
+# Registration failures from the most recent register_all(), as
+# [{"module": str, "error": str, "error_type": str}]. Populated fresh on each
+# call so a re-registration cannot inherit a stale failure.
+#
+# This list exists because a stderr line is not a signal (ledger CP-3). A facade
+# whose register() raised was caught, printed, and otherwise forgotten: no
+# non-zero exit, nothing an MCP caller could query, nothing a test could assert.
+# CP-5 lived in that gap — the grounding facade returned a bare function instead
+# of the (name, func) pairs every other facade returns, the bare except below
+# swallowed the TypeError, and the whole GROUND surface was missing from every
+# boot while CI printed the error on every run and nobody read it.
+_registration_failures: List[Dict[str, str]] = []
+
+
+def get_registration_failures() -> List[Dict[str, str]]:
+    """Facades that failed to register on the last register_all() call.
+
+    Empty list means every active module registered. Returns a copy — callers
+    (``nucleus doctor``, the health resource, tests) must not be able to clear
+    the record by mutating it.
+    """
+    return [dict(entry) for entry in _registration_failures]
+
+
+def _strict_registration() -> bool:
+    """Whether a facade failing to register should abort startup.
+
+    Default off: a degraded server that still answers is better than no server
+    for a local user whose optional dependency is missing. Set
+    NUCLEUS_STRICT_REGISTRATION=true in CI and in any deployment where a missing
+    tool surface should fail loudly instead of silently.
+    """
+    return os.environ.get("NUCLEUS_STRICT_REGISTRATION", "false").lower() in (
+        "1", "true", "yes", "on",
+    )
+
+
 def register_all(mcp, helpers):
     """Register active tool modules and re-export tools to parent module."""
     from ..runtime.tool_instrumentation import install_instrumentation
@@ -113,18 +155,46 @@ def register_all(mcp, helpers):
     modules = _get_active_modules()
 
     total_tools = 0
+    registered_modules = 0
+    stub_modules = []
     failed_modules = []
+    _registration_failures.clear()
     for mod in modules:
+        mod_name = getattr(mod, '__name__', str(mod)).rsplit('.', 1)[-1]
         try:
             result = mod.register(mcp, helpers)
             if result and parent:
                 for name, func in result:
                     setattr(parent, name, func)
                     total_tools += 1
+                registered_modules += 1
+            elif result is not None and len(result) == 0:
+                # Module registered zero tools (e.g. observability stub) —
+                # don't count it toward the registered-module total (fw-qa-dogfood).
+                stub_modules.append(mod_name)
         except Exception as e:
-            mod_name = getattr(mod, '__name__', str(mod)).rsplit('.', 1)[-1]
             failed_modules.append(mod_name)
+            _registration_failures.append({
+                "module": mod_name,
+                "error": str(e),
+                "error_type": type(e).__name__,
+            })
+            # Three channels, because the single stderr print was not enough to
+            # get CP-5 noticed for as long as it existed: the log (for anything
+            # aggregating logs), stderr (for a human at a terminal), and
+            # get_registration_failures() (for doctor, health, and tests).
+            logger.error(
+                "Facade module %r failed to register (%s): %s",
+                mod_name, type(e).__name__, e, exc_info=True,
+            )
             print(f"[Nucleus] Module '{mod_name}' failed to register: {e}", file=sys.stderr)
+
+    if failed_modules and _strict_registration():
+        raise RuntimeError(
+            "Facade registration failed for: " + ", ".join(failed_modules) +
+            ". NUCLEUS_STRICT_REGISTRATION is set, so this is fatal rather than "
+            "a degraded start. Unset it to boot with the remaining facades."
+        )
 
     # Register Phase 2 Delta event hook (auto-records Deltas from task/session events)
     try:
@@ -132,20 +202,31 @@ def register_all(mcp, helpers):
         from ..runtime.delta_ops import delta_event_hook
         register_event_hook(delta_event_hook)
     except Exception:
+        logger.debug("Swallowed exception in register_all", exc_info=True)
         pass  # Never let hook registration block server startup
 
     _is_quiet = any(arg in sys.argv for arg in ['-q', '--quiet', '--json', 'json']) or any('--format' in arg for arg in sys.argv) or not os.environ.get("NUCLEUS_DEBUG")
     if not _is_quiet:
-        msg = f"[NUCLEUS] Registered {total_tools} facade tools from {len(modules)} modules."
+        msg = f"[NUCLEUS] Registered {total_tools} facade tools from {registered_modules} modules."
+        if stub_modules:
+            msg += f" ({len(stub_modules)} stub: {', '.join(stub_modules)})"
         if failed_modules:
             msg += f" ({len(failed_modules)} failed: {', '.join(failed_modules)})"
         print(msg, file=sys.stderr)
 
-    # Startup diagnostic summary (non-blocking, silent on error)
-    if not _is_quiet and failed_modules:
+    # Startup diagnostic summary (non-blocking, silent on error).
+    #
+    # Deliberately NOT gated on _is_quiet. A degraded server is not routine
+    # output that a --quiet flag is asking to suppress; it is the one thing the
+    # operator needs to know at startup. _is_quiet is true unless NUCLEUS_DEBUG
+    # is set, so this summary was hidden on essentially every real boot, which
+    # is how a whole missing facade surface stayed unnoticed (CP-3, CP-5). The
+    # success line above stays quiet-gated — that one really is routine.
+    if failed_modules:
         try:
             print(f"[NUCLEUS] Startup diagnostics: {len(failed_modules)} module(s) degraded.", file=sys.stderr)
             print(f"[NUCLEUS]   Failed: {', '.join(failed_modules)}", file=sys.stderr)
             print(f"[NUCLEUS]   Run 'nucleus doctor' for detailed diagnostics.", file=sys.stderr)
         except Exception:
+            logger.debug("Swallowed exception in register_all", exc_info=True)
             pass

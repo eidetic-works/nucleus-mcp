@@ -214,6 +214,7 @@ def _post_oauth(
         try:
             _err_body = resp.text[:200]
         except Exception:
+            logger.debug("Swallowed exception in _post_oauth", exc_info=True)
             _err_body = "<unreadable body>"
         raise OAuthExchangeError(
             f"oauth grant_type={grant_type} rejected with status={resp.status_code}: {_err_body}"

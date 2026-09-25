@@ -1,0 +1,2 @@
+{"type":"future-event-type","uuid":"f1","sessionId":"sess-4","timestamp":"2026-05-21T13:00:00Z","message":{"role":"system","content":"some forward-compat payload"}}
+{"type":"another-future-type","uuid":"f2","sessionId":"sess-4","timestamp":"2026-05-21T13:00:01Z","message":{"role":"system","content":[{"type":"text","text":"with blocks"}]}}

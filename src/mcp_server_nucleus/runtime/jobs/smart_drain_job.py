@@ -17,6 +17,7 @@ def check_requirements() -> tuple:
             return False, "docker daemon not running"
         return True, "ok"
     except Exception:
+        logger.debug("Swallowed exception in check_requirements", exc_info=True)
         return False, "docker unavailable"
 
 

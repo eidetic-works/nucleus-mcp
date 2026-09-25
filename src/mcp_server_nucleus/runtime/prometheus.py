@@ -17,6 +17,8 @@ Usage:
     # - nucleus_sessions_total
     # - nucleus_events_total
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import time
 import threading
@@ -220,6 +222,7 @@ def get_prometheus_metrics() -> str:
                 action = parts[1] if len(parts) > 1 else parts[0]
                 lines.append(f'nucleus_dispatch_latency_avg_ms{{facade="{facade}",action="{action}"}} {stats["avg_ms"]}')
     except Exception:
+        logger.debug("Swallowed exception in get_prometheus_metrics", exc_info=True)
         pass  # Silently skip dispatch metrics if unavailable
 
     # Add brain state metrics if available
@@ -260,6 +263,7 @@ def get_prometheus_metrics() -> str:
             lines.append(f"nucleus_events_total {event_count}")
             
     except Exception:
+        logger.debug("Swallowed exception in get_prometheus_metrics", exc_info=True)
         pass  # Silently skip brain metrics if unavailable
     
     lines.append("")

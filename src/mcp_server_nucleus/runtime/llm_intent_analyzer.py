@@ -217,6 +217,7 @@ class LLMIntentAnalyzer:
             _get_telemetry().record_error("E105", f"Intent JSON parse: {e}", "llm_intent_analyzer")
             return self.analyze_without_llm(user_request, available_tools)
         except Exception as e:
+            logger.debug("Swallowed exception in analyze", exc_info=True)
             _get_telemetry().record_error("E600", f"Intent analysis: {e}", "llm_intent_analyzer", exception=e)
             return self.analyze_without_llm(user_request, available_tools)
     

@@ -367,8 +367,16 @@ class UnifiedOrchestrator:
         self._active_missions[mission_id] = mission_state
         self._save_all_state()
         
-        # Background execution
-        threading.Thread(target=lambda: self._run_mission_background(mission_id, mission_state, params), daemon=True).start()
+        # Background execution. Must carry the caller's tenant context into the
+        # thread — a plain threading.Thread starts with a fresh Context, so
+        # get_brain_path() inside the mission would resolve someone else's brain
+        # (ledger TN-4). start_tenant_thread copies the context at this call,
+        # which is still the request context.
+        from .common import start_tenant_thread
+        start_tenant_thread(
+            lambda: self._run_mission_background(mission_id, mission_state, params),
+            name=f"mission-{mission_id}",
+        )
         
         return {"mission_id": mission_id, "status": "started"}
 
@@ -431,11 +439,41 @@ class UnifiedOrchestrator:
     def get_mission_status(self, mission_id: str) -> Optional[Dict]:
         return self._active_missions.get(mission_id)
 
-# Singleton management
-_orchestrator = None
+# Per-brain instances, not one global singleton.
+#
+# This used to be a single module-level object constructed on first use, whose
+# brain_path was read once from NUCLEUS_BRAIN_PATH in __init__ and never revisited.
+# On the HTTP transport that meant the FIRST tenant to start a mission fixed the
+# brain for every tenant after them: their missions, tasks and state all landed in
+# someone else's brain, and nothing in the request path could correct it because the
+# object simply never looked at the environment again (audit ledger TN-3).
+#
+# Keying by resolved brain path gives each tenant its own orchestrator while keeping
+# the cheap reuse the singleton was there for.
+_orchestrators: Dict[str, "UnifiedOrchestrator"] = {}
 
-def get_orchestrator() -> UnifiedOrchestrator:
-    global _orchestrator
-    if _orchestrator is None:
-        _orchestrator = UnifiedOrchestrator()
-    return _orchestrator
+
+def get_orchestrator(brain_path: Optional[Path] = None) -> UnifiedOrchestrator:
+    """Return the orchestrator for a brain, resolving the path on every call.
+
+    Resolution goes through get_brain_path(), so the per-request contextvar the
+    tenant middleware sets is honoured. Callers that already know their brain can
+    pass it explicitly.
+    """
+    # Function-local: runtime.common is a sibling, but this module is reached from
+    # core/, and the boundary ratchet counts eager core->periphery edges.
+    from .common import get_brain_path
+
+    resolved = Path(brain_path) if brain_path is not None else Path(get_brain_path())
+    key = str(resolved)
+
+    orch = _orchestrators.get(key)
+    if orch is None:
+        orch = UnifiedOrchestrator(brain_path=resolved)
+        _orchestrators[key] = orch
+    return orch
+
+
+def _reset_orchestrators() -> None:
+    """Test-only: drop every cached instance."""
+    _orchestrators.clear()

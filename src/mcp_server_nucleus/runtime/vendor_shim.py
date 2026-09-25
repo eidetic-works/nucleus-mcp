@@ -77,7 +77,7 @@ _TIMEOUT_ENV = "NUCLEUS_VENDOR_SHIM_TIMEOUT_S"  # per-call ceiling
 
 
 def parse_model(model: str) -> Optional[Tuple[str, str]]:
-    """``nucleus/devin-glm-5.2`` -> ``("devin", "glm-5.2")``; else None.
+    """``nucleus/devin-glm-5-2`` -> ``("devin", "glm-5-2")``; else None.
 
     Returns None for anything outside the namespace so the caller can 400 rather
     than guess. Validation against the real allowlist happens in :func:`resolve`.
@@ -493,6 +493,7 @@ class _Handler(BaseHTTPRequestHandler):
                                  "timed out reading request body")[1])
             return
         except Exception:
+            logger.debug("Swallowed exception in do_POST", exc_info=True)
             self._send(400, _err(400, "invalid_request_error", "body is not valid JSON")[1])
             return
 

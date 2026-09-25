@@ -14,6 +14,9 @@ Tools:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import os
 import subprocess
@@ -43,6 +46,13 @@ def register(mcp, helpers):
             vendor: Default vendor — devin (GLM) or agy (Gemini).
             tag: Git tag for spec pinning (default: <role>-v1).
             force: Skip isolation guards (for testing only).
+
+        SIDE EFFECT — this switches the brain for the rest of the session.
+        Initializing a lane repoints NUCLEUS_BRAIN_PATH at the lane's .brain,
+        process-wide, so memory, task and relay calls made afterwards in this
+        session operate on the lane's brain rather than the one you started in.
+        That is intended — the lane is the working context — but it is not
+        obvious from the name, so: do not call this to inspect a repo.
 
         Returns:
             JSON string with initialization result.
@@ -190,6 +200,7 @@ async def _nucleus_lane_init(
         SpecParser(config).pin_spec()
         pinned = True
     except Exception as e:
+        logger.debug("Swallowed exception in _nucleus_lane_init", exc_info=True)
         pin_error = str(e)
 
     if not pinned and not force:

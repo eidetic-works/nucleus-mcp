@@ -90,6 +90,50 @@ def _filter_by_cooldown(triggers: List[Dict], state: Dict) -> List[Dict]:
     return valid_triggers
 
 
+# ── Fleet triggers (pool Step 5, EID-68) ─────────────────────────────────
+# Semantics live here; OBSERVATION + DELIVERY live in scripts/fleet/pool.py's
+# tick (the only always-live loop — heartbeat_check runs when a session asks).
+# Same trigger shape + same cooldown discipline, but minutes-scale: fleet
+# wakes are a 10-min cadence, not the centenary heart's hours.
+
+def check_fleet_signals(*, stale_pending: List[Dict], stale_relays: List[Dict],
+                        missing_panes: List[str]) -> List[Dict]:
+    """Fleet trigger evaluators (pure — the tick feeds observations).
+
+    stale_pending: [{task_id, lane, kind, surface, age_minutes}] — unclaimed
+        pool tasks pending >20min that have an idle matching lane.
+    stale_relays: [{lane, kind, surface, age_minutes}] — lanes whose pool relay
+        inbox has an unread envelope older than 30min (DEAF watcher).
+    missing_panes: [lane] — expected lanes with no pane in the pool snapshot.
+    """
+    out = [{"signal": "PENDING_TASK_IDLE_AGENT", "key": t["task_id"],
+            "task_id": t["task_id"], "lane": t["lane"], "kind": t.get("kind"),
+            "surface": t.get("surface"), "age_minutes": t["age_minutes"]}
+           for t in stale_pending]
+    out += [{"signal": "UNREAD_POOL_RELAY", "key": r["lane"], "lane": r["lane"],
+             "kind": r.get("kind"), "surface": r.get("surface"),
+             "age_minutes": r["age_minutes"]} for r in stale_relays]
+    out += [{"signal": "LANE_PANE_MISSING", "key": lane, "lane": lane}
+            for lane in missing_panes]
+    return out
+
+
+def filter_fleet_cooldown(triggers: List[Dict], state: Dict,
+                          cooldown_minutes: int = 10) -> List[Dict]:
+    """Same last_alerted discipline as _filter_by_cooldown, in minutes — the
+    plan's 'max 1 wake hint per lane per 10 min' edge case."""
+    now = datetime.now(timezone.utc)
+    valid = []
+    for t in triggers:
+        state_key = f"{t['signal']}_{t.get('key', t['signal'])}"
+        last = state.get("fleet_last_alerted", {}).get(state_key)
+        if last and (now - datetime.fromisoformat(last)).total_seconds() < cooldown_minutes * 60:
+            continue
+        valid.append(t)
+        state.setdefault("fleet_last_alerted", {})[state_key] = now.isoformat()
+    return valid
+
+
 def _trigger_autonomic_nervous_system(brain: Path, triggers: List[Dict]):
     """
     The Autonomic Nervous System: The Chief of Staff Protocol.
@@ -230,6 +274,7 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
             try:
                 existing_tasks = _list_tasks()
             except Exception:
+                logger.debug("Swallowed exception in _heartbeat_check_impl", exc_info=True)
                 pass  # If listing fails, create anyway
 
             for signal in triggers:
@@ -273,6 +318,7 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
                         "task_id": add_result["task"].get("id"),
                     })
         except Exception:
+            logger.debug("Swallowed exception in _heartbeat_check_impl", exc_info=True)
             pass  # Never let corrective task creation break heartbeat
 
     # Log the check
@@ -490,6 +536,7 @@ def _check_session_gap(brain: Path) -> Optional[Dict]:
                     except json.JSONDecodeError:
                         continue
         except Exception:
+            logger.debug("Swallowed exception in _check_session_gap", exc_info=True)
             pass
     
     # Check events for session-related activity
@@ -514,6 +561,7 @@ def _check_session_gap(brain: Path) -> Optional[Dict]:
                     except json.JSONDecodeError:
                         continue
         except Exception:
+            logger.debug("Swallowed exception in _check_session_gap", exc_info=True)
             pass
     
     if last_activity is None:
@@ -850,6 +898,7 @@ def _heartbeat_status_impl(brain_path: Optional[str] = None) -> Dict:
                     except json.JSONDecodeError:
                         continue
         except Exception:
+            logger.debug("Swallowed exception in _heartbeat_status_impl", exc_info=True)
             pass
     
     # Keep only last 5

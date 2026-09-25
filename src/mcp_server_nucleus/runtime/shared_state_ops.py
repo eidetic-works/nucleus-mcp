@@ -3,6 +3,8 @@
 Provides read/write/list for .brain/shared/{key}.json files.
 Any connected agent can share context through these keys.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -52,6 +54,7 @@ def brain_sync_write(key: str, value: Any, agent_id: str = "") -> Dict[str, Any]
             from .sync_ops import get_current_agent
             agent_id = get_current_agent() or "unknown"
         except Exception:
+            logger.debug("Swallowed exception in brain_sync_write", exc_info=True)
             agent_id = "unknown"
 
     data = {
@@ -77,5 +80,6 @@ def brain_sync_list() -> Dict[str, Any]:
                 "updated_at": data.get("updated_at", ""),
             })
         except Exception:
+            logger.debug("Swallowed exception in brain_sync_list", exc_info=True)
             keys.append({"key": f.stem, "agent_id": "unknown", "updated_at": ""})
     return {"keys": keys, "count": len(keys)}

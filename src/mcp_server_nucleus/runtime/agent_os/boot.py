@@ -110,6 +110,7 @@ def _ensure_brain_scaffold(brain_path: Optional[str] = None) -> Path:
 
         root = Path(brain_path) if brain_path else get_brain_path()
     except Exception:  # noqa: BLE001
+        logger.debug("Swallowed exception in _ensure_brain_scaffold", exc_info=True)
         root = Path(brain_path) if brain_path else Path(os.environ.get("NUCLEUS_BRAIN_PATH", ".brain"))
     for sub in ("ledger", "training", "raw", "engrams"):
         (root / sub).mkdir(parents=True, exist_ok=True)
@@ -196,6 +197,7 @@ class NucleusGateway:
                 description="Agent cognition routed THROUGH the Nucleus gateway (Stage 0 boot)",
             )
         except Exception:  # noqa: BLE001 — mediation event is best-effort
+            logger.debug("Swallowed exception in generate", exc_info=True)
             event_id = None
         # ``_emit_event`` returns an error STRING (not a raise) on failure; only a
         # real ``evt-*`` id counts as genuine mediation.
@@ -306,6 +308,7 @@ def _log_stub_interaction(prompt: str, text: str, session_id: str, agent_id: str
             encoding="utf-8",
         )
     except Exception:  # noqa: BLE001 — capture is best-effort
+        logger.debug("Swallowed exception in _log_stub_interaction", exc_info=True)
         pass
     try:
         from ..token_budget import estimate_tokens, get_budget_manager
@@ -318,6 +321,7 @@ def _log_stub_interaction(prompt: str, text: str, session_id: str, agent_id: str
             agent_id=agent_id,
         )
     except Exception:  # noqa: BLE001
+        logger.debug("Swallowed exception in _log_stub_interaction", exc_info=True)
         pass
 
 
@@ -418,7 +422,15 @@ def record_turn_to_flywheel(
             "injected recalled memory into the agent's context before it thought",
             f"cognition mediated by Nucleus (LLM_GENERATE event={gateway_result.event_id})",
         ],
-        outcome=(gateway_result.text or "")[:500],
+        # Persist the FULL text, not a truncated slice. label_turn() (below,
+        # called before this function) verifies against gateway_result.text
+        # in full. Truncating what gets stored here — but not what got
+        # verified — silently detaches the verdict from its own evidence: a
+        # CONFIRMED turn's stored `outcome` could omit the very substring
+        # that earned it. Found live 2026-08-21 (see
+        # docs/AGENT_OS_OAUTH_LIVE_VERIFICATION.md) — a turn confirmed via
+        # content past the old 500-char cutoff.
+        outcome=(gateway_result.text or ""),
         signal_absorbed=signal_absorbed,
         signal_produced=["loop_turn (flywheel training datum)"],
         confidence=0.9 if not gateway_result.stubbed else 0.7,
@@ -510,6 +522,7 @@ def boot_cell(
             outcome = getattr(gres, "text", "") or intent
             verified_label = label_turn(outcome, context=injected)
         except Exception:  # noqa: BLE001 — labeling must never break a boot
+            logger.debug("Swallowed exception in boot_cell", exc_info=True)
             verified_label = None
 
     # 3. RECORD the turn to the flywheel (after thinking) — with the verified

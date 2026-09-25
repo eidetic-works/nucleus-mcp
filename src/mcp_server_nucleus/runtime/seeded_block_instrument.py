@@ -87,10 +87,16 @@ def _make_project_dir(base: Path, slug: str, remote: str) -> Path:
 def run_seeded_block_instrument(
     *,
     brain_path: Optional[Path] = None,
-    project_a_slug: str = "bespoq",
-    project_a_remote: str = "https://github.com/eidetic-works/bespoq.git",
-    project_b_slug: str = "fashion",
-    project_b_remote: str = "https://github.com/eidetic-works/fashion.git",
+    # Synthetic identifiers, not real repositories. These are only passed to
+    # `git remote add origin` on a throwaway temp repo (_make_project_dir) and
+    # are never cloned, fetched or reached over the network — the instrument
+    # only needs two remotes that DIFFER, to prove a cross-project block. They
+    # used to name repositories the operator ships, which put a link between
+    # unrelated products into every published wheel.
+    project_a_slug: str = "project-a",
+    project_a_remote: str = "https://example.invalid/project-a.git",
+    project_b_slug: str = "project-b",
+    project_b_remote: str = "https://example.invalid/project-b.git",
     bucket: str = "claude_code_main",
     sender: str = "seeded_block_instrument",
 ) -> Dict[str, Any]:
@@ -112,6 +118,24 @@ def run_seeded_block_instrument(
     # The project spine flag MUST be ON for the cross-project block to fire.
     # The instrument sets it in-process; callers running outside should export
     # NUCLEUS_PROJECT_SPINE=1.
+    #
+    # Both this and NUCLEUS_BRAIN_PATH below are restored in the finally. They
+    # used to be assigned outright while the finally put back only the working
+    # directory — so after this weekly job ran inside the scheduler process,
+    # NUCLEUS_PROJECT_SPINE stayed on and NUCLEUS_BRAIN_PATH pointed at a
+    # deleted temp directory for the rest of that process's life. Every job
+    # scheduled after it resolved its brain from there, and get_brain_path
+    # creates what is missing, so they did not fail — they operated on an empty
+    # brain, the weekly backup included (ledger DS-7).
+    #
+    # Saved before the assignment rather than wrapped in temporary_env: the flag
+    # has to be set before get_brain_path() below, so a with-block would have to
+    # span most of this function and re-indent it. The restore is what matters.
+    _sentinel = object()
+    _prev_env = {
+        "NUCLEUS_PROJECT_SPINE": os.environ.get("NUCLEUS_PROJECT_SPINE", _sentinel),
+        "NUCLEUS_BRAIN_PATH": os.environ.get("NUCLEUS_BRAIN_PATH", _sentinel),
+    }
     os.environ["NUCLEUS_PROJECT_SPINE"] = "1"
 
     from .common import get_brain_path
@@ -198,6 +222,14 @@ def run_seeded_block_instrument(
             log_path = _append_conflict_log(record, brain_path=bp)
     finally:
         os.chdir(_orig_cwd)
+        # Put the process back exactly as it was found, including unsetting what
+        # was unset — writing back an empty string is the thing a naive restore
+        # gets wrong, and an empty NUCLEUS_BRAIN_PATH is not the same as none.
+        for _name, _old in _prev_env.items():
+            if _old is _sentinel:
+                os.environ.pop(_name, None)
+            else:
+                os.environ[_name] = _old
 
     verdict = {
         "blocked": cross_blocked,

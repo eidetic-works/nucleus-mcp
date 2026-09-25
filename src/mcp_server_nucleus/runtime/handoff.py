@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import json
 import uuid
 from datetime import datetime, timezone
@@ -73,6 +75,7 @@ class HandoffLedger:
                 return data
             return None
         except Exception:
+            logger.debug("Swallowed exception in verify_and_load", exc_info=True)
             return None
 
     def list_history(self) -> List[Dict[str, Any]]:

@@ -26,6 +26,9 @@ Schema version: 1 (locked at first public release; bump on breaking changes).
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import hashlib
 import json
 import os
@@ -600,4 +603,5 @@ def _nucleus_version() -> str:
         from importlib.metadata import version
         return version("nucleus-mcp")
     except Exception:
+        logger.debug("Swallowed exception in _nucleus_version", exc_info=True)
         return "unknown"

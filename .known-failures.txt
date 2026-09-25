@@ -1,0 +1,255 @@
+# Failures already present in mcp-server-nucleus/tests before your change.
+# scripts/verify.sh reports only failures NOT listed here, so you can tell your
+# breakage from ours. Shrinking this list is welcome; growing it silently is not.
+#
+# THIS IS A DIFFERENT SUITE FROM THE ONE AT THE REPO ROOT. pytest.ini sets
+# testpaths = tests, so a bare `pytest` from the root runs the root suite (1,395
+# tests) and never this one (13,772) -- the suite for the code that actually
+# ships. The root's own .known-failures.txt covers that suite and shares no
+# entries with this file.
+#
+# HOW MANY RUNS THIS IS BUILT FROM, AND WHY THAT MATTERS: two.
+#
+#   run 1   120 failed, 13,772 passed, 12 errors, 39m43s
+#   run 2   151 failed, 13,741 passed, 10 errors, 43m18s
+#   failed in BOTH      100
+#   failed in ONE only   71
+#
+# Two runs is not enough to call anything reproducible, and the annotation below
+# says only what was observed. The gq lane ran its suite FIVE times at one commit
+# on one machine and got 34/35/37/40/40 failures, 41 distinct ids, 30 in every
+# run and 11 intermittent -- so a two-run reading there would have mislabelled
+# eleven. There is no reason to assume this suite is better behaved. Treat "2 of
+# 2" as "failed twice", not as "always fails", and re-record over five runs on a
+# quiet machine before relying on the split.
+#
+# Both groups are listed and verify.sh suppresses both: a baseline that cries
+# wolf gets ignored wholesale. The counts are kept visible so nobody reads an
+# intermittent failure as a known bug.
+#
+# Conditions were poor and are part of the reading: both runs shared the machine
+# with ~20 live sessions, a concurrent OSV-querying gate, and a low-memory kill.
+
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_01_post_get_ack_happy_path   # 2 of 2
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_02_401_no_bearer_token   # 2 of 2
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_03_401_invalid_token   # 2 of 2
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_05_multi_tenant_isolation   # 2 of 2
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_07_payload_10kb   # 2 of 2
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_08_payload_100kb   # 2 of 2
+tests/e2e/test_relay_http_e2e.py::TestRelayHttpE2E::test_09_relay_status_endpoint   # 2 of 2
+tests/runs/test_acp_e2e_acceptance.py::test_acp_e2e_repo_coding_acceptance   # 2 of 2
+tests/runs/test_service_apply.py::test_apply_conflict_when_base_modified   # 2 of 2
+tests/runs/test_service_apply.py::test_apply_run_and_conflict   # 2 of 2
+tests/test_analytics_job_coverage.py::test_run_analytics_script_not_found   # 2 of 2
+tests/test_briefing_job_coverage.py::test_run_briefing_exception   # 2 of 2
+tests/test_briefing_job_coverage.py::test_run_briefing_script_not_found   # 2 of 2
+tests/test_briefing_job_coverage.py::test_run_briefing_success   # 2 of 2
+tests/test_briefing_job_coverage.py::test_run_briefing_system_exit   # 2 of 2
+tests/test_build_and_merge.py::test_plan_context_contains_plan_file_content   # 2 of 2
+tests/test_build_and_merge.py::test_plan_context_threaded_into_env   # 2 of 2
+tests/test_build_and_merge.py::test_preflight_pass_proceeds_to_stages   # 2 of 2
+tests/test_build_and_merge.py::test_preflight_passing_does_not_change_behavior   # 2 of 2
+tests/test_build_and_merge.py::test_preflight_skipped_in_dry_run   # 2 of 2
+tests/test_build_and_merge.py::test_preflight_skipped_under_dry_run   # 2 of 2
+tests/test_build_and_merge.py::test_verdict_pass_proceeds_to_commit_push_pr_authorize   # 2 of 2
+tests/test_build_and_merge.py::test_verify_receipt_threaded_into_env   # 2 of 2
+tests/test_cli_stranger_wow.py::test_setup_exit_codes_opposed_pair   # 2 of 2
+tests/test_driver_job_coverage.py::test_load_driver_not_found   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_compound_driver_not_found   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_compound_exception   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_compound_success   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_compound_system_exit   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_driver_session_exception   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_driver_session_success   # 2 of 2
+tests/test_driver_job_coverage.py::test_run_driver_session_system_exit   # 2 of 2
+tests/test_growth_ops_coverage.py::TestConstants::test_github_repo   # 2 of 2
+tests/test_paths.py::test_nucleus_root_fallback_non_strict   # 2 of 2
+tests/test_paths.py::test_nucleus_root_strict_raises_when_unset   # 2 of 2
+tests/test_phase73_resilience.py::TestResilientLLMClient::test_generate_json_with_fallback   # 2 of 2
+tests/test_phase73_resilience.py::TestResilientLLMClient::test_generate_with_fallback   # 2 of 2
+tests/test_pseudonymity_preflight.py::TestPseudonymityScan::test_case_insensitive_terms_detected   # 2 of 2
+tests/test_pseudonymity_preflight.py::TestPseudonymityScan::test_detects_blocked_term_in_diff   # 2 of 2
+tests/test_pseudonymity_preflight.py::TestPseudonymityScan::test_empty_file_list   # 2 of 2
+tests/test_pseudonymity_preflight.py::TestPseudonymityScan::test_existing_lines_not_flagged   # 2 of 2
+tests/test_pseudonymity_preflight.py::TestPseudonymityScan::test_multiple_violations_across_files   # 2 of 2
+tests/test_pseudonymity_preflight.py::TestPseudonymityScan::test_no_violations_in_clean_diff   # 2 of 2
+tests/test_register_all_honest_count.py::test_all_stub_modules_excluded   # 2 of 2
+tests/test_register_all_honest_count.py::test_no_stub_modules_message_clean   # 2 of 2
+tests/test_register_all_honest_count.py::test_observability_not_in_registered_count   # 2 of 2
+tests/test_register_all_honest_count.py::test_stub_module_not_counted_in_registered_total   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_budget_invalid_json   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_budget_stale_date   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_custom_branch   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_daily_cap_reached   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_driver_not_found   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_generic_exception   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_no_budget_file   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_no_stdout   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_subprocess_failure   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_success   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_success_no_tasks   # 2 of 2
+tests/test_tb_compound_job_coverage.py::test_run_tb_compound_timeout   # 2 of 2
+tests/test_tier3_aggregate.py::TestTier3Aggregate::test_aggregate_skipped_when_per_file_fails   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_check_readiness_exception   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_check_readiness_module_not_found   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_check_readiness_success   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_check_readiness_system_exit   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_load_module_not_found   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_load_module_success   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_run_refresh_exception   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_run_refresh_module_not_found   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_run_refresh_success_with_index   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_run_refresh_success_without_index   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_run_refresh_system_exit   # 2 of 2
+tests/test_training_refresh_job_coverage.py::test_run_refresh_system_exit_none   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_load_module_success   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_evening_exception   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_evening_success   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_evening_system_exit   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_evening_system_exit_none   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_morning_exception   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_morning_success   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_morning_system_exit   # 2 of 2
+tests/test_twin_routine_job_coverage.py::test_run_morning_system_exit_none   # 2 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_normalization_failure_is_attribution_unprovable   # 2 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[caller_ref_discarded]   # 2 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[empty_commit]   # 2 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[helper_failure]   # 2 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[no_sha_fail_closed]   # 2 of 2
+tests/test_verdict_tracking_third_state.py::test_tracked_file_is_true   # 2 of 2
+tests/test_verdict_tracking_third_state.py::test_untracked_file_is_false_not_none   # 2 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_commit_exists_false_for_bogus_sha   # 2 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_commit_exists_true_for_real_head   # 2 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_false_branch_claim_refutes   # 2 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_false_commit_claim_refutes   # 2 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_true_branch_claim_confirms   # 2 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_true_commit_claim_on_branch_confirms   # 2 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_add_feature_uses_git_diff_verification   # 2 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_changelog_uses_documentation_verification   # 2 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_code_fix_uses_git_diff_verification   # 2 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_documentation_task_uses_documentation_verification   # 2 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_file_existence_passes_when_file_exists   # 2 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_test_writing_uses_test_file_verification   # 2 of 2
+tests/runs/test_hosted.py::test_hosted_worker_fake_provider_delegates   # 1 of 2
+tests/runs/test_pilot_trust.py::TestSubmitCommand::test_submit_creates_and_dispatches   # 1 of 2
+tests/test_agent_coverage.py::TestRunLLM::test_run_llm_tool_call   # 1 of 2
+tests/test_agent_coverage.py::TestRunLLMCritic::test_critic_intervention_no_tool_after_retry   # 1 of 2
+tests/test_agent_os_boot.py::test_agent_os_boot_wrapper_cleans_env_on_success   # 1 of 2
+tests/test_agent_os_boot.py::test_first_cell_threads_all_three_seams   # 1 of 2
+tests/test_agent_os_demo_cli.py::test_demo_cli_compares_naked_vs_inside   # 1 of 2
+tests/test_agent_os_loop_cli.py::test_loop_cli_runs_n_cells_and_prints_summaries   # 1 of 2
+tests/test_agent_os_loop_e2e.py::test_moat_loop_end_to_end   # 1 of 2
+tests/test_agent_os_run_cli.py::test_run_cli_fires_three_proofs   # 1 of 2
+tests/test_agent_os_verified_record.py::test_boot_cell_attaches_verified_label_when_flag_on   # 1 of 2
+tests/test_agent_os_verified_record.py::test_boot_cell_flywheel_record_byte_identical_when_flag_off   # 1 of 2
+tests/test_agent_os_verified_record.py::test_boot_cell_no_label_when_flag_off   # 1 of 2
+tests/test_agent_os_verified_record.py::test_boot_cell_persists_verified_label_to_flywheel_when_flag_on   # 1 of 2
+tests/test_cli_coverage.py::TestDispatchMore::test_dispatch_setup_no_brain   # 1 of 2
+tests/test_merge_gate_execute.py::TestExecuteScriptInstructionValidation::test_legitimate_instructions_pass_gate   # 1 of 2
+tests/test_project_spine_relay.py::test_flag_on_real_project_writer_still_blocks_mismatch   # 1 of 2
+tests/test_prove.py::test_body_execution_does_count_as_running   # 1 of 2
+tests/test_prove.py::test_prove_diff_allow_stale_bypasses_insufficient   # 1 of 2
+tests/test_prove.py::test_prove_diff_fresh_coverage_preserves_verdict   # 1 of 2
+tests/test_prove.py::test_prove_diff_stale_coverage_returns_insufficient   # 1 of 2
+tests/test_rabbithole_argv.py::test_unknown_flag_exits_two   # 1 of 2
+tests/test_relay_gate.py::TestAnchorMode::test_mixed_real_sha_and_relay_id_accepted   # 1 of 2
+tests/test_relay_gate.py::TestAnchorMode::test_real_sha_accepted   # 1 of 2
+tests/test_relay_sender_anchor.py::test_verify_rejects_session_role_mismatch   # 1 of 2
+tests/test_slot_ops_coverage.py::TestBrainSlotComplete::test_complete_success   # 1 of 2
+tests/test_spec_gen_roundtrip.py::test_all_templates_produce_parseable_specs   # 1 of 2
+tests/test_spec_gen_roundtrip.py::test_task_ids_are_unique   # 1 of 2
+tests/test_split_regression_guards.py::test_scanner_sees_untracked_files   # 1 of 2
+tests/test_vendor_dispatch.py::test_artifact_ref_no_expect_paths_is_unprovable   # 1 of 2
+tests/test_vendor_dispatch.py::test_artifact_ref_vendor_derived_stamps_worktree_sha   # 1 of 2
+tests/test_vendor_dispatch.py::test_cd_chosen_sha_does_not_qualify[read-read_mode_no_increment]   # 1 of 2
+tests/test_vendor_dispatch.py::test_cd_chosen_sha_does_not_qualify[write-head_unchanged]   # 1 of 2
+tests/test_vendor_dispatch.py::test_local_head_behind_upstream_none_when_no_upstream   # 1 of 2
+tests/test_vendor_dispatch.py::test_local_head_behind_upstream_stamps_count_and_warns   # 1 of 2
+tests/test_vendor_dispatch.py::test_local_head_behind_upstream_zero_no_warning   # 1 of 2
+tests/test_vendor_dispatch.py::test_no_rebase_in_progress_no_warning   # 1 of 2
+tests/test_vendor_dispatch.py::test_rebase_in_progress_warns   # 1 of 2
+tests/test_vendor_dispatch.py::test_rebase_or_merge_in_progress_detects_real_rebase_dir   # 1 of 2
+tests/test_vendor_dispatch.py::test_rebase_or_merge_in_progress_none_when_clean   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_caller_artifact_ref_discarded_from_envelope   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_dispatch_commits_own_x_txt_qualifies_vendor_derived   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_foreign_commit_is_head_moved_by_foreign_commit   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_foreign_commit_unrelated_local_edit_is_head_moved_by_foreign_commit   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_read_mode_never_qualifies_even_when_head_moved   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[head_unchanged]   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[qualifying]   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_regression_rerun_guard_for_original_seven[read_mode]   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_write_mode_changed_paths_unavailable_when_helper_fails   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_write_mode_empty_commit_is_empty_commit_no_files   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_write_mode_head_moved_files_changed_qualifies   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_write_mode_head_moved_no_expect_paths_is_attribution_unprovable   # 1 of 2
+tests/test_vendor_dispatch_artifact_attribution.py::test_write_mode_head_unchanged_is_head_unchanged   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_branch_contains_false_for_bogus_branch   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_branch_contains_head_on_current_branch   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_file_exists_at_head_false   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_file_exists_at_head_true   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGit::test_log_grep_no_match   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGitBranchExists::test_branch_exists_false_for_a_tag_with_the_same_shape   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGitBranchExists::test_branch_exists_false_for_bogus_branch   # 1 of 2
+tests/test_verifier.py::TestProbeEngineGitBranchExists::test_branch_exists_true   # 1 of 2
+tests/test_verifier.py::TestProbeEngineIsAncestor::test_is_ancestor_dispatches_via_run_anchor   # 1 of 2
+tests/test_verifier.py::TestProbeEngineIsAncestor::test_is_ancestor_true_reflexive   # 1 of 2
+tests/test_verifier.py::TestProbeEngineIsAncestor::test_is_ancestor_unverifiable_for_missing_ref   # 1 of 2
+tests/test_verifier.py::TestRunAnchorDispatch::test_git_anchor_uses_default_repo   # 1 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_commit_on_bogus_branch_name_is_unverifiable_not_refuted   # 1 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_hedged_commit_claim_downgrades_to_partial   # 1 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_integration_synthetic_loop_cell_exercises_both_file_and_git_anchors   # 1 of 2
+tests/test_verifier.py::TestVerifierEndToEndGitClaims::test_true_commit_but_wrong_branch_refutes   # 1 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_doc_update_uses_documentation_verification   # 1 of 2
+tests/test_verify_done_types.py::TestVerifyDoneTypes::test_unknown_task_uses_default_smoke   # 1 of 2
+
+# ── ADDED 2026-09-19. A DIFFERENT AND WEAKER READING THAN THE 171 ABOVE. ────
+#
+# The entries above come from two runs of the FULL 13,772-test suite. These do
+# not. They were observed while verifying an unrelated change, in two FILTERED
+# runs (pytest -k), so their "of N" denominators count only the runs that
+# SELECTED them and are not comparable to the "of 2" above. They are here
+# because verify.sh was reporting them as NEW breakage, which is the failure
+# mode the whole file exists to prevent: a baseline that cries wolf gets
+# ignored wholesale, and then a real regression rides in with the noise.
+#
+#   run A   -k "wedge|store|remember|recall|memor|engram|seed|init|boot|relay"
+#           1,885 passed, 8 failed, 4 errors, 299s
+#   run B   run A's -k plus "cli"
+#           3,815 passed, 15 failed, 4 errors, 692s
+#
+# EVERY id below was additionally confirmed PRE-EXISTING by rebuilding the three
+# changed sources from a43b4b60 into a temp tree and re-running against it (the
+# control tree was checked to have zero hits for the new symbol, so it is known
+# to be genuinely pre-change). They are not caused by the CAS gate (c550951c) or
+# the lazy-create / seed-honesty fix (f18eac99).
+#
+# THESE ARE MOSTLY NOT CODE FAILURES, AND THAT DISTINCTION IS LOST BY LISTING
+# THEM HERE. Every test_work_cli, test_vendor_dispatch and test_stranger_first_run
+# entry below dies on a 30s pytest-timeout or a fixture timeout (fresh venv +
+# wheel install), not on an assertion. "This test cannot run on this machine" and
+# "this test fails" are different facts, and suppressing both with one mechanism
+# means a genuine break in any of them will now be silent. Re-check them on a
+# quiet machine before trusting a green verdict that depends on them.
+#
+# DELIBERATELY NOT ADDED:
+#   tests/test_vendor_dispatch.py::test_dispatch_cli_exit_codes
+# It failed only in run B, passed on the control tree, and passed 3 of 3 in
+# isolation with the changes in. That is load contention, not a known failure.
+# Baselining it would mask a real break in a test that currently works.
+#
+# ALSO UNRESOLVED: tests/release/test_stranger_first_run.py is the release gate
+# for a stranger's first run and it has NEVER executed on this machine — all
+# five beats error in the fixture. Listing it here stops verify.sh complaining
+# but does not make the gate run. It is dark, and nothing else records that.
+
+tests/release/test_stranger_first_run.py::test_beat_boot_server_handshake   # 2 of 2 selected; control CONFIRMS pre-existing; fixture timeout, never reached test body
+tests/release/test_stranger_first_run.py::test_beat_init_completes_under_60s   # 2 of 2 selected; control CONFIRMS pre-existing; fixture timeout, never reached test body
+tests/release/test_stranger_first_run.py::test_beat_init_creates_brain   # 2 of 2 selected; control CONFIRMS pre-existing; fixture timeout, never reached test body
+tests/release/test_stranger_first_run.py::test_beat_install_and_init_exit_clean   # 2 of 2 selected; control CONFIRMS pre-existing; fixture timeout, never reached test body
+tests/release/test_stranger_first_run.py::test_beat_no_futurewarnings   # 1 of 2 selected (appeared in the isolated re-run, not the batch); fixture timeout
+tests/runs/test_work_cli.py::test_nucleus_work_new_app_smoke_path   # 1 of 1 selected (run B only); timeout
+tests/runs/test_work_cli.py::test_nucleus_work_run_executes_queued   # 1 of 1 selected (run B only); timeout
+tests/runs/test_work_cli.py::test_nucleus_work_watch   # 1 of 1 selected (run B only); control CONFIRMS pre-existing; timeout
+tests/runs/test_work_cli.py::test_work_run_follow_streams_output_events   # 1 of 1 selected (run B only); timeout
+tests/runs/test_work_cli.py::test_work_watch_text_mode_prints_chunks   # 1 of 1 selected (run B only); timeout
+tests/test_vendor_dispatch.py::test_dispatch_and_capture_argv_and_relay   # 2 of 2 selected; control CONFIRMS pre-existing; 30s pytest-timeout, also fails in isolation

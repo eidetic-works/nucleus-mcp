@@ -224,7 +224,23 @@ export class RelayClient {
         out.push(...(await this.readDir(subPath)));
       }
     }
-    out.sort((a, b) => (a.id < b.id ? 1 : -1));
+    // Sort by filename desc (newest first), matching this method's own
+    // doc comment above and the Python SDK's read().
+    //
+    // This used to sort by `id`. Envelope ids are caller-suppliable — any
+    // 8-128 character string matching ID_PATTERN — and only fall back to the
+    // chronological `relay_<ts>_<hex>` shape when the caller omits one. So a
+    // client that supplied its own ids got an order that was not newest-first,
+    // and the two SDKs returned *opposite* orders for the same mailbox on
+    // disk. Filenames always begin with the timestamp (see writeEnvelope), so
+    // they order reliably whatever the id is (ledger CS-5).
+    const filenameOf = (m: RelayEnvelope) =>
+      (m as RelayEnvelope & { _filename?: string })._filename ?? "";
+    out.sort((a, b) => {
+      const fa = filenameOf(a);
+      const fb = filenameOf(b);
+      return fa < fb ? 1 : fa > fb ? -1 : 0;
+    });
     return out;
   }
 
@@ -295,8 +311,12 @@ export class RelayClient {
       try {
         const raw = await readFile(filePath, "utf-8");
         const env = JSON.parse(raw) as RelayEnvelope;
-        // Attach internal path for ack() to use.
-        (env as RelayEnvelope & { _path?: string })._path = filePath;
+        // Attach internal path for ack() to use, and the bare filename that
+        // read() sorts the merged listing by. The Python SDK attaches
+        // `_filename` for exactly this and the two must agree (ledger CS-5).
+        const internal = env as RelayEnvelope & { _path?: string; _filename?: string };
+        internal._path = filePath;
+        internal._filename = name;
         out.push(env);
       } catch {
         continue;

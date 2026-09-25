@@ -6,6 +6,8 @@ Events flow through here, triggering agent activation.
 
 Location: mcp_server_nucleus/runtime/event_stream.py
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 from datetime import datetime, timezone
@@ -87,6 +89,7 @@ def emit_event(
         get_bridge().push_event(event)
     except Exception:
         # Never block local op on cloud fail
+        logger.debug("Swallowed exception in emit_event", exc_info=True)
         pass
     
     return event

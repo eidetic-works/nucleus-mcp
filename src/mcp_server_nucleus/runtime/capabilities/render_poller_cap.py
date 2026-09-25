@@ -199,6 +199,7 @@ class RenderPolling(Capability):
                                         "smoke_test": smoke
                                     })
                                 except Exception:
+                                    logger.debug("Swallowed exception in _poll_loop", exc_info=True)
                                     pass
                                 
                                 return {
@@ -243,6 +244,7 @@ class RenderPolling(Capability):
                         if isinstance(data, dict) and data.get("status") == "healthy":
                             passed = True
                     except Exception:
+                        logger.debug("Swallowed exception in _smoke_test", exc_info=True)
                         pass
                     
                     return {

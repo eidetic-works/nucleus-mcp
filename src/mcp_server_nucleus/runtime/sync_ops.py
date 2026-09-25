@@ -219,6 +219,7 @@ def get_current_agent(brain_path: Optional[Path] = None) -> str:
             if agent_info.get("pid") == os.getpid():
                  return agent_info.get("agent_id", "unknown_agent")
         except Exception:
+            logger.debug("Swallowed exception in get_current_agent", exc_info=True)
             pass
     
     # Priority 4: Fallback
@@ -334,6 +335,7 @@ def get_agent_info(brain_path: Optional[Path] = None) -> Dict[str, Any]:
                     info["role"] = coerced["role"]
             return info
         except Exception:
+            logger.debug("Swallowed exception in get_agent_info", exc_info=True)
             pass
 
     fallback_id = get_current_agent(brain_path)
@@ -415,6 +417,7 @@ def sync_lock(brain_path: Optional[Path] = None, timeout: int = 5):
         try:
             lock_file_path.unlink(missing_ok=True)
         except Exception:
+            logger.debug("Swallowed exception in sync_lock", exc_info=True)
             pass
 
 
@@ -478,6 +481,7 @@ def get_last_modifier(file_path: Path) -> str:
             meta = json.loads(meta_file.read_text())
             return meta.get("last_agent", "unknown")
         except Exception:
+            logger.debug("Swallowed exception in get_last_modifier", exc_info=True)
             pass
     
     return "unknown"
@@ -535,6 +539,7 @@ def get_file_meta(file_path: Path) -> Dict[str, Any]:
         try:
             return json.loads(meta_file.read_text())
         except Exception:
+            logger.debug("Swallowed exception in get_file_meta", exc_info=True)
             pass
     
     return {}
@@ -726,6 +731,7 @@ def get_sync_status(brain_path: Optional[Path] = None) -> Dict[str, Any]:
         try:
             last_sync = sync_log.read_text().strip()
         except Exception:
+            logger.debug("Swallowed exception in get_sync_status", exc_info=True)
             pass
     
     return {
@@ -952,6 +958,7 @@ def auto_start_sync_if_configured(brain_path: Optional[Path] = None):
             from .common import get_brain_path
             brain_path = get_brain_path()
         except Exception:
+            logger.debug("Swallowed exception in auto_start_sync_if_configured", exc_info=True)
             return
     
     config = _load_sync_config(brain_path)

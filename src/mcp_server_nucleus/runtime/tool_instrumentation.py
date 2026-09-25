@@ -32,6 +32,9 @@ Env knobs:
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import inspect
 import json
 import os
@@ -121,6 +124,7 @@ def _emit(tool_name: str, duration_ms: float, error: str | None = None) -> None:
             date = datetime.now(timezone.utc).strftime("%Y%m%d")
             _JSONL_PATH_CACHE.pop(date, None)
         except Exception:
+            logger.debug("Swallowed exception in _emit", exc_info=True)
             pass
 
 

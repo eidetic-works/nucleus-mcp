@@ -12,6 +12,9 @@ module itself is import-safe and side-effect-free.
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -40,6 +43,7 @@ def _detect_repo_path() -> Optional[str]:
         if result.returncode == 0:
             return result.stdout.strip() or None
     except Exception:
+        logger.debug("Swallowed exception in _detect_repo_path", exc_info=True)
         pass
     return None
 

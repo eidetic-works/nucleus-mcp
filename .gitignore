@@ -1,5 +1,6 @@
 # Build artifacts
 dist/
+node_modules/
 *.egg-info/
 __pycache__/
 *.pyc
@@ -93,3 +94,12 @@ gemini
 
 # Stale telemetry stderr capture
 infra/telemetry/reports/digest.err
+
+# npm lockfile for sdk/typescript — no npm CI here, so it would go stale unnoticed
+package-lock.json
+
+# publish readiness receipts are local run records, not source
+.publish-receipts/
+
+# the twin baseline is evidence, not scratch
+!.known-twins.txt

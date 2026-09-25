@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from typing import List
 from .capabilities.proof_system import ProofSystem
 import json
@@ -43,4 +45,5 @@ def _brain_list_proofs_impl() -> List[str]:
         sys = _get_proof_system()
         return sys._list_proofs() # Returns List[str] filenames
     except Exception:
+        logger.debug("Swallowed exception in _brain_list_proofs_impl", exc_info=True)
         return []

@@ -32,6 +32,7 @@ class BudgetAuditor:
             try:
                 return json.loads(self.ledger_path.read_text())
             except Exception:
+                logger.debug("Swallowed exception in _load_ledger", exc_info=True)
                 pass
         return {
             "total_spend_usd": 0.0,
@@ -134,6 +135,7 @@ class BudgetGuard(Capability):
             # Even if it fails, did it cost money? 
             # For network tools/LLM, yes. For local function errors, maybe not.
             # We assume "Attempted Execution" costs standard rate for now.
+             logger.debug("Swallowed exception in execute", exc_info=True)
              result = f"Error: {e}"
 
         # 3. Post-Check (Record Cost)

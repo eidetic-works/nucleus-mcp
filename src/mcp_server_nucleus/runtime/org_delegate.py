@@ -13,6 +13,8 @@ Two surfaces:
 
 The two surfaces coexist; `assemble_prompt` callers are not affected.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import secrets
 import time
@@ -127,6 +129,7 @@ def spawn_prep(role: str, brief: str, model: str, parent: str,
             description=f"{parent} spawned {role} ({model})",
         )
     except Exception:
+        logger.debug("Swallowed exception in spawn_prep", exc_info=True)
         pass  # never block the spawn flow on emit failure
     try:
         from .marketplace import register_tool
@@ -144,6 +147,7 @@ def spawn_prep(role: str, brief: str, model: str, parent: str,
         })
         spawn_data["registry_address"] = address
     except Exception:
+        logger.debug("Swallowed exception in spawn_prep", exc_info=True)
         pass  # registry is supplementary — never block spawn
     return prompt, spawn_id
 
@@ -188,6 +192,7 @@ def spawn_close(spawn_id: str, response_text: str, *, success: bool = True) -> D
             description=f"agent_return for {spawn_id}",
         )
     except Exception:
+        logger.debug("Swallowed exception in spawn_close", exc_info=True)
         pass
     if prep is not None and return_data.get("duration_ms") is not None:
         try:
@@ -200,5 +205,6 @@ def spawn_close(spawn_id: str, response_text: str, *, success: bool = True) -> D
                 success=success,
             )
         except Exception:
+            logger.debug("Swallowed exception in spawn_close", exc_info=True)
             pass  # reputation tracking is supplementary
     return return_data

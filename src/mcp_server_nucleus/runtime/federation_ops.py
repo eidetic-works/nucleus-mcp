@@ -62,6 +62,7 @@ def _sanitize_to_primitives(obj: Any) -> Any:
     try:
         return str(obj)
     except Exception:
+        logger.debug("Swallowed exception in _sanitize_to_primitives", exc_info=True)
         return None
 
 
@@ -525,6 +526,7 @@ async def _brain_federation_route_impl(task_id: str, profile: str = "default") -
                         task = t
                         break
         except Exception:
+            logger.debug("Swallowed exception in _brain_federation_route_impl", exc_info=True)
             pass
         
         decision = await engine.route_task(task, profile)

@@ -27,6 +27,9 @@ failed" apart from "the tests never ran".
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import hashlib
 import json
 import os
@@ -105,7 +108,21 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             # directory cannot write __pycache__, and the old all() read that
             # as a syntax error, blocking commits over files it never parsed.
             decidable = [s for s in t1_sigs if not s.get("insufficient")]
-            if all(s["passed"] for s in decidable):
+            if not decidable:
+                # EVERY signal was insufficient, so nothing was actually
+                # checked. `all([])` is True, so this previously recorded the
+                # tier as PASSED -- a verification tier that could not run a
+                # single check reporting success. That is the exact shape the
+                # `insufficient` state was introduced to prevent, reappearing
+                # one line below its own fix: the comment above records that
+                # counting insufficient as FAILURE was corrected, and the
+                # correction created the vacuous-truth pass.
+                #
+                # Reachable exactly where the comment says: py_compile under a
+                # chflags-locked directory cannot write __pycache__, so every
+                # file comes back insufficient at once.
+                _skip(1, "all Tier-1 signals were insufficient — nothing could be checked")
+            elif all(s["passed"] for s in decidable):
                 tiers_passed.append(1)
             else:
                 tiers_failed.append(1)
@@ -191,6 +208,7 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
                     from .goal_tracker import record_goal_attempt
                     record_goal_attempt(str(plan_path), {}, t5_sigs, project_root)
                 except Exception:
+                    logger.debug("Swallowed exception in verify_execution", exc_info=True)
                     pass
                 # Frontier 4: report Tier 5 outcome to the flywheel — every
                 # outcome verification becomes a CSR claim. Best-effort.
@@ -204,13 +222,23 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
                         failed_signal = next(
                             (s for s in t5_sigs if not s.get("passed")), {}
                         )
+                        # The signal NAME is a stable identifier by
+                        # construction, unlike a stack trace or prose, so it is
+                        # safe to ask how many sessions have seen it. Without
+                        # this the ticket asserts "tier5 outcome failed" with
+                        # no way to tell a one-off from a standing problem.
+                        signal_name = str(
+                            failed_signal.get("name", "tier5 outcome failed")
+                        )
                         fw.file_ticket(
                             step=step,
-                            error=str(failed_signal.get("name", "tier5 outcome failed")),
+                            error=signal_name,
                             logs=json.dumps(failed_signal, default=str)[:1500],
                             phase="ground_tier5",
+                            evidence_pattern=signal_name,
                         )
                 except Exception:
+                    logger.debug("Swallowed exception in verify_execution", exc_info=True)
                     pass  # flywheel hook is best-effort
             else:
                 _skip(5, "not enabled")
@@ -229,6 +257,7 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
                            text=True, timeout=3, cwd=str(project_root))
         commit_sha = r.stdout.strip() if r.returncode == 0 else ""
     except Exception:
+        logger.debug("Swallowed exception in verify_execution", exc_info=True)
         pass
 
     receipt_content = json.dumps(signals, sort_keys=True, default=str) + str(time.time())
@@ -317,6 +346,7 @@ def detect_runtime_checks(project_root: Path) -> list[dict]:
                     "detected_from": "pyproject.toml",
                 })
         except Exception:
+            logger.debug("Swallowed exception in detect_runtime_checks", exc_info=True)
             pass
 
     # Node.js detection
@@ -335,6 +365,7 @@ def detect_runtime_checks(project_root: Path) -> list[dict]:
                     "detected_from": "package.json",
                 })
         except Exception:
+            logger.debug("Swallowed exception in detect_runtime_checks", exc_info=True)
             pass
 
     # Dockerfile detection
@@ -356,6 +387,7 @@ def detect_runtime_checks(project_root: Path) -> list[dict]:
                     "detected_from": "Dockerfile",
                 })
         except Exception:
+            logger.debug("Swallowed exception in detect_runtime_checks", exc_info=True)
             pass
 
     return checks
@@ -389,6 +421,7 @@ def _get_submodule_paths(project_root: Path) -> set[str]:
                 if len(parts) >= 2:
                     paths.add(os.path.normpath(parts[-1].strip()))
     except Exception:
+        logger.debug("Swallowed exception in _get_submodule_paths", exc_info=True)
         pass
     return paths
 
@@ -452,6 +485,7 @@ def _get_changed_files(git_diff_text: str, pre_head: str,
             )
             return [l.strip() for l in r.stdout.strip().splitlines() if l.strip()]
         except Exception:
+            logger.debug("Swallowed exception in _get_changed_files", exc_info=True)
             return []
 
     # Submodule pointer changes (mode 160000) are NOT file edits — exclude
@@ -533,6 +567,131 @@ def _tier0_diff_nonempty(changed_files: list[str]) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Target-file presence check
+# ---------------------------------------------------------------------------
+
+# Mirror roots: the same package is vendored under two roots in this repo.
+# A declared path under one root names the same file as a changed path under
+# the other, so both reduce to a common form before comparison.
+_TARGET_MIRROR_ROOTS = (
+    "mcp-server-nucleus/src/", "nucleus-mcp/src/",
+    "mcp-server-nucleus/", "nucleus-mcp/",
+)
+
+
+def _strip_target_mirror_root(path: str) -> str:
+    """Strip mirror-root prefixes and leading ``./`` for path comparison."""
+    p = (path or "").strip()
+    while p.startswith("./"):
+        p = p[2:]
+    p = p.strip("/")
+    for root in _TARGET_MIRROR_ROOTS:
+        if p.startswith(root):
+            return p[len(root):]
+    return p
+
+
+def _target_paths_match(declared: str, changed: str) -> bool:
+    """True when *declared* and *changed* name the same file.
+
+    Component-wise suffix match in both directions, so a declared path at any
+    depth matches the working-tree path git reports (mirror-root tolerant).
+    """
+    a = _strip_target_mirror_root(declared)
+    b = _strip_target_mirror_root(changed)
+    if a == b:
+        return True
+    pa, pb = a.split("/"), b.split("/")
+    shorter, longer = (pa, pb) if len(pa) <= len(pb) else (pb, pa)
+    return longer[-len(shorter):] == shorter
+
+
+def _target_path_exists(declared: str, project_root: Path) -> bool:
+    """True if *declared* (or its mirror equivalent) exists on disk."""
+    p = Path(declared)
+    if not p.is_absolute():
+        p = project_root / declared
+    if p.exists():
+        return True
+    stripped = _strip_target_mirror_root(declared)
+    for root in _TARGET_MIRROR_ROOTS:
+        candidate = project_root / root / stripped
+        if candidate.exists():
+            return True
+    return False
+
+
+def verify_target_files_present(
+    declared_paths, changed_files, project_root: Path,
+) -> dict:
+    """Verify that each declared target file was actually modified.
+
+    THE DEFECT this closes: a vendor that drops its tasked target files —
+    reports ``status == "ok"`` and ``produced_output is True`` without
+    touching the files it was supposed to — still passed the fail-stop
+    predicate, because neither field proves the declared target files were
+    touched.  Tier 0 (diff non-empty) only checks that *something* changed,
+    not that the *right* files changed.
+
+    For each declared path:
+
+    * **MODIFIED** — the path (or its mirror equivalent) appears in
+      *changed_files*.  The vendor did its job for this file.
+    * **NOT_MODIFIED** — the path does NOT appear in *changed_files* but
+      EXISTS on disk.  The file was there, the vendor was supposed to edit
+      it, and didn't.  This is a hard failure.
+    * **ABSENT** — the path does NOT appear in *changed_files* and does NOT
+      exist on disk.  This is the "confirmed absent-for-reason" case: the
+      absence is confirmed, and the reason is that the file genuinely does
+      not exist (it may have been mentioned as context, was supposed to be
+      deleted, or is a path that doesn't resolve).  Not a failure.
+
+    Path matching is component-wise suffix tolerant to handle the
+    mirror-root case (the same file exists under ``mcp-server-nucleus/src/``
+    and ``nucleus-mcp/src/``).
+
+    Returns a signal dict:
+
+    * ``check``        — ``"target_files_present"``
+    * ``passed``       — ``True`` iff no existing target file was left unmodified
+    * ``modified``     — list of declared paths that were modified
+    * ``not_modified``  — list of declared paths that exist but weren't modified
+    * ``absent``       — list of declared paths that don't exist (absent-for-reason)
+    """
+    declared_list = sorted(declared_paths or [])
+    if not declared_list:
+        return {
+            "check": "target_files_present",
+            "passed": True,
+            "modified": [],
+            "not_modified": [],
+            "absent": [],
+            "reason": "no declared target files — nothing to verify",
+        }
+
+    changed_set = set(changed_files or [])
+    modified = []
+    not_modified = []
+    absent = []
+
+    for declared_path in declared_list:
+        if any(_target_paths_match(declared_path, c) for c in changed_set):
+            modified.append(declared_path)
+        elif _target_path_exists(declared_path, project_root):
+            not_modified.append(declared_path)
+        else:
+            absent.append(declared_path)
+
+    return {
+        "check": "target_files_present",
+        "passed": len(not_modified) == 0,
+        "modified": modified,
+        "not_modified": not_modified,
+        "absent": absent,
+    }
+
+
 # Extension → (command_template, description)
 # {file} is replaced with absolute path
 _SYNTAX_CHECKS = {
@@ -560,8 +719,19 @@ def _tier1_syntax_check(changed_files: list[str], project_root: Path,
 
         ext = fpath.suffix.lower()
 
+        # Claude Code Workflow scripts are an async function BODY, not a module:
+        # top-level `return`/`await` are legal and `export const meta` is how the
+        # harness reads metadata. Bare `node --check` rejects every one of them
+        # (2026-09-23: blocked all four department workflows, and the committed
+        # roadmap-redteam.js fails the same way). Check them as the harness runs
+        # them — wrapped in an async IIFE with `export` stripped.
+        if ext == ".js" and ".claude/workflows/" in relpath.replace("\\", "/"):
+            sig = _check_workflow_script(fpath, relpath)
+            sig["tier"] = 1
+            signals.append(sig)
+
         # Python: py_compile
-        if ext in _SYNTAX_CHECKS:
+        elif ext in _SYNTAX_CHECKS:
             cmd_template, check_name = _SYNTAX_CHECKS[ext]
             cmd = [c.replace("{file}", str(fpath)) for c in cmd_template]
             sig = _run_check(cmd, check_name, relpath, timeout=5)
@@ -706,6 +876,7 @@ except (ImportError, ModuleNotFoundError):
                 "passed": False, "error": "timeout",
             })
         except Exception as e:
+            logger.debug("Swallowed exception in _tier2_import_check", exc_info=True)
             signals.append({
                 "tier": 2, "check": "import", "module": module,
                 "passed": False, "error": str(e)[:200],
@@ -714,10 +885,68 @@ except (ImportError, ModuleNotFoundError):
     return signals
 
 
+# A full aggregate pass may run up to 60s (see timeout below). Attempting it
+# when the caller's overall Tier 3 budget is small (e.g. a short-lived CI
+# check) would either starve the per-file phase of its own headroom or get
+# truncated before producing a useful signal. 30 mirrors the existing
+# per-file timeout cap (``min(30, budget_s)``) below: only once the caller
+# affords strictly more than one per-file run's worth of time is a second,
+# whole-directory pass worth attempting.
+_TIER3_AGGREGATE_MIN_BUDGET_S = 30.0
+
+
+def _references_changed_stem(text: str, stems: set[str]) -> bool:
+    """Cheap static relevance check: does ``text`` mention any of ``stems``
+    as a whole word?
+
+    Used to decide whether a discovered (not task-specified, not itself a
+    changed file) failing test file is plausibly related to the change, or
+    is a pre-existing failure the verifier merely happened to run.
+    """
+    for stem in stems:
+        if not stem:
+            continue
+        if re.search(rf"\b{re.escape(stem)}\b", text):
+            return True
+    return False
+
+
 def _tier3_test_execution(changed_files: list[str], task: dict,
                           project_root: Path, budget_s: float,
                           python_path: str = None) -> list[dict]:
-    """Run tests related to changed files."""
+    """Run tests related to changed files.
+
+    Two collection modes are used (fw-1786151929):
+
+    1. **Per-file** (explicit-file collection): runs each test file
+       individually via ``pytest <file>``. This is fast and insulated
+       from cross-module interactions, but is structurally blind to
+       import-order, sys.modules, fixture-scope, and other cross-module
+       interaction failures.
+
+    2. **Aggregate** (directory collection): after all per-file tests
+       pass, runs ``pytest tests/ -k <filter> --continue-on-collection-errors``
+       to collect the full directory. This catches cross-module
+       interactions that per-file collection cannot see. Disagreement
+       between per-file green and aggregate red is itself the finding
+       and surfaces as a distinct signal with ``aggregate_disagreement: True``.
+       The aggregate pass only runs when the caller's budget affords it
+       (``budget_s > _TIER3_AGGREGATE_MIN_BUDGET_S``); a tight budget skips
+       straight to returning the per-file signals.
+
+    Each signal carries a ``collection_mode`` field (``"per_file"`` or
+    ``"aggregate"``) so the verdict card can distinguish them.
+
+    **Relevance guard**: a discovered test file (one that is neither
+    task-specified nor itself among ``changed_files``) that fails is only
+    treated as a genuine regression if its source text mentions one of the
+    changed files' stems as a whole word. Otherwise it is reclassified as
+    ``classification: "pre_existing_candidate"`` — ``passed`` is flipped to
+    ``True`` (it does not fail the verdict) but ``warning: True`` and
+    ``test_returncode`` preserve the real outcome for human review. A test
+    file that IS task-specified or itself a changed file is always treated
+    as relevant and never reclassified.
+    """
     signals = []
     test_files = set()
 
@@ -747,7 +976,9 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
             exact = d / f"test_{name}"
             if (project_root / exact).exists():
                 test_files.add(str(exact))
-            for match in real_dir.glob(f"test_{stem}*.py"):
+            # Underscore boundary prevents prefix-only matches: stem "cli" must
+            # not match "test_clinical.py", only "test_cli_*.py".
+            for match in real_dir.glob(f"test_{stem}_*.py"):
                 test_files.add(str(d / match.name))
 
     if not test_files:
@@ -758,7 +989,16 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
     def _sort_key(path_str):
         return (0 if Path(path_str).name in exact_basenames else 1, path_str)
 
+    # Relevance guard bookkeeping: a test file is always relevant (never
+    # reclassified as pre_existing_candidate) if it was explicitly
+    # task-specified or is itself one of the changed files.
+    always_relevant_files = set(changed_files)
+    if task_test:
+        always_relevant_files.add(task_test)
+    changed_stems = {Path(f).stem for f in changed_files if f.endswith(".py")}
+
     t0 = time.monotonic()
+    per_file_all_passed = True
     for test_file in sorted(test_files, key=_sort_key)[:3]:  # cap at 3 test files
         if time.monotonic() - t0 > budget_s:
             break
@@ -781,24 +1021,149 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
                 "output": combined.strip()[-300:],
                 "duration_s": round(time.monotonic() - t0, 1),
                 "python": python,
+                "collection_mode": "per_file",
             }
             if re.search(r"no module named pytest", combined, re.IGNORECASE):
                 sig["passed"] = False
                 sig["unrunnable"] = True
                 sig["reason"] = "pytest_not_available"
+
+            # Capture the REAL outcome before the relevance guard can flip
+            # ``passed`` back to True — the aggregate pass gating below must
+            # reflect what actually happened, not the verdict-facing
+            # reclassification.
+            raw_failed = not sig["passed"]
+
+            # Relevance guard: a failing DISCOVERED test file (not
+            # task-specified, not itself a changed file) that never
+            # mentions any changed stem is a pre-existing candidate, not a
+            # regression attributable to this change. Never applies to the
+            # unrunnable case (pytest itself missing is never "irrelevant").
+            if (raw_failed and not sig.get("unrunnable")
+                    and test_file not in always_relevant_files):
+                try:
+                    test_text = (project_root / test_file).read_text(
+                        encoding="utf-8", errors="ignore")
+                except OSError:
+                    test_text = None
+                if test_text is not None and not _references_changed_stem(
+                        test_text, changed_stems):
+                    sig["classification"] = "pre_existing_candidate"
+                    sig["warning"] = True
+                    sig["test_returncode"] = r.returncode
+                    sig["passed"] = True
+
             signals.append(sig)
+            if raw_failed:
+                per_file_all_passed = False
         except subprocess.TimeoutExpired:
             signals.append({
                 "tier": 3, "check": "pytest", "file": test_file,
                 "passed": False, "error": "timeout",
                 "python": python,
+                "collection_mode": "per_file",
             })
+            per_file_all_passed = False
         except Exception as e:
+            logger.debug("Swallowed exception in _tier3_test_execution", exc_info=True)
             signals.append({
                 "tier": 3, "check": "pytest", "file": test_file,
                 "passed": False, "error": str(e)[:200],
                 "python": python,
+                "collection_mode": "per_file",
             })
+            per_file_all_passed = False
+
+    # ── Aggregate pass (fw-1786151929) ─────────────────────────────────────
+    # After all per-file tests pass, run ONE aggregate pass over the test
+    # directory to catch cross-module interactions (sys.modules pollution,
+    # import-order dependencies, fixture-scope conflicts) that per-file
+    # collection cannot see. Skip if any per-file test already failed —
+    # the aggregate won't add signal value in that case. Also skip when the
+    # caller's overall budget is too tight to afford a second, potentially
+    # up-to-60s pass (see _TIER3_AGGREGATE_MIN_BUDGET_S above).
+    if (per_file_all_passed and (time.monotonic() - t0) < budget_s
+            and budget_s > _TIER3_AGGREGATE_MIN_BUDGET_S):
+        # Determine the test directory from the first test file
+        first_test = sorted(test_files, key=_sort_key)[0]
+        test_dir = str(Path(first_test).parent)
+        if test_dir == ".":
+            test_dir = "tests"
+        # Build a -k filter from the test file stems to keep the aggregate
+        # run focused on the same tests, not the entire suite
+        stems = [Path(f).stem for f in sorted(test_files, key=_sort_key)[:3]]
+        # Convert test_foo -> foo to match test function names
+        k_terms = [s[5:] if s.startswith("test_") else s for s in stems]
+        k_filter = " or ".join(k_terms[:3])
+        python = python_path or _find_venv_python(first_test, project_root) or sys.executable
+        cmd = [
+            python, "-m", "pytest", test_dir,
+            "-k", k_filter,
+            "-q", "--no-header", "-p", "no:timeout",
+            "--continue-on-collection-errors",
+            "--tb=no",
+        ]
+        try:
+            remaining = max(5, budget_s - (time.monotonic() - t0))
+            r = subprocess.run(
+                cmd, capture_output=True, text=True,
+                timeout=min(60, remaining),
+                cwd=str(project_root),
+            )
+            combined = (r.stdout or "") + (r.stderr or "")
+            agg_passed = r.returncode == 0
+            sig = {
+                "tier": 3,
+                "check": "pytest",
+                "file": f"{test_dir}/ (aggregate)",
+                "passed": agg_passed,
+                "output": combined.strip()[-300:],
+                "duration_s": round(time.monotonic() - t0, 1),
+                "python": python,
+                "collection_mode": "aggregate",
+            }
+            # If per-file passed but aggregate failed, flag the disagreement
+            if not agg_passed and per_file_all_passed:
+                sig["aggregate_disagreement"] = True
+                sig["reason"] = "per_file_passed_aggregate_failed"
+            signals.append(sig)
+        except subprocess.TimeoutExpired:
+            signals.append({
+                "tier": 3, "check": "pytest",
+                "file": f"{test_dir}/ (aggregate)",
+                "passed": False, "error": "timeout",
+                "python": python,
+                "collection_mode": "aggregate",
+            })
+        except Exception as e:
+            logger.debug("Swallowed exception in _tier3_test_execution", exc_info=True)
+            signals.append({
+                "tier": 3, "check": "pytest",
+                "file": f"{test_dir}/ (aggregate)",
+                "passed": False, "error": str(e)[:200],
+                "python": python,
+                "collection_mode": "aggregate",
+            })
+    else:
+        # Record WHY the aggregate pass was skipped so the verdict card
+        # can distinguish "not run" from "ran and passed/failed". Without
+        # this the skip was silently unrecorded — a skipped tier-3
+        # aggregate check left no trace in the signal list.
+        if not per_file_all_passed:
+            skip_reason = "per_file_failed"
+        elif (time.monotonic() - t0) >= budget_s:
+            skip_reason = "budget_exhausted"
+        else:
+            skip_reason = "budget_too_tight"
+        signals.append({
+            "tier": 3,
+            "check": "pytest",
+            "file": "(aggregate)",
+            "passed": True,
+            "skipped": True,
+            "reason": skip_reason,
+            "collection_mode": "aggregate",
+        })
 
     return signals
 
@@ -894,6 +1259,7 @@ def _tier4_runtime_check(checks: list[dict], project_root: Path,
                 signals.append(sig)
 
         except Exception as e:
+            logger.debug("Swallowed exception in _tier4_runtime_check", exc_info=True)
             signals.append({
                 "tier": 4, "check": check_type, "url": url_path,
                 "passed": False, "error": str(e)[:200],
@@ -936,6 +1302,7 @@ def _poll_for_port(proc: subprocess.Popen, timeout_s: float) -> int | None:
             else:
                 time.sleep(wait)
         except Exception:
+            logger.debug("Swallowed exception in _poll_for_port", exc_info=True)
             time.sleep(wait)
 
         # Look for HTTP server port: "Uvicorn running on http://127.0.0.1:PORT"
@@ -1065,11 +1432,42 @@ def _run_check(cmd: list, check_name: str, relpath: str,
         return {"check": check_name, "file": relpath,
                 "passed": False, "error": "timeout"}
     except FileNotFoundError:
+        # A MISSING TOOL IS NOT A PASS. This returned passed=True, so a check
+        # that never executed counted toward the tier verdict as though the file
+        # had been verified. Uninstall the linter and the tree goes green.
+        #
+        # This file already has the honest value -- `insufficient`, set at ~L601
+        # for permission errors, with the comment "unknown coerced into a
+        # verdict. INSUFFICIENT is the honest value". But that scan only inspects
+        # signals where passed is FALSE, so a branch claiming passed=True routed
+        # around the very state introduced to cover it.
+        #
+        # passed=False + insufficient=True excludes it from the verdict instead
+        # of counting it either way, and Tier 1 reports "nothing could be
+        # checked" when every signal lands here.
         return {"check": check_name, "file": relpath,
-                "passed": True, "error": "tool not found, skipped"}
+                "passed": False, "insufficient": True, "state": "INSUFFICIENT",
+                "error": f"could not RUN {check_name}: tool not found. "
+                         f"NOT verified — this is not a pass and not a failure"}
     except Exception as e:
         return {"check": check_name, "file": relpath,
                 "passed": False, "error": str(e)[:200]}
+
+
+def _check_workflow_script(fpath: Path, relpath: str) -> dict:
+    """Syntax-check a Claude Code Workflow script as an async function body.
+    Reported line numbers are offset by one (the wrapper line)."""
+    import tempfile
+
+    body = re.sub(r"^export\s+(?=(const|let|var|function|async)\b)", "",
+                  fpath.read_text(), flags=re.M)
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as tmp:
+        tmp.write("(async () => {\n" + body + "\n})\n")
+    try:
+        sig = _run_check(["node", "--check", tmp.name], "workflow_node_check", relpath)
+    finally:
+        os.unlink(tmp.name)
+    return sig
 
 
 def _check_json(fpath: Path, relpath: str) -> dict:
@@ -1114,6 +1512,7 @@ def _find_venv_python(relpath: str, project_root: Path) -> str | None:
             if main_venv_python.exists():
                 return str(main_venv_python)
     except Exception:
+        logger.debug("Swallowed exception in _find_venv_python", exc_info=True)
         pass
 
     return None
@@ -1125,8 +1524,15 @@ def _check_yaml(fpath: Path, relpath: str) -> dict:
         yaml.safe_load(fpath.read_text())
         return {"check": "yaml_parse", "file": relpath, "passed": True}
     except ImportError:
+        # SAME DEFECT as _run_check's FileNotFoundError branch, in the same
+        # file: a missing dependency reported the file as verified. Uninstall
+        # pyyaml and every YAML file passes its syntax check without being
+        # parsed. Fixing one site and not this one would have been fixing the
+        # instance instead of the class.
         return {"check": "yaml_parse", "file": relpath,
-                "passed": True, "error": "pyyaml not installed, skipped"}
+                "passed": False, "insufficient": True, "state": "INSUFFICIENT",
+                "error": "could not RUN yaml_parse: pyyaml not installed. "
+                         "NOT verified — this is not a pass and not a failure"}
     except Exception as e:
         return {"check": "yaml_parse", "file": relpath,
                 "passed": False, "error": str(e)[:200]}
@@ -1224,6 +1630,7 @@ def _measure_count(unit: str, project_root: Path) -> int:
                 try:
                     total += sum(1 for _ in open(pf, errors="ignore"))
                 except Exception:
+                    logger.debug("Swallowed exception in _measure_count", exc_info=True)
                     pass
             return total
         elif unit == "endpoint":
@@ -1235,6 +1642,7 @@ def _measure_count(unit: str, project_root: Path) -> int:
                         r'@(?:app|router|mcp)\.\s*(?:get|post|put|delete|patch|route|tool)',
                         content, re.IGNORECASE))
                 except Exception:
+                    logger.debug("Swallowed exception in _measure_count", exc_info=True)
                     pass
             return count
         elif unit == "function":
@@ -1244,6 +1652,7 @@ def _measure_count(unit: str, project_root: Path) -> int:
                     content = pf.read_text(errors="ignore")
                     count += len(re.findall(r'^\s*def\s+\w+', content, re.MULTILINE))
                 except Exception:
+                    logger.debug("Swallowed exception in _measure_count", exc_info=True)
                     pass
             return count
         elif unit == "module":
@@ -1259,9 +1668,11 @@ def _measure_count(unit: str, project_root: Path) -> int:
                         count += sum(1 for line in open(jl, errors="ignore")
                                      if line.strip())
                     except Exception:
+                        logger.debug("Swallowed exception in _measure_count", exc_info=True)
                         pass
             return count
     except Exception:
+        logger.debug("Swallowed exception in _measure_count", exc_info=True)
         pass
     return 0
 

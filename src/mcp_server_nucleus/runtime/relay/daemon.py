@@ -77,6 +77,7 @@ class _PollDaemon:
             try:
                 messages = _transport_read(self.recipient, unread_only=True, limit=200)
             except Exception:
+                logger.debug("Swallowed exception in _scan", exc_info=True)
                 return []
             return [
                 {
@@ -101,6 +102,7 @@ class _PollDaemon:
                 try:
                     data = json.loads(fpath.read_text(encoding="utf-8"))
                 except Exception:
+                    logger.debug("Swallowed exception in _scan", exc_info=True)
                     continue
                 if data.get("read") is True:
                     continue
@@ -151,6 +153,7 @@ class _PollDaemon:
                 data["stopped_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                 path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         except Exception:
+            logger.debug("Swallowed exception in _run", exc_info=True)
             pass
         logger.info(f"relay_poll daemon stopped for bucket '{self.recipient}'")
 
@@ -245,6 +248,7 @@ class RelayWatchHandler:
                     description=f"Relay message from {sender} to {recipient}: {subject}",
                 )
             except Exception:
+                logger.debug("Swallowed exception in _on_new_relay_message", exc_info=True)
                 pass  # Never let event emission break the watcher
 
             # Autonomous delegation: urgent/high relays auto-create tasks
@@ -326,6 +330,7 @@ def stop_relay_watcher() -> Dict[str, Any]:
                 _relay_observer.stop()
                 _relay_observer.join(timeout=5)
             except Exception:
+                logger.debug("Swallowed exception in stop_relay_watcher", exc_info=True)
                 pass
             _relay_observer = None
             return {"status": "stopped"}
@@ -414,6 +419,7 @@ def relay_archive(
             entries.append((f, ts, data))
         except Exception:
             # Unparseable files are kept (not archived).
+            logger.debug("Swallowed exception in relay_archive", exc_info=True)
             continue
 
     # Sort newest-first for the keep/archive split.
@@ -585,6 +591,7 @@ def relay_poll_status(recipient: str) -> Dict[str, Any]:
             data["running"] = running
             return data
         except Exception:
+            logger.debug("Swallowed exception in relay_poll_status", exc_info=True)
             pass
 
     return {
@@ -640,6 +647,7 @@ def relay_wait(
             try:
                 messages = _transport_read(recipient, unread_only=False, limit=200)
             except Exception:
+                logger.debug("Swallowed exception in relay_wait", exc_info=True)
                 messages = []
             for m in messages:
                 if m.get("in_reply_to") == in_reply_to:
@@ -658,6 +666,7 @@ def relay_wait(
                     try:
                         data = json.loads(fpath.read_text(encoding="utf-8"))
                     except Exception:
+                        logger.debug("Swallowed exception in relay_wait", exc_info=True)
                         continue
                     if data.get("in_reply_to") == in_reply_to:
                         return {
@@ -741,6 +750,7 @@ def relay_listen(
                     if m.get("id"):
                         seen.add(m["id"])
             except Exception:
+                logger.debug("Swallowed exception in relay_listen", exc_info=True)
                 pass
         else:
             try:
@@ -751,6 +761,7 @@ def relay_listen(
                         continue
                     seen.add(fpath.stem)
             except Exception:
+                logger.debug("Swallowed exception in relay_listen", exc_info=True)
                 pass
 
     deadline = time.monotonic() + window_s
@@ -761,6 +772,7 @@ def relay_listen(
             try:
                 messages = _transport_read(recipient, unread_only=True, limit=200)
             except Exception:
+                logger.debug("Swallowed exception in relay_listen", exc_info=True)
                 messages = []
             for m in messages:
                 mid = m.get("id", "")
@@ -797,6 +809,7 @@ def relay_listen(
                     try:
                         data = json.loads(fpath.read_text(encoding="utf-8"))
                     except Exception:
+                        logger.debug("Swallowed exception in relay_listen", exc_info=True)
                         seen.add(stem)
                         continue
                     if data.get("read") is True:

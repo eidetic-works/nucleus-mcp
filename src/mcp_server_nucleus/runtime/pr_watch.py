@@ -3,7 +3,7 @@
 Enumerates open PRs across configured repos, classifies each into one of:
 
   - auto-mergeable  : CI green AND mergeable AND age >= threshold
-  - billing-stuck   : eidetic-works repo CI failure with billing-exhaustion
+  - billing-stuck   : owned-repo CI failure with billing-exhaustion
                       signature (FAILURE + steps_count=0 + duration <= 5s)
                       → AGENTS.md H8 billing-bypass merge applies
   - needs-verdict   : everything else (real CI failure, conflicts, unresolved
@@ -36,21 +36,29 @@ from .common import get_brain_path
 
 logger = logging.getLogger("nucleus.pr_watch")
 
-DEFAULT_REPOS: tuple[str, ...] = (
-    "eidetic-works/mcp-server-nucleus",
-)
+# No repos ship. A watcher that defaults to somebody else's repositories is
+# useless to everyone but them, and those particular ones 404. Configure via
+# NUCLEUS_PR_REPOS (comma-separated) or pass `repos=`.
+DEFAULT_REPOS: tuple[str, ...] = ()
 DEFAULT_THRESHOLD_DAYS = 7
 DEFAULT_DEDUP_HOURS = 24
 DEFAULT_COORD = "claude_code_main"
 BILLING_EXHAUSTION_DURATION_S = 5
-EIDETIC_OWNER = "eidetic-works"
+def _billing_policy_owner() -> str:
+    """Owner whose repos may claim the CI billing-exhaustion bypass.
+
+    Empty by default, and empty means NOTHING qualifies. That is the safe
+    direction: the policy grants an exception, so a permissive default would
+    hand the bypass to every repo it was never written for.
+    """
+    return os.environ.get("NUCLEUS_PR_WATCH_OWNER", "").strip()
 
 
 @dataclass(frozen=True)
 class StalePR:
     """One open PR past the staleness threshold + its classification."""
 
-    repo: str            # "eidetic-works/mcp-server-nucleus"
+    repo: str            # "<owner>/<name>"
     number: int
     created_at: str      # ISO-8601
     age_days: int
@@ -102,9 +110,11 @@ def _is_billing_exhaustion(rollup: list[dict[str, Any]] | None, owner: str) -> d
     """Return the billing-exhaustion check signature if present, else None.
 
     Per .brain/policies/ci_billing_bypass.md: failure + 0 steps + ≤5s duration
-    on an eidetic-works repo is the signature. Non-eidetic repos never qualify.
+    on a repo under the configured owner is the signature. Repos outside it
+    never qualify.
     """
-    if owner != EIDETIC_OWNER or not rollup:
+    policy_owner = _billing_policy_owner()
+    if not policy_owner or owner != policy_owner or not rollup:
         return None
     for check in rollup:
         if check.get("conclusion") != "FAILURE":

@@ -218,6 +218,7 @@ class Locker:
                         attrs = output.split()[0]
                         return 'i' in attrs
             except Exception:
+                logger.debug("Swallowed exception in is_locked", exc_info=True)
                 pass
             return False
 
@@ -228,6 +229,7 @@ class Locker:
                 return (st.st_flags & 0x2) != 0
             return False
         except Exception:
+            logger.debug("Swallowed exception in is_locked", exc_info=True)
             return False
 
     # --- METADATA (Layer 4) ---
@@ -318,4 +320,5 @@ class Locker:
                     data[clean_key] = val
             return data
         except Exception:
+            logger.debug("Swallowed exception in get_metadata", exc_info=True)
             return {}

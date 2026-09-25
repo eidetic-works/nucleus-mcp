@@ -336,6 +336,7 @@ def run_self_digest_instrument(
     try:
         engram_counts = _count_engrams_in_window(bp, since)
     except Exception as e:
+        logger.debug("Swallowed exception in run_self_digest_instrument", exc_info=True)
         engram_counts = {"present": False, "count_in_window": 0, "total": 0, "error": f"crashed: {e}"}
         errors.append(f"engram_count: {e}")
 
@@ -343,6 +344,7 @@ def run_self_digest_instrument(
     try:
         relay_counts = _count_relay_envelopes(bp)
     except Exception as e:
+        logger.debug("Swallowed exception in run_self_digest_instrument", exc_info=True)
         relay_counts = {"ok": False, "error": f"crashed: {e}"}
         errors.append(f"relay_count: {e}")
 
@@ -350,6 +352,7 @@ def run_self_digest_instrument(
     try:
         sched_snap = _scheduler_snapshot(bp)
     except Exception as e:
+        logger.debug("Swallowed exception in run_self_digest_instrument", exc_info=True)
         sched_snap = {"present": False, "job_count": 0, "jobs": {}, "error": f"crashed: {e}"}
         errors.append(f"scheduler_snap: {e}")
 

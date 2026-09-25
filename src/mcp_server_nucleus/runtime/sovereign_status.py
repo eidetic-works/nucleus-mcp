@@ -74,6 +74,7 @@ def _brain_identity(brain_path: Path) -> Dict[str, Any]:
             result["brain_id"] = state.get("brain_id")
             result["version"] = state.get("version")
         except (json.JSONDecodeError, Exception):
+            logger.debug("Swallowed exception in _brain_identity", exc_info=True)
             pass
 
     # Count all files in brain
@@ -118,6 +119,7 @@ def _memory_health(brain_path: Path) -> Dict[str, Any]:
                     if isinstance(data, dict):
                         engrams.append(data)
             except (json.JSONDecodeError, Exception):
+                logger.debug("Swallowed exception in _memory_health", exc_info=True)
                 continue
 
     # Also check memory/engrams.json (array of engrams written by CLI)
@@ -130,6 +132,7 @@ def _memory_health(brain_path: Path) -> Dict[str, Any]:
                         if isinstance(item, dict) and item.get("key"):
                             engrams.append(item)
         except (json.JSONDecodeError, Exception):
+            logger.debug("Swallowed exception in _memory_health", exc_info=True)
             pass
 
     if not engrams:
@@ -200,6 +203,7 @@ def _governance_posture(brain_path: Path) -> Dict[str, Any]:
             result["kill_switch"] = reqs.get("kill_switch_required", False)
             result["audit_retention_days"] = reqs.get("audit_trail_retention_days")
         except (json.JSONDecodeError, Exception):
+            logger.debug("Swallowed exception in _governance_posture", exc_info=True)
             pass
 
     # HITL policy
@@ -214,6 +218,7 @@ def _governance_posture(brain_path: Path) -> Dict[str, Any]:
             result["blocked_operations"] = len(hitl.get("blocked_operations", []))
             result["required_approvals"] = len(hitl.get("required_approvals", {}))
         except (json.JSONDecodeError, Exception):
+            logger.debug("Swallowed exception in _governance_posture", exc_info=True)
             pass
 
     result["status"] = "configured" if result["jurisdiction"] else "partial"
@@ -245,6 +250,7 @@ def _dsor_integrity(brain_path: Path) -> Dict[str, Any]:
                     t = data.get("type", "unknown")
                     types[t] = types.get(t, 0) + 1
             except (json.JSONDecodeError, Exception):
+                logger.debug("Swallowed exception in _dsor_integrity", exc_info=True)
                 continue
         result["types"] = types
         result["decision_count"] = sum(types.values())
@@ -258,6 +264,7 @@ def _dsor_integrity(brain_path: Path) -> Dict[str, Any]:
                 with open(f) as fh:
                     event_count += sum(1 for line in fh if line.strip())
             except Exception:
+                logger.debug("Swallowed exception in _dsor_integrity", exc_info=True)
                 continue
         result["event_count"] = event_count
 
@@ -314,6 +321,7 @@ def _get_nucleus_version() -> str:
                 if match:
                     return match.group(1)
         except Exception:
+            logger.debug("Swallowed exception in _get_nucleus_version", exc_info=True)
             pass
     return "unknown"
 

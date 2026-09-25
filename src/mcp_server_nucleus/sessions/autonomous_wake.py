@@ -214,6 +214,7 @@ def _get_session_events(
     try:
         parsed = resp.json()
     except Exception:
+        logger.debug("Swallowed exception in _get_session_events", exc_info=True)
         return []
     if isinstance(parsed, dict):
         return list(parsed.get("events") or parsed.get("data") or [])

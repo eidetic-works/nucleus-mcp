@@ -17,6 +17,11 @@ Public API
     render_dashboard_html() — dashboard as a self-contained HTML page
     generate_week_report() — weekly markdown report
     curriculum_refresh() — close the training loop
+    record_signal(artifact, verdict, source, evidence) — demand-signal ledger:
+        was there ever real external evidence anyone wanted this, orthogonal
+        to whether it was built correctly (that's what CSR answers)
+    read_signal_ledger() / latest_verdict() / summarize_demand() — read the
+        demand-signal ledger
 """
 
 from .core import Flywheel, file_ticket, record_survived
@@ -24,6 +29,12 @@ from .csr import bump_survived, bump_unsurvived, read_csr
 from .dashboard import render_dashboard_html, render_dashboard_json
 from .report import generate_week_report
 from .curriculum import curriculum_refresh
+from .demand_signal import (
+    record_signal,
+    read_signal_ledger,
+    latest_verdict,
+    summarize as summarize_demand,
+)
 
 __all__ = [
     "Flywheel",
@@ -36,6 +47,10 @@ __all__ = [
     "render_dashboard_json",
     "generate_week_report",
     "curriculum_refresh",
+    "record_signal",
+    "read_signal_ledger",
+    "latest_verdict",
+    "summarize_demand",
 ]
 
 __version__ = "0.1.0"

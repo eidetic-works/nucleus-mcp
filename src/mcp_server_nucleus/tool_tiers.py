@@ -59,6 +59,7 @@ TIER_2_ADVANCED: Set[str] = {
     "nucleus_infra",             # Infrastructure (gcloud, strategy, file changes, export)
     "nucleus_agents",            # Agent management (spawn, critique, dashboard, ingest)
     "nucleus_relay_subscribe",   # Native MCP notifications — long-poll inbox-arrival push (FOUNDER-OVERRIDE 2026-05-31)
+    "nucleus_runs",              # Renaissance run engine (create/list/apply/dismiss/cancel)
 }
 
 # =============================================================================

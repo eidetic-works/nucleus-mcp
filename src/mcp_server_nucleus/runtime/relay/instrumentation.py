@@ -106,6 +106,7 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
             try:
                 out.append(json.loads(line))
             except Exception:
+                logger.debug("Swallowed exception in _read_jsonl", exc_info=True)
                 continue
     return out
 

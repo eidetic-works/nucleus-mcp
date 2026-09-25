@@ -113,6 +113,7 @@ def get_current_posture() -> Dict[str, Any]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
+        logger.debug("Swallowed exception in get_current_posture", exc_info=True)
         return {}
 
 

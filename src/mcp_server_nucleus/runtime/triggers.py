@@ -6,6 +6,8 @@ Events trigger agents based on configurable rules.
 
 Location: mcp_server_nucleus/runtime/triggers.py
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 from pathlib import Path
@@ -144,6 +146,7 @@ def evaluate_condition(condition: str, event: Dict) -> bool:
             return event_type == target
         
     except Exception:
+        logger.debug("Swallowed exception in evaluate_condition", exc_info=True)
         pass
     
     return False

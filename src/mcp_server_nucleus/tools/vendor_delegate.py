@@ -19,11 +19,12 @@ Actions:
         When unsure use 'write': a read task still works in write mode, but a write
         task silently does NOTHING in read mode.
       model? — optional. Defaults to the vendor's verified model
-        (agy → gemini-3.1-pro-high, devin → glm-5.2). These are ALREADY the
+        (agy → gemini-3.1-pro-high, devin → swe-2-max). These are ALREADY the
         defaults, so omitting model is sufficient; pass it only to be explicit or
-        to override. The response echoes model_id — read model_id (NOT model_family)
-        to confirm which model ran. A cross-wired model (e.g. glm-5.2 with agy) is
-        rejected with the valid ids named.
+        to override; pass "glm-5-2" to use GLM-5.2 High instead. The response
+        echoes model_id — read model_id (NOT model_family) to confirm which model
+        ran. A cross-wired model (e.g. glm-5-2 with agy) is rejected with the
+        valid ids named.
       artifact_ref — a commit SHA / PR# / file path to bind the result to. No commit
         yet (a from-scratch build)? Pass the repo-relative path you will write,
         e.g. src/foo.py.
@@ -88,6 +89,7 @@ from ..runtime.vendor_dispatch import (
     dispatch_and_capture,
     normalize_mode,
     resolve_model,
+    resolve_model_family,
 )
 
 logger = logging.getLogger("nucleus.tool.vendor_delegate")
@@ -271,9 +273,13 @@ def register(mcp, helpers):
     def _h_list(**params):
         vendors = {
             name: {
-                "model_family": spec.model,                # RENAMED from "model" (decoy kill)
-                "selectable_models": list(spec.models),    # what to pass in params.model
-                "default_model": spec.default_model,       # used when model omitted
+                "model_family": resolve_model_family(spec.default_model, spec.model),
+                "model_families": {
+                    model_id: resolve_model_family(model_id, spec.model)
+                    for model_id in spec.models
+                },
+                "selectable_models": list(spec.models),
+                "default_model": spec.default_model,
                 "model_flag": spec.model_flag,
                 "binary": spec.binary,
                 "to_default": spec.to_default,
@@ -341,6 +347,7 @@ def register(mcp, helpers):
         execute_plan_review_loop,
         query_plan_review_loop_status,
         cancel_plan_review_loop,
+        execute_plan_review_chief_amend,
     )
 
     def _h_plan_review_loop(**params):
@@ -354,6 +361,9 @@ def register(mcp, helpers):
         plan_id = params.get("plan_id", "")
         return cancel_plan_review_loop(plan_id, make_response)
 
+    def _h_plan_review_chief_amend(**params):
+        return execute_plan_review_chief_amend(params, make_response)
+
     ROUTER = {
         "dispatch": _h_dispatch,
         "review": _h_review,
@@ -361,10 +371,13 @@ def register(mcp, helpers):
         "plan_review_loop": _h_plan_review_loop,
         "plan_review_loop_status": _h_plan_review_loop_status,
         "plan_review_loop_cancel": _h_plan_review_loop_cancel,
+        "plan_review_chief_amend": _h_plan_review_chief_amend,
     }
 
-    # All six handlers absorb **params, so _dispatch cannot read their contract
-    # from the signature (see _dispatch._allowed_param_names). Declare it.
+    # All seven handlers absorb **params, so _dispatch cannot read their
+    # contract from the signature (see _dispatch._allowed_param_names). Declare
+    # it. Every entry in ROUTER above needs one; a missing declaration does not
+    # fail loudly, it just turns the unknown-param check off for that action.
     # Keys transcribed from each handler body; plan_review_loop's come from
     # execute_plan_review_loop() in plan_review_loop.py, which is handed the
     # params dict wholesale. `timeout_s` IS now in the dispatch contract: the
@@ -382,12 +395,22 @@ def register(mcp, helpers):
     _h_list._nucleus_params = ()
     _h_plan_review_loop._nucleus_params = (
         "prompt", "max_rounds", "author_vendor", "reviewer_vendor",
-        "author_model", "reviewer_model", "tiebreaker_vendor", "effort_level",
+        "author_model", "reviewer_model", "tiebreaker_vendor", "allow_same_vendor",
+        "effort_level",
         "max_cost_usd", "plan_output_path", "context_files",
         "accepted_tradeoffs", "approval_criteria", "sandbox_test_cmd",
     )
     _h_plan_review_loop_status._nucleus_params = ("plan_id",)
     _h_plan_review_loop_cancel._nucleus_params = ("plan_id",)
+    # Added when the action was; it was the one handler of the seven with no
+    # declaration, so _allowed_param_names returned None for it and _dispatch
+    # SKIPPED the unknown-param check entirely — a misspelled key was silently
+    # dropped rather than rejected, on this action alone (ledger DS-6). Keys
+    # transcribed from execute_plan_review_chief_amend's own docstring and body
+    # in plan_review_loop.py.
+    _h_plan_review_chief_amend._nucleus_params = (
+        "plan_id", "amended_plan", "chief_note",
+    )
     _LOG_LABELS = {
         "dispatch": "nucleus_delegate dispatch failed",
         "review": "nucleus_delegate review failed",
@@ -426,11 +449,12 @@ Actions:
         When unsure use 'write': a read task still works in write mode, but a write
         task silently does NOTHING in read mode.
       model? — optional. Defaults to the vendor's verified model
-        (agy → gemini-3.1-pro-high, devin → glm-5.2). These are ALREADY the
+        (agy → gemini-3.1-pro-high, devin → swe-2-max). These are ALREADY the
         defaults, so omitting model is sufficient; pass it only to be explicit or
-        to override. The response echoes model_id — read model_id (NOT model_family)
-        to confirm which model ran. A cross-wired model (e.g. glm-5.2 with agy) is
-        rejected with the valid ids named.
+        to override; pass "glm-5-2" to use GLM-5.2 High instead. The response
+        echoes model_id — read model_id (NOT model_family) to confirm which model
+        ran. A cross-wired model (e.g. glm-5-2 with agy) is rejected with the
+        valid ids named.
       artifact_ref — a commit SHA / PR# / file path to bind the result to. No commit
         yet (a from-scratch build)? Pass the repo-relative path you will write,
         e.g. src/foo.py.
@@ -448,7 +472,7 @@ Actions:
         effect rather than inferring it from success.
       You never pass CLI flags — the tool injects the right permissions per vendor.
       Example (build): action="dispatch", params={"vendor":"devin","prompt":"<task>",
-        "artifact_ref":"src/foo.py","mode":"write","model":"glm-5.2",
+        "artifact_ref":"src/foo.py","mode":"write","model":"glm-5-2",
         "expect_paths":["src/foo.py"]}
   review - Independent, different-model verdict on pasted code / a diff.
       params: {content, ref?, vendor?, model?, to?}

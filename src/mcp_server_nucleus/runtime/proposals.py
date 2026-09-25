@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 
 """
 ProposalOps: Deep Thought & Ratification Engine.
@@ -73,6 +75,7 @@ class ProposalOps:
                 if data.get("status") == "pending":
                     pending.append(Proposal(**data))
             except Exception:
+                logger.debug("Swallowed exception in get_pending_proposals", exc_info=True)
                 pass
         return pending
 

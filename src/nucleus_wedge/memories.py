@@ -363,9 +363,25 @@ def build_auto_memory_index(
     brain_path: Path | None = None,
     memory_root: Path | None = None,
 ) -> Path:
-    """Ingest auto-memory markdown files. History-projected rows are preserved."""
+    """Ingest auto-memory markdown files. History-projected rows are preserved.
+
+    Brain-path isolation: when ``brain_path`` is explicitly provided (and
+    ``memory_root`` is not), the auto-memory root is scoped to
+    ``<brain>/auto_memory`` rather than the CWD-based
+    ``default_auto_memory_root()``. Without this, a fresh empty temp brain
+    would cross-contaminate with the operator's global CC memory corpus
+    (``~/.claude/projects/<slug>/memory``) — the ``brain_path`` arg was
+    silently dropped on the auto-memory read path, returning rows from the
+    wrong corpus. When ``brain_path`` is ``None`` (normal operation), the
+    legacy ``default_auto_memory_root()`` behavior is preserved unchanged.
+    """
     db = ensure_schema(brain_path)
-    root = memory_root or default_auto_memory_root()
+    if memory_root is not None:
+        root = memory_root
+    elif brain_path is not None:
+        root = Path(brain_path) / "auto_memory"
+    else:
+        root = default_auto_memory_root()
     rows: list[tuple] = []
     if root.exists():
         for md in sorted(root.glob("*.md")):

@@ -205,6 +205,7 @@ class LLMToolValidator:
             )
             
         except Exception as e:
+            logger.debug("Swallowed exception in validate", exc_info=True)
             _get_telemetry().record_error("E601", f"Validation: {e}", "llm_tool_validator", exception=e)
             return ValidationResult(
                 passed=False,

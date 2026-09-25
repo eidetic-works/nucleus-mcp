@@ -9,6 +9,8 @@ Users correct AI output. Each correction:
 
 This closes the loop: GROUND verifies → ALIGN corrects → COMPOUND learns.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import uuid
@@ -109,6 +111,7 @@ def record_correction(context: str, correction: str,
             "pref_id": pref_id,
         })
     except Exception:
+        logger.debug("Swallowed exception in record_correction", exc_info=True)
         pass
 
     # Coord-event capture (§5.3 completion): emit correction event for router corpus.
@@ -127,6 +130,7 @@ def record_correction(context: str, correction: str,
             tags=[severity] if severity else [],
         )
     except Exception:
+        logger.debug("Swallowed exception in record_correction", exc_info=True)
         pass
 
     return {
@@ -187,6 +191,7 @@ def record_rejection(context: str, reason: str = "",
             "severity": severity,
         })
     except Exception:
+        logger.debug("Swallowed exception in record_rejection", exc_info=True)
         pass
 
     return {
@@ -223,6 +228,7 @@ def record_approval(context: str, notes: str = "") -> Dict[str, Any]:
             "verdict": "accepted",
         })
     except Exception:
+        logger.debug("Swallowed exception in record_approval", exc_info=True)
         pass
 
     # Coord-event capture (§5.3 completion): emit founder_verdict event.
@@ -240,6 +246,7 @@ def record_approval(context: str, notes: str = "") -> Dict[str, Any]:
             tags=["approval"],
         )
     except Exception:
+        logger.debug("Swallowed exception in record_approval", exc_info=True)
         pass
 
     return {

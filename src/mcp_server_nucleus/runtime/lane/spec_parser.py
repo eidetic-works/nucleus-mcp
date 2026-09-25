@@ -23,12 +23,15 @@ and body SHA-256 are recorded in the LaneConfig.
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import subprocess
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 from .config import LaneConfig, WorkItem
+
+logger = logging.getLogger(__name__)
 
 
 class SpecParseError(Exception):
@@ -186,7 +189,10 @@ class SpecParser:
         if not tag or not self.config.spec_tag_commit:
             raise SpecParseError("Spec not pinned — no tag/commit in config")
 
-        # Check tag commit
+        # Check tag commit. NOTE: this is checked but NOT raised on here — the
+        # decision is deferred until after the two CONTENT checks below, because
+        # the correct response depends on whether the spec itself actually
+        # changed. See the pointer-vs-content split at the end of this method.
         result = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", f"{tag}^{{commit}}"],
             capture_output=True,
@@ -194,11 +200,7 @@ class SpecParser:
             check=True,
         )
         actual_commit = result.stdout.strip()
-        if actual_commit != self.config.spec_tag_commit:
-            raise SpecParseError(
-                f"Spec tag {tag} moved from pinned commit "
-                f"{self.config.spec_tag_commit[:12]} to {actual_commit[:12]}"
-            )
+        commit_moved = actual_commit != self.config.spec_tag_commit
 
         # Check blob
         result = subprocess.run(
@@ -223,10 +225,92 @@ class SpecParser:
                 f"to {actual_sha[:12]}"
             )
 
-        return {
+        # ── POINTER DRIFT vs CONTENT DRIFT ────────────────────────────────
+        # Reaching here means BOTH content checks passed: the spec blob at the
+        # tag and the on-disk body SHA-256 are byte-identical to what was
+        # pinned. The spec has demonstrably not been tampered with.
+        #
+        # A moved commit pointer with identical content is a DIFFERENT event
+        # from a changed spec, and conflating them bricked this lane for 16
+        # days (2026-08-03 → 2026-08-19). The tag was re-pointed from a merge
+        # commit onto a same-day docs commit carrying the identical SPEC.md
+        # blob; every content check passed, yet `nucleus lane status` died in
+        # self-heal with "needs human review" and there was no documented
+        # re-pin path — so any retag permanently disabled the lane.
+        #
+        # The commit pin still guards something real: the repo CONTEXT the spec
+        # was validated against, which is not covered by the content hashes. So
+        # it is not dropped — it is downgraded to a warning that the caller can
+        # see and act on, and an explicit re-pin is offered instead of a dead
+        # end. Content drift remains a hard raise above, unchanged.
+        result = {
             "tag": tag,
             "tag_commit": actual_commit,
             "blob": actual_blob,
             "body_sha256": actual_sha,
             "verified": True,
+            "pointer_drift": commit_moved,
         }
+        if commit_moved:
+            result["pinned_tag_commit"] = self.config.spec_tag_commit
+            result["warning"] = (
+                f"Spec tag {tag} moved from pinned commit "
+                f"{self.config.spec_tag_commit[:12]} to {actual_commit[:12]}, "
+                f"but the spec CONTENT is byte-identical (blob and body SHA-256 "
+                f"both match the pin). Proceeding. The repo context the spec was "
+                f"validated against has changed — re-pin with "
+                f"SpecParser.repin_tag_commit() once that is reviewed."
+            )
+            logger.warning(result["warning"])
+        return result
+
+    def repin_tag_commit(self) -> dict:
+        """Re-pin ONLY the tag's commit pointer, after content is re-verified.
+
+        Deliberately narrow. This exists because pointer drift previously had
+        no recovery path at all, which meant a single retag disabled the lane
+        permanently. It re-pins the commit ONLY, and it refuses to run unless
+        both content checks still pass — so it can never be used to launder a
+        changed spec into an accepted one. To accept genuinely changed spec
+        CONTENT, re-run the full pin_spec() path, which is a deliberate and
+        visible act rather than a quiet repair.
+        """
+        repo = self.config.repo_root
+        spec_rel = self.config.spec_path.relative_to(repo)
+        tag = self.config.spec_tag
+
+        if not tag:
+            raise SpecParseError("Cannot re-pin — no spec tag in config")
+
+        blob = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", f"{tag}:{spec_rel}"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        if blob != self.config.spec_blob:
+            raise SpecParseError(
+                f"REFUSING to re-pin: spec blob at {tag} is {blob[:12]}, pinned "
+                f"is {self.config.spec_blob[:12]}. The spec CONTENT changed — "
+                f"this is not pointer drift. Re-run the full pin if that change "
+                f"is intended."
+            )
+
+        body_sha = hashlib.sha256(self.config.spec_path.read_bytes()).hexdigest()
+        if body_sha != self.config.spec_body_sha256:
+            raise SpecParseError(
+                f"REFUSING to re-pin: spec body SHA-256 is {body_sha[:12]}, "
+                f"pinned is {self.config.spec_body_sha256[:12]}. The spec CONTENT "
+                f"changed on disk — this is not pointer drift."
+            )
+
+        old_commit = self.config.spec_tag_commit
+        new_commit = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", f"{tag}^{{commit}}"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        self.config.spec_tag_commit = new_commit
+        logger.warning(
+            "Re-pinned spec tag %s commit %s -> %s (content verified unchanged)",
+            tag, old_commit[:12], new_commit[:12],
+        )
+        return {"tag": tag, "old_commit": old_commit, "new_commit": new_commit,
+                "content_verified_unchanged": True}

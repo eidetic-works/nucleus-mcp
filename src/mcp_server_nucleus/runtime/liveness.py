@@ -108,6 +108,7 @@ class LivenessReport:
     items: List[LivenessItem]
     summary: Dict[str, int] = field(default_factory=dict)
     host_info: Dict[str, Any] = field(default_factory=dict)
+    empty_scope: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert report to JSON-serializable dictionary."""
@@ -117,7 +118,35 @@ class LivenessReport:
             "host_info": self.host_info,
             "item_count": len(self.items),
             "items": [item.to_dict() for item in self.items],
+            "empty_scope": self.empty_scope,
         }
+
+
+# ── Nucleus Ownership Markers ─────────────────────────────────
+
+NUCLEUS_OWNERSHIP_MARKERS: Tuple[str, ...] = (
+    "nucleus",
+    ".brain/",
+    "mcp_server_nucleus",
+)
+
+
+def is_nucleus_owned(item: LivenessItem) -> bool:
+    """Return True if a LivenessItem appears to be owned by Nucleus.
+
+    Checks the item's id, name, command, and metadata for any of the
+    NUCLEUS_OWNERSHIP_MARKERS. Used to distinguish Nucleus-managed
+    scheduled tasks/processes from unrelated system or third-party jobs.
+    """
+    haystacks = (
+        item.id or "",
+        item.name or "",
+        item.command or "",
+    )
+    for marker in NUCLEUS_OWNERSHIP_MARKERS:
+        if any(marker in h for h in haystacks):
+            return True
+    return False
 
 
 # ── Secret Redaction Logic ────────────────────────────────────
@@ -130,6 +159,12 @@ _SECRET_PATTERNS = [
     (re.compile(r'(ghp_[a-zA-Z0-9]{36})'), r'<REDACTED_GITHUB_TOKEN>'),
     (re.compile(r'(eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)'), r'<REDACTED_JWT>'),
     (re.compile(r'(AKIA[0-9A-Z]{16})'), r'<REDACTED_AWS_KEY>'),
+    # Whitespace-separated env-set commands: `launchctl setenv KEY VALUE`,
+    # `export KEY VALUE`, `env KEY VALUE`. These use no =/: separator, so the
+    # key-value pattern above never fires and the value leaks. Only redact when
+    # KEY itself names a secret, so benign forms (`setenv PATH /usr/local/bin`)
+    # pass through untouched. Closes the class, not just the setenv instance.
+    (re.compile(r'(?i)\b(setenv|export|env)\s+(\w*(?:api[_-]?key|secret|token|password|passwd|auth|bearer)\w*)\s+([^\s;\'"]+)', re.IGNORECASE), r'\1 \2 <REDACTED>'),
     # CLI parameters (--password mypass, -p secret, --key secret, --secret foo)
     (re.compile(r'(-p|--password|--token|--api-key|--key|--secret|-k)\s+([^\s]+)', re.IGNORECASE), r'\1 <REDACTED>'),
     # Basic Auth URLs (https://user:pass@host)
@@ -345,8 +380,12 @@ def classify_liveness_item(
 
 # ── Platform Enumerators ──────────────────────────────────────
 
-def enumerate_cron_jobs(user: Optional[str] = None) -> List[LivenessItem]:
-    """Enumerate cron jobs for user via `crontab -l`."""
+def enumerate_cron_jobs(user: Optional[str] = None, *, include_unowned: bool = False) -> List[LivenessItem]:
+    """Enumerate cron jobs for user via `crontab -l`.
+
+    When *include_unowned* is False (default), only Nucleus-owned jobs are
+    returned; non-Nucleus jobs are filtered out via :func:`is_nucleus_owned`.
+    """
     items: List[LivenessItem] = []
     try:
         cmd = ["crontab", "-l"]
@@ -397,6 +436,8 @@ def enumerate_cron_jobs(user: Optional[str] = None) -> List[LivenessItem]:
     except Exception as ex:
         logger.warning("Failed to enumerate cron jobs: %s", ex)
 
+    if not include_unowned:
+        items = [it for it in items if is_nucleus_owned(it)]
     return items
 
 
@@ -430,8 +471,16 @@ def _query_launchctl_status() -> Dict[str, Dict[str, Any]]:
     return status_map
 
 
-def enumerate_launchd_jobs(target_dirs: Optional[List[Path]] = None) -> List[LivenessItem]:
-    """Enumerate launchd services from plist files and launchctl list."""
+def enumerate_launchd_jobs(
+    target_dirs: Optional[List[Path]] = None,
+    *,
+    include_unowned: bool = False,
+) -> List[LivenessItem]:
+    """Enumerate launchd services from plist files and launchctl list.
+
+    When ``include_unowned`` is False (default), only jobs that pass
+    :func:`is_nucleus_owned` are returned.
+    """
     items: List[LivenessItem] = []
     if sys.platform != "darwin":
         return items
@@ -495,19 +544,32 @@ def enumerate_launchd_jobs(target_dirs: Optional[List[Path]] = None) -> List[Liv
         except Exception as ex:
             logger.warning("Error reading launchd dir %s: %s", pdir, ex)
 
+    if not include_unowned:
+        items = [it for it in items if is_nucleus_owned(it)]
+
     return items
 
 
 def enumerate_all_liveness(
     grace_multiplier: float = 1.5,
     redact: bool = True,
+    *,
+    include_unowned: bool = False,
 ) -> LivenessReport:
     """Enumerate cron and launchd liveness targets into a unified report."""
     now = datetime.now(timezone.utc)
     items: List[LivenessItem] = []
 
-    items.extend(enumerate_cron_jobs())
-    items.extend(enumerate_launchd_jobs())
+    # Leaves must be called unscoped (include_unowned=True) so this wrapper
+    # owns the single filtering decision at line 560-561; calling them bare
+    # re-introduces the double-filter bug.
+    items.extend(enumerate_cron_jobs(include_unowned=True))
+    items.extend(enumerate_launchd_jobs(include_unowned=True))
+
+    if not include_unowned:
+        items = [it for it in items if is_nucleus_owned(it)]
+
+    empty_scope = not items
 
     processed_items: List[LivenessItem] = []
     summary: Dict[str, int] = {
@@ -537,6 +599,7 @@ def enumerate_all_liveness(
         items=processed_items,
         summary=summary,
         host_info=host_info,
+        empty_scope=empty_scope,
     )
 
 
@@ -556,6 +619,13 @@ def format_liveness_table(
 
     if redact:
         items = [redact_liveness_item(it) for it in items]
+
+    if report and report.empty_scope:
+        # Honest-empty: when scope is empty it is because no Nucleus-managed
+        # jobs survived the ownership filter (only third-party/unowned jobs
+        # present, or none at all). This is an absence of scope, NOT a health
+        # verdict — so the text must never claim healthy.
+        return "Liveness scope is empty: no Nucleus-managed jobs found among cron/launchd (nothing to report)."
 
     if not items:
         return "No scheduled jobs or liveness items found."

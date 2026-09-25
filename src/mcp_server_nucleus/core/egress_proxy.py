@@ -35,6 +35,7 @@ def is_domain_allowed(url: str) -> bool:
                 return True
         return False
     except Exception:
+        logger.debug("Swallowed exception in is_domain_allowed", exc_info=True)
         return False
 
 def nucleus_curl_impl(url: str, method: str = "GET") -> str:

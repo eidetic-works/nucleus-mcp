@@ -116,6 +116,7 @@ def detect_session_role() -> str:
             if isinstance(role, str) and role:
                 return role
     except Exception:
+        logger.debug("Swallowed exception in detect_session_role", exc_info=True)
         pass
 
     # Priority 3: CC_SESSION_ROLE (legacy fallback for pre-migration Claude Code)
@@ -171,6 +172,7 @@ def _disambiguate_vscode_fork() -> str | None:
                     timeout=1,
                 ).decode("utf-8", errors="replace").strip()
             except Exception:
+                logger.debug("Swallowed exception in _disambiguate_vscode_fork", exc_info=True)
                 break
             for marker, host in _VSCODE_FORK_MARKERS:
                 if marker in comm or marker.lower() in comm.lower():
@@ -183,8 +185,10 @@ def _disambiguate_vscode_fork() -> str | None:
                 ).decode("utf-8", errors="replace").strip()
                 curr_pid = int(ppid_raw)
             except Exception:
+                logger.debug("Swallowed exception in _disambiguate_vscode_fork", exc_info=True)
                 break
     except Exception:
+        logger.debug("Swallowed exception in _disambiguate_vscode_fork", exc_info=True)
         pass
     return None
 
@@ -212,6 +216,7 @@ def _detect_session_type_raw() -> str:
             if isinstance(agent, str) and agent in KNOWN_SESSION_TYPES:
                 return agent
     except Exception:
+        logger.debug("Swallowed exception in _detect_session_type_raw", exc_info=True)
         pass
 
     # Priority 3: Cowork sessions run in /sessions/ sandbox paths
@@ -266,6 +271,7 @@ def _detect_session_type_raw() -> str:
             if "claude" in parent_cmd.lower():
                 return _maybe_split_cc_role("claude_code")
     except Exception:
+        logger.debug("Swallowed exception in _detect_session_type_raw", exc_info=True)
         pass
 
     # Per role_taxonomy_refactor_agy_v3.md Phase 0: the ~/.claude dir + non-tty

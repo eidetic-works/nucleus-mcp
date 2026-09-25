@@ -32,6 +32,62 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      # Regression suites for the audit findings in docs/AUDIT_LEDGER.md. These
+      # live outside tests/ because tests/ is export-ignored from this mirror,
+      # and they are run unconditionally: a regression test CI never executes is
+      # decoration, and these cover the tenant-isolation boundary.
+      - name: Run audit regression suites
+        shell: bash
+        run: |
+          suites=""
+          for d in tests_security tests_onboarding tests_contract; do
+            [ -d "$d" ] && suites="$suites $d"
+          done
+          if [ -n "$suites" ]; then
+            pytest $suites -v --tb=short
+          else
+            echo "No audit regression suites present."
+          fi
+
+      # Every active facade must register. With NUCLEUS_STRICT_REGISTRATION set,
+      # register_all raises instead of printing and carrying on, so a facade
+      # that silently drops out of the server fails the build.
+      #
+      # This is the gate that was missing. The grounding facade returned a bare
+      # function where every other facade returns (name, func) pairs; the bare
+      # except swallowed it, the GROUND surface was absent from every boot, and
+      # CI printed the error on every run without failing (ledger CP-3, CP-5).
+      - name: Every facade registers
+        shell: bash
+        env:
+          NUCLEUS_STRICT_REGISTRATION: "true"
+        run: |
+          python - <<'PY'
+          import sys
+          import mcp_server_nucleus as n
+
+          # Strict mode raises out of register_all, so catch it and report the
+          # detail the exception message does not carry. Without the catch the
+          # job still fails, just with a less useful traceback.
+          try:
+              n._ensure_initialized()
+          except RuntimeError as e:
+              print(f"::error::{e}", file=sys.stderr)
+
+          from mcp_server_nucleus.tools import get_registration_failures
+
+          failures = get_registration_failures()
+          for f in failures:
+              print(
+                  f"::error title=Facade {f['module']} failed to register::"
+                  f"{f['error_type']}: {f['error']}",
+                  file=sys.stderr,
+              )
+          if failures:
+              sys.exit(1)
+          print("All facades registered cleanly.")
+          PY
+
       - name: Run tests
         shell: bash
         run: |
@@ -56,7 +112,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff
+          # Pinned deliberately. An unpinned ruff meant the gate's rule set moved
+          # with each release: a newer default rule set took this job from 5
+          # findings to 7293 without a line of source changing.
+          pip install "ruff==0.15.*"
 
       - name: Run linter
         run: |

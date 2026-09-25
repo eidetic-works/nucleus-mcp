@@ -183,6 +183,7 @@ def record_delta(
         reinvestment = _reinvest(brain, delta_record, frontier, insight, deltas_path)
         delta_record["reinvestment"] = reinvestment
     except Exception:
+        logger.debug("Swallowed exception in record_delta", exc_info=True)
         pass  # Reinvestment failure never blocks delta recording
 
     # Emit event (wires into Artery 4 triggers + Artery 5 hooks)
@@ -196,6 +197,7 @@ def record_delta(
             "insight": insight,
         })
     except Exception:
+        logger.debug("Swallowed exception in record_delta", exc_info=True)
         pass  # Event emission failure never blocks delta recording
 
     return delta_id
@@ -255,6 +257,7 @@ def _reinvest(
             )
             reinvestment["engram_written"] = key
         except Exception:
+            logger.debug("Swallowed exception in _reinvest", exc_info=True)
             pass
 
     # Negative deltas → DPO pair
@@ -271,6 +274,7 @@ def _reinvest(
             )
             reinvestment["archive_turn_id"] = delta["delta_id"]
         except Exception:
+            logger.debug("Swallowed exception in _reinvest", exc_info=True)
             pass
 
     return reinvestment
@@ -298,6 +302,7 @@ def query_deltas(
     try:
         brain = brain or get_brain_path()
     except Exception:
+        logger.debug("Swallowed exception in query_deltas", exc_info=True)
         return []
 
     deltas_path = brain / "deltas" / "deltas.jsonl"
@@ -318,6 +323,7 @@ def query_deltas(
         from .hardening import safe_read_jsonl
         all_deltas = safe_read_jsonl(deltas_path)
     except Exception:
+        logger.debug("Swallowed exception in query_deltas", exc_info=True)
         return []
 
     results = []
@@ -502,6 +508,7 @@ def delta_event_hook(event_type: str, emitter: str, data: dict):
         elif event_type == "session_ended":
             _auto_delta_from_session_end(data)
     except Exception:
+        logger.debug("Swallowed exception in delta_event_hook", exc_info=True)
         pass  # Never let delta hooks break event emission
 
 
@@ -559,4 +566,5 @@ def _auto_delta_from_session_end(data: dict):
             brain=brain,
         )
     except Exception:
+        logger.debug("Swallowed exception in _auto_delta_from_session_end", exc_info=True)
         pass

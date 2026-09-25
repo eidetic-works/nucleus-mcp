@@ -13,7 +13,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Import models from broker
 from .broker import ContextListing, ContextTransaction
@@ -27,6 +27,7 @@ def _notify_tasks_changed() -> None:
         from .event_bus import get_change_ledger
         get_change_ledger().record_change("tasks.json", "modified")
     except Exception:
+        logger.debug("Swallowed exception in _notify_tasks_changed", exc_info=True)
         pass
 
 class StorageBackend(ABC):
@@ -206,7 +207,7 @@ class JSONBackend(StorageBackend):
         for i, t in enumerate(tasks):
             if t.get("id") == task_id:
                 tasks[i].update(updates)
-                tasks[i]["updated_at"] = datetime.now().isoformat()
+                tasks[i]["updated_at"] = datetime.now(timezone.utc).isoformat()
                 changed = True
                 break
         if changed:
@@ -232,7 +233,16 @@ class JSONBackend(StorageBackend):
             try:
                 data = self.tasks_path.read_text().strip()
                 tasks = json.loads(data) if data else []
-            except Exception:
+            except (OSError, json.JSONDecodeError):
+                # A corrupt or unreadable ledger returns the same False as "another
+                # agent got there first", so a damaged tasks.json looked exactly like
+                # ordinary contention and every claim silently failed forever
+                # (audit ledger QG-5). Same return value, but say what happened.
+                logger.warning(
+                    "task claim aborted: %s is unreadable or not valid JSON. This is "
+                    "corruption, not contention — claims will keep failing until it is "
+                    "repaired.", self.tasks_path, exc_info=True,
+                )
                 return False
             for i, t in enumerate(tasks):
                 if t.get("id") != task_id:
@@ -349,6 +359,7 @@ class SQLiteBackend(StorageBackend):
                         default = '""' if col in ("required_role", "plan_ref") else 'NULL'
                         cursor.execute(f'ALTER TABLE tasks ADD COLUMN {col} TEXT DEFAULT {default}')
                 except Exception:
+                    logger.debug("Swallowed exception in _init_db", exc_info=True)
                     pass  # Column already exists
             
             conn.commit()
@@ -497,7 +508,7 @@ class SQLiteBackend(StorageBackend):
             params.append(v)
             
         update_cols.append("updated_at = ?")
-        params.append(datetime.now().isoformat())
+        params.append(datetime.now(timezone.utc).isoformat())
         
         params.append(task_id)
         
@@ -518,7 +529,7 @@ class SQLiteBackend(StorageBackend):
         This prevents TOCTOU races where two executors read claimed_by=NULL
         simultaneously and both succeed.
         """
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         query = (
             "UPDATE tasks SET claimed_by = ?, status = 'IN_PROGRESS', "
             "claimed_at = ?, updated_at = ? "
@@ -738,7 +749,7 @@ class PostgresBackend(StorageBackend):
             params.append(v)
             
         update_cols.append("updated_at = %s")
-        params.append(datetime.now().isoformat())
+        params.append(datetime.now(timezone.utc).isoformat())
         params.append(task_id)
         query = f"UPDATE tasks SET {', '.join(update_cols)} WHERE id = %s"
         
@@ -754,7 +765,7 @@ class PostgresBackend(StorageBackend):
     def claim_task_atomic(self, task_id: str, agent_id: str) -> bool:
         """Atomically claim a task using a conditional UPDATE (Postgres)."""
         from datetime import datetime
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         query = (
             "UPDATE tasks SET claimed_by = %s, status = 'IN_PROGRESS', "
             "claimed_at = %s, updated_at = %s "

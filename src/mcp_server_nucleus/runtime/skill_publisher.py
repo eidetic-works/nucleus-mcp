@@ -65,6 +65,7 @@ class SkillPublisher:
                 tags=["install"],
             )
         except Exception:
+            logger.debug("Swallowed exception in install", exc_info=True)
             pass
 
         return dest

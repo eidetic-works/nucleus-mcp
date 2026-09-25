@@ -8,6 +8,8 @@ Supports both:
 - Ephemeral agents (fast, minimal prompts) - DevOps, Librarian
 - Nuanced agents (rich, 400-line prompts) - Critic, Researcher, Synthesizer
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 import re
@@ -41,7 +43,16 @@ from .budget import BudgetAuditor
 # Path to brain (can be overridden via env var)
 # NOTE: Default changed to absolute path to fix "Read-only file system" error
 # when MCP server runs from a different working directory.
-BRAIN_PATH = Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
+def _default_brain_path() -> Path:
+    """Resolve NUCLEUS_BRAIN_PATH at CALL time, not import time.
+
+    As a module-level constant this froze whichever brain path was set when
+    the module was first imported. In a test session that import happens
+    during collection, so no fixture -- monkeypatch included -- can change
+    it afterwards, and whichever test module imported last silently owned
+    the value for every test that followed.
+    """
+    return Path(os.environ.get("NUCLEUS_BRAIN_PATH", "./.brain"))
 
 # ============================================================
 # INTENT-BASED TIER ESCALATION (Enterprise Feature)
@@ -265,7 +276,7 @@ class ContextFactory:
     
     def __init__(self, brain_path: Optional[Path] = None):
         self._registry: Dict[str, Capability] = {}
-        self._brain_path = brain_path or BRAIN_PATH
+        self._brain_path = brain_path or _default_brain_path()
         self._auditor = BudgetAuditor(self._brain_path)
         self._plugin_loader = PluginLoader(self._brain_path, self._auditor)
         self._agent_cache: Dict[str, str] = {}  # Cache loaded agent prompts
@@ -369,6 +380,7 @@ class ContextFactory:
             if brain_file_exists(ext_path):
                 return read_brain_file(ext_path)
         except Exception:
+            logger.debug("Swallowed exception in load_external_agent", exc_info=True)
             pass
         return None
 
@@ -423,6 +435,7 @@ class ContextFactory:
                                 
                             injected_docs.append(f"## Context: {doc_path}\n{content}\n")
                         except Exception:
+                            logger.debug("Swallowed exception in _resolve_dynamic_context", exc_info=True)
                             pass
                             
         if not injected_docs:

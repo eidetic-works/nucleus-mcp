@@ -68,6 +68,7 @@ except ImportError:
                     self.proc.terminate()
                     await self.proc.wait()
                 except Exception:
+                    logger.debug("Swallowed exception in __aexit__", exc_info=True)
                     pass
             if self.reader_task:
                 self.reader_task.cancel()
@@ -144,6 +145,7 @@ except ImportError:
                     except Exception as e:
                         logger.error(f"Shim parser error: {e}")
             except Exception:
+                logger.debug("Swallowed exception in _reader_loop", exc_info=True)
                 pass
 
         async def list_tools(self):

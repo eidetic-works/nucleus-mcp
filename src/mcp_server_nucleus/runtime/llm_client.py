@@ -41,7 +41,19 @@ logger = logging.getLogger("nucleus.llm")
 # loaders below, called lazily from the methods that actually use it
 # (DualEngineLLM.__init__ / generate_content / generate_vision / stream_content),
 # so importing this module no longer taxes daemon / relay / MCP-tool cold start.
-HAS_GENAI = importlib.util.find_spec("google.genai") is not None
+#
+# The probe must be guarded. find_spec() on a DOTTED name imports the parent
+# package to search it, so `find_spec("google.genai")` raises ModuleNotFoundError
+# when `google` is absent entirely — it does not return None. And `google-genai`
+# is in the `full` extra, not in `dependencies`, so absent is exactly what a
+# default `pip install nucleus-mcp` produces. Unguarded, the probe written to make
+# this dependency optional made it mandatory: importing this module raised on a
+# default install, and cli.py reaches it. Reproduced by blocking `google` from
+# sys.meta_path and importing the module (2026-09-12 sweep).
+try:
+    HAS_GENAI = importlib.util.find_spec("google.genai") is not None
+except (ModuleNotFoundError, ImportError, ValueError):
+    HAS_GENAI = False
 
 # Module-level SDK handles. Kept as attributes (so they stay monkeypatchable in
 # tests, e.g. patch("...llm_client.genai")) but left as None until first real use;
@@ -129,6 +141,7 @@ def _cross_vendor_enabled() -> bool:
         from .vendor_dispatch import cross_vendor_enabled
         return cross_vendor_enabled()
     except Exception:
+        logger.debug("Swallowed exception in _cross_vendor_enabled", exc_info=True)
         return False
 
 
@@ -1620,6 +1633,7 @@ class VendorCLILLM:
             from .vendor_dispatch import VENDOR_SPECS
             self.model_name = VENDOR_SPECS[vendor].model
         except Exception:
+            logger.debug("Swallowed exception in __init__", exc_info=True)
             self.model_name = vendor
         self.engine = f"vendor_cli:{vendor}"
 

@@ -83,6 +83,7 @@ class TelegramChannel(NotificationChannel):
             try:
                 body = e.read(200).decode("utf-8", errors="replace")
             except Exception:
+                logger.debug("Swallowed exception in send", exc_info=True)
                 pass
             logger.warning(
                 "Telegram send failed: HTTP %s for title=%r body=%r",

@@ -7,10 +7,13 @@ Contains:
 - _brain_search_engrams_impl: Substring search across engrams
 - _brain_governance_status_impl: Governance status reporting
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
 import re
+from datetime import datetime, timezone
 
 from .common import get_brain_path, make_response
 from .event_ops import _emit_event
@@ -39,6 +42,7 @@ def _search_engrams_sor(query, case_sensitive, limit, existing):
         facade = MemoryFacade(enabled=True)
         hits = facade.recall(query=query or "", limit=max(int(limit) * 4, 40), mode="hybrid")
     except Exception:
+        logger.debug("Swallowed exception in _search_engrams_sor", exc_info=True)
         return []
     seen_keys = {m.get("key") for m in existing if isinstance(m, dict)}
     out = []
@@ -85,6 +89,7 @@ def _query_engrams_sor(context, min_intensity, limit, existing):
             mode="hybrid",
         )
     except Exception:
+        logger.debug("Swallowed exception in _query_engrams_sor", exc_info=True)
         return []
     seen_keys = {m.get("key") for m in existing if isinstance(m, dict)}
     out = []
@@ -163,6 +168,7 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
             from .engram_cache import get_engram_cache
             get_engram_cache().invalidate()
         except Exception:
+            logger.debug("Swallowed exception in _brain_write_engram_impl", exc_info=True)
             pass
 
         # Emit event for audit trail
@@ -189,6 +195,31 @@ def _brain_write_engram_impl(key: str, value: str, context: str, intensity: int)
     except Exception as e:
         from .error_sanitizer import sanitize_error
         return make_response(False, error=sanitize_error(e, "internal_error", "engram_write"))
+
+
+def write_engram(content: str, tags: list[str] | None = None, source: str = "") -> str:
+    """Public wrapper around ``_brain_write_engram_impl``.
+
+    This exists so that callers (e.g. god_combos.pulse_and_polish) can import
+    ``write_engram`` from this module. It delegates to
+    ``_brain_write_engram_impl`` with a generated key and sane defaults.
+
+    Argument mapping:
+        - ``content`` → ``value`` (the engram text).
+        - ``context`` is hardcoded to ``"Decision"`` — one of the five valid
+          contexts (Feature, Architecture, Brand, Strategy, Decision) and a
+          sane default for a pipeline-run record.
+        - ``intensity`` is hardcoded to ``5`` (mid-scale default).
+        - ``key`` is generated from ``source`` + a UTC timestamp and sanitized
+          to the ``[a-zA-Z0-9_.-]+`` pattern so a bad ``source`` cannot trip
+          ``_brain_write_engram_impl``'s security check.
+        - ``tags`` is accepted for caller ergonomics but is **not** passed to
+          ``_brain_write_engram_impl`` (which has no tags param).
+    """
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    key = f"{source or 'engram'}_{ts}"
+    key = re.sub(r"[^a-zA-Z0-9_.-]", "_", key)
+    return _brain_write_engram_impl(key=key, value=content, context="Decision", intensity=5)
 
 
 def _brain_query_engrams_impl(context: str, min_intensity: int, limit: int = 50) -> str:
@@ -483,6 +514,7 @@ def _dsor_get_trace_impl(decision_id: str) -> str:
                         trace["context_snapshot"] = sdata
                         break
                 except Exception:
+                    logger.debug("Swallowed exception in _dsor_get_trace_impl", exc_info=True)
                     continue
                     
         return make_response(True, data={"trace": trace})

@@ -42,6 +42,7 @@ class KeyManager:
         try:
             return json.loads(self.keystore_path.read_text())
         except Exception:
+            logger.debug("Swallowed exception in _load_keystore", exc_info=True)
             return {}
 
     def _save_keystore(self, store: Dict):

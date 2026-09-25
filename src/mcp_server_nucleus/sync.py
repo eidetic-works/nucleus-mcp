@@ -172,6 +172,7 @@ def _apply_remote_engrams(
         from mcp_server_nucleus.runtime.engram_cache import get_engram_cache
         get_engram_cache().invalidate()
     except Exception:
+        logger.debug("Swallowed exception in _apply_remote_engrams", exc_info=True)
         pass
 
     return applied, skipped

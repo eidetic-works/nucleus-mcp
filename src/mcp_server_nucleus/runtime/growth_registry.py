@@ -119,6 +119,7 @@ def registry_path(brain_path: Optional[Path] = None) -> Path:
             resolved = get_brain_path()
             brain_path = Path(resolved) if resolved else Path.cwd() / ".brain"
         except Exception:  # noqa: BLE001
+            logger.debug("Swallowed exception in registry_path", exc_info=True)
             brain_path = Path.cwd() / ".brain"
     return Path(brain_path) / REGISTRY_FILENAME
 
@@ -190,6 +191,7 @@ def load_registry(path: Optional[Path] = None,
     try:
         data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     except Exception as exc:  # noqa: BLE001
+        logger.debug("Swallowed exception in load_registry", exc_info=True)
         out.errors.append(f"unparseable registry: {exc}")
         return out
 

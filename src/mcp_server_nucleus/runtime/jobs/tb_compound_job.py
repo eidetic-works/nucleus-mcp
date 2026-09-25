@@ -7,13 +7,16 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
+from ..sibling_repos import require_script
+from ...paths import brain_path
+
 logger = logging.getLogger("NucleusJobs.tb_compound")
 
 
 async def run_tb_compound() -> dict:
     """Run compound loop: pick tasks -> headless Claude -> training capture."""
     try:
-        brain = Path.home() / "ai-mvp-backend" / ".brain"
+        brain = brain_path()
         config_path = brain / "driver" / "config.json"
 
         config = {}
@@ -44,7 +47,7 @@ async def run_tb_compound() -> dict:
 
         remaining = daily_cap - budget["tasks_run"]
         branch = config.get("autonomous_branch", "tb/autonomous")
-        driver = Path.home() / "ai-mvp-backend" / "scripts" / "third_brother_driver.py"
+        driver = require_script("scripts/third_brother_driver.py")
 
         if not driver.exists():
             return {"ok": False, "error": f"driver not found: {driver}"}

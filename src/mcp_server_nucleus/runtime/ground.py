@@ -7,6 +7,8 @@ GROUND goes outside — execution, reality, the tesseract.
 This adapter wraps scripts/execution_verifier.py (the engine) and makes
 it callable from anywhere: MCP tools, CLI, CI, any ring.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -16,7 +18,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .common import get_brain_path, logger
+from .common import cap_log_file, get_brain_path, logger
 
 
 def detect_project_root(start: Path = None) -> Path:
@@ -32,6 +34,7 @@ def detect_project_root(start: Path = None) -> Path:
         if r.returncode == 0 and r.stdout.strip():
             return Path(r.stdout.strip()).resolve()
     except Exception:
+        logger.debug("Swallowed exception in detect_project_root", exc_info=True)
         pass
 
     for d in [start_dir, *start_dir.parents]:
@@ -78,6 +81,7 @@ def _get_git_diff(project_root: Path, pre_head: str = None) -> str:
         )
         return r.stdout
     except Exception:
+        logger.debug("Swallowed exception in _get_git_diff", exc_info=True)
         return ""
 
 
@@ -121,10 +125,12 @@ def run_ground(project_root: str = None, python_path: str = None,
     try:
         brain = get_brain_path()
         log_path = brain / "verification_log.jsonl"
+        cap_log_file(log_path)  # EID-74: bound the receipt trail
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(log_path, "a") as f:
             f.write(json.dumps(result, default=str) + "\n")
     except Exception:
+        logger.debug("Swallowed exception in run_ground", exc_info=True)
         pass  # best-effort
 
     # Emit ground_verified event (Three Frontiers: GROUND signal)
@@ -145,6 +151,7 @@ def run_ground(project_root: str = None, python_path: str = None,
             "tiers_failed": result.get("tiers_failed", []),
         })
     except Exception:
+        logger.debug("Swallowed exception in run_ground", exc_info=True)
         pass  # never break verification
 
     return result

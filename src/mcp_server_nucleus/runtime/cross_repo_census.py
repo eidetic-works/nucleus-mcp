@@ -79,6 +79,9 @@ is the load-bearing artifact; commit it under
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import argparse
 import hashlib
 import json
@@ -123,6 +126,16 @@ _CI_NOT_PASS = frozenset({
 ARTIFACT_REF_VENDOR_DERIVED = "vendor_derived"
 ARTIFACT_REF_CALLER_INPUT = "caller_input"
 ARTIFACT_REF_ABSENT = "absent"
+# ``machinery_derived`` = the capture instrument stamped the ref from a
+#   commit nucleus BUILD MACHINERY made directly (e.g.
+#   build_and_merge._commit_changed_files via vendor_dispatch's
+#   capture_machinery_commit) — NOT a vendor CLI dispatch. Distinct from
+#   ``vendor_derived`` on purpose (fw-1786271394, "never fake a vendor
+#   label"): a machinery-authored commit is a real, git-verified increment,
+#   so it is QUALIFYING for that narrower reason, but it did not come from
+#   cross-vendor work, so it must never count toward crit-(c)'s
+#   ≥2-genuine-vendor-surface span. See _is_machinery_derived_artifact_ref.
+ARTIFACT_REF_MACHINERY_DERIVED = "machinery_derived"
 
 
 def _ci_passes(conclusion: Any) -> bool:
@@ -166,6 +179,58 @@ def _is_vendor_derived_artifact_ref(envelope: Dict[str, Any]) -> bool:
     return envelope.get("artifact_ref_source") == ARTIFACT_REF_VENDOR_DERIVED
 
 
+def _artifact_ref_attribution_unprovable(envelope: Dict[str, Any]) -> bool:
+    """The THIRD STATE (director 2026-08-09): a capture that did not qualify
+    because attribution could not be PROVEN, not because it was provably not a
+    vendor increment.
+
+    ``attribution_unprovable`` means a write-mode dispatch moved HEAD but
+    carried no ``expect_paths`` evidence, so the instrument could not bind the
+    increment to this dispatch. That is genuine-maybe vendor work — REMEDIABLE
+    by supplying evidence — and must be counted apart from the provably-not
+    reasons (``read_mode_no_increment`` / ``head_unchanged`` /
+    ``head_moved_by_foreign_commit`` / ``empty_commit_no_files`` /
+    ``changed_paths_unavailable``). Collapsing the two is exactly what lets a
+    strict instrument read zero-by-construction and pass it off as "no real
+    work". Reads the body first (where the capture writes it), then top level.
+    """
+    body = envelope.get("body")
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except (ValueError, TypeError):
+            body = None
+    if isinstance(body, dict) and "artifact_ref_nonqualifying_reason" in body:
+        return body.get("artifact_ref_nonqualifying_reason") == "attribution_unprovable"
+    return envelope.get("artifact_ref_nonqualifying_reason") == "attribution_unprovable"
+
+
+def _is_machinery_derived_artifact_ref(envelope: Dict[str, Any]) -> bool:
+    """Machinery-authored commit (fw-1786271394 "capture-at-the-commit" fix):
+    the increment came from nucleus build machinery committing its own verify-
+    stage output directly (e.g. ``build_and_merge._commit_changed_files`` via
+    ``vendor_dispatch.capture_machinery_commit``), not from a dispatched
+    vendor CLI. The ref is just as git-verified and non-forgeable as a
+    vendor-derived one — mechanically stamped from real pre/post HEAD
+    movement, never caller input — so it is QUALIFYING for that purpose. It
+    is intentionally a DISTINCT source value from ``vendor_derived`` (never
+    "fake a vendor label"): callers that need crit-(c)'s cross-VENDOR
+    coordination span must keep using ``_is_vendor_derived_artifact_ref``,
+    which this predicate does not satisfy. Reads the body first (where the
+    capture writes it), then top level — same fallback shape as its two
+    siblings above.
+    """
+    body = envelope.get("body")
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except (ValueError, TypeError):
+            body = None
+    if isinstance(body, dict) and "artifact_ref_source" in body:
+        return body.get("artifact_ref_source") == ARTIFACT_REF_MACHINERY_DERIVED
+    return envelope.get("artifact_ref_source") == ARTIFACT_REF_MACHINERY_DERIVED
+
+
 def _envelope_artifact_refs(envelope: Dict[str, Any]) -> List[str]:
     """Extract the artifact_refs list from an envelope.
 
@@ -206,6 +271,7 @@ def _hash_file_tree(root: Path) -> str:
         try:
             h.update(p.read_bytes())
         except Exception:
+            logger.debug("Swallowed exception in _hash_file_tree", exc_info=True)
             h.update(b"<unreadable>")
         h.update(b"\0")
     return "sha256:" + h.hexdigest()
@@ -225,6 +291,7 @@ def _read_classification(brain_path: Path) -> Dict[str, Any]:
         try:
             return json.loads(cls_path.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Swallowed exception in _read_classification", exc_info=True)
             return {"repos": {}, "taxonomy_version": 0}
     return {"repos": {}, "taxonomy_version": 0}
 
@@ -277,6 +344,7 @@ def verify_classification(
     try:
         expected = commitment.read_text(encoding="utf-8").strip().split()[0]
     except Exception:
+        logger.debug("Swallowed exception in verify_classification", exc_info=True)
         expected = ""
     return {
         "status": "verified" if expected and expected == actual else "tampered",
@@ -504,6 +572,7 @@ def _load_snapshot(snapshot_dir: Path) -> Dict[str, Any]:
             try:
                 msg = json.loads(f.read_text(encoding="utf-8"))
             except Exception:
+                logger.debug("Swallowed exception in _load_snapshot", exc_info=True)
                 continue
             refs = _envelope_artifact_refs(msg)
             surface = _classify_vendor_surface(bucket, msg)
@@ -654,7 +723,19 @@ def _predicate_c(
         e for e in bound
         if e["from_verified"] and _is_vendor_derived_artifact_ref(e["msg"])
     ]
-    non_qualifying = [e for e in bound if e not in qualifying]
+    # THIRD STATE (director 2026-08-09): partition the non-qualifying remainder
+    # so "attribution_unprovable" is counted on its own, never folded into
+    # non_qualifying. unprovable is REMEDIABLE (supply expect_paths) and must be
+    # visible as its own number — otherwise a producer that ships zero
+    # expect_paths makes the census read a silent zero indistinguishable from a
+    # world with no cross-vendor work. It does NOT count toward the gated K.
+    unprovable = [
+        e for e in bound
+        if e not in qualifying and _artifact_ref_attribution_unprovable(e["msg"])
+    ]
+    non_qualifying = [
+        e for e in bound if e not in qualifying and e not in unprovable
+    ]
 
     # Distinct genuine vendor surfaces among qualifying bound envelopes.
     surfaces: Counter = Counter()
@@ -720,6 +801,11 @@ def _predicate_c(
         "bound_envelope_count": len(bound),
         "qualifying_bound_count": K_bound,
         "non_qualifying_bound_count": len(non_qualifying),
+        # Third state, surfaced explicitly. NOT part of qualifying (does not
+        # count toward K) and NOT folded into non_qualifying. A non-zero value
+        # here means "genuine-maybe vendor work the instrument could not
+        # attribute — supply expect_paths", not "no cross-vendor work".
+        "attribution_unprovable_bound_count": len(unprovable),
         "distinct_vendor_surfaces": sorted(genuine_surfaces),
         "distinct_vendor_count": distinct_vendor_count,
         "meets_K": meets_K,
@@ -923,6 +1009,14 @@ def run_census(
                 "c_pass": repo_c_pass,
                 "increments_evaluated": len(repo_incs),
                 "increment_verdicts": inc_verdicts,
+                # Third state, rolled up to repo level so it is visible without
+                # digging into per-increment verdicts. Non-zero => genuine-maybe
+                # vendor work the instrument could not attribute (supply
+                # expect_paths), NOT "no cross-vendor work".
+                "attribution_unprovable_bound_count": sum(
+                    v["c"].get("attribution_unprovable_bound_count", 0)
+                    for v in inc_verdicts
+                ),
             },
             "d_build_output": {
                 "d_pass": repo_d_pass,

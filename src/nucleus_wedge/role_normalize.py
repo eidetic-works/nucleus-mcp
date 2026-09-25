@@ -35,7 +35,7 @@ _CANONICAL_ALIASES: dict[str, list[str]] = {
     "worker": ["worker", "peer", "cc_peer", "cc-peer", "secondary"],
     "reviewer": ["reviewer", "tb", "cc_tb", "cc-tb"],
     # Vendor-specific roles (not function roles, kept as-is)
-    "gq": ["gq", "cc_gq", "cc-gq", "gentlequest"],
+    "gq": ["gq", "cc_gq", "cc-gq"],
     "operator_assistant": ["operator_assistant", "op_assistant", "op-assistant"],
     "agy": ["agy", "antigravity", "agy-cli"],
     "devin": ["devin"],

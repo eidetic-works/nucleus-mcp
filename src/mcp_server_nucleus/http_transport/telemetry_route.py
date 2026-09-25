@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import json
 import logging
+import hmac
 import os
 import time
 from typing import Any, Dict, Set
@@ -219,8 +220,22 @@ async def get_telemetry_g35(request: Request) -> JSONResponse:
         1 for count in _install_sessions.values() if count > 1
     )
 
-    # Per-install detail (no PII — just counts)
-    per_install = [
+    # Per-install detail is OPERATOR-ONLY. The aggregate metrics below are the
+    # point of this endpoint and stay open; enumerating every install_id the
+    # process has ever seen is a different thing, and it was being served to any
+    # caller who could reach the route (audit ledger HS-3). Whether an install_id
+    # counts as PII is beside the point — a per-install activity roster is an
+    # internal operations view, not a public metric.
+    #
+    # Set NUCLEUS_TELEMETRY_ADMIN_TOKEN and send it as a bearer token to get the
+    # detail. With the variable unset the detail is simply never served, so a
+    # deployment that has not thought about this cannot leak it by default.
+    admin_token = os.environ.get("NUCLEUS_TELEMETRY_ADMIN_TOKEN", "").strip()
+    presented = request.headers.get("authorization", "")
+    presented = presented[7:].strip() if presented.lower().startswith("bearer ") else ""
+    detail_allowed = bool(admin_token) and hmac.compare_digest(presented, admin_token)
+
+    per_install = [] if not detail_allowed else [
         {
             "install_id": iid,
             "distinct_days": len(_install_dates.get(iid, set())),
@@ -250,6 +265,7 @@ async def get_telemetry_g35(request: Request) -> JSONResponse:
             ),
             "distinct_installs": len(_seen_install_ids),
             "per_install": per_install,
+            "per_install_withheld": not detail_allowed,
             "source": "in-process-stub",
         },
         status_code=200,

@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 
 import shlex
 import subprocess
@@ -89,6 +91,7 @@ class FixerLoop:
                     # Continue anyway? No, probably fatal.
                     # But maybe transient.
             except Exception as e:
+                logger.debug("Swallowed exception in run", exc_info=True)
                 self._log(f"Exception calling fixer: {e}")
             
             # Verify Again

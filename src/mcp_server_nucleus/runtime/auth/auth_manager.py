@@ -53,7 +53,13 @@ def get_auth_provider(transport: AuthTransport = AuthTransport.STDIO) -> AuthPro
         return provider
     
     elif transport_key in ("http", "sse"):
-        # Phase 2: JWT authentication for HTTP/SSE transports
+        # Phase 2: JWT authentication for HTTP/SSE transports.
+        #
+        # DEAD BRANCH (ledger AU-4). Nothing calls get_auth_provider with "http"
+        # or "sse" — the shipping HTTP transport authenticates in
+        # http_transport/tenant.py and never imports this package. Returning a
+        # provider here does not mean one is in use. See docs/AUTH_ARCHITECTURE.md
+        # before assuming HTTP requests pass through anything in runtime/auth/.
         provider = JWTAuthProvider()
         _providers[transport_key] = provider
         return provider

@@ -18,6 +18,15 @@ nucleus engram write my_key "insight" --context Strategy --intensity 8
 nucleus engram query --context Decision --limit 10
 ```
 
+`engram search` is case-insensitive substring matching over each engram's key and
+value. It is not semantic and not relevance-ranked: results come back ordered by
+the `--intensity` you assigned at write time, highest first, and by write order
+within the same intensity. So a two-word query matches only where that exact
+substring appears — `"deploy key"` finds an engram containing that phrase, and
+`"key deploy"` finds nothing. Treat it as a filter, and use `--intensity` on write
+to control what surfaces first. Ranked FTS5 recall exists behind
+`NUCLEUS_MEMORY_SOR`, which is off by default.
+
 ## Tasks
 
 ```bash

@@ -7,10 +7,26 @@ from .base import Capability
 
 class DepthTracker(Capability):
     def __init__(self):
-        # Determine brain path (fallback for agent runtime if env not set)
-        if not os.environ.get("NUCLEUS_BRAIN_PATH"):
-            # Default used in verification/dev
-            os.environ["NUCLEUS_BRAIN_PATH"] = ".brain"
+        # Deliberately empty. This constructor used to do:
+        #
+        #     if not os.environ.get("NUCLEUS_BRAIN_PATH"):
+        #         os.environ["NUCLEUS_BRAIN_PATH"] = ".brain"
+        #
+        # Three things wrong with it (ledger DS-8). The value is a *relative*
+        # literal, so it resolves against whatever the working directory happens
+        # to be at each later use rather than naming one brain. It is
+        # process-wide, written from a constructor that ContextFactory builds
+        # per request on the long-lived MCP server, so the first request that
+        # arrives without a brain set pins every later one. And it short-circuits
+        # get_brain_path()'s own fallback — the contextvar, project detection and
+        # cwd walk-up — which is strictly better at answering the same question.
+        #
+        # Nothing here needs the value: depth_ops calls get_brain_path() itself
+        # (depth_ops.py:21, :281). Removing it means that in a tree with no
+        # .brain anywhere, get_brain_path raises rather than silently creating
+        # one in the current directory — which is what every other caller
+        # already gets, and the better outcome.
+        pass
 
     @property
     def name(self) -> str:

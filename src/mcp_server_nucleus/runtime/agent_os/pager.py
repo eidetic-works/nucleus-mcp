@@ -43,6 +43,9 @@ rest).
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import math
 import os
 from datetime import datetime, timezone
@@ -143,6 +146,7 @@ def _bm25_relevance_scores(
     try:
         from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
     except Exception:  # noqa: BLE001 — fall back to overlap if rank_bm25 missing
+        logger.debug("Swallowed exception in _bm25_relevance_scores", exc_info=True)
         q_tokens = set(_tokenize(query))
         return [
             float(len(q_tokens & set(_tokenize(str(c.get("text") or "")))))

@@ -57,6 +57,7 @@ def _check_ollama() -> bool:
         res = subprocess.run(["ollama", "list"], capture_output=True, timeout=5)
         return res.returncode == 0
     except Exception:
+        logger.debug("Swallowed exception in _check_ollama", exc_info=True)
         return False
 
 
@@ -65,6 +66,7 @@ def _check_docker() -> bool:
         res = subprocess.run(["docker", "info"], capture_output=True, timeout=3)
         return res.returncode == 0
     except Exception:
+        logger.debug("Swallowed exception in _check_docker", exc_info=True)
         return False
 
 
@@ -355,6 +357,7 @@ class DaemonManager:
                             "cot_quality": t_status["cot"]["quality"],
                         }, indent=2))
                 except Exception:
+                    logger.debug("Swallowed exception in main_loop", exc_info=True)
                     pass
 
             # ── Idle-triggered compound mode (every 60 ticks = 5 min) ──
@@ -438,6 +441,7 @@ class DaemonManager:
         try:
             self.scheduler.persist_state()
         except Exception:
+            logger.debug("Swallowed exception in shutdown", exc_info=True)
             pass
 
         # Write stop file for any running driver
@@ -445,6 +449,7 @@ class DaemonManager:
         try:
             stop_file.write_text(str(os.getpid()))
         except Exception:
+            logger.debug("Swallowed exception in shutdown", exc_info=True)
             pass
 
         # Wait for running jobs to finish (up to 30s)
@@ -454,6 +459,7 @@ class DaemonManager:
         try:
             stop_file.unlink(missing_ok=True)
         except Exception:
+            logger.debug("Swallowed exception in shutdown", exc_info=True)
             pass
 
         # Clean PID file
@@ -461,6 +467,7 @@ class DaemonManager:
         try:
             pid_path.unlink(missing_ok=True)
         except Exception:
+            logger.debug("Swallowed exception in shutdown", exc_info=True)
             pass
 
         # Release resources

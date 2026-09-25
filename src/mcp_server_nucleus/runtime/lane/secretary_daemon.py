@@ -12,6 +12,9 @@ secretary-verified CONFIRMED status is authoritative.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import os
 import subprocess
@@ -291,7 +294,15 @@ class SecretaryDaemon:
                 ts = claimed_at_raw.replace("Z", "+00:00")
                 claimed_at = datetime.fromisoformat(ts)
                 if claimed_at.tzinfo is None:
-                    claimed_at = claimed_at.replace(tzinfo=timezone.utc)
+                    # A naive timestamp came from datetime.now() -- LOCAL time,
+                    # not UTC. Stamping it UTC put every claim up to a full
+                    # timezone offset in the FUTURE, so age_seconds went
+                    # negative, never cleared the staleness threshold, and the
+                    # reaper could not reap anything, ever. Measured on this
+                    # repo at UTC+5:30: claims reported an age of -216 minutes.
+                    # The writer is fixed to emit tz-aware UTC; rows already in
+                    # the store are still naive, so they are read as local.
+                    claimed_at = claimed_at.astimezone()
             except (ValueError, TypeError):
                 continue
 
@@ -385,6 +396,7 @@ class SecretaryDaemon:
                 if task_verifier:
                     task_verifier = resolve_canonical_inbox_name(task_verifier)
             except Exception:
+                logger.debug("Swallowed exception in _process_done_relays", exc_info=True)
                 pass  # If normalization fails, fall back to raw comparison
             if task_verifier and relay_sender and task_verifier != relay_sender:
                 print(
@@ -486,6 +498,7 @@ class SecretaryDaemon:
                 sender="secretary",
             )
         except Exception:
+            logger.debug("Swallowed exception in _post_telemetry", exc_info=True)
             pass  # Never let telemetry crash the secretary
 
         # Auto-friction alert: high failure rate
@@ -500,6 +513,7 @@ class SecretaryDaemon:
                     repo=str(self.config.repo_root),
                 )
             except Exception:
+                logger.debug("Swallowed exception in _post_telemetry", exc_info=True)
                 pass  # Best-effort
 
     def _cleanup_old_relays(self) -> None:

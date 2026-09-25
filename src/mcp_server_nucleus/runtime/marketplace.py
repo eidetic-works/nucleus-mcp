@@ -152,6 +152,7 @@ def search_by_tags(tags: List[str], brain_path: Optional[Path] = None) -> List[D
         try:
             card = json.loads(card_path.read_text())
         except Exception:
+            logger.debug("Swallowed exception in search_by_tags", exc_info=True)
             continue
             
         if not query_tags:
@@ -213,6 +214,7 @@ class CapabilityRegistry:
                                 if addr not in last_seen_index or ts > last_seen_index[addr]:
                                     last_seen_index[addr] = ts
                         except Exception:
+                            logger.debug("Swallowed exception in mark_stale", exc_info=True)
                             continue
             except Exception as e:
                 logger.error(f"mark_stale: failed reading telemetry: {e}")
@@ -228,6 +230,7 @@ class CapabilityRegistry:
             try:
                 card = json.loads(card_path.read_text())
             except Exception:
+                logger.debug("Swallowed exception in mark_stale", exc_info=True)
                 skipped += 1
                 continue
 
@@ -367,6 +370,7 @@ class ReputationSignals:
                             if ev_time and (not last_seen or ev_time > last_seen):
                                 last_seen = ev_time
                     except Exception:
+                        logger.debug("Swallowed exception in compute_signals", exc_info=True)
                         continue
         except Exception as e:
             logger.error(f"Failed to read reputation telemetry: {e}")
@@ -418,6 +422,7 @@ class TrustTier(IntEnum):
                 now = datetime.now(timezone.utc)
                 age_days = (now - registered_dt).days
             except Exception:
+                logger.debug("Swallowed exception in evaluate", exc_info=True)
                 pass
                 
         if conns >= 50 and success_rate >= 0.95 and age_days >= 30:
@@ -503,10 +508,12 @@ class ListingEligibility:
                             if data.get("address") == address:
                                 count += 1
                         except Exception:
+                            logger.debug("Swallowed exception in check_pre_listing", exc_info=True)
                             pass
                 if count > 5:
                     return False, "Failed quarantine threshold"
             except Exception:
+                logger.debug("Swallowed exception in check_pre_listing", exc_info=True)
                 pass
                 
         return True, "Eligible"

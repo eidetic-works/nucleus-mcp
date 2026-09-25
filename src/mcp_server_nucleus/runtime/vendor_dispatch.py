@@ -40,13 +40,15 @@ import logging
 import os
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 logger = logging.getLogger("nucleus.vendor_dispatch")
 
@@ -153,6 +155,33 @@ def _read_worktree_head_sha(cwd: Optional[str] = None) -> Optional[str]:
             if len(sha) == 40:
                 return sha
     except Exception:
+        logger.debug("Swallowed exception in _read_worktree_head_sha", exc_info=True)
+        pass
+    return None
+
+
+def _git_porcelain_snapshot(cwd: Optional[str] = None) -> Optional[str]:
+    """Snapshot ``git status --porcelain`` in *cwd*, or ``None`` if it could
+    not be read (git unavailable, not a repo, timeout).
+
+    Used by :meth:`VendorCLIExecutor.run` to detect a mode='read' dispatch
+    that actually wrote to the working tree — devin's read-mode permission
+    flag is ``dangerous`` (2026-08-18: 'auto' still blocks some tool calls
+    entirely, confirmed by devin_readmode_nowop_rca.md and
+    nucleus_delegate_read_mode_rca.md), which grants real write access with
+    no CLI-level guarantee of read-only behavior. ``None`` is a distinct
+    "could not verify" sentinel, never coerced to "" (which would read as
+    "confirmed clean" for a repo we simply failed to check).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if result.returncode == 0:
+            return result.stdout
+    except Exception:
+        logger.debug("Swallowed exception in _git_porcelain_snapshot", exc_info=True)
         pass
     return None
 
@@ -188,8 +217,87 @@ def _count_behind_upstream(cwd: Optional[str] = None) -> Optional[int]:
         # (`fatal: no upstream configured for branch '...'`) and any other
         # git refusal — both map to "unknown", not a crash.
     except Exception:
+        logger.debug("Swallowed exception in _count_behind_upstream", exc_info=True)
         pass
     return None
+
+
+def _commits_changed_paths(
+    pre_sha: str, post_sha: str, cwd: Optional[str] = None
+) -> Optional[Set[str]]:
+    """Return the set of relative paths touched by the commits in
+    ``pre_sha..post_sha``.
+
+    Runs ``git rev-list pre_sha..post_sha`` then, for each commit,
+    ``git diff-tree --no-commit-id --name-only -r <sha>`` and unions the
+    reported paths. Returns ``None`` on any git failure (bad rev range, not a
+    git repo, git unavailable, subprocess error, timeout) so the caller can
+    fail closed; returns ``set()`` when the range is valid but touched nothing
+    (e.g. an empty merge). Mirrors the fault-isolation contract of
+    :func:`_read_worktree_head_sha` / :func:`_count_behind_upstream` — this is
+    a best-effort diagnostic signal and must NEVER raise into
+    :func:`dispatch_and_capture`.
+    """
+    try:
+        revs = subprocess.run(
+            ["git", "rev-list", f"{pre_sha}..{post_sha}"],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if revs.returncode != 0:
+            return None
+        changed: Set[str] = set()
+        for sha in revs.stdout.splitlines():
+            sha = sha.strip()
+            if not sha:
+                continue
+            diff = subprocess.run(
+                ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", sha],
+                capture_output=True, text=True, timeout=5, cwd=cwd,
+            )
+            if diff.returncode != 0:
+                return None
+            for line in diff.stdout.splitlines():
+                path = line.strip()
+                if path:
+                    changed.add(path)
+        return changed
+    except Exception:
+        logger.debug("Swallowed exception in _commits_changed_paths", exc_info=True)
+        return None
+
+
+def _repo_relative_posix(path: str, cwd: Optional[str] = None) -> Optional[str]:
+    """Resolve ``path`` against ``cwd``, strip the repo toplevel prefix, and
+    return a POSIX-style repo-relative path. Returns ``None`` on any failure
+    (git unavailable, not a repo, subprocess error, path outside the repo
+    root) — never raises. The toplevel lookup is cached for the duration of
+    this call only (per the call-site contract); callers re-invoking across
+    sessions get a fresh lookup. Mirrors the fault-isolation contract of
+    :func:`_commits_changed_paths` / :func:`_read_worktree_head_sha`.
+    """
+    try:
+        toplevel = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if toplevel.returncode != 0:
+            return None
+        root = Path(toplevel.stdout.strip()).resolve()
+        if not root.is_dir():
+            return None
+        resolved = Path(path)
+        if not resolved.is_absolute():
+            resolved = Path(cwd or ".") / resolved
+        resolved = resolved.resolve()
+        rel = resolved.relative_to(root)
+        return rel.as_posix()
+    except (ValueError, OSError):
+        # ValueError: path outside repo root (relative_to mismatch).
+        # OSError: filesystem/subprocess I/O failure.
+        return None
+    except Exception:
+        logger.debug("Swallowed exception in _repo_relative_posix", exc_info=True)
+        return None
 
 
 def _rebase_or_merge_in_progress(cwd: Optional[str] = None) -> Optional[str]:
@@ -234,6 +342,7 @@ def _rebase_or_merge_in_progress(cwd: Optional[str] = None) -> Optional[str]:
         if _git_path_exists("CHERRY_PICK_HEAD", is_dir=False):
             return "cherry-pick"
     except Exception:
+        logger.debug("Swallowed exception in _rebase_or_merge_in_progress", exc_info=True)
         pass
     return None
 
@@ -270,6 +379,7 @@ def _onboard_config_path() -> Optional[Path]:
     try:
         return Path.home() / ".nucleus" / ONBOARD_CONFIG_NAME
     except Exception:  # noqa: BLE001
+        logger.debug("Swallowed exception in _onboard_config_path", exc_info=True)
         return None
 
 
@@ -349,6 +459,58 @@ def is_multi_vendor_available() -> bool:
 # kept. A ceiling that discards finished output is worse than a slow lane.
 _DEFAULT_VENDOR_TIMEOUT_S = int(os.environ.get("NUCLEUS_VENDOR_TIMEOUT_S", "3600"))
 
+# One session (2026-08-16/17) fanned out 9 concurrent dispatches through this
+# module -- each call reaches the same running mcp-server-nucleus process, so
+# concurrent VendorCLIExecutor.run() calls pile their blocking subprocess.run()
+# onto that one process with no cap, exactly like the Workflow tool's own
+# agent() calls would without its min(16, CPUs-2) limiter. Result, same
+# session: one SIGBUS crash, one 8-minute hang requiring a manual kill, four
+# hard 2700s timeouts with zero output, and one dispatch killed externally
+# mid-run -- seven real incidents, none caused by the task content, all by
+# unbounded concurrent load on this one choke point. The cap below is scoped
+# to the actual subprocess.run() in VendorCLIExecutor.run(), not the whole
+# call (argv/prompt-file setup is cheap and doesn't need to queue).
+_DISPATCH_MAX_CONCURRENT = max(1, int(os.environ.get("NUCLEUS_VENDOR_MAX_CONCURRENT", "3")))
+_DISPATCH_SEMAPHORE = threading.Semaphore(_DISPATCH_MAX_CONCURRENT)
+
+# Host-load gate: the semaphore caps lane COUNT but nothing stops a fleet of
+# dispatches piling onto an already-saturated host (observed 2026-09-14: cap-2
+# fleet + parallel sessions pushed loadavg past cpu_count and every new
+# subprocess spawn worsened the pileup). Before spawning a vendor subprocess,
+# wait while the 1-min load average is >= _LOAD_FACTOR * cpu_count. Bounded at
+# _LOAD_MAX_WAIT seconds so a permanently-loaded host can't deadlock the
+# queue — the dispatch proceeds after the ceiling regardless.
+_LOAD_FACTOR = float(os.environ.get("NUCLEUS_VENDOR_LOAD_FACTOR", "0.8"))
+_LOAD_MAX_WAIT = float(os.environ.get("NUCLEUS_VENDOR_LOAD_MAX_WAIT", "30"))
+_LOAD_POLL = 2.0
+
+
+def _wait_for_load(timeout_s: float = 0.0) -> None:
+    """Block while 1-min loadavg >= _LOAD_FACTOR * cpu_count, up to the
+    wait budget. The budget is ``_LOAD_MAX_WAIT`` further capped by
+    ``timeout_s`` when >0 — it is nonsensical to wait 30s for load on a
+    dispatch whose own subprocess ceiling is 1s. No-op on platforms
+    without getloadavg."""
+    try:
+        cpus = os.cpu_count() or 1
+        threshold = _LOAD_FACTOR * cpus
+        budget = _LOAD_MAX_WAIT
+        if timeout_s and timeout_s > 0:
+            budget = min(budget, timeout_s)
+        deadline = time.monotonic() + budget
+        while True:
+            load = os.getloadavg()[0]
+            if load < threshold or time.monotonic() >= deadline:
+                if load >= threshold:
+                    logger.warning(
+                        "vendor dispatch proceeding at load %.1f (>= %.1f*%.0f cpus) after %.0fs ceiling",
+                        load, _LOAD_FACTOR, cpus, _LOAD_MAX_WAIT,
+                    )
+                return
+            time.sleep(_LOAD_POLL)
+    except (AttributeError, OSError):  # no getloadavg (Windows)
+        return
+
 # ── Vendor registry ───────────────────────────────────────────────────────────
 VENDOR_MODES = ("read", "write")
 DEFAULT_MODE = "write"
@@ -404,7 +566,7 @@ class VendorSpec:
     """
 
     vendor: str            # dispatch name: "agy" | "devin"
-    model: str             # underlying model family: "gemini" | "glm"
+    model: str             # default model family for this vendor surface
     binary: str            # CLI executable resolved on PATH
     sender: str            # relay sender identity (canonicalized downstream)
     to_default: str        # default capture recipient role
@@ -496,6 +658,21 @@ def resolve_model(vendor: str, model: Optional[str]) -> str:
     return model
 
 
+def resolve_model_family(model_id: str, fallback: str = "") -> str:
+    normalized = (model_id or "").strip().lower()
+    prefixes = (
+        ("swe-", "swe"),
+        ("glm-", "glm"),
+        ("gemini-", "gemini"),
+        ("gpt-", "gpt"),
+        ("claude-", "claude"),
+    )
+    for prefix, family in prefixes:
+        if normalized.startswith(prefix):
+            return family
+    return fallback
+
+
 VENDOR_SPECS: Dict[str, VendorSpec] = {
     # agy → Gemini (Antigravity CLI). Prompt delivered INLINE in argv as the
     # value of `-p` (agy ≥1.1.1 changed `-p`/`--print` to take the prompt as an
@@ -544,29 +721,111 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         ),
         model_flag="--model",
     ),
-    # devin → GLM. Prompt delivered via a private 0600 temp file whose path is
-    # substituted for {prompt_file}. REAL-CLI VERIFIED (2026-07-09): `devin -p --`
-    # (stdin, the old template) drops into REPL mode and PANICS (rc=101,
+    # devin → selectable SWE/GLM/Claude/GPT families. Prompt delivery uses a
+    # private 0600 temp file whose path is substituted for {prompt_file}.
+    # REAL-CLI VERIFIED (2026-07-09): `devin -p --` (stdin, the old template)
+    # drops into REPL mode and PANICS (rc=101,
     # 'Option::unwrap() on None' in chisel/src/repl_mode.rs) — devin does NOT read
     # the prompt from stdin. `devin -p --prompt-file <FILE>` returns rc=0 and the
     # real answer, identity-safe (prompt in a file, not argv/stdin).
+    # codex-cli 0.147.0. `codex exec [PROMPT]` runs non-interactively; passing
+    # `-` (or omitting the positional) makes it read instructions from STDIN,
+    # which is the identity-safe path -- the prompt never enters argv, so it
+    # cannot leak through the process table. That is stdin mode: no {prompt}
+    # and no {prompt_file} slot, so VendorCLIExecutor streams it.
+    #
+    # Smoke-verified before wiring, not assumed:
+    #   codex exec --dangerously-bypass-approvals-and-sandbox "Reply with
+    #   exactly: CODEX_OK"  -> rc=0, stdout "CODEX_OK"
+    #
+    # The bypass flag is required for the same reason devin needs
+    # --permission-mode dangerous: a non-interactive run cannot answer an
+    # approval prompt, and without it codex rejects any tool call needing
+    # confirmation and returns having done nothing. Read and write flags match
+    # because the sandbox decision is per-invocation, not per-mode; scope is
+    # enforced by the lane's commit scope gate, not by the vendor.
+    "codex": VendorSpec(
+        vendor="codex",
+        model="gpt",
+        binary="codex",
+        sender="codex",
+        to_default="cross_vendor",
+        engram_tags=("vendor:gpt", "surface:codex"),
+        argv_template=("codex", "exec", "-"),
+        read_flags=("--dangerously-bypass-approvals-and-sandbox",),
+        write_flags=("--dangerously-bypass-approvals-and-sandbox",),
+        # `codex exec -m <MODEL>`. A models tuple is required for the vendor to
+        # be addressable THROUGH THE SHIM at all: vendor_shim's model regex is
+        # ^nucleus/(vendor)-(model)$ with the model part mandatory, so a
+        # selection-less vendor has no valid id and every shim call is rejected
+        # with "does not support model selection". models[0] must equal
+        # default_model, per the note on the devin spec.
+        model_flag="-m",
+        # Read from codex's OWN config (~/.codex/config.toml: model =
+        # "gpt-5.6-terra"), not guessed. A guessed id fails as
+        # status=not_found with rc=None in 0.0s -- it never reaches the binary,
+        # so the failure looks like a dead vendor rather than a bad name.
+        default_model="gpt-5.6-terra",
+        models=("gpt-5.6-terra",),
+    ),
     "devin": VendorSpec(
         vendor="devin",
-        model="glm",
+        model="swe",
         binary="devin",
         sender="devin",
         to_default="cross_vendor",
-        engram_tags=("vendor:glm", "surface:devin"),
+        engram_tags=("vendor:swe", "surface:devin"),
         argv_template=("devin", "-p", "--prompt-file", "{prompt_file}"),
-        read_flags=(),
-        write_flags=("--permission-mode", "dangerous"),
-        default_model="glm-5.2",
-        models=("glm-5.2", "swe-1.7"),
+        # 2026-08-18: 'auto' still blocks devin's first real tool call under
+        # non-interactive -p for some shell commands (confirmed twice live
+        # this session; RCA on disk at
+        # .brain/strategy/north_star/agent_integration/devin_readmode_nowop_rca.md
+        # and nucleus_delegate_read_mode_rca.md). devin has no permission tier
+        # between 'default' (blocks all tool use non-interactively) and
+        # 'dangerous' (full autonomous tool use). Matching write_flags is the
+        # only way read-mode investigations can actually complete -- the
+        # automatic _git_porcelain_snapshot() check in run() is the real
+        # safety boundary now, not this flag.
+        read_flags=("--permission-mode", "dangerous", "--respect-workspace-trust", "false"),
+        write_flags=("--permission-mode", "dangerous", "--respect-workspace-trust", "false"),
+        # Confirmed model IDs use family-specific routing: swe-* → swe and
+        # glm-* → glm. The dotted glm-5.2 spelling is not a valid model ID.
+        # SWE-2 Max is free and outperforms SWE-1.7 / GLM-5.2 on Terminal-Bench
+        # 2.1, DeepSWE 1.1 and FrontierCode 1.1 (2026-09-10), so it is the
+        # default. SWE-1.7 and GLM-5.2 remain as fallbacks.
+        # models[0] stays equal to default_model.
+        default_model="swe-2-max",
+        models=(
+            "swe-2-max",
+            "swe-2-high",
+            "swe-2-medium",
+            "swe-1-7",
+            "swe-1-7-medium",
+            "glm-5-2",
+            "claude-5-fable-low",
+            "claude-5-fable-medium",
+            "claude-5-fable-high",
+            "claude-5-fable-xhigh",
+            "claude-5-fable-max",
+            "gpt-5-6-sol-medium",
+            "gpt-5-6-sol-none",
+            "claude-opus-5-low",
+            "claude-opus-5-medium",
+            "claude-opus-5-high",
+            "claude-opus-5-xhigh",
+            "claude-opus-5-max",
+            "claude-sonnet-5-low",
+            "claude-sonnet-5-medium",
+            "claude-sonnet-5-high",
+            "claude-sonnet-5-xhigh",
+            "claude-sonnet-5-max",
+        ),
         model_flag="--model",
         max_prompt_chars=60000,   # measured: SIGPIPE above ~64KB
     ),
-    # devin-swe → SWE-1.7 model on devin CLI. Same binary, different model.
-    # Free tier alongside glm-5.2. Used for SWE-bench-style coding tasks.
+    # devin-swe → SWE family on devin CLI. Same binary, different model.
+    # Free tiers: SWE-2 Max/High/Medium alongside SWE-1.7 and glm-5.2.
+    # Used for SWE-bench-style coding tasks.
     "devin-swe": VendorSpec(
         vendor="devin-swe",
         model="swe",
@@ -575,10 +834,13 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         to_default="cross_vendor",
         engram_tags=("vendor:swe", "surface:devin"),
         argv_template=("devin", "-p", "--prompt-file", "{prompt_file}"),
-        read_flags=(),
+        read_flags=("--permission-mode", "auto"),
         write_flags=("--permission-mode", "dangerous"),
-        default_model="swe-1.7",
-        models=("swe-1.7",),
+        # CONFIRMED via `devin models list` (2026-09-10): real ids are
+        # "swe-2-max", "swe-2-high", "swe-2-medium" and "swe-1-7",
+        # all free. See the note above VENDOR_SPECS["devin"].
+        default_model="swe-2-max",
+        models=("swe-2-max", "swe-2-high", "swe-2-medium", "swe-1-7", "swe-1-7-medium"),
         model_flag="--model",
         max_prompt_chars=60000,   # measured: SIGPIPE above ~64KB
     ),
@@ -623,6 +885,7 @@ def _cheap_version(binary: str) -> Optional[str]:
         out = ((proc.stdout or "") + (proc.stderr or "")).strip()
         return out.splitlines()[0][:120] if out else None
     except Exception:  # noqa: BLE001 — version is best-effort, never fatal
+        logger.debug("Swallowed exception in _cheap_version", exc_info=True)
         return None
 
 
@@ -662,17 +925,31 @@ def detect_vendor_clis() -> Dict[str, Dict[str, Any]]:
 
 # ── Executor result ───────────────────────────────────────────────────────────
 @dataclass
+class VendorSubprocessResult:
+    """Raw outcome from the vendor subprocess layer."""
+
+    rc: Optional[int]
+    output: str
+    duration: float
+    timed_out: bool = False
+    cancelled: bool = False
+
+
+@dataclass
 class VendorResult:
     """Outcome of one non-interactive vendor CLI invocation."""
 
     vendor: str
     model: str
     rc: Optional[int]
-    status: str           # ok | empty_output | error | timed_out | not_found | budget_rejected
+    status: str           # ok | empty_output | intent_only | error | timed_out | not_found | budget_rejected | prompt_too_large | read_mode_wrote_files
     result: str
     duration: float
-    model_id: str = ""            # resolved SELECTABLE id (e.g. "glm-5.2")
+    model_id: str = ""            # resolved SELECTABLE id (e.g. "glm-5-2")
     redacted: int = 0             # count of secret redactions applied to result
+
+    def __post_init__(self) -> None:
+        self.model = resolve_model_family(self.model_id, self.model)
 
     @property
     def produced_output(self) -> bool:
@@ -737,11 +1014,49 @@ def _redact_secrets(text: str) -> "tuple[str, int]":
 
 def _classify_completed(returncode: int, output: str) -> str:
     """Classify a completed (non-timeout) subprocess: ``ok`` vs ``empty_output``
-    vs ``error``. An rc=0 run with blank output is ``empty_output`` — the silent
-    no-op signal this module surfaces explicitly instead of mislabeling ``ok``."""
+    vs ``error`` vs ``intent_only``. An rc=0 run with blank output is ``empty_output``
+    — the silent no-op signal this module surfaces explicitly instead of mislabeling
+    ``ok``.
+
+    Also detects silent refusals-disguised-as-success where a vendor (e.g. devin)
+    returns rc=0 but refused to run the command, asking for more permissions.
+
+    Also detects ``intent_only`` output where a vendor describes an intention to act
+    ("I will...", "I'll...", "I am going to...") but emits no concrete execution
+    evidence such as code fences, diff markers, or explicit file-change confirmations.
+    """
     if returncode != 0:
         return "error"
-    return "ok" if (output and output.strip()) else "empty_output"
+    if not (output and output.strip()):
+        return "empty_output"
+
+    out_lower = output.lower()
+    # Detect devin read-mode refusal-disguised-as-success where it asks for more permission
+    if (
+        "--permission-mode dangerous" in out_lower
+        or "requires confirmation" in out_lower
+        or "cannot execute without" in out_lower
+    ):
+        return "error"
+
+    # Detect "intent_only" output: vendor states an intention to act but produces
+    # no concrete execution evidence (code fences, diff markers, or explicit
+    # file-change confirmations). This is a distinct silent no-op shape between
+    # ``empty_output`` and ``ok``.
+    intent_phrases = (
+        "i will ", "i'll ", "i am going to ", "i'm going to ",
+        "i intend to ", "i plan to ",
+    )
+    if any(p in out_lower for p in intent_phrases):
+        concrete_markers = (
+            "```", "+++ ", "--- ", "@@ -",
+            "file:", "edited:", "created:", "updated:", "fixed:", "changed:",
+            "done", "completed", "finished",
+        )
+        if not any(m in out_lower for m in concrete_markers):
+            return "intent_only"
+
+    return "ok"
 
 
 def _snapshot_paths(paths: Optional[List[str]]) -> Dict[str, Any]:
@@ -795,6 +1110,9 @@ class VendorCLIExecutor:
         budget_usd: float = 0.0,
         model: Optional[str] = None,
         mode: str = DEFAULT_MODE,
+        cwd: Optional[str] = None,
+        cancel_event: Optional[threading.Event] = None,
+        stream_callback: Any = None,
     ) -> None:
         if vendor not in VENDOR_SPECS:
             raise ValueError(
@@ -816,6 +1134,10 @@ class VendorCLIExecutor:
         self.budget_usd = float(budget_usd)
         self.mode = normalize_mode(mode)          # raises on bad mode
         self.model = resolve_model(vendor, model) # raises on bad/cross-wired model
+        self.model_family = resolve_model_family(self.model, self.spec.model)
+        self.cwd = cwd
+        self.cancel_event = cancel_event
+        self.stream_callback = stream_callback
 
     def _budget_ok(self) -> bool:
         """Enforce the budget ceiling.
@@ -844,10 +1166,184 @@ class VendorCLIExecutor:
             os.close(fd)
         return path
 
+    def _kill_proc_group(self, proc: subprocess.Popen) -> None:
+        """Kill the process group rooted at *proc* (process-group leader)."""
+        try:
+            pgid = os.getpgid(proc.pid)
+            os.killpg(pgid, signal.SIGTERM)
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(pgid, signal.SIGKILL)
+                proc.kill()
+        except (ProcessLookupError, OSError):
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+    def _run_subprocess(
+        self, argv: List[str], stdin_input: Optional[str]
+    ) -> "VendorSubprocessResult":
+        """Execute the vendor CLI and return the outcome.
+
+        Uses ``subprocess.run`` for the default (non-streaming, non-cancellable)
+        path so existing offline tests remain stable, and ``subprocess.Popen``
+        only when a cancellation event or streaming callback is supplied.
+        """
+        if self.cancel_event is None and self.stream_callback is None:
+            return self._run_subprocess_sync(argv, stdin_input)
+        return self._run_subprocess_streamed(argv, stdin_input)
+
+    def _run_subprocess_sync(
+        self, argv: List[str], stdin_input: Optional[str]
+    ) -> "VendorSubprocessResult":
+        start = time.perf_counter()
+        with _DISPATCH_SEMAPHORE:
+            _wait_for_load(self.timeout_s)
+            try:
+                proc = subprocess.run(
+                    argv,
+                    input=stdin_input,
+                    capture_output=True,
+                    text=True,
+                    timeout=None if self.timeout_s == 0 else self.timeout_s,
+                    check=False,
+                    cwd=self.cwd,
+                )
+                out = _as_text(proc.stdout)
+                err = _as_text(proc.stderr)
+                if proc.returncode != 0 and err:
+                    out = (out + "\n" + err).strip() if out else err.strip()
+                if proc.returncode == 0 and not out.strip() and err.strip():
+                    out = err.strip()
+                return VendorSubprocessResult(
+                    rc=proc.returncode,
+                    output=out,
+                    duration=time.perf_counter() - start,
+                    timed_out=False,
+                    cancelled=False,
+                )
+            except subprocess.TimeoutExpired as exc:
+                partial = _as_text(exc.stdout) or _as_text(exc.stderr)
+                return VendorSubprocessResult(
+                    rc=None,
+                    output=partial,
+                    duration=time.perf_counter() - start,
+                    timed_out=True,
+                    cancelled=False,
+                )
+
+    def _run_subprocess_streamed(
+        self, argv: List[str], stdin_input: Optional[str]
+    ) -> "VendorSubprocessResult":
+        start = time.perf_counter()
+        with _DISPATCH_SEMAPHORE:
+            _wait_for_load(self.timeout_s)
+            proc = subprocess.Popen(
+                argv,
+                stdin=subprocess.PIPE if stdin_input is not None else subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                cwd=self.cwd,
+                start_new_session=True,
+            )
+
+        out_chunks: List[str] = []
+        result: Optional["VendorSubprocessResult"] = None
+
+        def _drain() -> None:
+            if proc.stdout is None:
+                return
+            for line in iter(proc.stdout.readline, ""):
+                if not line:
+                    break
+                out_chunks.append(line)
+                if self.stream_callback is not None:
+                    try:
+                        self.stream_callback(line)
+                    except Exception:  # noqa: BLE001
+                        pass
+
+        drain_thread = threading.Thread(target=_drain, daemon=True)
+        drain_thread.start()
+
+        if stdin_input is not None and proc.stdin is not None:
+            try:
+                proc.stdin.write(stdin_input)
+                proc.stdin.close()
+            except BrokenPipeError:
+                pass
+
+        try:
+            if self.cancel_event is not None:
+                while proc.poll() is None:
+                    if self.cancel_event.is_set():
+                        self._kill_proc_group(proc)
+                        result = VendorSubprocessResult(
+                            rc=None,
+                            output="",
+                            duration=time.perf_counter() - start,
+                            timed_out=False,
+                            cancelled=True,
+                        )
+                        break
+                    if self.timeout_s > 0 and (time.perf_counter() - start) > self.timeout_s:
+                        self._kill_proc_group(proc)
+                        result = VendorSubprocessResult(
+                            rc=None,
+                            output="",
+                            duration=time.perf_counter() - start,
+                            timed_out=True,
+                            cancelled=False,
+                        )
+                        break
+                    time.sleep(0.1)
+            else:
+                # Streaming only (no cancel event). Wait with timeout polling.
+                while proc.poll() is None:
+                    if self.timeout_s > 0 and (time.perf_counter() - start) > self.timeout_s:
+                        self._kill_proc_group(proc)
+                        result = VendorSubprocessResult(
+                            rc=None,
+                            output="",
+                            duration=time.perf_counter() - start,
+                            timed_out=True,
+                            cancelled=False,
+                        )
+                        break
+                    time.sleep(0.1)
+        finally:
+            if proc.poll() is None:
+                self._kill_proc_group(proc)
+            drain_thread.join(timeout=2.0)
+
+        output = "".join(out_chunks)
+        if result is not None:
+            return VendorSubprocessResult(
+                rc=result.rc,
+                output=output,
+                duration=result.duration,
+                timed_out=result.timed_out,
+                cancelled=result.cancelled,
+            )
+
+        rc = proc.returncode
+        if rc is None:
+            rc = -1
+        return VendorSubprocessResult(
+            rc=rc,
+            output=output,
+            duration=time.perf_counter() - start,
+            timed_out=False,
+            cancelled=False,
+        )
+
     def run(self) -> VendorResult:
         if not self._budget_ok():
             return VendorResult(
-                self.vendor, self.spec.model, None, "budget_rejected",
+                self.vendor, self.model_family, None, "budget_rejected",
                 f"negative budget_usd={self.budget_usd}", 0.0,
                 model_id=self.model,
             )
@@ -855,7 +1351,7 @@ class VendorCLIExecutor:
         binary = shutil.which(self.spec.binary)
         if binary is None:
             return VendorResult(
-                self.vendor, self.spec.model, None, "not_found",
+                self.vendor, self.model_family, None, "not_found",
                 f"vendor CLI {self.spec.binary!r} not found on PATH", 0.0,
                 model_id=self.model,
             )
@@ -869,7 +1365,7 @@ class VendorCLIExecutor:
         cap = self.spec.max_prompt_chars
         if cap and len(self.prompt) > cap:
             return VendorResult(
-                self.vendor, self.spec.model, None, "prompt_too_large",
+                self.vendor, self.model_family, None, "prompt_too_large",
                 f"prompt is {len(self.prompt):,} chars but {self.vendor} caps at "
                 f"{cap:,} (measured: SIGPIPE above ~64KB). Use a vendor without "
                 f"this ceiling (agy handled 120,018 chars) or shorten the prompt.",
@@ -903,70 +1399,66 @@ class VendorCLIExecutor:
             )
             argv[0] = binary  # resolved absolute path
 
-            proc = subprocess.run(
-                argv,
-                input=stdin_input,          # IDENTITY-SAFE: stdin (or None in prompt-file/inline-argv mode)
-                capture_output=True,
-                text=True,
-                timeout=None if self.timeout_s == 0 else self.timeout_s,  # 0 = no timeout
-                check=False,
-            )
-            duration = time.perf_counter() - start
-            out = _as_text(proc.stdout)
-            err = _as_text(proc.stderr)
-            if proc.returncode != 0 and err:
-                out = (out + "\n" + err).strip() if out else err.strip()
-            # SURFACE STDERR ON EMPTY STDOUT (2026-08-04, flywheel #92).
-            # When rc=0 but stdout is blank, the vendor silently failed (rate
-            # limit, OAuth expiry, internal error swallowed). The old code
-            # classified this as "empty_output" and discarded stderr — so the
-            # error message several layers up was the unhelpful "vendor did not
-            # produce output" with no clue WHY. Including stderr in the output
-            # for empty-stdout runs makes the error visible without changing
-            # the status classification (still "empty_output", still a failure).
-            if proc.returncode == 0 and not out.strip() and err.strip():
-                out = err.strip()
+            # AUTOMATIC read-mode write-detection (2026-08-18). devin's
+            # read_flags grant real write access (see _git_porcelain_snapshot's
+            # docstring) -- the existing expect_paths/_snapshot_paths backstop
+            # is real but opt-in, and most callers never pass it. This runs
+            # unconditionally for every mode='read' dispatch regardless of
+            # what the caller remembered to ask for. cwd=None matches the
+            # vendor subprocess below, which also has no explicit cwd override
+            # and inherits this process's cwd -- both observe the same tree.
+            _read_mode_check = self.mode == "read"
+            _porcelain_before = _git_porcelain_snapshot(self.cwd) if _read_mode_check else None
+
+            sub = self._run_subprocess(argv, stdin_input)
+
+            # Only a snapshot pair where BOTH sides were actually read counts
+            # as evidence; None on either side means "cannot verify" and must
+            # fail open (never invent a false positive from a failed check).
+            _wrote_files_in_read_mode = False
+            if _read_mode_check and _porcelain_before is not None:
+                _porcelain_after = _git_porcelain_snapshot(self.cwd)
+                if _porcelain_after is not None and _porcelain_after != _porcelain_before:
+                    _wrote_files_in_read_mode = True
+            duration = sub.duration
+            out = sub.output
             out, nredacted = _redact_secrets(out)   # secret-hygiene backstop
-            status = _classify_completed(proc.returncode, out)
-            # NEAR-MISS WARNING. A dispatch that finishes at 290s of a 300s
-            # ceiling is indistinguishable from one that finished at 30s — both
-            # report `ok` — yet the first will DIE the next time the machine is
-            # busy. Measured 2026-08-01: agy ran a real analysis brief in 107.7s
-            # in isolation and timed out at 300s under load, while five
-            # workflows x four lanes competed. The ceiling was never the binding
-            # constraint; contention was, and nothing surfaced how close each
-            # success had been. Emit the ratio so a run can be seen trending
-            # toward the wall before it hits it.
-            if self.timeout_s and duration > 0.6 * self.timeout_s:
-                logger.warning(
-                    "vendor %s/%s NEAR TIMEOUT: %.1fs of %ds ceiling (%.0f%%) — "
-                    "raise NUCLEUS_VENDOR_TIMEOUT_S or reduce concurrency",
-                    self.vendor, self.model, duration, self.timeout_s,
-                    100.0 * duration / self.timeout_s,
-                )
+
+            if sub.cancelled:
+                status = "cancelled"
+            elif sub.timed_out:
+                status = "timed_out"
+            else:
+                status = _classify_completed(sub.rc if sub.rc is not None else -1, out)
+                if _wrote_files_in_read_mode:
+                    logger.warning(
+                        "vendor %s ran mode='read' but the working tree changed "
+                        "(git status --porcelain differs before/after) -- "
+                        "read_flags grant real write access, this dispatch used it",
+                        self.vendor,
+                    )
+                    status = "read_mode_wrote_files"
+                # NEAR-MISS WARNING. A dispatch that finishes at 290s of a 300s
+                # ceiling is indistinguishable from one that finished at 30s — both
+                # report `ok` — yet the first will DIE the next time the machine is
+                # busy. Emit the ratio so a run can be seen trending toward the wall
+                # before it hits it.
+                if self.timeout_s and duration > 0.6 * self.timeout_s:
+                    logger.warning(
+                        "vendor %s/%s NEAR TIMEOUT: %.1fs of %ds ceiling (%.0f%%) — "
+                        "raise NUCLEUS_VENDOR_TIMEOUT_S or reduce concurrency",
+                        self.vendor, self.model, duration, self.timeout_s,
+                        100.0 * duration / self.timeout_s,
+                    )
             return VendorResult(
-                self.vendor, self.spec.model, proc.returncode, status, out, duration,
+                self.vendor, self.model_family, sub.rc, status, out, duration,
                 model_id=self.model, redacted=nredacted,
-            )
-        except subprocess.TimeoutExpired as exc:
-            duration = time.perf_counter() - start
-            # subprocess.run has already killed and reaped the child; salvage any
-            # partial output it managed to emit before the kill.
-            partial = _as_text(exc.stdout) or _as_text(exc.stderr)
-            partial, npredacted = _redact_secrets(partial)   # secret-hygiene backstop
-            logger.warning(
-                "vendor %s timed out after %.1fs (hard kill); partial=%d bytes",
-                self.vendor, duration, len(partial),
-            )
-            return VendorResult(
-                self.vendor, self.spec.model, None, "timed_out", partial, duration,
-                model_id=self.model, redacted=npredacted,
             )
         except Exception as exc:  # noqa: BLE001 — a dispatch bug must never stall
             duration = time.perf_counter() - start
             logger.warning("vendor %s dispatch failure: %s", self.vendor, exc)
             return VendorResult(
-                self.vendor, self.spec.model, None, "error",
+                self.vendor, self.model_family, None, "error",
                 f"dispatch failure: {exc}", duration,
                 model_id=self.model,
             )
@@ -1000,6 +1492,7 @@ def _capture(
     force_fs: bool,
     effect: str = "unknown",
     artifact_ref_source: str = "no_vendor_increment",
+    nonqualifying_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Write the relay capture envelope + a vendor-tagged engram.
 
@@ -1035,7 +1528,7 @@ def _capture(
 
         dispatch_sig = get_signature_guard().sign_vendor_dispatch(
             vendor=spec.vendor,
-            model=spec.model,
+            model=result.model,
             prompt_digest=prompt_digest,
             artifact_refs=artifact_refs,
             result_sha256=result_sha256,
@@ -1049,7 +1542,7 @@ def _capture(
     body = json.dumps(
         {
             "vendor": spec.vendor,
-            "model": spec.model,
+            "model": result.model,
             "model_id": result.model_id,
             "prompt_digest": prompt_digest,
             "result": result.result[:3000],
@@ -1060,7 +1553,10 @@ def _capture(
             "redacted": result.redacted,
             "effect": effect,
             "duration": round(result.duration, 3),
-            "artifact_refs": [artifact_ref],
+            # NOTE: an earlier duplicate "artifact_refs": [artifact_ref] used to sit
+            # here and was silently discarded by the later key below (F601). Both
+            # held the same value — artifact_refs is [artifact_ref] and is never
+            # reassigned — so removing the losing one is byte-identical.
             # THE FIELD THE CENSUS COUNTS ON. Absent until 2026-08-02, and its
             # absence made G1 crit-3/crit-4 structurally unpassable: the census
             # requires artifact_ref_source == "vendor_derived" to count an
@@ -1071,6 +1567,17 @@ def _capture(
             # A criterion whose instrument cannot emit a passing value is the
             # required-check-that-cannot-report pattern, at the governance layer.
             "artifact_ref_source": artifact_ref_source,
+            # THE THIRD-STATE FIELD (director 2026-08-09). When a capture is not
+            # vendor_derived, WHY it failed to qualify is load-bearing at the
+            # census: "attribution_unprovable" (a write dispatch that moved HEAD
+            # but supplied no expect_paths evidence) is a REMEDIABLE state —
+            # genuine-maybe vendor work the instrument simply could not attribute
+            # — and must be counted apart from "read_mode_no_increment" /
+            # "head_unchanged" / "head_moved_by_foreign_commit", which are
+            # provably NOT vendor increments. Folding the two together is what
+            # would let the strict instrument read zero-by-construction and hide
+            # it as "no real work". null when the capture qualifies.
+            "artifact_ref_nonqualifying_reason": nonqualifying_reason,
             "ts": ts,
             "artifact_refs": artifact_refs,
             "dispatch_sig": dispatch_sig,
@@ -1084,7 +1591,7 @@ def _capture(
 
         relay_res = relay_ops.relay_post(
             to=to_role,
-            subject=f"[cross-vendor] {spec.vendor}/{spec.model} {result.status}",
+            subject=f"[cross-vendor] {spec.vendor}/{result.model} {result.status}",
             body=body,
             sender=spec.sender,
             priority="normal",
@@ -1101,7 +1608,8 @@ def _capture(
     try:
         from nucleus_wedge.store import Store  # separate package; lazy + guarded
 
-        tags = list(spec.engram_tags) + [
+        tags = [tag for tag in spec.engram_tags if not tag.startswith("vendor:")] + [
+            f"vendor:{result.model}",
             f"artifact:{artifact_ref}",
             f"status:{result.status}",
             f"model:{result.model_id}",
@@ -1141,10 +1649,11 @@ def _record_dispatch_health(spec: "VendorSpec", result: "VendorResult") -> None:
     keys off stderr patterns. We bridge by passing the real execution output
     (``result.result``) as the stderr text so quota/rate/auth signatures in the
     vendor's actual output are classified correctly, and folding ``status=...``
-    onto it so a ``timed_out`` status (which has no stderr of its own) is still
-    classified as ``F_TIMEOUT`` via the ``_TIMEOUT_PATTERNS`` regex. Empty/error
-    output with no recognizable signature stays ``F_UNKNOWN``, which is correct
-    — it has no quota/rate/auth signature.
+    onto it so a ``timed_out`` status (which has no stderr of its own) and an
+    ``intent_only`` status (which has produced output but no concrete execution
+    evidence) are classified by their status string. Empty/error output with no
+    recognizable signature stays ``F_UNKNOWN``, which is correct — it has no
+    quota/rate/auth signature.
 
     LOCAL PRECONDITION EXCLUSIONS: ``not_found`` (vendor binary missing on
     PATH), ``budget_rejected`` (negative ``budget_usd``), and
@@ -1181,17 +1690,26 @@ def _record_dispatch_health(spec: "VendorSpec", result: "VendorResult") -> None:
             # in the actual vendor output. A bare status string carries no
             # quota/rate/auth signal and would leave every failure as
             # F_UNKNOWN. We still fold the status in so timed_out (which has
-            # no stderr of its own) is classified via _TIMEOUT_PATTERNS.
+            # no stderr of its own) and intent_only (which has produced output
+            # but no concrete execution evidence) are classified by their
+            # status string.
             stderr_text = (result.result or "").strip()
             if not stderr_text:
                 stderr_text = f"status={result.status}"
             else:
                 stderr_text = f"{stderr_text}\nstatus={result.status}"
+            # intent_only: vendor emitted non-blank text but only stated an
+            # intention to act. For cooldown/availability heuristics this is
+            # empty of concrete output, so treat it the same as empty_output.
+            is_empty = (
+                not result.produced_output
+                or result.status == "intent_only"
+            )
             registry.record_failure(
                 spec.vendor, model_key,
                 stderr=stderr_text,
                 rc=result.rc if result.rc is not None else 1,
-                stdout_empty=not result.produced_output,
+                stdout_empty=is_empty,
             )
     except Exception as exc:  # noqa: BLE001 — observability must never break dispatch
         logger.debug("dispatch health record failed: %s", exc)
@@ -1325,11 +1843,99 @@ def dispatch_and_capture(
     # silence would have closed the pathway.
     post_sha = _read_worktree_head_sha()
     head_moved = bool(post_sha and pre_sha and post_sha != pre_sha)
-    qualifies = bool(post_sha) and canon == "write" and head_moved
+    # v3.2 (2026-08-09): head_moved alone is insufficient — `git commit
+    # --allow-empty` moves HEAD without touching any file, and a mid-range git
+    # failure hides what the commits touched. Both must fail closed: the
+    # instrument can only qualify an increment whose touched paths it can
+    # verify. _commits_changed_paths returns None on git failure (fail closed)
+    # or set() on an empty commit (head moved, nothing changed).
+    commit_paths: Optional[Set[str]] = (
+        _commits_changed_paths(pre_sha, post_sha)
+        if head_moved and canon == "write"
+        else None
+    )
+    # v3.3 (2026-08-09) — CLOSES THE FOREIGN-CONCURRENT-COMMIT HOLE.
+    #
+    # v3.2's `commit_paths` check stopped empty commits and mid-range git
+    # failures from minting qualifying envelopes. It did not stop a FOREIGN
+    # lane's commits from doing so: `head_moved` only tests that SOME commit
+    # landed while the vendor ran, not that THIS dispatch produced it. A peer
+    # lane committing to the shared worktree during the window moved HEAD on
+    # paths this dispatch never touched, and `commit_paths` — drawn from every
+    # commit in the pre..post range — dutifully listed them. The instrument
+    # then credited those foreign concurrent commits to a dispatch that was
+    # forbidden to commit (read-mode) or that committed nothing of its own.
+    # The cheapest attack on crit-3 now needed no cd and no confederate: just
+    # run a read-mode dispatch while any other lane commits, and the ambient
+    # HEAD movement scores the envelope for free.
+    #
+    # Attribution works by INTERSECTION, but ONLY when the caller provides
+    # path evidence via `expect_paths`. The moved HEAD's commit_paths are
+    # intersected with THIS dispatch's own changed_paths — the paths the
+    # dispatch demonstrably modified, captured from the pre/post worktree
+    # snapshot the caller opted into. Both sets are normalized to repo-relative
+    # POSIX before the intersection, so absolute paths, trailing slashes, and
+    # cwd-relative forms cannot smuggle a foreign path past the match. A HEAD
+    # that moved on a foreign lane's commits touches none of this dispatch's
+    # paths: the intersection is empty and the envelope does not qualify
+    # (`head_moved_by_foreign_commit`).
+    #
+    # When NO `expect_paths` evidence exists the instrument CANNOT do the
+    # intersection — it has no record of which paths this dispatch modified.
+    # Rather than fail closed (which would break every caller that doesn't pass
+    # expect_paths — the common case), it falls back to the v3.2 check: head
+    # moved + commit_paths non-empty. This is not a regression — it is the
+    # same behavior that shipped under v3.2. The v3.3 intersection is a
+    # TIGHTENING available to callers who opt into path evidence; callers who
+    # don't are no worse off than before. Making expect_paths mandatory would
+    # break all existing call sites for a hole that only manifests when a
+    # foreign lane commits during the dispatch window.
+    has_path_evidence = bool(changed_paths)
+    attributable_paths: Set[str] = set()
+    normalized_changed: Set[str] = set()
+    normalization_failed = False
+    if has_path_evidence and commit_paths is not None:
+        for p in changed_paths:
+            normed = _repo_relative_posix(p)
+            if normed is not None:
+                normalized_changed.add(normed)
+        # If EVERY path failed normalization, the intersection is vacuously
+        # empty — but the cause is NOT a foreign commit; it is that the
+        # instrument could not map the dispatch's changed_paths into the
+        # repo's coordinate space (e.g. process cwd outside the repo, paths
+        # outside the repo root). Labelling this "head_moved_by_foreign_commit"
+        # would be a lie: we don't know whether the commit was foreign or not
+        # because we couldn't normalize the evidence to compare. The honest
+        # label is "attribution_unprovable" — fail closed with the real reason.
+        normalization_failed = (
+            len(normalized_changed) == 0 and len(changed_paths) > 0
+        )
+        attributable_paths = commit_paths & normalized_changed
+    # v3.3 FAIL-CLOSED (director 2026-08-09): qualification requires PATH
+    # EVIDENCE. A prior revision added an ``else`` that fell back to v3.2
+    # (head moved + non-empty commit_paths) when the caller passed no
+    # expect_paths — which is the common case for build_runner. That fallback
+    # REOPENED the exact foreign-commit hole this block exists to close: a
+    # concurrent foreign commit satisfies "head moved + commit_paths non-empty"
+    # and was credited to a dispatch that produced nothing. Proven live: a
+    # foreign commit with no expect_paths qualified True. Without changed_paths
+    # the instrument CANNOT attribute the increment to this dispatch, so it MUST
+    # NOT qualify — attribution_unprovable, fail closed. The cure for the common
+    # case is to give the instrument evidence (callers pass expect_paths), NEVER
+    # to loosen the rule.
+    qualifies = (
+        bool(post_sha) and canon == "write" and head_moved
+        and commit_paths is not None and len(commit_paths) > 0
+        and has_path_evidence and len(attributable_paths) > 0
+    )
     nonqualifying_reason = (
         None if qualifies
         else "read_mode_no_increment" if canon != "write"
-        else "head_unchanged"
+        else "head_unchanged" if not head_moved
+        else "changed_paths_unavailable" if commit_paths is None
+        else "empty_commit_no_files" if len(commit_paths) == 0
+        else "attribution_unprovable" if (not has_path_evidence or normalization_failed)
+        else "head_moved_by_foreign_commit"
     )
 
     stamped_sha = post_sha
@@ -1373,7 +1979,8 @@ def dispatch_and_capture(
     capture = _capture(spec, result, digest, artifact_ref, to_role,
                        force_fs=force_fs, effect=effect,
                        artifact_ref_source=(
-                           "vendor_derived" if qualifies else "no_vendor_increment"))
+                           "vendor_derived" if qualifies else "no_vendor_increment"),
+                       nonqualifying_reason=(None if qualifies else nonqualifying_reason))
 
     out = result.to_dict()
     out.update({
@@ -1402,6 +2009,153 @@ def dispatch_and_capture(
     return out
 
 
+def capture_machinery_commit(
+    *,
+    producer: str,
+    changed_files: List[str],
+    pre_head: Optional[str],
+    post_head: Optional[str],
+    commit_message: str,
+    to_role: Optional[str] = None,
+    force_fs: bool = True,
+) -> Dict[str, Any]:
+    """Capture ONE relay envelope for a commit made directly by nucleus build
+    machinery (e.g. ``build_and_merge._commit_changed_files``) instead of by
+    a dispatched vendor CLI.
+
+    fw-1786271303 / fw-1786271394 (chief-decided fix, "capture-at-the-commit"):
+    ``build_and_merge``'s own commit ran as a bare ``subprocess.run(["git",
+    "commit", ...])`` outside :func:`dispatch_and_capture` — the ONLY code
+    path that had ever written a capture envelope. A plain ``nucleus build``
+    could therefore never produce a QUALIFYING ``artifact_ref`` envelope: a
+    live proving run showed 18/18 write dispatches reading ``head_unchanged``
+    (vendor dispatches never commit their own work) while the one commit that
+    DID happen — the merge-stage commit — was never captured at all. This
+    closes that structural gap by reusing the SAME writer (:func:`_capture`)
+    and the SAME git-evidence machinery :func:`dispatch_and_capture` uses
+    (:func:`_commits_changed_paths`, :func:`_repo_relative_posix`) rather than
+    forking a second serialization. The only difference from a vendor
+    dispatch is that the caller already made the commit and knows its
+    pre/post HEAD and changed-file set — there is no vendor subprocess to run
+    and no pre/post ``os.stat`` snapshot to take.
+
+    The envelope is stamped ``artifact_ref_source="machinery_derived"`` —
+    NEVER ``"vendor_derived"``. No vendor CLI ran here; claiming vendor
+    provenance would fake a vendor label and silently inflate crit-3's
+    ≥2-genuine-vendor-surface span with a surface that is not a vendor.
+    ``cross_repo_census`` carries a dedicated
+    ``_is_machinery_derived_artifact_ref`` predicate so this class of
+    increment is COUNTABLE and VISIBLE under its own honest name, instead of
+    being folded into either "vendor work" or "no real work".
+
+    Qualification mirrors :func:`dispatch_and_capture`'s v3.2/v3.3 predicate,
+    minus the read/write-mode branch (a commit is inherently a write): HEAD
+    must have moved, the commits in ``pre_head..post_head`` must be
+    git-evidenced (not ``None`` — a mid-range git failure fails closed) and
+    non-empty (not an empty commit), and the caller-declared *changed_files*
+    must intersect the commits' actual touched paths.
+
+    Fault-isolated on missing HEADs exactly like ``dispatch_and_capture``: no
+    git SHA ⇒ no envelope, fail closed. This function has no return-code
+    contract with the caller — it exists only for its capture side effect,
+    so a caller invokes it strictly AFTER its own commit already succeeded.
+    """
+    head_moved = bool(post_head and pre_head and post_head != pre_head)
+    commit_paths: Optional[Set[str]] = (
+        _commits_changed_paths(pre_head, post_head) if head_moved else None
+    )
+    has_path_evidence = bool(changed_files)
+    normalized_changed: Set[str] = set()
+    normalization_failed = False
+    if has_path_evidence:
+        for p in changed_files:
+            normed = _repo_relative_posix(p)
+            if normed is not None:
+                normalized_changed.add(normed)
+        normalization_failed = (
+            len(normalized_changed) == 0 and len(changed_files) > 0
+        )
+    attributable_paths: Set[str] = (
+        (commit_paths & normalized_changed) if commit_paths is not None else set()
+    )
+    qualifies = (
+        bool(post_head) and head_moved
+        and commit_paths is not None and len(commit_paths) > 0
+        and has_path_evidence and len(attributable_paths) > 0
+    )
+    nonqualifying_reason = (
+        None if qualifies
+        else "head_unchanged" if not head_moved
+        else "changed_paths_unavailable" if commit_paths is None
+        else "empty_commit_no_files" if len(commit_paths) == 0
+        else "attribution_unprovable" if (not has_path_evidence or normalization_failed)
+        else "head_moved_by_foreign_commit"
+    )
+
+    if not post_head:
+        # Fail closed: no git SHA = no envelope, mirrors dispatch_and_capture.
+        return {
+            "producer": producer,
+            "mode": "write",
+            "to": to_role or "cross_vendor",
+            "artifact_ref": None,
+            "artifact_ref_source": "machinery_derived_failed",
+            "changed_paths": [],
+            "capture": {"relay": None, "engram": None,
+                       "error": "worktree_sha_unavailable"},
+            "head_before": pre_head,
+            "head_after": post_head,
+        }
+
+    spec = VendorSpec(
+        vendor=producer,
+        model="machinery",
+        binary="",
+        sender=producer,
+        to_default="cross_vendor",
+        engram_tags=(f"producer:{producer}", "surface:machinery"),
+        argv_template=(),
+    )
+    result = VendorResult(
+        vendor=producer,
+        model="machinery",
+        rc=0,
+        status="ok",
+        result=commit_message,
+        duration=0.0,
+        model_id=producer,
+    )
+    resolved_to_role = to_role or spec.to_default
+    source = "machinery_derived" if qualifies else "no_vendor_increment"
+    digest = _prompt_digest(commit_message)
+    capture = _capture(
+        spec, result, digest, post_head, resolved_to_role,
+        force_fs=force_fs,
+        effect=(
+            "files_touched" if attributable_paths
+            else "no_files_touched" if commit_paths is not None
+            else "unknown"
+        ),
+        artifact_ref_source=source,
+        nonqualifying_reason=(None if qualifies else nonqualifying_reason),
+    )
+
+    out: Dict[str, Any] = {
+        "producer": producer,
+        "mode": "write",
+        "to": resolved_to_role,
+        "artifact_ref": post_head,
+        "artifact_ref_source": source,
+        "changed_paths": sorted(attributable_paths),
+        "capture": capture,
+        "head_before": pre_head,
+        "head_after": post_head,
+    }
+    if not qualifies:
+        out["artifact_ref_nonqualifying_reason"] = nonqualifying_reason
+    return out
+
+
 # ── CLI entry (flag-gated) ────────────────────────────────────────────────────
 def dispatch_cli(
     vendor: str,
@@ -1420,7 +2174,7 @@ def dispatch_cli(
     testable seam. Exit codes:
       * 2 — usage / flag OFF (executor never invoked)
       * 3 — capture rejected (STRICT gate) or relay failed
-      * 1 — vendor errored / timed out / empty_output / no_files_touched
+      * 1 — vendor errored / timed out / empty_output / intent_only / no_files_touched
       * 0 — success
     """
     if not cross_vendor_enabled():
@@ -1532,6 +2286,7 @@ __all__ = [
     "VendorResult",
     "VendorCLIExecutor",
     "dispatch_and_capture",
+    "capture_machinery_commit",
     "dispatch_cli",
     "run_swarm_vendor_persona",
     "normalize_mode",

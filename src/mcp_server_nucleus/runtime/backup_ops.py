@@ -4,6 +4,8 @@ Nucleus Sovereign Backup Primitive
 Portable, SSD-aware backup engine for the Nucleus Substrate.
 Supports: macOS, Linux, Windows.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 import shutil
@@ -67,6 +69,7 @@ class SovereignBackup:
                     local_path.symlink_to(external_target)
                     link_status = "created"
                 except Exception as e:
+                    logger.debug("Swallowed exception in create_backup", exc_info=True)
                     link_status = f"failed: {str(e)}"
             
             self.prune(external_dir, retention)
@@ -99,7 +102,9 @@ class SovereignBackup:
                         old.unlink()
                     else:
                         shutil.rmtree(old)
-                except: pass
+                except:
+                    logger.debug("Swallowed exception in prune", exc_info=True)
+                    pass
 
 def run_backup_primitive(brain_path: Path, 
                          root_path: Path, 

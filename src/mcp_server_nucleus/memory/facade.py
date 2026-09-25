@@ -28,6 +28,9 @@ lazy-init contract (a bare ``import mcp_server_nucleus`` stays residue-free).
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 from pathlib import Path
 from typing import Any, Iterable, Optional, Union
@@ -129,6 +132,7 @@ class MemoryFacade:
             try:
                 vector_sink.index(result["id"], payload, metadata=meta)
             except Exception:  # noqa: BLE001 — index sink is best-effort/additive
+                logger.debug("Swallowed exception in capture", exc_info=True)
                 pass
         return result
 

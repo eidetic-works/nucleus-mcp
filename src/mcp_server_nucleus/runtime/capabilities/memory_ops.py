@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 
 from typing import List, Dict, Any
 from .base import Capability
@@ -58,6 +60,7 @@ class MemoryOps(Capability):
             facade = MemoryFacade(enabled=True)
             hits = facade.recall(query=query or "", limit=limit, mode="hybrid")
         except Exception:
+            logger.debug("Swallowed exception in _search_via_facade", exc_info=True)
             return self.vector_store.search_memory(query=query, limit=limit)
         out: List[Dict] = []
         for h in hits:

@@ -84,7 +84,9 @@ class GatewayManager:
         if self.metadata_path.exists():
             try:
                 return json.loads(self.metadata_path.read_text())
-            except: pass
+            except:
+                logger.debug("Swallowed exception in _load_state", exc_info=True)
+                pass
         return {"keys": {}}
 
     def save_state(self):
@@ -306,7 +308,9 @@ class GovernanceGatewayHandler(BaseHTTPRequestHandler):
                     usage = data.get("usage", {})
                     input_tokens = usage.get("prompt_tokens", usage.get("input_tokens", 0))
                     output_tokens = usage.get("completion_tokens", usage.get("output_tokens", 0))
-            except: pass
+            except:
+                logger.debug("Swallowed exception in _record_usage_metrics", exc_info=True)
+                pass
 
             # 2. Parse Rate Limit Headers
             if resp_headers:
@@ -361,7 +365,9 @@ class GovernanceGatewayHandler(BaseHTTPRequestHandler):
             resp_body = e.read()
             msg = ""
             try: msg = json.loads(resp_body).get("error", {}).get("message", "").lower()
-            except: pass
+            except:
+                logger.debug("Swallowed exception in _execute_remote_call", exc_info=True)
+                pass
 
             if e.code == 429 or "quota" in msg or "exhausted" in msg:
                 self.manager.mark_exhausted(key_id, model)

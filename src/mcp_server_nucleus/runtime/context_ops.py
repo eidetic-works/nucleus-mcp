@@ -4,6 +4,8 @@ Nucleus Runtime - Context & Prompts
 Core logic for context injection (`brain://context`) and system prompts.
 Moves large inline string formatting out of __init__.py.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 
@@ -169,6 +171,7 @@ def _cold_start_prompt() -> str:
             else:
                 engram_section = "\n## 🧠 Memory\n  _(No engrams file found — run `brain_write_engram` to start building memory)_\n"
         except Exception:
+            logger.debug("Swallowed exception in _cold_start_prompt", exc_info=True)
             engram_section = "\n## 🧠 Memory\n  _(Could not read engrams)_\n"
         
         # ─── BRAIN CARD: Tasks ───
@@ -200,6 +203,7 @@ def _cold_start_prompt() -> str:
             else:
                 task_section = "\n## 📋 Tasks\n  _(No tasks found)_\n"
         except Exception:
+            logger.debug("Swallowed exception in _cold_start_prompt", exc_info=True)
             task_section = "\n## 📋 Tasks\n  _(Could not read tasks)_\n"
         
         # ─── BRAIN CARD: Mounts ───
@@ -220,6 +224,7 @@ def _cold_start_prompt() -> str:
             else:
                 mount_section = "\n## 🔌 Mounts\n  _(No mounts configured — use `brain_mount_server` to connect external MCP servers)_\n"
         except Exception:
+            logger.debug("Swallowed exception in _cold_start_prompt", exc_info=True)
             mount_section = "\n## 🔌 Mounts\n  _(Could not read mounts)_\n"
         
         # ─── BRAIN CARD: Session Arc ───
@@ -237,6 +242,7 @@ def _cold_start_prompt() -> str:
                 focus_line = f"  - **Today's focus:** {focus}\n" if focus else ""
                 arc_section = f"\n## 📋 Session Arc\n{arc_lines}{focus_line}"
         except Exception:
+            logger.debug("Swallowed exception in _cold_start_prompt", exc_info=True)
             arc_section = ""
 
         # ─── BRAIN CARD: Compounding Pulse ───
@@ -255,6 +261,7 @@ def _cold_start_prompt() -> str:
                 score_text = f"Score: {ws}" if ws is not None else "Score: pending"
                 pulse_section = f"\n## 📈 Compounding Pulse\n  Week {cid} | Day {completed}/7 | {score_text} | Today: {action}\n"
         except Exception:
+            logger.debug("Swallowed exception in _cold_start_prompt", exc_info=True)
             pulse_section = ""
 
         return f"""# 🧠 Nucleus Brain Card

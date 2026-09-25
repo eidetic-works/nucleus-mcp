@@ -47,10 +47,35 @@ The existence of the extension actually **increases** the potential for rich eng
 ### 3. Graceful UI Degradation (The "Hardened Wake")
 Proprietary VS Code forks (Windsurf, Cursor) heavily sandbox their AI UI panels, actively blocking third-party extensions from natively injecting text and submitting prompts (unlike Antigravity, which exposes `antigravity.sendPromptToAgentPanel`).
 
-To ensure zero task loss across any host, the bridge must implement a multi-tier degradation loop:
-- **Tier 1 (Native Injection):** If the host exposes a native command that accepts arguments (e.g. `antigravity.sendPromptToAgentPanel`), execute and auto-submit.
-- **Tier 2 (Clipboard + Focus Focus):** If native injection is sandboxed (e.g. Windsurf), copy the prompt to the OS Clipboard and execute the host's native focus command (e.g. `windsurf.cascadePanel.focus`) without arguments to pop the panel smoothly. The user pastes via `Cmd+V`.
-- **Tier 3 (Virtual Document):** If the UI panel commands are completely absent or crash, fall back to opening an ephemeral, read-only VS Code text document (`nucleus-prompt:`) displaying the payload.
+To ensure zero task loss across any host, the bridge degrades through the
+following chain. **The names and numbers below are the ones the shipped
+extension actually uses** — `ExecutionTier` in `extension.ts`, as embedded in
+every tracked `.vsix`. An earlier version of this section described a different
+scheme (Tier 1 / 2 / 3, with clipboard-and-focus as a tier of its own) that no
+released build has implemented (ledger CS-6).
+
+- **`Tier 3A (Native)`** — the host exposes a command that accepts arguments
+  (e.g. `antigravity.sendPromptToAgentPanel`): execute and auto-submit. The
+  enum calls this `NativeChat`.
+- **`Tier 3A (Copilot)`** — the same rung for a Copilot-style chat surface.
+  `CopilotChat` in the enum, sharing Tier 3A's label deliberately: from the
+  user's point of view both auto-submit.
+- **`Tier 4 (Virtual Doc)`** — panel commands absent or crashing: open an
+  ephemeral read-only document (`nucleus-prompt:`) with the payload.
+  `VirtualDoc`, and the initial value of `activeTier`, so an unrecognised host
+  degrades to this rather than to nothing.
+- **Tier 4.5** — an unmissable toast, if even the virtual document fails.
+  Not in the enum; it exists only as `triggerTier4Fallback`'s tail.
+
+**Clipboard-and-focus is not a tier of its own.** Copying to the clipboard and
+popping the host panel happens *inside* the Native and Copilot branches, as
+their in-branch fallback when injection is sandboxed (Cursor and Windsurf both
+take this path). Documenting it as a separate rung implied a host could land
+there without first attempting native injection, which no build does.
+
+The numbering starts at 3A because it is inherited from an earlier scheme; it is
+recorded here as it is rather than renumbered, because the strings are
+user-visible in the status bar.
 
 ## Future Architecture: Dynamic API Surface Discovery
 

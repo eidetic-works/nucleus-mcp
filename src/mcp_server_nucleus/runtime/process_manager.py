@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import subprocess
 import os
 import signal
@@ -75,6 +77,7 @@ class SovereignProcess:
             try:
                 self._proc.kill()
             except:
+                logger.debug("Swallowed exception in kill_group", exc_info=True)
                 pass
 
     def terminate_group(self):

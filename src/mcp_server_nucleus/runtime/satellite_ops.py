@@ -8,6 +8,8 @@ Contains:
 - _get_satellite_view
 - _format_satellite_cli
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import time
@@ -64,6 +66,7 @@ def _get_activity_sparkline(days: int = 7) -> Dict:
                         "source": "precomputed"
                     }
             except Exception:
+                logger.debug("Swallowed exception in _get_activity_sparkline", exc_info=True)
                 pass  # Fall through to slow path
         
         # Slow path: read events.jsonl
@@ -102,6 +105,7 @@ def _get_activity_sparkline(days: int = 7) -> Dict:
                     evt_date = timestamp[:10]  # Get YYYY-MM-DD
                     day_counts[evt_date] += 1
             except Exception:
+                logger.debug("Swallowed exception in _get_activity_sparkline", exc_info=True)
                 pass
         
         # Build counts for last N days
@@ -202,6 +206,7 @@ def _get_products_health() -> Dict:
                         "path": str(sat_path.name)
                     }
     except Exception:
+        logger.debug("Swallowed exception in _get_products_health", exc_info=True)
         pass
 
     return products
@@ -236,6 +241,7 @@ def _get_satellite_view(detail_level: str = "standard") -> Dict:
             "indicator": depth.get("indicator", "🟢 ○○○○○")
         }
     except Exception:
+        logger.debug("Swallowed exception in _get_satellite_view", exc_info=True)
         result["depth"] = {
             "current": 0,
             "max": 5,
@@ -264,6 +270,7 @@ def _get_satellite_view(detail_level: str = "standard") -> Dict:
             "last_scan": ledger.get("last_scan")
         }
     except Exception:
+        logger.debug("Swallowed exception in _get_satellite_view", exc_info=True)
         result["commitments"] = None
     
     if detail_level == "standard":
@@ -289,8 +296,10 @@ def _get_satellite_view(detail_level: str = "standard") -> Dict:
                     for t in active_tasks
                 ]
             except Exception:
+                logger.debug("Swallowed exception in _get_satellite_view", exc_info=True)
                 result["active_tasks"] = []
         except Exception:
+            logger.debug("Swallowed exception in _get_satellite_view", exc_info=True)
             result["sprint"] = None
             result["active_tasks"] = []
     
@@ -311,6 +320,7 @@ def _get_satellite_view(detail_level: str = "standard") -> Dict:
         else:
             result["session"] = None
     except Exception:
+        logger.debug("Swallowed exception in _get_satellite_view", exc_info=True)
         result["session"] = None
     
     return result

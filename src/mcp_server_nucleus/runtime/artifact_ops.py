@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from typing import List, Optional
 from .common import get_brain_path
 
@@ -52,4 +54,5 @@ def _list_artifacts(folder: Optional[str] = None) -> List[str]:
                     pass # Should not happen if root is correct
         return files[:50]
     except Exception:
+        logger.debug("Swallowed exception in _list_artifacts", exc_info=True)
         return []

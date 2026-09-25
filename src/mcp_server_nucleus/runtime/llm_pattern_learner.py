@@ -238,6 +238,7 @@ class LLMPatternLearner:
             }
             
         except Exception as e:
+            logger.debug("Swallowed exception in analyze_failures", exc_info=True)
             _get_telemetry().record_error("E603", f"Pattern learning: {e}", "llm_pattern_learner", exception=e)
             return self._analyze_deterministic(failures)
     

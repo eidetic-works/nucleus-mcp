@@ -89,6 +89,7 @@ def _auto_dispatch_relay_inner(msg: Dict[str, Any], recipient: str):
                 logger.debug(f"Relay task already exists for {message_id}, skipping")
                 return
     except Exception:
+        logger.debug("Swallowed exception in _auto_dispatch_relay_inner", exc_info=True)
         pass  # Fail open — create task even if dedup check fails
 
     # Build task description from relay content
@@ -147,6 +148,7 @@ def _auto_dispatch_relay_inner(msg: Dict[str, Any], recipient: str):
                     description=f"Relay from {sender} auto-dispatched as task {task_id}",
                 )
             except Exception:
+                logger.debug("Swallowed exception in _auto_dispatch_relay_inner", exc_info=True)
                 pass
         else:
             logger.warning(f"Auto-dispatch task creation failed: {result.get('error')}")

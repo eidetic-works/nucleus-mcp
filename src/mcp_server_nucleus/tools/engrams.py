@@ -4,6 +4,8 @@ DSoR, heartbeat, and tier system tools.
 Super-Tools Facade: All 36 engram/health/observability actions exposed via
 a single `nucleus_engrams(action, params)` MCP tool.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 from typing import Dict, List, Optional
@@ -44,7 +46,7 @@ def register(mcp, helpers):
 
     def _h_version():
         info = _brain_version_impl()
-        return f"🧠 NUCLEUS VERSION INFO\n═══════════════════════════════════════\n\n📦 VERSION\n   Nucleus: {info['nucleus_version']}\n   Python: {info['python_version']}\n   Platform: {info['platform']} {info['platform_release']}\n\n🔧 CAPABILITIES\n   MCP Tools: {info['mcp_tools_count']}+\n   Architecture: {info['architecture']}\n   Status: {info['status']}\n\n   GitHub: https://github.com/eidetic-works/nucleus-mcp\n   PyPI: pip install nucleus-mcp\n   Docs: https://nucleusos.dev"
+        return f"🧠 NUCLEUS VERSION INFO\n═══════════════════════════════════════\n\n📦 VERSION\n   Nucleus: {info['nucleus_version']}\n   Python: {info['python_version']}\n   Platform: {info['platform']} {info['platform_release']}\n\n🔧 CAPABILITIES\n   MCP Tools: {info['mcp_tools_count']}+\n   Architecture: {info['architecture']}\n   Status: {info['status']}\n\n   PyPI: pip install nucleus-mcp\n   Docs: https://nucleusos.dev"
 
     async def _h_export_schema():
         schema = await generate_tool_schema(mcp)
@@ -127,7 +129,9 @@ def register(mcp, helpers):
                 for line in f:
                     if line.strip():
                         try: decisions.append(json.loads(line))
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             decisions = decisions[-limit:][::-1]
             return make_response(True, data={"decisions": decisions, "count": len(decisions), "parse_errors": parse_errors})
         except Exception as e:
@@ -144,7 +148,9 @@ def register(mcp, helpers):
                 try:
                     with open(snap_file, encoding='utf-8') as f:
                         snapshots.append(json.load(f))
-                except Exception: continue
+                except Exception:
+                    logger.debug("Swallowed exception in register", exc_info=True)
+                    continue
             return make_response(True, data={"snapshots": snapshots, "count": len(snapshots)})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")
@@ -168,7 +174,9 @@ def register(mcp, helpers):
                             entry = json.loads(line)
                             if entry.get("timestamp", "") >= cutoff:
                                 entries.append(entry)
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             summary = {"total_entries": len(entries), "total_units": sum(e.get("units_consumed", 0) for e in entries), "by_scope": {}, "by_resource_type": {}, "decisions_linked": sum(1 for e in entries if e.get("decision_id")), "since_hours": since_hours, "parse_errors": parse_errors}
             for e in entries:
                 scope = e.get("scope", "unknown")
@@ -192,7 +200,9 @@ def register(mcp, helpers):
                 for line in f:
                     if line.strip():
                         try: events.append(json.loads(line))
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             token_states = {}
             for event in events:
                 tid = event.get("token_id")
@@ -221,6 +231,7 @@ def register(mcp, helpers):
                             json.loads(line)
                             decision_count += 1
                         except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
                             parse_errors += 1
             snapshots_dir = brain / "ledger" / "snapshots"
             snapshot_count = len(list(snapshots_dir.glob("snap-*.json"))) if snapshots_dir.exists() else 0
@@ -232,7 +243,9 @@ def register(mcp, helpers):
                         try:
                             entry = json.loads(line)
                             meter_count += 1; total_units += entry.get("units_consumed", 0)
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             tokens_file = brain / "ledger" / "auth" / "ipc_tokens.jsonl"
             token_issued, token_consumed = 0, 0
             if tokens_file.exists():
@@ -242,7 +255,9 @@ def register(mcp, helpers):
                             event = json.loads(line)
                             if event.get("event") == "issued": token_issued += 1
                             elif event.get("event") == "consumed": token_consumed += 1
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             overall_status = "DEGRADED" if parse_errors else "OPERATIONAL"
             return make_response(True, data={"version": "0.6.0", "feature": "DSoR", "components": {"decision_ledger": {"status": "ACTIVE" if decision_count else "READY", "total": decision_count}, "snapshots": {"status": "ACTIVE" if snapshot_count else "READY", "total": snapshot_count}, "ipc_auth": {"status": "ACTIVE" if token_issued else "READY", "issued": token_issued, "consumed": token_consumed}, "metering": {"status": "ACTIVE" if meter_count else "READY", "entries": meter_count, "units": total_units}}, "overall_status": overall_status, "parse_errors": parse_errors})
         except Exception as e:
@@ -266,7 +281,9 @@ def register(mcp, helpers):
                                     fed_events[key] += 1
                             if et.startswith("federation_"):
                                 recent.append({"type": et, "timestamp": event.get("timestamp"), "decision_id": event.get("data", {}).get("decision_id")})
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             return make_response(True, data={"event_counts": fed_events, "total": sum(fed_events.values()), "recent_events": recent[-10:], "parse_errors": parse_errors})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")
@@ -287,7 +304,9 @@ def register(mcp, helpers):
                             if event.get("type") == "federation_task_routed":
                                 data = event.get("data", {})
                                 decisions.append({"timestamp": event.get("timestamp"), "target_brain": data.get("target_brain"), "score": data.get("score"), "profile": data.get("profile"), "decision_id": data.get("decision_id")})
-                        except Exception: parse_errors += 1
+                        except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
+                            parse_errors += 1
             return make_response(True, data={"total_decisions": len(decisions[-limit:]), "decisions": decisions[-limit:], "parse_errors": parse_errors})
         except Exception as e:
             return make_response(False, error=f"Error: {e}")

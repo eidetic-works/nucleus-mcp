@@ -21,10 +21,14 @@ from fastmcp import FastMCP
 from nucleus_wedge import __version__
 from nucleus_wedge import bm25
 from nucleus_wedge.seed import ensure_seeds
-from nucleus_wedge.store import Store
+from nucleus_wedge.store import MemoryConflict, Store, mark_long_lived
 
 
 def build_server() -> FastMCP:
+    # This process serves many sessions and its environment froze at startup,
+    # so it must not attribute writes from that environment. Measured
+    # 2026-09-20: the running server held a session id 8.6h stale.
+    mark_long_lived()
     mcp = FastMCP(name=f"nucleus-wedge-{__version__}")
     try:
         from mcp_server_nucleus.runtime.tool_instrumentation import install_instrumentation
@@ -37,7 +41,72 @@ def build_server() -> FastMCP:
     ensure_seeds(store)
 
     @mcp.tool()
-    def remember(content: str, kind: str = "note", tags: list[str] | None = None) -> dict:
+    def memory_store_status() -> dict:
+        """Whether an engram store is present here, and how full it is.
+
+        Answers the question a zero-result ``recall`` cannot: is this brain
+        empty, or is it the wrong brain? Those look identical from the outside
+        and the difference is usually a wrong working directory.
+
+        Returns ``{state, rows, path, detail}`` where ``state`` is one of:
+          ``ABSENT``    — no engram store at this path. Nothing has ever been
+                          written here; a recall will return nothing and that
+                          nothing means nothing.
+          ``EMPTY``     — a real store exists but holds no records.
+          ``POPULATED`` — a store with records in it.
+        """
+        path = str(store.history_file)
+        if not store.exists:
+            return {
+                "state": "ABSENT",
+                "rows": 0,
+                "path": path,
+                "detail": (
+                    "No engram store at this path — absent, not empty. A recall "
+                    "here returns nothing because there is nothing to search, "
+                    "not because nothing has been learned. Check the working "
+                    "directory or set NUCLEUS_BRAIN_PATH."
+                ),
+            }
+        rows = sum(1 for _ in store.rows())
+        if rows == 0:
+            return {
+                "state": "EMPTY",
+                "rows": 0,
+                "path": path,
+                "detail": "Engram store exists but holds no records yet.",
+            }
+        return {
+            "state": "POPULATED",
+            "rows": rows,
+            "path": path,
+            "detail": f"Engram store holds {rows} records.",
+        }
+
+    @mcp.tool()
+    def memory_head_hash(key: str) -> dict:
+        """Hash of the current head of memory ``key`` — the read half of a
+        guarded update.
+
+        Take this before editing a memory, then hand it back to ``remember`` as
+        ``expected_hash``. If another agent wrote to the same key in between,
+        the write is refused instead of silently overwriting their work.
+
+        Returns:
+            ``{key, head_hash}``. ``head_hash`` is ``"absent"`` when no live
+            record exists — pass that value back to assert you are creating it.
+        """
+        return {"key": key, "head_hash": store.head_hash(key)}
+
+    @mcp.tool()
+    def remember(
+        content: str,
+        kind: str = "note",
+        tags: list[str] | None = None,
+        key: str | None = None,
+        expected_hash: str | None = None,
+        session: str | None = None,
+    ) -> dict:
         """Append one memory to .brain/engrams/history.jsonl.
 
         Args:
@@ -47,11 +116,165 @@ def build_server() -> FastMCP:
             tags: Optional list of short tag strings; encoded into context field.
                   Any ``role:<x>`` tag is canonicalized at write-time per
                   ADR-0033 v3 §B (`_normalize_role`).
+            key: Optional explicit key. Reusing an existing key updates that
+                 memory; omitting it mints a fresh one as before.
+            session: The caller's session id, recorded so a later reading can
+                  count how many DISTINCT sessions a pattern appeared in.
+                  Supply it per call. This server process may outlive the
+                  session that spawned it -- measured at 3 days -- so its own
+                  environment cannot be trusted to say which session is
+                  writing, and an id taken from there is recorded but not
+                  counted.
+            expected_hash: Optional compare-and-swap token from
+                 ``memory_head_hash``. When supplied, the write is refused with
+                 ``conflict: true`` if the head moved since you read it. Requires
+                 ``key``. Omit it and the write behaves exactly as it always has.
 
         Returns:
-            ``{key, timestamp}`` of the appended record.
+            ``{key, timestamp, head_hash}`` on success — ``head_hash`` is the new
+            head, so a read-modify-write loop needs no second call. On a refused
+            write: ``{conflict: True, key, expected, actual, error}``.
         """
-        return store.append(value=content, kind=kind, tags=tags)
+        try:
+            out = store.append(
+                value=content, kind=kind, tags=tags, key=key,
+                expected_hash=expected_hash, session=session,
+            )
+        except MemoryConflict as exc:
+            # Returned, not raised: an MCP tool that throws gives the calling
+            # agent a stack trace to guess at. This gives it the two hashes and
+            # the retry instruction in a shape it can branch on.
+            return {
+                "conflict": True,
+                "key": exc.key,
+                "expected": exc.expected,
+                "actual": exc.actual,
+                "error": str(exc),
+            }
+        out["head_hash"] = store.head_hash(out["key"])
+        return out
+
+    @mcp.tool()
+    def memory_proposals_list() -> dict:
+        """Pending proposed memory changes — the queue a decision gates.
+
+        The dreaming batch pass proposes memory changes with evidence attached;
+        nothing reaches memory until a proposal is accepted. This is the list
+        of what is waiting for that decision.
+
+        Returns ``{pending: [...], count}`` where each entry carries
+        ``proposal_id``, ``proposed_memory``, ``evidence_summary``, and
+        ``evidence_complete`` — the flag ``memory_proposal_accept`` checks. An
+        entry with ``evidence_complete: false`` cannot be accepted; weak
+        evidence is a reason to reject, not to approve.
+        """
+        try:
+            from mcp_server_nucleus.flywheel import proposals
+        except ImportError:
+            # nucleus_wedge is packaged to be importable standalone; the
+            # proposal gate lives in mcp_server_nucleus.
+            return {
+                "available": False,
+                "pending": [],
+                "count": 0,
+                "error": "mcp_server_nucleus is not available in this build",
+            }
+        rows = proposals.pending(store._brain_path)
+        return {
+            "pending": [
+                {
+                    "proposal_id": r.get("proposal_id"),
+                    "proposed_memory": r.get("proposed_memory"),
+                    "evidence_summary": (r.get("evidence") or {}).get("summary", ""),
+                    "evidence_complete": bool(
+                        (r.get("evidence") or {}).get("complete", False)
+                    ),
+                    "pattern": r.get("pattern", ""),
+                    "proposed_at": r.get("at"),
+                }
+                for r in rows
+            ],
+            "count": len(rows),
+        }
+
+    @mcp.tool()
+    def memory_proposal_accept(proposal_id: str) -> dict:
+        """Accept a pending proposal — the ONLY path a proposal has to memory.
+
+        The gate's central refusal lives here: a proposal whose evidence is
+        INSUFFICIENT (a capped scan, a count over a set nobody could fully see)
+        cannot be accepted. Approving it is how a partial reading becomes an
+        organisational fact every later agent reads.
+
+        Args:
+            proposal_id: The ``proposal_id`` from ``memory_proposals_list``.
+
+        Returns:
+            The decided row fields on success. On any refusal — insufficient
+            evidence, already decided, unknown id — ``{refused: True,
+            proposal_id, reason}`` so the caller can branch on it instead of
+            parsing a stack trace.
+        """
+        try:
+            from mcp_server_nucleus.flywheel import proposals
+        except ImportError:
+            return {
+                "available": False,
+                "error": "mcp_server_nucleus is not available in this build",
+            }
+        try:
+            row = proposals.accept(store._brain_path, proposal_id)
+        except ValueError as exc:
+            # Returned, not raised — same shape as ``remember``'s conflict: the
+            # calling agent gets a refusal it can act on, not a traceback.
+            return {"refused": True, "proposal_id": proposal_id, "reason": str(exc)}
+        return {
+            "refused": False,
+            "accepted": True,
+            "proposal_id": row["proposal_id"],
+            "status": row["status"],
+            "decided_at": row["decided_at"],
+            "decided_by": row["decided_by"],
+        }
+
+    @mcp.tool()
+    def memory_proposal_reject(proposal_id: str, reason: str) -> dict:
+        """Reject a pending proposal. Recorded, never deleted.
+
+        A rejection needs a reason: an unexplained rejection tells the next
+        batch pass nothing, so it proposes the same thing again. The record of
+        what was rejected — and why — is itself evidence.
+
+        Args:
+            proposal_id: The ``proposal_id`` from ``memory_proposals_list``.
+            reason: Why the proposal is declined. Required — an empty reason
+                    is refused.
+
+        Returns:
+            The decided row fields on success, or ``{refused: True,
+            proposal_id, reason}`` when the rejection itself is refused
+            (empty reason, already decided, unknown id).
+        """
+        try:
+            from mcp_server_nucleus.flywheel import proposals
+        except ImportError:
+            return {
+                "available": False,
+                "error": "mcp_server_nucleus is not available in this build",
+            }
+        try:
+            row = proposals.reject(store._brain_path, proposal_id, reason=reason)
+        except ValueError as exc:
+            return {"refused": True, "proposal_id": proposal_id, "reason": str(exc)}
+        return {
+            "refused": False,
+            "accepted": False,
+            "proposal_id": row["proposal_id"],
+            "status": row["status"],
+            "decided_at": row["decided_at"],
+            "decided_by": row["decided_by"],
+            "reason": row["reason"],
+        }
 
     @mcp.tool()
     def recall(

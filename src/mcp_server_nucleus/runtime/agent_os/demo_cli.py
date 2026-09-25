@@ -6,6 +6,9 @@ Runs a prompt two ways:
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 from typing import Optional
 
@@ -39,6 +42,7 @@ def run_demo(
             from ..llm_client import get_llm_client
             client = get_llm_client()
         except Exception:
+            logger.debug("Swallowed exception in run_demo", exc_info=True)
             pass
 
     if client is not None:
@@ -46,6 +50,7 @@ def run_demo(
             resp = client.generate_content(intent)
             naked_text = getattr(resp, "text", "") or ""
         except Exception:
+            logger.debug("Swallowed exception in run_demo", exc_info=True)
             client = None
 
     if client is None:

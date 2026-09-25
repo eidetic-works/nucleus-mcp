@@ -14,6 +14,24 @@ Tools exposed (4):
 Mounted at: /mcp-readonly
 Full server: /mcp (all 17 tools, including write tools)
 
+"Read-only" describes the TOOL SURFACE, not an access boundary
+--------------------------------------------------------------
+This endpoint carries **exactly the same tenant and authentication posture as
+/mcp**. ``app.py`` applies the same ``NucleusTenantMiddleware`` to both, so a
+caller who can reach one can reach the other under the same credential rules:
+anonymous requests are rejected wherever a tenant map or ``NUCLEUS_REQUIRE_AUTH``
+exists, and accepted where neither does.
+
+The only difference is which tools are registered below. It is NOT a lower-trust
+surface, and reaching it does not require less than reaching /mcp (ledger HS-4).
+The framing above — "enterprise sandboxes", "federated connectors" — reads like
+an access-control boundary, and it is not one; better to say so here than let a
+deployment infer otherwise.
+
+If a genuinely lower-trust surface is ever needed, it needs its own auth check.
+Do not build one by weakening the middleware on this mount: that would make
+/mcp-readonly a bypass around /mcp rather than a restriction of it.
+
 Env vars:
   NUCLEUS_BRAIN_PATH  — Path to .brain directory (same as main server)
   PORT                — Cloud Run port (default: 8080)

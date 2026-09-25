@@ -18,6 +18,9 @@ session-context snapshots under ``.brain/sessions/``.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import hashlib
 import hmac
 import json
@@ -422,6 +425,7 @@ def _walk_ppid_ancestry(start_pid: int, max_depth: int = 32) -> list[int]:
                 timeout=2,
             ).decode("utf-8", errors="replace").strip()
         except Exception:
+            logger.debug("Swallowed exception in _walk_ppid_ancestry", exc_info=True)
             break
         if not out:
             break
@@ -450,6 +454,7 @@ def _pid_create_time(pid: int) -> str | None:
         val = out.decode("utf-8", errors="replace").strip()
         return val or None
     except Exception:
+        logger.debug("Swallowed exception in _pid_create_time", exc_info=True)
         return None
 
 

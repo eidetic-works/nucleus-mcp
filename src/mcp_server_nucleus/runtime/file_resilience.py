@@ -132,6 +132,7 @@ class FileLock:
                     self.lock_path.unlink(missing_ok=True)
                     break
             except Exception:
+                logger.debug("Swallowed exception in _acquire_fallback", exc_info=True)
                 break
             if time.monotonic() - start > self.timeout:
                 return False
@@ -142,12 +143,14 @@ class FileLock:
             self._acquired = True
             return True
         except Exception:
+            logger.debug("Swallowed exception in _acquire_fallback", exc_info=True)
             return False
 
     def _cleanup_lock_file(self):
         try:
             self.lock_path.unlink(missing_ok=True)
         except Exception:
+            logger.debug("Swallowed exception in _cleanup_lock_file", exc_info=True)
             pass
 
     def __enter__(self):
@@ -197,6 +200,7 @@ class AtomicWriter:
                                 backup.unlink()
                             path.rename(backup)
                         except Exception:
+                            logger.debug("Swallowed exception in write_text", exc_info=True)
                             pass
                     os.rename(tmp_path, str(path))
                     # Clean up backup
@@ -205,6 +209,7 @@ class AtomicWriter:
                         try:
                             backup.unlink()
                         except Exception:
+                            logger.debug("Swallowed exception in write_text", exc_info=True)
                             pass
                 else:
                     os.rename(tmp_path, str(path))
@@ -215,6 +220,7 @@ class AtomicWriter:
                 try:
                     os.unlink(tmp_path)
                 except Exception:
+                    logger.debug("Swallowed exception in write_text", exc_info=True)
                     pass
                 raise
 
@@ -292,6 +298,7 @@ class ResilientJSONReader:
                 content = path.read_text(encoding="latin-1")
                 return json.loads(content)
             except Exception:
+                logger.debug("Swallowed exception in read_json", exc_info=True)
                 return default
         except Exception as e:
             logger.error(f"Failed to read {path}: {e}")
@@ -317,9 +324,11 @@ class ResilientJSONReader:
                 try:
                     return json.loads(backup.read_text(encoding="utf-8-sig"))
                 except Exception:
+                    logger.debug("Swallowed exception in _try_recover_json", exc_info=True)
                     pass
 
         except Exception:
+            logger.debug("Swallowed exception in _try_recover_json", exc_info=True)
             pass
 
         return default
@@ -374,6 +383,7 @@ class DiskSpaceChecker:
             free_mb = usage.free / (1024 * 1024)
             return free_mb >= min_required
         except Exception:
+            logger.debug("Swallowed exception in has_space", exc_info=True)
             return True  # Assume OK if check fails
 
     @staticmethod
@@ -387,6 +397,7 @@ class DiskSpaceChecker:
             usage = shutil.disk_usage(str(check))
             return usage.free / (1024 * 1024)
         except Exception:
+            logger.debug("Swallowed exception in get_free_space_mb", exc_info=True)
             return float('inf')
 
 
@@ -425,6 +436,7 @@ class PermissionChecker:
         except PermissionError:
             return False
         except Exception:
+            logger.debug("Swallowed exception in ensure_writable", exc_info=True)
             return False
 
 

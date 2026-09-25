@@ -22,6 +22,9 @@ Design invariants:
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import hashlib
 import json
 import os
@@ -276,6 +279,7 @@ def _try_recall_activity(role: str, domain: Optional[str]) -> List[Dict[str, Any
     try:
         from nucleus_wedge import memories  # type: ignore
     except Exception:
+        logger.debug("Swallowed exception in _try_recall_activity", exc_info=True)
         return []
     fn = getattr(memories, "nucleus_wedge__recall_activity", None)
     if not callable(fn):
@@ -288,6 +292,7 @@ def _try_recall_activity(role: str, domain: Optional[str]) -> List[Dict[str, Any
             return list(result["results"])
         return []
     except Exception:
+        logger.debug("Swallowed exception in _try_recall_activity", exc_info=True)
         return []
 
 
@@ -297,6 +302,7 @@ def _try_write_activity_engram(
     try:
         from nucleus_wedge import memories  # type: ignore
     except Exception:
+        logger.debug("Swallowed exception in _try_write_activity_engram", exc_info=True)
         return False
     fn = getattr(memories, "nucleus_wedge__write_activity", None)
     if not callable(fn):
@@ -308,6 +314,7 @@ def _try_write_activity_engram(
         fn(role=role, content=resolution, tags=tags)
         return True
     except Exception:
+        logger.debug("Swallowed exception in _try_write_activity_engram", exc_info=True)
         return False
 
 

@@ -1,0 +1,52 @@
+# CORE FAST-GATE manifest (ADR-0043 W1)
+#
+# Checked-in selector for the fast pre-merge gate: the subset of the suite that
+# covers the project spine — runtime/entrypoint registration, memory facade/SoR,
+# and relay. Paths are relative to the package root (the dir holding pyproject.toml).
+#
+# Contract:
+#   - scripts/core_gate.sh reads this file and runs exactly these paths.
+#   - tests/test_core_gate_manifest.py guards that the selection stays >500 tests
+#     (protects against silent decay to zero) and that every path resolves.
+#   - Blank lines and lines beginning with '#' are ignored.
+#
+# When you add/remove a spine test file, edit this list; the guard keeps it honest.
+# Baseline at authorship: 32 files -> 556 tests collected.
+
+# --- Runtime / entrypoint registration (9 files) ---
+tests/test_tool_registration.py
+tests/test_tool_registration_impl_coverage.py
+tests/test_register_cmd.py
+tests/test_manifest.py
+tests/test_manifest_coverage.py
+tests/test_dispatch.py
+tests/test_dispatch_envelope.py
+tests/test_stdio_server_facades.py
+tests/runtime/test_tool_instrumentation.py
+
+# --- Memory facade / SoR (12 files) ---
+tests/test_memory_facade.py
+tests/test_memory_sor.py
+tests/test_pipeline_sor_dualwrite.py
+tests/test_wedge_sor_dualwrite.py
+tests/test_recall_beats_grep.py
+tests/test_recall_activity.py
+tests/test_recall_activity_health.py
+tests/test_engram_ops.py
+tests/test_engram_tools.py
+tests/test_dsor_coverage.py
+tests/test_vector_store_coverage.py
+tests/test_engram_cache_dual_source.py
+
+# --- Relay (11 files) ---
+tests/test_relay_post_helper.py
+tests/test_relay_inbox_canonical.py
+tests/test_relay_transport.py
+tests/test_relay_poll.py
+tests/test_relay_gate.py
+tests/test_relay_per_session_read.py
+tests/test_relay_atomic_write.py
+tests/test_relay_engram_projection.py
+tests/test_relay_wait.py
+tests/test_relay_status_http_parity.py
+tests/test_tools_relay.py

@@ -63,6 +63,7 @@ def register_resources(mcp, helpers):
             ledger = get_change_ledger()
             return json.dumps(ledger.get_snapshot(), indent=2)
         except Exception:
+            logger.debug("Swallowed exception in register_resources", exc_info=True)
             return json.dumps({"global_version": 0, "uri_versions": {}, "recent_changes": []})
 
     @mcp.resource("brain://traces")
@@ -422,6 +423,7 @@ def register_prompts(mcp, helpers):
                     info = f.get(name, {})
                     sections.append(f"- **{name}**: {json.dumps(info)}")
             except Exception:
+                logger.debug("Swallowed exception in register_prompts", exc_info=True)
                 sections.append("- (frontiers data unavailable)")
             sections.append("\n## What should we DO differently this week?")
             return "\n".join(sections)
@@ -510,6 +512,7 @@ def main():
                              "Install with: pip install fastmcp\n")
         sys.stderr.flush()
     except Exception:
+        logger.debug("Swallowed exception in main", exc_info=True)
         pass
 
     # Check for standalone/fallback mode
@@ -565,6 +568,7 @@ def main():
                             source="FILE_MONITOR",
                         ))
                 except Exception:
+                    logger.debug("Swallowed exception in main", exc_info=True)
                     pass
             
             monitor = init_file_monitor(brain_path, on_change=_on_brain_file_change)
@@ -573,6 +577,7 @@ def main():
     except ImportError as e:
         log_debug(f"File monitor not available: {e}")
     except Exception as e:
+        logger.debug("Swallowed exception in main", exc_info=True)
         log_debug(f"File monitor init failed: {e}")
 
     try:
@@ -580,6 +585,7 @@ def main():
         auto_start_relay_watcher(get_brain_path())
         log_debug("📬 Relay watcher auto-started")
     except Exception as e:
+        logger.debug("Swallowed exception in main", exc_info=True)
         log_debug(f"Relay watcher auto-start failed: {e}")
 
     # Emit session_started — triggers cycle bootstrap + growth hooks
@@ -590,6 +596,7 @@ def main():
         _emit_event("session_started", "mcp_server", {"session_id": _session_id})
         log_debug(f"🟢 session_started emitted: {_session_id}")
     except Exception as e:
+        logger.debug("Swallowed exception in main", exc_info=True)
         log_debug(f"session_started emission failed: {e}")
 
     # Fire anonymous telemetry session_start (MCP server mode)
@@ -598,6 +605,7 @@ def main():
         record_session_start()
         log_debug("📡 anon telemetry session_start sent")
     except Exception as e:
+        logger.debug("Swallowed exception in main", exc_info=True)
         log_debug(f"anon telemetry session_start failed: {e}")
 
     # Start a heartbeat thread — sends a telemetry ping every 30 minutes
@@ -613,12 +621,14 @@ def main():
                     _time.sleep(1800)  # 30 minutes
                     record_anon_command("heartbeat", "mcp_server", 0)
                 except Exception:
+                    logger.debug("Swallowed exception in main", exc_info=True)
                     break
 
         _hb = _threading.Thread(target=_heartbeat_loop, daemon=True)
         _hb.start()
         log_debug("📡 anon telemetry heartbeat thread started (30min interval)")
     except Exception as e:
+        logger.debug("Swallowed exception in main", exc_info=True)
         log_debug(f"anon telemetry heartbeat failed: {e}")
 
     try:
@@ -639,4 +649,5 @@ def main():
             shutdown_anon_telemetry(timeout=3.0)
             log_debug("📡 anon telemetry flushed on shutdown")
         except Exception:
+            logger.debug("Swallowed exception in main", exc_info=True)
             pass

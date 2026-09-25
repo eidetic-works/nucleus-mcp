@@ -41,7 +41,7 @@ Claude Code `.mcp.json` snippet:
 }
 ```
 
-Full documentation: [docs/RABBITHOLE.md](docs/RABBITHOLE.md)
+Full documentation: [docs/RABBITHOLE.md](docs/RABBITHOLE.md) — also installed with the package, at `<site-packages>/mcp_server_nucleus/docs/RABBITHOLE.md`.
 
 ---
 
@@ -64,7 +64,7 @@ The core loop that makes AI reliability compound over time:
 
 **GROUND** — 5-tier execution verification. Syntax, imports, tests, runtime. Goes outside the formal system to check the AI's work.
 
-**ALIGN** — One-call corrections. `nucleus_align(action="correct", params={context, correction})`. Each correction automatically records a verdict, creates a training pair, and emits an event.
+**ALIGN** — One-call corrections. `nucleus review` records a verdict against a prior decision, which becomes a training pair and an event.
 
 **COMPOUND** — Deltas measure the gap between intent and reality. Recurring patterns become strategy. Negative deltas become training signal.
 
@@ -77,24 +77,26 @@ Every tool response shows frontier health:
 
 ## Quick Start
 
-**Option A — No install (ChatGPT, Claude, Perplexity):**
+**Hosted access is not currently available.** The remote MCP endpoint is
+withdrawn pending an access-control review. Use the local install below.
 
-Add `https://relay.nucleusos.dev/mcp` as a remote MCP server in your platform's connector settings. That's it — your AI now has persistent memory.
-
-**Option B — Local install (Cursor, Windsurf, Claude Desktop):**
+**Local install (Cursor, Windsurf, Claude Desktop):**
 
 ```bash
 pip install nucleus-mcp
 nucleus init --recipe founder
 ```
 
-Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` auto-configures your MCP client — just restart it.
+Two commands. Nucleus is running. `nucleus init` seeds `.brain/`, writes a project-local `.mcp.json`, and offers to configure every AI client you have installed. Say yes, then restart the client.
 
 ---
 
 ## What It Does
 
-**114 MCP tools** across 13 facades:
+**30 MCP tools** across 16 facades, exposing **210 actions**, plus 19 `brain://`
+resources and 8 prompts. Regenerate these with `python3 tools_audit/count_surface.py`
+rather than editing them by hand — three hand-maintained copies of this number had
+drifted apart before that script existed.
 
 - **GROUND** — Execution verification (5 tiers: diff, syntax, imports, tests, runtime)
 - **ALIGN** — Human corrections (verdict + delta + DPO + event in one call)
@@ -105,7 +107,7 @@ Two commands. Nucleus is running. AI outputs are now verified. `nucleus init` au
 - **Orchestration** — Agent slots, multi-brain sync, task dispatch.
 - **Archive** — Training pipeline (SFT + DPO), delta tracking, frontier health dashboard.
 
-**Benchmark:** [decision-retention-evals](https://github.com/eidetic-works/decision-retention-evals) — does your AI agent remember why the code is the way it is?
+**Benchmark:** decision-retention-evals — does your AI agent remember why the code is the way it is? (ask on [Discord](https://discord.gg/RJuBNNJ5MT) for the current mirror)
 
 ---
 
@@ -116,18 +118,18 @@ Everything above is free (MIT). Nucleus Pro adds verifiable governance:
 ```bash
 nucleus trial                              # 14-day free trial
 nucleus compliance-check                   # Score your AI governance
-nucleus audit-report --signed -o report.html  # Cryptographically signed report
+nucleus audit-report --format html -o report.html   # Audit report
 ```
 
 **$19/month** or **$149/year** — [nucleusos.dev/pricing](https://nucleusos.dev/pricing)
 
 | | Free | Pro |
 |---|---|---|
-| 13 tools, 10 resources, 3 prompts | Yes | Yes |
+| 30 tools, 19 resources, 8 prompts | Yes | Yes |
 | Persistent memory | Yes | Yes |
 | Governance & HITL | Yes | Yes |
 | Audit trails (DSoR) | Yes | Yes |
-| **Signed audit reports** | - | Ed25519 |
+| **Signed audit reports** | - | not yet shipped |
 | **Compliance exports** | Score only | Full PDF/HTML |
 | **Priority issues** | - | Yes |
 
@@ -135,22 +137,37 @@ nucleus audit-report --signed -o report.html  # Cryptographically signed report
 
 ## Install
 
-One command installs the CLI and auto-configures every MCP client you have —
-**Claude Desktop, Claude Code, Cursor, Windsurf, and Antigravity** — backing up
-each config file it touches. No hand-editing JSON.
-
 ```bash
 pip install nucleus-mcp      # or:  uvx nucleus-mcp  ·  pipx install nucleus-mcp
-nucleus init                 # seeds .brain/ and writes the MCP config for every client found
+nucleus init                 # seeds .brain/, then offers to configure your AI clients
 ```
+
+`nucleus init` always does three things: seeds `.brain/`, writes a project-local
+`.mcp.json` that Claude Code reads in that folder, and runs a memory write-and-recall
+self-test so you can see it working before you trust it.
+
+In an interactive terminal it then asks whether to configure your other AI clients.
+Answer yes and it writes the `nucleus` entry into every one it finds installed —
+**Claude Desktop, Claude Code, Cursor, Windsurf, Antigravity, Devin** — backing up
+each file it touches. It tells you how many it configured, and says so plainly when
+that number is zero rather than leaving you to wonder.
+
+Run with `--no-wizard`, or in a script where there is no terminal to ask, and it
+seeds the brain and the project-local config only. Use `nucleus setup` for the
+client configuration in that case.
 
 Then **restart your AI client**. To verify: your client's tool list now shows
 `nucleus_*` tools, or run `nucleus doctor`.
 
-`nucleus init` writes a `<config>.json.bak` backup before editing, and never
-touches an existing `nucleus` entry unless you pass `--force`. Already have a
-`.brain`? Run `nucleus setup` to (re)configure clients without re-seeding it —
-add `--dry-run` to preview the exact changes first.
+An existing `nucleus` entry is never touched unless you pass `--force`. For most
+clients a `<config>.json.bak` copy is written before the edit. Claude Code's
+`~/.claude.json` is handled differently and deliberately: nucleus writes a temp
+file and swaps it in atomically, so a failed write leaves the original exactly as
+it was, and no `.bak` is left lying beside it. A client that is installed but has
+never had an MCP config gets one created; a client you do not have is left alone
+entirely, and `~/.claude.json` is never invented if it is missing.
+Already have a `.brain`? Run `nucleus setup` to configure clients without
+re-seeding it, with `--dry-run` to preview the exact changes first.
 
 ### Claude Desktop — one-click bundle
 
@@ -159,18 +176,19 @@ A one-click **`nucleus.mcpb`** bundle for Claude Desktop is built via
 workflow ships it). Opening the bundle with Claude Desktop uses Claude's
 built-in uv runtime to fetch and run `nucleus-mcp` — no Python setup required.
 
-### No install (ChatGPT, Claude.ai, Perplexity)
+### Hosted / no-install access
 
-Add `https://relay.nucleusos.dev/mcp` as a remote MCP server in your platform's
-connector settings. Persistent memory, nothing to install.
+Currently unavailable. The remote MCP endpoint is withdrawn pending an
+access-control review; use a local install.
 
 <details>
 <summary>Manual config (fallback)</summary>
 
-If a client isn't auto-detected, `nucleus init` prints a ready-to-paste
-`mcpServers` block and copies it to your clipboard, along with each client's
-config-file location. The full manual walkthrough lives in
-[docs/QUICK_START.md](docs/QUICK_START.md).
+If a client isn't auto-detected, run `nucleus setup --dry-run` to print every
+location nucleus looks in and the exact `mcpServers` block it would write, then
+paste that block into your client's config yourself. `nucleus setup --create`
+writes a Claude Code config even when nothing is detected. The full manual
+walkthrough lives in [docs/QUICK_START.md](docs/QUICK_START.md), which ships with the package at `<site-packages>/mcp_server_nucleus/docs/QUICK_START.md`.
 </details>
 
 ### Path Discovery
@@ -254,8 +272,8 @@ See [TELEMETRY.md](TELEMETRY.md) for details.
 
 ## Contributing
 
-- **Bug?** Open an [Issue](https://github.com/eidetic-works/nucleus-mcp/issues)
-- **Feature idea?** Start a [Discussion](https://github.com/eidetic-works/nucleus-mcp/discussions)
+- **Bug?** Email [hello@nucleusos.dev](mailto:hello@nucleusos.dev) or report it on [Discord](https://discord.gg/RJuBNNJ5MT)
+- **Feature idea?** Bring it to [Discord](https://discord.gg/RJuBNNJ5MT)
 - **Code?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Chat?** [Discord](https://discord.gg/RJuBNNJ5MT)
 
@@ -263,12 +281,47 @@ See [TELEMETRY.md](TELEMETRY.md) for details.
 
 MIT © 2026 | [hello@nucleusos.dev](mailto:hello@nucleusos.dev)
 
+
+## Companion repositories (optional)
+
+Some deployments keep companion scripts in a repo next to this one. Point nucleus at them with
+either:
+
+```bash
+export NUCLEUS_SIBLING_REPOS="$HOME/repo-a:$HOME/repo-b"     # os.pathsep-separated
+# or, one path per line:
+printf '%s\n' "$HOME/repo-a" "$HOME/repo-b" > ~/.config/nucleus/siblings
+```
+
+With neither set, nucleus searches only its own repo — no assumptions are made about the host.
+A job whose script cannot be found fails with an error naming every location tried.
+
 ## Privacy
 
-Nucleus is a local-first tool. All engrams, memories, and project state are stored on your machine in `.brain/` — no personal data is sent to any server unless you explicitly configure a remote relay.
+**Where your memories live depends on which Quick Start option you chose.**
 
-**Telemetry:** Anonymous, aggregate usage statistics only (command name, duration, error type, versions, OS). No engram content, no file paths, no prompts, no API keys, no PII — ever. Disable with `nucleus config --no-telemetry` or `NUCLEUS_ANON_TELEMETRY=false`.
+**Option B — local install.** Nucleus is local-first. Engrams, memories and
+project state are written to `.brain/` on your machine. Nothing is sent anywhere
+unless you configure a relay yourself.
 
-**Remote relay (optional):** If you configure a remote relay endpoint, engram metadata is synced to your own relay server. You control the relay — no third-party data sharing.
+**Option A — no install (`relay.nucleusos.dev`).** This is a **hosted service we
+operate**. Your engrams are stored on our servers, not on your machine, and what
+is stored is the **full content** of each memory — the `value` field, not just a
+key or a timestamp — along with its context label, intensity, version and
+timestamps. There is no local `.brain/` in this mode; the relay is the brain.
+
+We keep tenants separated and reachable only with your own bearer token. But
+"local-first" does not describe Option A, and it would be wrong to let the word
+cover it: if you would not put something on a server we run, do not put it in a
+memory while connected this way. Use Option B for that.
+
+An earlier version of this section described only the local case, and understated
+what a relay receives. It has been corrected.
+
+**Telemetry:** Anonymous, aggregate usage statistics only (command name, duration, error type, versions, OS). No engram content, no file paths, no prompts, no API keys, no PII — ever. Disable with `nucleus config --no-telemetry` or `NUCLEUS_ANON_TELEMETRY=false`. This is separate from, and unaffected by, which option above you chose.
+
+**Self-hosted relay (optional, Option B):** If you point Nucleus at a relay
+endpoint you run, full engram content is synced there — same record shape as
+above. That server is yours.
 
 **Contact:** Privacy questions → [hello@nucleusos.dev](mailto:hello@nucleusos.dev)

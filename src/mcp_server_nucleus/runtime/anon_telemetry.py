@@ -106,6 +106,7 @@ def _read_yaml_config() -> dict:
             try:
                 return yaml.safe_load(p.read_text()) or {}
             except Exception:
+                logger.debug("Swallowed exception in _read_yaml_config", exc_info=True)
                 pass
     return {}
 
@@ -173,6 +174,7 @@ def _get_nucleus_version() -> str:
         from importlib.metadata import version
         return version("nucleus-mcp")
     except Exception:
+        logger.debug("Swallowed exception in _get_nucleus_version", exc_info=True)
         return "unknown"
 
 
@@ -195,9 +197,11 @@ def _get_install_id() -> str:
         try:
             path.chmod(0o600)
         except Exception:
+            logger.debug("Swallowed exception in _get_install_id", exc_info=True)
             pass
         return new_id
     except Exception:
+        logger.debug("Swallowed exception in _get_install_id", exc_info=True)
         return "unknown"
 
 
@@ -335,6 +339,7 @@ def record_install():
                     version_marker.parent.mkdir(parents=True, exist_ok=True)
                     version_marker.write_text(current_version, encoding="utf-8")
             except Exception:
+                logger.debug("Swallowed exception in record_install", exc_info=True)
                 pass
             return  # Already recorded for this install_id
 
@@ -349,8 +354,10 @@ def record_install():
             version_marker.parent.mkdir(parents=True, exist_ok=True)
             version_marker.write_text(current_version, encoding="utf-8")
         except Exception:
+            logger.debug("Swallowed exception in record_install", exc_info=True)
             pass
     except Exception:
+        logger.debug("Swallowed exception in record_install", exc_info=True)
         pass  # Never let telemetry break the user's workflow
 
 
@@ -366,6 +373,7 @@ def _detect_install_method() -> str:
             return "editable"
         return "unknown"
     except Exception:
+        logger.debug("Swallowed exception in _detect_install_method", exc_info=True)
         return "unknown"
 
 
@@ -377,6 +385,7 @@ def record_session_start():
         event = _build_event("session_start")
         _send_in_background(event)
     except Exception:
+        logger.debug("Swallowed exception in record_session_start", exc_info=True)
         pass
 
 
@@ -393,6 +402,7 @@ def record_session_end():
         })
         _send_in_background(event)
     except Exception:
+        logger.debug("Swallowed exception in record_session_end", exc_info=True)
         pass
 
 
@@ -416,6 +426,7 @@ def record_anon_command(
                              duration_ms=duration_ms, error_type=error_type)
         _send_in_background(event)
     except Exception:
+        logger.debug("Swallowed exception in record_anon_command", exc_info=True)
         pass  # Never let telemetry break the user's workflow
 
 
@@ -427,6 +438,7 @@ def record_feature_adoption(feature: str, context: Optional[dict] = None):
         event = _build_event("feature_adoption", command=feature, extra=context)
         _send_in_background(event)
     except Exception:
+        logger.debug("Swallowed exception in record_feature_adoption", exc_info=True)
         pass
 
 
@@ -438,6 +450,7 @@ def record_error(error_type: str, command: str = "", context: Optional[dict] = N
         event = _build_event("error", command=command, error_type=error_type, extra=context)
         _send_in_background(event)
     except Exception:
+        logger.debug("Swallowed exception in record_error", exc_info=True)
         pass
 
 
@@ -449,6 +462,7 @@ def record_daemon_install():
         event = _build_event("daemon_install")
         _send_in_background(event)
     except Exception:
+        logger.debug("Swallowed exception in record_daemon_install", exc_info=True)
         pass
 
 
@@ -490,6 +504,7 @@ def _write_yaml_telemetry_setting(enabled: bool) -> bool:
         target.write_text(yaml.safe_dump(existing, sort_keys=False), encoding="utf-8")
         return True
     except Exception:
+        logger.debug("Swallowed exception in _write_yaml_telemetry_setting", exc_info=True)
         return False
 
 
@@ -533,9 +548,10 @@ def show_first_run_notice():
             "     nucleus config --no-telemetry\n"
             "     What's sent: commands, sessions, feature adoption, errors, version, OS, install_id.\n"
             "     NEVER sent: content, prompts, file paths, API keys, identity.\n"
-            "     Details: https://github.com/eidetic-works/nucleus-mcp/blob/main/TELEMETRY.md\n"
+            "     Details: https://nucleusos.dev\n"
         )
     except Exception:
+        logger.debug("Swallowed exception in show_first_run_notice", exc_info=True)
         pass  # Even a broken stdout must not block the CLI
 
     # Marker so we never print again, even if a subsequent invocation has no tty
@@ -546,6 +562,7 @@ def show_first_run_notice():
                 marker.touch()
                 break
             except Exception:
+                logger.debug("Swallowed exception in show_first_run_notice", exc_info=True)
                 continue
 
 

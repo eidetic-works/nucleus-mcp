@@ -11,6 +11,9 @@ strict isolation while enabling communication.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import os
 import uuid
@@ -118,9 +121,9 @@ def submit_feedback(
     Issue routing:
         - Set NUCLEUS_LANE_FEEDBACK_REPO to override (e.g. for internal users
           who have access to the private repo).
-        - Default: public repo (eidetic-works/nucleus-mcp) — works for anyone.
-        - Internal users: set NUCLEUS_LANE_FEEDBACK_REPO=eidetic-works/mcp-server-nucleus
-          to route to the private repo.
+        - Unset: issues are routed to the built-in default repo.
+        - Set NUCLEUS_LANE_FEEDBACK_REPO=<owner>/<name> to route elsewhere,
+          e.g. a private repo you control.
 
     Set NUCLEUS_LANE_FEEDBACK_GITHUB=0 to disable GitHub issue creation
     (e.g. for air-gapped environments or testing).
@@ -142,17 +145,22 @@ def submit_feedback(
     github_enabled = os.environ.get("NUCLEUS_LANE_FEEDBACK_GITHUB", "1") != "0"
     if github_enabled:
         # Resolve target repo: env override > parameter > default public
-        target_repo = (
-            os.environ.get("NUCLEUS_LANE_FEEDBACK_REPO", "")
-            or github_repo
-            or "eidetic-works/nucleus-mcp"  # public repo — works for anyone
+        # No built-in fallback. This used to default to a repo that 404s, so
+        # user feedback was posted into the void and reported as filed.
+        target_repo = os.environ.get("NUCLEUS_LANE_FEEDBACK_REPO", "") or github_repo
+    if github_enabled and not target_repo:
+        item["github_issue"] = None
+        item["github_skipped"] = (
+            "no feedback repo configured — set NUCLEUS_LANE_FEEDBACK_REPO"
         )
+    elif github_enabled:
         try:
             item["github_issue"] = _create_github_issue(
                 target_repo, feedback_type, subject, body, reporter, repo, item["id"]
             )
             store.update_status(item["id"], "open")  # refresh stored item
         except Exception as exc:
+            logger.debug("Swallowed exception in submit_feedback", exc_info=True)
             item["github_issue_error"] = str(exc)
 
     return item

@@ -280,47 +280,71 @@ def get_registry() -> ModelHealthRegistry:
 # which is universally true.
 TASK_STRENGTH: Dict[str, Dict[str, float]] = {
     "plan_author": {
-        "gemini-3.1-pro-high": 0.95,
-        "glm-5.2": 0.85,
+        "swe-2-max": 0.94,
+        "swe-2-high": 0.92,
+        "swe-2-medium": 0.90,
+        "glm-5-2": 0.88,
+        "swe-1-7": 0.86,
+        "gemini-3.1-pro-high": 0.82,
         "gemini-3.6-flash-high": 0.70,
-        "swe-1.7": 0.60,
         "gemini-3.5-flash-low": 0.40,
     },
-    # OPERATOR ROUTING RULE (2026-08-07): on the agy lane, default to the
-    # GEMINI models (pro-high, flash-3.6-high) — NOT agy's claude models.
-    # agy's claude quota is shallow and its OAuth is re-authed often, so
-    # scoring claude-opus/sonnet above glm-5.2 sent the default path straight
-    # into quota exhaustion + auth churn. They stay in the table as
-    # last-resort entries (scored below every devin model) rather than being
-    # deleted, so the fallback chain can still reach them if everything else
-    # is cold. Do not restore them above glm-5.2.
+    # OPERATOR ROUTING RULE (2026-09-10): devin (swe-2 / swe-1-7 / glm-5-2)
+    # are the primary free lane on this host. SWE-2 Max leads plan_author:
+    # it outperforms SWE-1.7 and GLM-5.2 on Terminal-Bench 2.1, DeepSWE 1.1
+    # and FrontierCode 1.1. GLM-5.2 leads plan_reviewer, code_executor and
+    # adversarial_review — it has stronger 1M-context / math / structured
+    # review signals and operational history on those tasks. SWE-2 High and
+    # Medium are scored just below Max. agy-gemini-3.1-pro-high is
+    # quota-limited, so it is scored below the devin lane and used as a
+    # fallback. agy-gemini flash and agy-claude stay in the table below the
+    # devin models, with agy-claude last-resort only.
+    #
+    # GLM-5.2 FREEZE LIFTED (2026-09-02): glm-5-2 is confirmed free again
+    # and restored to its pre-freeze task scores. The registry's composite
+    # score (strength x availability x freshness) will pick the best available
+    # model for each task.
     "plan_reviewer": {
-        "gemini-3.1-pro-high": 0.95,
-        "glm-5.2": 0.80,
+        "glm-5-2": 0.92,
+        "swe-2-max": 0.90,
+        "swe-2-high": 0.87,
+        "swe-2-medium": 0.84,
+        "swe-1-7": 0.75,
+        "gemini-3.1-pro-high": 0.74,
         "gemini-3.6-flash-high": 0.65,
-        "swe-1.7": 0.55,
         "claude-opus-4-6-thinking": 0.45,
         "claude-sonnet-4-6": 0.40,
     },
     "code_executor": {
-        "glm-5.2": 0.90,
-        "swe-1.7": 0.85,
+        "glm-5-2": 0.95,
+        "swe-2-max": 0.94,
+        "swe-2-high": 0.92,
+        "swe-2-medium": 0.90,
+        "swe-1-7": 0.85,
         "gemini-3.1-pro-high": 0.75,
         "gemini-3.6-flash-high": 0.55,
     },
     "simple_read": {
         "gemini-3.6-flash-low": 0.90,
         "gemini-3.5-flash-low": 0.85,
-        "glm-5.2": 0.80,
+        "swe-2-max": 0.82,
+        "swe-2-high": 0.80,
+        "swe-2-medium": 0.78,
+        "glm-5-2": 0.76,
         "gemini-3.1-pro-high": 0.70,
     },
-    # Same operator routing rule as plan_reviewer: agy-gemini first, devin
-    # next, agy-claude last resort only.
+    # Same operator routing rule: devin (swe-2 / swe-1-7 / glm-5-2) first,
+    # agy-gemini-3.1-pro-high fallback (limited quota), agy-claude last resort.
+    # GLM-5.2 leads adversarial_review so a genuinely different family is
+    # available when an SWE-2 author needs an independent reviewer.
     "adversarial_review": {
-        "gemini-3.1-pro-high": 0.95,
-        "glm-5.2": 0.80,
+        "glm-5-2": 0.92,
+        "swe-2-max": 0.88,
+        "swe-2-high": 0.85,
+        "swe-2-medium": 0.82,
+        "swe-1-7": 0.75,
+        "gemini-3.1-pro-high": 0.74,
         "gemini-3.6-flash-high": 0.65,
-        "swe-1.7": 0.55,
         "claude-opus-4-6-thinking": 0.45,
     },
 }
@@ -391,8 +415,13 @@ def _query_devin_models() -> List[str]:
         if spec and spec.models:
             return list(spec.models)
     except Exception:
+        logger.debug("Swallowed exception in _query_devin_models", exc_info=True)
         pass
-    return ["glm-5.2", "swe-1.7"]
+    # SWE-2 FREE TIER (2026-09-10): SWE-2 Max/High/Medium are free and are
+    # the preferred default. GLM-5.2 FREEZE LIFTED (2026-09-02): include
+    # glm-5-2 alongside the SWE-1.7 tiers so model_registry can discover it
+    # even when the VENDOR_SPECS import path is unavailable.
+    return ["swe-2-max", "swe-2-high", "swe-2-medium", "swe-1-7", "swe-1-7-medium", "glm-5-2"]
 
 
 def discover_models() -> List[ModelSpec]:

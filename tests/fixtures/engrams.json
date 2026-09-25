@@ -1,0 +1,23 @@
+[
+  {
+    "key": "welcome_nucleus",
+    "value": "Welcome to Nucleus — your persistent memory substrate.",
+    "context": "seed",
+    "intensity": 7,
+    "source": "seed:nucleus-wedge"
+  },
+  {
+    "key": "workflow_founder",
+    "value": "Founder workflow: plan in .brain/plans/, execute via CC, reflect on Fridays.",
+    "context": "seed",
+    "intensity": 7,
+    "source": "seed:nucleus-wedge"
+  },
+  {
+    "key": "quick_reference",
+    "value": "Quick reference: nucleus init, nucleus mcp register, nucleus status.",
+    "context": "seed",
+    "intensity": 7,
+    "source": "seed:nucleus-wedge"
+  }
+]

@@ -1,7 +1,7 @@
 name: "SRE Brain"
 description: "Incident diagnosis, post-mortem memory, and pattern recognition for Site Reliability Engineers."
 version: "1.0.0"
-author: "eidetic-works"
+author: "nucleus"
 persona: "SRE / DevOps engineer managing production systems"
 tags:
   - sre

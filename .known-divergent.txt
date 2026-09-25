@@ -1,0 +1,74 @@
+# Paths that exist in this repo AND in a sibling, at the same path, with
+# DIFFERENT content — where differing is correct and expected.
+#
+# Why this file exists: 66 paths are shared with gentlequest; 43 are byte-
+# identical (see .known-twins.txt) and 23 differ. Most of those 23 differ
+# because each repo needs its own CI, its own ignore rules and its own
+# governance records — reporting them as drift every run is how a real signal
+# gets muted wholesale. This file is the allowlist, so that anything NOT on it
+# is reported loudly.
+#
+# What does NOT belong here: a file that differs because a fix landed in one
+# copy and not the other. That is the thing the drift report is for. When such
+# a pair is reconciled it moves to .known-twins.txt, not here.
+#
+# Add an entry only with a reason on the line above it.
+
+# Per-repo CI: each repo builds a different artifact; a change to one is not
+# supposed to reach the other, and there is no shared-action setup to point at.
+.github/workflows/android_release.yml
+.github/workflows/ci_cd_pipeline.yml
+.github/workflows/docs-validation.yml
+.github/workflows/ios_release.yml
+.github/workflows/release_one_button.yml
+.github/workflows/test_on_pr.yml
+
+# Per-repo tooling and hygiene: different trees ignore different things.
+.gitignore
+.gitattributes
+.env.example
+requirements-dev.txt
+tests/conftest.py
+
+# Per-repo governance and agent instructions: these describe THIS repo. The
+# split gave each repo its own; identical copies would be the defect.
+AGENTS.md
+CLAUDE.md
+DECISIONS.md
+
+# Historical narrative docs, frozen at different points in each repo. Nothing
+# reads them mechanically and neither copy is authoritative over the other.
+docs/COMPLETE_SESSION_SUMMARY_FINAL.md
+docs/IMPLEMENTATION_COMPLETE_170_FILES.md
+docs/MARKETING_MASTER_PLAYBOOK.md
+docs/PIPELINE_GUIDE.md
+scripts/assess_implementation.py
+
+# GentleQuest product content (Alex wellness-companion prompts). Owned by the
+# gq lane by the charter's content boundary; the root copy evolved after the
+# split and the sibling's is the older prompt set. Flagged to gq 2026-09-02.
+providers/gemini.py
+
+# Per-repo by construction — each of these describes or measures THIS repo, and
+# the sibling's copy is about the sibling. Identical copies would be the defect.
+README.md
+scripts/verify.sh
+.known-failures.txt
+
+# The guard chain differs on purpose: nucleus owns the identity and pseudonymity
+# guards and the lane-hygiene check, so its pre-commit runs them from the repo.
+# The siblings ship no such scripts and load the identity list externally, from
+# $NUCLEUS_GUARD_DIR or ~/.config/nucleus/guards, so a contributor with nothing
+# configured still gets the vendored secret scan. Two shapes, both deliberate.
+.githooks/pre-commit
+
+# PENDING, not permanent — move these to .known-twins.txt when gentlequest's
+# branch fix/nucleus-atomic-state-stderr (0f74c882) merges to its main.
+# They are byte-identical to that branch ALREADY (git hash-object matches all
+# three); they differ only from gentlequest's main, which does not carry the
+# port yet. Listing them here stops a known, owned, in-flight state from
+# reading as an unexplained finding every run. If that branch is abandoned,
+# these come off this list and become findings again.
+nucleus/artifacts.py
+nucleus/events.py
+nucleus/state.py

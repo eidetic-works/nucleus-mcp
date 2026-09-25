@@ -66,6 +66,7 @@ def _build_anchors(gate_predicate: str, refs: List[str], repo: Optional[str]) ->
     try:
         from .verifier import Anchor
     except Exception:  # pragma: no cover - verifier unavailable ⇒ fail closed
+        logger.debug("Swallowed exception in _build_anchors", exc_info=True)
         return []
 
     anchors: List[Any] = []

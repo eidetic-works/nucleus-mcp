@@ -13,6 +13,9 @@ consecutive failures cause exit.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import subprocess
 import sys
@@ -81,8 +84,19 @@ class ControlWatcher:
 
         result = {}
         for t in _list_tasks():
-            task_role = t.get("required_role", "")
-            if task_role == self.config.role:
+            task_role = (t.get("required_role") or "").strip()
+            # An EMPTY required_role means "any agent can pull this" -- that is
+            # _add_task's documented contract, not an unset field. Filtering on
+            # equality dropped exactly those tasks, so a task that existed in the
+            # store and was PENDING reported as NOT_SEEDED: the status surface
+            # said "never created" about work that was queued and waiting.
+            #
+            # This is the SECOND time this index has hidden real tasks. The
+            # docstring above records the first (an ID-prefix filter that never
+            # matched). Same shape, different column: a narrowing filter on the
+            # lookup, with the miss surfacing as a state that means the opposite
+            # of what is true.
+            if task_role == self.config.role or not task_role:
                 result[t["id"]] = t
         return result
 
@@ -111,12 +125,20 @@ class ControlWatcher:
                 # Check if blocked deps are now met — auto-unblock
                 task = existing[item.task_id]
                 if task.get("status", "").upper() == "BLOCKED":
-                    deps_met = all(
-                        existing.get(dep, {}).get("status", "").upper() == "DONE"
-                        for dep in item.blocked_by
-                    )
-                    if deps_met:
-                        _update_task(item.task_id, {"status": "PENDING"})
+                    # Only DEPENDENCY blocks auto-clear. `all()` over an empty
+                    # blocked_by is vacuously True, so a task BLOCKED by a
+                    # deliberate hold -- no deps declared -- was auto-unblocked
+                    # on every seed cycle. That silently returned five flagged
+                    # a sibling project's docs to the queue and wiped their pause_reason
+                    # minutes after they were pulled out of it. A hold that any
+                    # routine cycle can clear is not a hold.
+                    if item.blocked_by:
+                        deps_met = all(
+                            existing.get(dep, {}).get("status", "").upper() == "DONE"
+                            for dep in item.blocked_by
+                        )
+                        if deps_met:
+                            _update_task(item.task_id, {"status": "PENDING"})
 
         # Verify spec
         principal = self.parser.verify_spec()
@@ -218,6 +240,7 @@ class ControlWatcher:
                 try:
                     relay_id = self._post_relay(item.task_id, lane, item.description)
                 except Exception as exc:
+                    logger.debug("Swallowed exception in dispatch", exc_info=True)
                     skipped[item.task_id] = f"relay-failed: {exc}"
                     continue
                 dispatches[item.task_id] = {

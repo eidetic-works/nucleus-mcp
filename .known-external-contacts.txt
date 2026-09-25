@@ -1,0 +1,18 @@
+# Third-party contact addresses that are allowed to appear in a built artifact.
+# scripts/third_party_pii_gate.py suppresses these and reports everything else.
+#
+# Why the file exists: the identity gate holds hashes of the OPERATOR's terms, so
+# it reads CLEAN on other people's names and addresses. Measured 2026-09-19 — a
+# two-row prospect list passed the identity gate AND the secret scanner (an email
+# is not a credential) and would have shipped in the wheel.
+#
+# What does NOT belong here: anything that is a person. A prospect, a lead, a
+# subscriber, a user who filed a bug. Those do not get allowlisted, they get
+# removed, and the lists they come from live in the private operator workspace,
+# never in this repo.
+#
+# What may: a published role address at an organisation, where publishing it
+# discloses nothing about an individual. One reason per entry.
+
+# Published partnership contact, used in the marketplace submission docs.
+partnerships@perplexity.ai

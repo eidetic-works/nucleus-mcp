@@ -10,6 +10,7 @@ import logging
 import shutil
 import sqlite3
 import sys
+from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
 from datetime import datetime, timezone
@@ -98,6 +99,8 @@ _SQLITE_HARDENING_PRAGMAS = (
     "PRAGMA synchronous=NORMAL",
 )
 _sqlite_pragma_warned = False
+# Guards once-per-process emission for the legacy alias warning.
+_nuclear_alias_warned = False
 
 
 def open_hardened_sqlite(
@@ -141,11 +144,37 @@ def get_nucleus_bin_path() -> str:
 
 
 def get_nucleus_mcp_command() -> list:
-    """Return the command list for MCP config. Prefers nucleus-mcp binary (full path)."""
+    """Return the command list for MCP config. Prefers the nucleus-mcp entrypoint.
+
+    Resolution order:
+      1. ``nucleus-mcp`` on PATH.
+      2. ``nucleus-mcp`` sitting NEXT TO the running interpreter.
+      3. ``<interpreter> -m mcp_server_nucleus``.
+
+    Step 2 exists because step 1 misses far more often than it looks. An MCP
+    client, a launchd job, or a sandboxed first run routinely has a PATH without
+    the venv's bin/, so ``which`` returns None for an entrypoint that is right
+    there — ``sys.executable`` IS the venv that has nucleus installed. Measured
+    2026-09-20 on a real first run under ``env -i PATH=/usr/bin:/bin``: the
+    written .mcp.json pinned ``.../bin/python -m mcp_server_nucleus`` while
+    ``.../bin/nucleus-mcp`` existed the whole time.
+
+    That mattered to the user, not just to tidiness: naming an interpreter means
+    the MCP server stops launching when the venv is rebuilt, moved, or its
+    Python upgraded, with no error pointing at the config. The entrypoint is the
+    stabler thing to name.
+
+    Step 3 is kept as a genuine last resort — a degraded install should still
+    yield something runnable.
+    """
     bin_path = shutil.which("nucleus-mcp")
     if bin_path:
         return [str(Path(bin_path).resolve())]
-    # Fallback: exact python that has nucleus installed + module
+
+    sibling = Path(sys.executable).parent / "nucleus-mcp"
+    if sibling.is_file() and os.access(sibling, os.X_OK):
+        return [str(sibling.resolve())]
+
     return [sys.executable, "-m", "mcp_server_nucleus"]
 
 
@@ -176,6 +205,82 @@ def set_tenant_brain_path(path: Optional[str]) -> None:
     request completes to prevent contextvar leakage).
     """
     _tenant_brain_path.set(path)
+
+
+def start_tenant_thread(target, *, name: Optional[str] = None, daemon: bool = True):
+    """Start a background thread that inherits the caller's tenant context.
+
+    ``threading.Thread`` starts with a *fresh* ``Context``, so a plain
+    ``Thread(target=...)`` launched from inside a request does not see
+    ``_tenant_brain_path`` — ``get_brain_path()`` inside it falls through to
+    ``os.environ`` or a cwd walk and resolves some *other* tenant's brain, or
+    the process default. Both orchestrators launched mission execution that way
+    (ledger TN-4), so a mission started by tenant A could write into whichever
+    brain the environment happened to name by the time the thread ran. The
+    middleware clears those env vars in a ``finally`` (TN-5), which makes the
+    window wider rather than narrower: by the time a background thread runs, the
+    request that started it has usually already returned.
+
+    ``copy_context()`` snapshots the contextvars *at call time*, which is the
+    request context, and the thread runs inside that copy. Each call makes its
+    own copy, so two missions on two tenants never share one Context — required,
+    since a single ``Context`` may not be entered from two threads at once.
+
+    Call this from the request context, not from inside another thread; a copy
+    taken in the wrong place inherits the wrong tenant just as silently.
+
+    Off the HTTP path (CLI, stdio) the contextvar is unset and the copy is
+    empty, so behaviour is unchanged.
+    """
+    import threading
+    import contextvars
+
+    ctx = contextvars.copy_context()
+    thread = threading.Thread(
+        target=lambda: ctx.run(target), name=name, daemon=daemon
+    )
+    thread.start()
+    return thread
+
+
+@contextmanager
+def temporary_env(**overrides):
+    """Set environment variables for a block, then put them back exactly.
+
+    ``None`` as a value removes the variable for the duration. On exit each name
+    is restored to what it was, including being unset if it was unset — which is
+    the case a naive save/restore gets wrong by writing back an empty string.
+
+    This exists because the weekly self-test instruments pointed
+    ``NUCLEUS_BRAIN_PATH`` at a temporary directory and never put it back
+    (ledger DS-7). They run inside the long-lived scheduler process, so every
+    job that fired afterwards — the briefing, the analytics pass, the
+    orchestrator, and the weekly backup — resolved its brain from a path that
+    had since been deleted. ``get_brain_path`` creates what is missing, so those
+    jobs did not fail; they quietly operated on an empty brain.
+
+    Prefer this over hand-rolled save/restore anywhere a process-wide variable is
+    changed temporarily. The same reasoning applies as in the tenant middleware
+    (TN-5): a value that outlives the work that set it is indistinguishable from
+    configuration.
+    """
+    import os as _os
+
+    sentinel = object()
+    previous = {name: _os.environ.get(name, sentinel) for name in overrides}
+    try:
+        for name, value in overrides.items():
+            if value is None:
+                _os.environ.pop(name, None)
+            else:
+                _os.environ[name] = str(value)
+        yield
+    finally:
+        for name, old in previous.items():
+            if old is sentinel:
+                _os.environ.pop(name, None)
+            else:
+                _os.environ[name] = old
 
 
 # ── Project ContextVar (ADR-0042 D6 — entrypoint lifecycle) ──────────────
@@ -246,6 +351,22 @@ def init_project_context() -> None:
         set_current_project(proj)
 
 
+def cap_log_file(path: Union[str, Path], max_bytes: int = 32 << 20,
+                 keep_bytes: int = 8 << 20) -> bool:
+    """Tail-cap an append-only log (EID-74) — same discipline as
+    scripts/fleet/pool.py::_cap_file: over max_bytes, keep only the last
+    keep_bytes. Never raises: a logging cap must never take the writer down.
+    Returns True when the file was trimmed."""
+    try:
+        p = Path(path)
+        if p.is_file() and p.stat().st_size > max_bytes:
+            p.write_bytes(p.read_bytes()[-keep_bytes:])
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def get_brain_path() -> Path:
     """Get the brain path for the current request context.
 
@@ -266,6 +387,7 @@ def get_brain_path() -> Path:
     function's behavior is byte-identical to before; the detection layer is
     never entered and its module is never imported.
     """
+    global _nuclear_alias_warned
     # 1. Per-request contextvar (async-safe, set by tenant middleware)
     brain_path = _tenant_brain_path.get()
     if brain_path:
@@ -308,6 +430,19 @@ def get_brain_path() -> Path:
     brain_path = os.environ.get("NUCLEUS_BRAIN_PATH") or os.environ.get("NUCLEAR_BRAIN_PATH")
 
     if brain_path:
+        # Legacy-alias detection: NUCLEAR_BRAIN_PATH forced this path without
+        # NUCLEUS_BRAIN_PATH set. Warn once per process (sentinel at module top).
+        if (
+            not os.environ.get("NUCLEUS_BRAIN_PATH")
+            and os.environ.get("NUCLEAR_BRAIN_PATH")
+            and not _nuclear_alias_warned
+        ):
+            _nuclear_alias_warned = True
+            logger.warning(
+                "NUCLEAR_BRAIN_PATH is deprecated and forced brain path to %s; "
+                "use NUCLEUS_BRAIN_PATH instead (legacy alias sunsets 2026-05-27)",
+                brain_path,
+            )
         path = Path(brain_path)
         if not path.exists():
             # Auto-create brain directory structure instead of crashing

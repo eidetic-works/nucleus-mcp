@@ -4,6 +4,8 @@ Nucleus Runtime - Recovery Operations
 Universal session recovery workflow for frozen/bloated conversations.
 Antigravity-specific helpers; sibling modules cover other IDEs.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -131,6 +133,7 @@ def _extract_conversation_context(conversation_id: str) -> Dict[str, Any]:
                     "lines": len(content.splitlines())
                 }
             except Exception as e:
+                logger.debug("Swallowed exception in _extract_conversation_context", exc_info=True)
                 context["artifacts"][artifact] = {
                     "error": str(e)
                 }
@@ -390,6 +393,7 @@ def _rewrite_test_paths(old_conversation_id: str, new_session_id: str, dry_run: 
                         "applied": not dry_run
                     })
             except Exception as e:
+                logger.debug("Swallowed exception in _rewrite_test_paths", exc_info=True)
                 rewrites.append({
                     "file": str(py_file),
                     "error": str(e)

@@ -1,7 +1,7 @@
 name: "Founder OS"
 description: "Daily workflow for solo founders and indie hackers. Morning context, decision tracking, end-of-day synthesis."
 version: "1.0.0"
-author: "eidetic-works"
+author: "nucleus"
 persona: "Solo founder / indie hacker building with AI tools (Claude, Cursor, Windsurf)"
 tags:
   - founder

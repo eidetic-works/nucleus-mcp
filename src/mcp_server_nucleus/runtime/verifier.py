@@ -103,7 +103,37 @@ _CLASS_PATTERNS: Dict[str, List[str]] = {
     "BUSINESS-STATE": [r"\bmerchants?\b", r"\busers?\b", r"\bactive\b", r"\bsubscribers?\b", r"\bcustomers?\b"],
     "IDENTITY": [r"\bauthenticated\b", r"\bidentity\b", r"\brole\b", r"\bcredential\b"],
     "ATTRIBUTION": [r"\battribution\b", r"\bauthored\b", r"\bproduced by\b", r"\bcaused\b"],
+    # G1: canonical repo-state claim shapes (see _GIT_BRANCH_EXISTS_RE /
+    # _GIT_COMMIT_EXISTS_RE) — distinct from CODE-EXISTS's free-text
+    # "committed"/"merged" prose, these are the fixed "GIT BRANCH EXISTS: x" /
+    # "GIT COMMIT EXISTS: x" claim formats.
+    "GIT-BRANCH-EXISTS": [r"\bgit\s+branch\s+exists\b"],
+    "GIT-COMMIT-EXISTS": [r"\bgit\s+commit\s+exists\b"],
+    # D3: behavioural (not structural) truth. Deliberately a fixed claim
+    # format, like the two git classes above and unlike CODE-EXISTS's free
+    # prose -- "tests pass" appears constantly in ordinary commentary, and a
+    # loose pattern would classify every such sentence into a class whose
+    # mandatory anchor it cannot satisfy, turning chatter into REFUTED.
+    "TESTS-PASSED": [r"\btests\s+passed\b"],
 }
+
+# Hedge-phrase downgrade (Adjudicate step, RuleReasoner.adjudicate). HEURISTIC,
+# NOT SEMANTIC — a fixed, explicit phrase blocklist, not an NLP hedge/negation
+# detector. A claim matching one of these phrases downgrades an
+# otherwise-CONFIRMED verdict to PARTIAL: a passing deterministic anchor
+# proves the named fact is TRUE, but says nothing about whether the claimant
+# actually asserted it rather than speculated about it ("I believe X may
+# exist" is not the same claim as "X exists", even when X does). Known,
+# explicitly out-of-scope gaps this blocklist does NOT catch: sarcasm,
+# double-negatives ("I don't think it's false that..."), hedges phrased
+# without these exact words, or hedges in languages other than English. Those
+# would require real NLP, not a keyword list — track as a future item if they
+# come up, don't silently claim this is solved for them.
+_HEDGE_PHRASE_RE = re.compile(
+    r"\b(may|might|possibly|perhaps|probably|i believe|i think|not sure|"
+    r"not certain|not fully certain|i'm not certain)\b",
+    re.IGNORECASE,
+)
 
 # The ⊤ (top) element of the lattice: an assertion matching no known class.
 # ⊤ is "unknown class -> maximally strong / manual" (REFEREE_CONFINEMENT §3.3) —
@@ -121,6 +151,14 @@ _CLASS_MANDATORY: Dict[str, set] = {
     "DEPLOYED-LIVE": {("http", "json_get")},        # build-identity / deployed-SHA token
     "BEHAVIOR-CORRECT": {("http", "json_get")},     # value predicate on the live output
     "FILE-EXISTS": {("fs", "file_exists")},         # filesystem check (D1: file-existence class)
+    "GIT-BRANCH-EXISTS": {("git", "branch_exists")},  # G1: local branch ref check
+    "GIT-COMMIT-EXISTS": {("git", "commit_exists")},  # G1: commit-object check
+    # D3: the witness log is the non-adjacent anchor -- it is written by the
+    # test RUNNER and signed with a key the agent does not hold, so the agent
+    # cannot forge it. Reachable only because runtime/agent_os/verify_tests.py
+    # now actually writes those entries; before that this class could never
+    # have reached CONFIRMED.
+    "TESTS-PASSED": {("tests_passed", "tests_passed")},
 }
 
 
@@ -247,9 +285,9 @@ class Anchor:
     """A deterministic, machine-checkable proposition derived from a claim.
 
     ``spec`` is a small dict whose shape depends on ``kind``:
-      git:   {"op": "commit_exists"|"file_exists_at_head"|"log_grep"|
-                    "branch_contains", "repo": <path, optional — falls
-                    back to ProbeEngine.default_repo>, ...op-specific keys}
+      git:   {"op": "commit_exists"|"branch_exists"|"file_exists_at_head"|
+                    "log_grep"|"branch_contains", "repo": <path, optional —
+                    falls back to ProbeEngine.default_repo>, ...op-specific keys}
       http:  {"op": "get_status"|"get_contains"|"json_get", "url": ...,
                     ...op-specific keys}
       fs:    {"op": "file_exists"|"file_contains", "path": ..., ...}
@@ -473,6 +511,35 @@ class ProbeEngine:
         except Exception as exc:  # pragma: no cover - defensive
             return Evidence(anchor_id, None, f"error: {exc}", None)
 
+    def branch_exists(self, repo: str, branch: str) -> Evidence:
+        """Does local branch `branch` exist in `repo`?
+
+        Checks `refs/heads/<branch>` specifically (not a bare
+        `git rev-parse --verify <branch>`), which also resolves tags and
+        commit-ish expressions sharing the same name — a bare check would
+        report a tag named `main` as an existing *branch*, which is a
+        different claim.
+        """
+        anchor_id = f"git:branch_exists:{branch}"
+        pre = self._git_unavailable(repo, anchor_id)
+        if pre is not None:
+            return pre
+        try:
+            r = subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet", f"refs/heads/{branch}"],
+                cwd=repo, capture_output=True, text=True, timeout=self.git_timeout,
+            )
+            ok = r.returncode == 0
+            detail = (
+                f"branch {branch} exists in {repo}" if ok
+                else f"branch {branch} not found in {repo}"
+            )
+            return Evidence(anchor_id, ok, detail, {"returncode": r.returncode})
+        except subprocess.TimeoutExpired:
+            return Evidence(anchor_id, None, "git rev-parse timed out", None)
+        except Exception as exc:  # pragma: no cover - defensive
+            return Evidence(anchor_id, None, f"error: {exc}", None)
+
     def file_exists_at_head(self, repo: str, path: str) -> Evidence:
         """Does `path` (relative to `repo`) exist as a tracked blob at HEAD?
 
@@ -497,6 +564,7 @@ class ProbeEngine:
             if pr.returncode == 0:
                 prefix = pr.stdout.strip()
         except Exception:  # pragma: no cover - defensive; falls back to no prefix
+            logger.debug("Swallowed exception in file_exists_at_head", exc_info=True)
             prefix = ""
         full_path = f"{prefix}{path}" if prefix else path
         ref = f"HEAD:{full_path}"
@@ -791,6 +859,8 @@ class ProbeEngine:
                     return Evidence(anchor.anchor_id, None, "no repo specified for git anchor", None)
                 if op == "commit_exists":
                     return self._retag(anchor, self.commit_exists(repo, spec.get("sha", "")))
+                if op == "branch_exists":
+                    return self._retag(anchor, self.branch_exists(repo, spec.get("branch", "")))
                 if op == "is_ancestor":
                     return self._retag(
                         anchor, self.is_ancestor(repo, spec.get("sha", ""), spec.get("ref", "origin/main"))
@@ -869,6 +939,14 @@ class ProbeEngine:
                     found = query_shell_exec(str(cmd_query), brain_path=brain_path)
                     if found:
                         return Evidence(anchor.anchor_id, True, f"shell_executed: command '{cmd_query}' found in witness log", None)
+                    if found is None:
+                        # INSUFFICIENT, not False. No witness log means nothing
+                        # was ever recorded, which is not evidence that the
+                        # command did not run. This verifier already carries a
+                        # third state (verdict=None); it was simply never
+                        # reachable here, because the query collapsed "no log"
+                        # into a definitive negative before we saw it.
+                        return Evidence(anchor.anchor_id, None, f"shell_executed: no witness log — cannot verify whether '{cmd_query}' ran", None)
                     return Evidence(anchor.anchor_id, False, f"shell_executed: command '{cmd_query}' not in witness log", None)
                 except Exception as exc:
                     return Evidence(anchor.anchor_id, None, f"shell_executed: witness query failed: {exc}", None)
@@ -885,6 +963,8 @@ class ProbeEngine:
                     found = query_deployment(url=url or None, commit_sha=commit_sha or None, brain_path=brain_path)
                     if found:
                         return Evidence(anchor.anchor_id, True, f"deployment_executed: deployment matching url='{url}' sha='{commit_sha}' found in witness log", None)
+                    if found is None:
+                        return Evidence(anchor.anchor_id, None, "deployment_executed: no witness log — cannot verify whether the deployment happened", None)
                     return Evidence(anchor.anchor_id, False, f"deployment_executed: no matching deployment in witness log", None)
                 except Exception as exc:
                     return Evidence(anchor.anchor_id, None, f"deployment_executed: witness query failed: {exc}", None)
@@ -988,6 +1068,30 @@ def _cue_near(text: str, start: int, end: int, window: int) -> bool:
 
 _URL_RE = re.compile(r"https?://[^\s'\"<>()\[\]]+")
 
+# G1: canonical repo-state claim shapes. These are a FIXED, Nucleus-authored
+# text format (not free-text prose to be sniffed out of natural language),
+# so the match is a literal prefix, not a keyword-anywhere-in-window heuristic
+# like _SHA_CUE_RE. Branch/ref name characters follow git's own convention
+# (letters, digits, `.`, `/`, `_`, `-`).
+_GIT_BRANCH_EXISTS_RE = re.compile(
+    r"\bGIT\s+BRANCH\s+EXISTS\s*:\s*([\w./-]+)", re.IGNORECASE,
+)
+# "TESTS PASSED: <run-id>" -- the run id ties the claim to a specific witnessed
+# run. Without it the claim is unanchorable, and verifier's tests_passed handler
+# already returns INSUFFICIENT ("no test_run_id specified") rather than guessing.
+_TESTS_PASSED_RE = re.compile(
+    r"\bTESTS\s+PASSED\s*:\s*([\w.-]+)", re.IGNORECASE,
+)
+_GIT_COMMIT_EXISTS_RE = re.compile(
+    r"\bGIT\s+COMMIT\s+EXISTS\s*:\s*([0-9a-fA-F]{4,40})(?:\s+on\s+branch\s+([\w./-]+))?",
+    re.IGNORECASE,
+)
+# "FILE EXISTS: <path>" -- the canonical D1 claim shape, like the G1 git
+# shapes above. Captured paths are resolved relative to the probe repo.
+_FILE_EXISTS_RE = re.compile(
+    r"\bFILE\s+EXISTS\s*:\s*([\w./-]+)", re.IGNORECASE,
+)
+
 
 class RuleReasoner(Reasoner):
     """Deterministic fallback reasoner — no LLM involved. Mirrors
@@ -1014,6 +1118,99 @@ class RuleReasoner(Reasoner):
         text = claim.assertion or ""
         anchors: List[Anchor] = []
 
+        # G1: canonical GIT-BRANCH-EXISTS / GIT-COMMIT-EXISTS claim shapes —
+        # a FIXED, Nucleus-authored text contract (not prose), matched and
+        # routed ADDITIVELY alongside the SHA/URL doctrine below (same
+        # pattern as those two: a claim can name several independent facts
+        # in one turn, e.g. a multi-line "FILE EXISTS: x / GIT BRANCH
+        # EXISTS: y / GIT COMMIT EXISTS: z" response, and every one gets its
+        # own anchor). `finditer` (not `search`) so more than one branch or
+        # commit claim in the same text each get an anchor. Any assertion
+        # not using this exact prefix is entirely unaffected.
+        # D3: TESTS PASSED: <run-id> -> witness anchor. finditer, like the git
+        # classes, so several runs claimed in one turn each get an anchor.
+        seen_runs = set()
+        for tmatch in _TESTS_PASSED_RE.finditer(text):
+            run_id = tmatch.group(1)
+            if run_id in seen_runs:
+                continue
+            seen_runs.add(run_id)
+            anchors.append(Anchor(
+                anchor_id=f"tests-passed-{run_id}",
+                kind="tests_passed",
+                spec={
+                    "op": "tests_passed",
+                    "test_run_id": run_id,
+                    # A run with failures must NOT satisfy the claim "tests
+                    # passed". require_all_passed is what makes this anchor
+                    # able to emit False rather than only True.
+                    "require_all_passed": True,
+                },
+                description=f"test run {run_id} passed, per the signed witness log",
+                critical=True,
+            ))
+
+        seen_branches = set()
+        for bmatch in _GIT_BRANCH_EXISTS_RE.finditer(text):
+            branch = bmatch.group(1)
+            if branch in seen_branches:
+                continue
+            seen_branches.add(branch)
+            anchors.append(Anchor(
+                anchor_id=f"git-branch-exists-{branch}",
+                kind="git",
+                spec={"op": "branch_exists", "branch": branch},
+                description=f"branch {branch} exists in the repo",
+                critical=True,
+            ))
+
+        # SHAs already anchored via the canonical GIT-COMMIT-EXISTS format
+        # below are pre-seeded into seen_shas so the generic SHA/cue-word
+        # scan further down does not ALSO emit a redundant, differently-named
+        # anchor (`git-sha-<sha>`) for the same commit ("commit" is itself
+        # one of the generic detector's cue words, so it would otherwise
+        # double-anchor every GIT COMMIT EXISTS claim).
+        seen_shas = set()
+        for cmatch in _GIT_COMMIT_EXISTS_RE.finditer(text):
+            sha = cmatch.group(1).lower()
+            commit_branch = cmatch.group(2)
+            if sha not in seen_shas:
+                anchors.append(Anchor(
+                    anchor_id=f"git-commit-exists-{sha}",
+                    kind="git",
+                    spec={"op": "commit_exists", "sha": sha},
+                    description=f"commit {sha} exists in the repo",
+                    critical=True,
+                ))
+            if commit_branch:
+                anchors.append(Anchor(
+                    anchor_id=f"git-commit-exists-{sha}-on-{commit_branch}",
+                    kind="git",
+                    spec={"op": "is_ancestor", "sha": sha, "ref": commit_branch},
+                    description=f"commit {sha} is on branch {commit_branch} (an ancestor of it)",
+                    critical=True,
+                ))
+            seen_shas.add(sha)
+
+        # D1: canonical FILE-EXISTS claim shape -- "FILE EXISTS: <path>". Like
+        # the G1 git shapes above, this is emitted unconditionally and
+        # additively, so a multi-fact turn (file + git) keeps BOTH anchors. A
+        # `seen_paths` set de-duplicates repeated claims and is also used by the
+        # bare-filename fallback below to avoid double-anchoring a path.
+        seen_paths: set[str] = set()
+        for fmatch in _FILE_EXISTS_RE.finditer(text):
+            path = fmatch.group(1)
+            if path in seen_paths:
+                continue
+            seen_paths.add(path)
+            anchors.append(Anchor(
+                anchor_id=f"fs-exists-{path}",
+                kind="fs",
+                spec={"op": "file_exists", "path": path},
+                description=f"file {path} exists on disk",
+                critical=True,
+            ))
+
         # Flag-gated (default OFF). When ON, a git SHA in a shipped/live/deployed
         # claim gets the MANDATORY ancestry anchor (`--is-ancestor origin/main`)
         # instead of the adjacent `commit_exists`, and a bare URL in a live claim
@@ -1026,7 +1223,9 @@ class RuleReasoner(Reasoner):
         urls = _URL_RE.findall(text)
         text_without_urls = _URL_RE.sub(" ", text)
 
-        seen_shas = set()
+        # seen_shas is NOT reset here — it may already carry SHAs consumed by
+        # the canonical GIT-COMMIT-EXISTS pass above, which must stay
+        # excluded from this generic cue-word scan (see comment there).
         for match in _SHA_RE.finditer(text_without_urls):
             sha = match.group(1).lower()
             # The token has to be claimed AS a commit by nearby text. An
@@ -1095,14 +1294,27 @@ class RuleReasoner(Reasoner):
         # (with a known extension), add an fs:file_exists anchor. This lets
         # "Verify that DECISIONS.md exists" get a real anchor instead of
         # UNVERIFIABLE. The path is resolved relative to default_repo.
+        #
+        # Leading boundary is `(?<!\w)`, not `\b`: `\b` never fires between
+        # two non-word characters (e.g. a space and `/`), so a leading `\b`
+        # silently dropped the `/` off absolute paths -- `/abs/path/AGENTS.md`
+        # captured as `Users/x/AGENTS.md`, resolved against the wrong base,
+        # and REFUTED a file that genuinely existed. `(?<!\w)` fires in the
+        # same relative-path cases `\b` did (unchanged there) but also fires
+        # right before a `/` preceded by whitespace. Fixed 2026-08-21; see
+        # test_absolute_path_claim_for_existing_file_confirms_not_refutes.
         if not anchors:
             for fm in re.finditer(
-                r'\b([\w./-]+\.(?:md|py|ts|js|json|yaml|yml|toml|txt|sh|cfg|ini|rs|go|rb))\b',
+                r'(?<!\w)([\w./-]+\.(?:md|py|ts|js|json|yaml|yml|toml|txt|sh|cfg|ini|rs|go|rb))\b',
                 text, re.IGNORECASE,
             ):
                 path = fm.group(1)
                 # Skip paths that look like URLs (already handled above)
                 if path.startswith("http://") or path.startswith("https://"):
+                    continue
+                # Don't re-anchor a path already claimed via the explicit
+                # "FILE EXISTS:" format (pre-seeded in seen_paths above).
+                if path in seen_paths:
                     continue
                 anchors.append(Anchor(
                     anchor_id=f"fs-exists-{path}",
@@ -1184,6 +1396,22 @@ class RuleReasoner(Reasoner):
                         + "(ANCHOR_DOCTRINE §3: --is-ancestor / build-identity json_get / "
                         "first-party read) before CONFIRMED is legal."
                     )
+            # Hedge-phrase downgrade (heuristic, not semantic — see
+            # _HEDGE_PHRASE_RE docstring). A passing deterministic anchor
+            # proves the NAMED fact is true; it says nothing about whether
+            # the claimant actually asserted it or only speculated. Runs
+            # regardless of the confinement cap above (independent checks,
+            # both can fire; PARTIAL from either wins over CONFIRMED).
+            if status == "CONFIRMED" and _HEDGE_PHRASE_RE.search(claim.assertion or ""):
+                status, confidence = "PARTIAL", 0.5
+                remediation = (
+                    "Hedged assertion — a deterministic anchor passed, but the "
+                    "claim text itself expresses uncertainty (matched: "
+                    + ", ".join(sorted(set(_HEDGE_PHRASE_RE.findall(claim.assertion or ""))))
+                    + "). A hedge is not an assertion; CONFIRMED requires the "
+                    "claimant to have actually asserted the fact, not speculated "
+                    "about it."
+                )
         elif passed and unverifiable:
             status, confidence = "PARTIAL", 0.5
             remediation = "Manually confirm: " + ", ".join(e.anchor_id for e in unverifiable)
@@ -1293,6 +1521,7 @@ class LLMReasoner(Reasoner):
         try:
             from .llm_resilience import get_resilient_llm_client
         except Exception:
+            logger.debug("Swallowed exception in _decompose_via_llm", exc_info=True)
             return []
 
         resilient = get_resilient_llm_client()

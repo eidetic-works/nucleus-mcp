@@ -397,6 +397,7 @@ class MemoryPipeline:
             if role and role != "unknown":
                 return role
         except Exception:
+            logger.debug("Swallowed exception in _derive_source_agent", exc_info=True)
             pass
         return caller_value or "unknown"
 
@@ -459,6 +460,7 @@ class MemoryPipeline:
             guard = get_signature_guard(self.brain_path)
             return guard.verify_dict(_canonical_anchor_payload(engram), sig)
         except Exception:
+            logger.debug("Swallowed exception in verify_engram", exc_info=True)
             return False
 
     def _resolve_dedup_winner(self, existing: Dict, candidate: Dict) -> Dict:
@@ -752,6 +754,7 @@ class MemoryPipeline:
 
                     sink = self._sor_vector_sink = VectorStore()
                 except Exception:  # noqa: BLE001 — derived-index sink is best-effort
+                    logger.debug("Swallowed exception in _mirror_to_sor", exc_info=True)
                     sink = None
             self._sor_facade.capture(
                 surface=engram.get("source_agent", "unknown"),

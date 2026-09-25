@@ -429,12 +429,14 @@ class AgentPool:
                         try:
                             self.checkpoint_callback(task_id)
                         except Exception:
+                            logger.debug("Swallowed exception in exhaust_agent", exc_info=True)
                             pass  # Best effort
 
                     if self.handoff_callback:
                         try:
                             self.handoff_callback(task_id)
                         except Exception:
+                            logger.debug("Swallowed exception in exhaust_agent", exc_info=True)
                             pass  # Best effort
 
                 # Reassign tasks to available agents

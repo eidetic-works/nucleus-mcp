@@ -23,6 +23,8 @@ import time
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+from ._status import derive_combo_status
+
 logger = logging.getLogger("nucleus.god_combos.self_healing_sre")
 
 MAX_EXECUTION_SECONDS = 30
@@ -50,6 +52,8 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
         "meta": {"steps_completed": 0, "execution_time_ms": 0, "circuit_breaker_hit": False},
     }
 
+    step_states: list = []
+
     def _check_timeout():
         elapsed = time.time() - start
         if elapsed > MAX_EXECUTION_SECONDS:
@@ -62,9 +66,9 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
         from ..engram_ops import _brain_search_engrams_impl
         search_raw = _brain_search_engrams_impl(query=symptom, limit=10)
         search_data = json.loads(search_raw)
-        
+
         engrams = search_data.get("data", {}).get("engrams", [])
-        
+
         result["sections"]["search"] = {
             "query": symptom,
             "matches": len(engrams),
@@ -73,12 +77,14 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
             "contexts": list(set(e.get("context", "Unknown") for e in engrams)),
         }
         result["meta"]["steps_completed"] += 1
+        step_states.append({"name": "search", "status": "ok"})
     except Exception as e:
         logger.warning(f"Search step failed: {e}")
         result["sections"]["search"] = {"error": str(e), "matches": 0}
+        step_states.append({"name": "search", "status": "skipped", "reason": str(e)})
 
     if _check_timeout():
-        return _finalize(result, start)
+        return _finalize(result, start, step_states)
 
     # ── STEP 2: METRICS — Collect performance data ────────────
     try:
@@ -115,12 +121,14 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
             "latency_avg_ms": round(latency_avg, 2),
         }
         result["meta"]["steps_completed"] += 1
+        step_states.append({"name": "metrics", "status": "ok"})
     except Exception as e:
         logger.warning(f"Metrics step failed: {e}")
         result["sections"]["metrics"] = {"error": str(e)}
+        step_states.append({"name": "metrics", "status": "skipped", "reason": str(e)})
 
     if _check_timeout():
-        return _finalize(result, start)
+        return _finalize(result, start, step_states)
 
     # ── STEP 3: DIAGNOSE — Correlate symptoms with data ──────
     search_section = result["sections"].get("search", {})
@@ -165,9 +173,10 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
     }
     result["diagnosis"] = diagnosis
     result["meta"]["steps_completed"] += 1
+    step_states.append({"name": "diagnosis", "status": "ok"})
 
     if _check_timeout():
-        return _finalize(result, start)
+        return _finalize(result, start, step_states)
 
     # ── STEP 4: RECOMMEND — Generate action plan ─────────────
     if severity == "CRITICAL":
@@ -185,6 +194,7 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
         "auto_fixable": severity in ("LOW", "MEDIUM"),
     }
     result["meta"]["steps_completed"] += 1
+    step_states.append({"name": "recommendation", "status": "ok"})
 
     if write_engram:
         try:
@@ -202,15 +212,22 @@ def run_self_healing_sre(symptom: str, write_engram: bool = True) -> Dict[str, A
                 intensity=8 if severity in ("CRITICAL", "HIGH") else 5,
             )
             result["meta"]["engram_written"] = True
+            step_states.append({"name": "engram_write", "status": "ok"})
         except Exception as e:
             logger.warning(f"Engram write failed: {e}")
             result["meta"]["engram_written"] = False
+            step_states.append({"name": "engram_write", "status": "skipped", "reason": str(e)})
 
-    return _finalize(result, start)
+    return _finalize(result, start, step_states)
 
 
-def _finalize(result: Dict, start: float) -> Dict:
-    """Add final timing metadata."""
+def _finalize(result: Dict, start: float, step_states: Optional[list] = None) -> Dict:
+    """Add final timing metadata plus the aggregate status/degraded_steps signal."""
     elapsed = (time.time() - start) * 1000
     result["meta"]["execution_time_ms"] = round(elapsed, 1)
+    if step_states is not None:
+        status, degraded_steps = derive_combo_status(step_states)
+        result["step_states"] = step_states
+        result["status"] = status
+        result["degraded_steps"] = degraded_steps
     return result

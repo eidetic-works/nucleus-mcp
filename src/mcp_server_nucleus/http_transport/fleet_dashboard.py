@@ -68,6 +68,24 @@ def _brain_root() -> Path:
     return Path.cwd() / ".brain"
 
 
+def _request_brain(request) -> Path:
+    """The brain this REQUEST should see, not the one the process starts in.
+
+    NucleusTenantMiddleware resolves a per-request brain and puts it on
+    request.state. Both dashboard handlers ignored that and called _brain_root(),
+    which reads a process-wide env var — so on a multi-tenant deployment every
+    tenant was served the same view, assembled from whatever brain the process
+    happened to point at rather than their own (audit ledger HS-2).
+
+    Falls back to _brain_root() when the middleware did not run, which is the
+    stdio and solo case.
+    """
+    resolved = getattr(getattr(request, "state", None), "nucleus_brain_path", None)
+    if resolved:
+        return Path(str(resolved))
+    return _brain_root()
+
+
 # ── Data collectors ────────────────────────────────────────────────────
 
 
@@ -482,7 +500,7 @@ def _build_page(brain: Path) -> str:
 
 async def get_fleet_dashboard(request: Request) -> HTMLResponse:
     """GET /fleet — full HTML dashboard page."""
-    brain = _brain_root()
+    brain = _request_brain(request)
     html = _build_page(brain)
     return HTMLResponse(html)
 
@@ -494,7 +512,7 @@ async def get_fleet_panel(request: Request) -> HTMLResponse:
     polls this endpoint to refresh the live data without a full page
     reload. Returns just the four <section> panels.
     """
-    brain = _brain_root()
+    brain = _request_brain(request)
     html = _build_panel(brain)
     return HTMLResponse(html)
 

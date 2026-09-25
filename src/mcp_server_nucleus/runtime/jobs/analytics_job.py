@@ -6,6 +6,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from ..sibling_repos import require_script
+
 logger = logging.getLogger("NucleusJobs.analytics")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
@@ -29,7 +31,7 @@ async def run_analytics() -> dict:
         return {"ok": False, "error": msg}
 
     try:
-        script = PROJECT_ROOT / "scripts" / "analytics_dashboard.py"
+        script = require_script("scripts/analytics_dashboard.py")
         if not script.exists():
             return {"ok": False, "error": "analytics_dashboard.py not found"}
 

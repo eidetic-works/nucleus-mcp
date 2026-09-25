@@ -25,6 +25,9 @@ STRICTLY ADDITIVE. No .sh / settings.json / live-hook edits.
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Optional
 
 from . import canary_cli, corpus_cli, scheduler
@@ -53,6 +56,7 @@ def _print_providers() -> None:
         try:
             ok = scheduler._provider_available(provider)
         except Exception:
+            logger.debug("Swallowed exception in _print_providers", exc_info=True)
             ok = False
         (available if ok else unavailable).append(provider)
 

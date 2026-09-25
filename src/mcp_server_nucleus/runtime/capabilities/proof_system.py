@@ -85,19 +85,49 @@ class ProofSystem(Capability):
         # Format the proof markdown (Tier 1 Style)
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         
-        files_block = "\n".join([f"- {f}" for f in files_changed]) if files_changed else "None"
-        
-        content = f"""# Proof: {feature_id}
+        # Every field below is CALLER-SUPPLIED. This function verifies nothing
+        # about them, so the document must not call itself a proof: an agent can
+        # assert any deployed_url and any file list and get a file that reads as
+        # evidence later. Naming it honestly costs nothing; the alternative is a
+        # "Proof:" heading over a self-report.
+        #
+        # files_changed IS cheaply checkable, so it is checked -- each path is
+        # marked verified / MISSING rather than echoed. Third state applies:
+        # a path we cannot resolve is not the same as one we confirmed.
+        checked_files = []
+        for f in files_changed or []:
+            try:
+                exists = (Path(str(f)).exists()
+                          or (self.brain_path.parent / str(f)).exists())
+            except (OSError, ValueError):
+                exists = None
+            mark = "verified: exists" if exists else (
+                "UNVERIFIABLE" if exists is None else "MISSING — path does not exist")
+            checked_files.append(f"- `{f}` — {mark}")
+        files_block = "\n".join(checked_files) if checked_files else "None declared"
+        verified_n = sum(1 for line in checked_files if "verified: exists" in line)
+
+        content = f"""# Self-reported record: {feature_id}
 
 > Generated: {timestamp}
+>
+> **This is NOT a proof.** Every field below except the file check was supplied
+> by the caller and is recorded verbatim, unverified. Nothing here confirms that
+> the feature works, that the URL is live, or that the deployment happened.
+> Treat it as a claim with a timestamp.
 
-## Thinking
+## Verification actually performed
+- **Files declared:** {len(checked_files)} — **{verified_n} confirmed to exist on disk**
+- **Deployed URL:** NOT checked — no request was made to `{deployed_url}`
+- **Thinking / risk / rollback:** caller-supplied prose, unverified by construction
+
+## Thinking (unverified, as supplied)
 {thinking}
 
-## Deployed URL
+## Deployed URL (unverified — not fetched)
 {deployed_url}
 
-## Files Changed
+## Files Changed (each checked against disk)
 {files_block}
 
 ## Rollback Plan

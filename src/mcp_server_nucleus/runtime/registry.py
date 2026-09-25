@@ -57,6 +57,7 @@ class RegistryClient:
             try:
                 self.fetch_index()
             except Exception:
+                logger.debug("Swallowed exception in search", exc_info=True)
                 pass
                 
         query = query.lower()

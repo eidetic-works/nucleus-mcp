@@ -53,6 +53,7 @@ class SecurityEventHandler(FileSystemEventHandler):
                     # False positive IDE scan, content is identical
                     return
             except Exception:
+                logger.debug("Swallowed exception in on_modified", exc_info=True)
                 pass
 
             # Breach Detected!

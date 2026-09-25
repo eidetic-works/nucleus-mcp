@@ -1,10 +1,13 @@
 import json
 import hashlib
+import logging
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from .common import get_brain_path
+
+logger = logging.getLogger("nucleus.dsor")
 
 class DecisionEntry:
     """Represents a single entry in the Decision System of Record (DSoR)."""
@@ -195,5 +198,14 @@ class SessionStateManager:
             return None
         try:
             return json.loads(self.state_file.read_text())
-        except Exception:
+        except (OSError, json.JSONDecodeError):
+            # The file-missing case already returned above, so reaching here means
+            # the state exists and is damaged. Returning a bare None made that
+            # indistinguishable from "no session yet", so a corrupted session
+            # silently became a fresh one (audit ledger QG-5).
+            logger.warning(
+                "session state at %s exists but could not be read; treating as absent, "
+                "which will start a fresh session and leave the damaged file in place",
+                self.state_file, exc_info=True,
+            )
             return None

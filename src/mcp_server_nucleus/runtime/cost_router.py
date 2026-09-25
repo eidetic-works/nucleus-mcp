@@ -147,6 +147,7 @@ def _is_local_tb_available() -> bool:
         with urllib.request.urlopen(req, timeout=2) as resp:
             return resp.status == 200
     except Exception:
+        logger.debug("Swallowed exception in _is_local_tb_available", exc_info=True)
         return False
 
 
@@ -291,6 +292,7 @@ def _emit_cost_telemetry(decision: RouteDecision, ctx: dict) -> None:
                 duration_ms=0.0,  # routing itself is negligible
             )
         except Exception:
+            logger.debug("Swallowed exception in _emit_cost_telemetry", exc_info=True)
             pass  # telemetry must never break caller
 
     t = threading.Thread(target=_fire, daemon=True)

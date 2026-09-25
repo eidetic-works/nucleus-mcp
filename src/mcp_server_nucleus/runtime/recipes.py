@@ -52,6 +52,20 @@ class RecipeNotFoundError(Exception):
     pass
 
 
+def _slugify(text: str) -> str:
+    """Convert text to a lowercase, hyphen-separated slug."""
+    out = []
+    prev_dash = False
+    for ch in text.lower():
+        if ch.isalnum():
+            out.append(ch)
+            prev_dash = False
+        elif not prev_dash:
+            out.append("-")
+            prev_dash = True
+    return "".join(out).strip("-")
+
+
 def validate_recipe(data: Dict[str, Any]) -> List[str]:
     """
     Validate a recipe dict against the schema.
@@ -251,8 +265,13 @@ def load_recipe(name: str) -> Dict[str, Any]:
     Load a recipe by name. Searches built-in first, then user recipes.
     Raises RecipeNotFoundError if not found.
     Raises RecipeValidationError if schema validation fails.
+
+    Resolution stages:
+      1. Exact file-stem lookup (built-in then user recipes dir).
+      2. Case-insensitive display-name match via list_recipes().
+      3. Slug match via list_recipes() and _slugify().
     """
-    # Search built-in
+    # Stage 1: exact file-stem lookup
     builtin_dir = _get_builtin_recipes_dir()
     recipe_path = builtin_dir / f"{name}.yaml"
     if not recipe_path.exists():
@@ -262,7 +281,28 @@ def load_recipe(name: str) -> Dict[str, Any]:
             recipe_path = user_dir / f"{name}.yaml"
 
     if not recipe_path.exists():
-        available = [r["name"] for r in list_recipes()]
+        recipe_path = None
+
+    # Stage 2: case-insensitive display-name match
+    if recipe_path is None:
+        name_lower = name.lower()
+        for candidate in list_recipes():
+            if candidate.get("name", "").lower() == name_lower:
+                recipe_path = Path(candidate["path"])
+                break
+
+    # Stage 3: slug match
+    if recipe_path is None:
+        name_slug = _slugify(name)
+        for candidate in list_recipes():
+            if _slugify(candidate.get("name", "")) == name_slug:
+                recipe_path = Path(candidate["path"])
+                break
+
+    if recipe_path is None:
+        available = [
+            f"{r['name']} ({Path(r['path']).stem})" for r in list_recipes()
+        ]
         raise RecipeNotFoundError(
             f"Recipe '{name}' not found. Available: {', '.join(available) or 'none'}"
         )
@@ -319,6 +359,7 @@ def install_recipe(brain_path: Path, recipe_data: Dict[str, Any]) -> Dict[str, A
                         try:
                             existing_keys.add(json.loads(line).get("key", ""))
                         except Exception:
+                            logger.debug("Swallowed exception in install_recipe", exc_info=True)
                             pass
 
         new_count = 0
@@ -350,6 +391,7 @@ def install_recipe(brain_path: Path, recipe_data: Dict[str, Any]) -> Dict[str, A
                 if not isinstance(existing_tasks, list):
                     existing_tasks = []
             except Exception:
+                logger.debug("Swallowed exception in install_recipe", exc_info=True)
                 existing_tasks = []
 
         existing_ids = {t.get("id") for t in existing_tasks}
@@ -395,6 +437,7 @@ def install_recipe(brain_path: Path, recipe_data: Dict[str, Any]) -> Dict[str, A
                 if not isinstance(existing_mounts, dict):
                     existing_mounts = {}
             except Exception:
+                logger.debug("Swallowed exception in install_recipe", exc_info=True)
                 existing_mounts = {}
 
         for srv in servers:
@@ -421,6 +464,7 @@ def install_recipe(brain_path: Path, recipe_data: Dict[str, Any]) -> Dict[str, A
             try:
                 state = json.loads(state_file.read_text())
             except Exception:
+                logger.debug("Swallowed exception in install_recipe", exc_info=True)
                 state = {}
         state["recipe"] = recipe_name
         state["recipe_version"] = recipe_data.get("version", "0.0.0")
@@ -459,6 +503,7 @@ def get_installed_recipes(brain_path: Path) -> List[Dict[str, Any]]:
             data = json.loads(f.read_text())
             installed.append(data)
         except Exception:
+            logger.debug("Swallowed exception in get_installed_recipes", exc_info=True)
             pass
     return installed
 
@@ -497,6 +542,7 @@ def uninstall_recipe(brain_path: Path, recipe_name: str) -> Dict[str, Any]:
                 f.writelines(lines)
             summary["engrams_removed"] = removed
         except Exception:
+            logger.debug("Swallowed exception in uninstall_recipe", exc_info=True)
             pass
 
     # Remove tasks sourced from this recipe
@@ -510,6 +556,7 @@ def uninstall_recipe(brain_path: Path, recipe_name: str) -> Dict[str, Any]:
             summary["tasks_removed"] = before - len(tasks)
             tasks_file.write_text(json.dumps(tasks, indent=2))
         except Exception:
+            logger.debug("Swallowed exception in uninstall_recipe", exc_info=True)
             pass
 
     # Remove manifest

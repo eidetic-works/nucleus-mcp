@@ -101,6 +101,7 @@ def _post_upstream(payload: Dict[str, Any], bearer: str) -> "tuple[int, Dict[str
     try:
         body = resp.json()
     except Exception:
+        logger.debug("Swallowed exception in _post_upstream", exc_info=True)
         body = resp.text
     return resp.status_code, body
 
@@ -255,6 +256,7 @@ def _gemini_call_once(
     try:
         body = resp.json()
     except Exception:
+        logger.debug("Swallowed exception in _gemini_call_once", exc_info=True)
         body = resp.text
     return resp.status_code, body
 
@@ -350,6 +352,7 @@ async def messages(request: Request) -> Response:
     try:
         payload = await request.json()
     except Exception:
+        logger.debug("Swallowed exception in messages", exc_info=True)
         return JSONResponse(
             {"type": "error", "error": {"type": "invalid_request_error",
              "message": "body is not valid JSON"}}, status_code=400,

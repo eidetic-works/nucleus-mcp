@@ -73,6 +73,7 @@ def get_trace(brain_path: Path, trace_id: str) -> Optional[Dict[str, Any]]:
                 if data.get("review_id", "").startswith(trace_id):
                     return data
         except (json.JSONDecodeError, Exception):
+            logger.debug("Swallowed exception in get_trace", exc_info=True)
             continue
 
     return None

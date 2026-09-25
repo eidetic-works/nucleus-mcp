@@ -14,6 +14,7 @@ Security Model:
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 from dataclasses import dataclass, field, asdict
@@ -22,6 +23,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .base import AuthProvider, AuthToken, AuthResult
+
+logger = logging.getLogger("nucleus.auth.ipc")
 
 
 def get_brain_path() -> Path:
@@ -91,9 +94,26 @@ class IPCAuthProvider(AuthProvider):
     - Per-request auth tokens (no implicit trust)
     - 30-second TTL (short-lived)
     - Single-use consumption
-    - HMAC signatures for integrity
     - Decision linkage for audit trail
     - Metering for billing accuracy
+
+    NOT a security feature, despite an earlier version of this list claiming it:
+    HMAC token integrity. `_compute_signature` below is implemented and has ZERO
+    callers -- no token field stores a signature and nothing verifies one, so a
+    token's contents are not integrity-protected. Claiming otherwise is worse
+    than the gap itself, because a caller reading this list would reasonably
+    stop worrying about tampering.
+
+    Wiring it is a real change, not a one-liner: tokens would need a signature
+    field, validate_token would need to check it, and existing in-flight tokens
+    would need a migration path. That is a design decision. Removing the false
+    claim is not, so it is done here and the gap is stated instead of implied.
+
+    Related: `validate_token` accepts a `request_hash` parameter its body never
+    reads. No caller passes one -- agent.py sends request_hash to
+    `consume_token`, which DOES store it for the audit trail. So that parameter
+    is dead weight rather than a dropped check, and an audit that flagged it as
+    high-severity had the fact right and the impact wrong.
     """
     
     TOKEN_TTL_SECONDS = 30
@@ -262,7 +282,14 @@ class IPCAuthProvider(AuthProvider):
             with open(meter_file, "a", encoding='utf-8') as f:
                 f.write(json.dumps(entry.to_dict(), ensure_ascii=False) + "\n")
         except Exception:
-            pass
+            # Still swallowed on purpose — a metering write must not break the call
+            # it measures — but no longer silent. This ledger is what billing and
+            # usage reporting are read from, so a write that stops working needs to
+            # be visible rather than inferred later from a gap (audit ledger QG-3).
+            logger.warning(
+                "token metering write failed; the meter ledger is incomplete from "
+                "this point", exc_info=True,
+            )
     
     def _log_token_event(self, event_type: str, token: IPCToken) -> None:
         """Log token lifecycle event."""
@@ -281,7 +308,10 @@ class IPCAuthProvider(AuthProvider):
             with open(log_file, "a", encoding='utf-8') as f:
                 f.write(json.dumps(event, ensure_ascii=False) + "\n")
         except Exception:
-            pass
+            logger.warning(
+                "auth audit write failed for %s event; the IPC token ledger is "
+                "incomplete from this point", event_type, exc_info=True,
+            )
     
     def get_metering_summary(self, since: Optional[str] = None) -> Dict[str, Any]:
         """Get metering summary for billing/audit."""
@@ -326,6 +356,7 @@ class IPCAuthProvider(AuthProvider):
             
             return entries[-limit:]
         except Exception:
+            logger.debug("Swallowed exception in get_audit_log", exc_info=True)
             return []
 
 
@@ -367,6 +398,7 @@ def require_ipc_token(scope: str):
                     from mcp_server_nucleus.runtime.prometheus import inc_auth_failure
                     inc_auth_failure()
                 except Exception:
+                    logger.debug("Swallowed exception in require_ipc_token", exc_info=True)
                     pass
                 raise PermissionError(f"IPC token validation failed: {error}")
             

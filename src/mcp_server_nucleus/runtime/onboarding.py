@@ -5,12 +5,15 @@ Detects the project environment, asks the user a few questions,
 and tailors the .brain setup accordingly. The goal: make the first
 30 seconds impressive.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
+from typing import Optional
 
 
 # ── Project Detection ────────────────────────────────────────────
@@ -105,6 +108,7 @@ def detect_project(cwd: Path = None) -> dict:
             if r.returncode == 0 and r.stdout.strip():
                 result["git_remote"] = r.stdout.strip()
         except Exception:
+            logger.debug("Swallowed exception in detect_project", exc_info=True)
             pass
 
     # Language detection
@@ -138,6 +142,7 @@ def _extract_project_name(cwd: Path) -> str | None:
                     if len(parts) == 2:
                         return parts[1].strip().strip('"').strip("'")
         except Exception:
+            logger.debug("Swallowed exception in _extract_project_name", exc_info=True)
             pass
 
     # package.json
@@ -147,6 +152,7 @@ def _extract_project_name(cwd: Path) -> str | None:
             data = json.loads(pkg.read_text(encoding="utf-8"))
             return data.get("name")
         except Exception:
+            logger.debug("Swallowed exception in _extract_project_name", exc_info=True)
             pass
 
     # Cargo.toml
@@ -160,6 +166,7 @@ def _extract_project_name(cwd: Path) -> str | None:
                     if len(parts) == 2:
                         return parts[1].strip().strip('"').strip("'")
         except Exception:
+            logger.debug("Swallowed exception in _extract_project_name", exc_info=True)
             pass
 
     return None
@@ -167,9 +174,20 @@ def _extract_project_name(cwd: Path) -> str | None:
 
 # ── Interactive Prompts ──────────────────────────────────────────
 
-def _ask_choice(prompt: str, options: list[dict], default: int = 0) -> str:
+def _ask_choice(
+    prompt: str,
+    options: list[dict],
+    default: int = 0,
+    _explicit: Optional[list] = None,
+) -> str:
     """Present a numbered choice. Each option is {key, label, description?}.
-    Returns the selected key. Non-interactive falls back to default."""
+
+    Returns the selected key. If ``_explicit`` is a one-element list, it is
+    set to ``True`` when the value came from an affirmative answer at a TTY
+    prompt and ``False`` when it was defaulted because the input is not a TTY.
+    Pressing Enter at a real prompt counts as a choice; never being asked does
+    not.
+    """
     print(f"\n{prompt}")
     for i, opt in enumerate(options):
         marker = ">" if i == default else " "
@@ -178,18 +196,26 @@ def _ask_choice(prompt: str, options: list[dict], default: int = 0) -> str:
 
     if not sys.stdin.isatty():
         print(f"  (non-interactive, using default: {options[default]['label']})")
+        if _explicit is not None:
+            _explicit[0] = False
         return options[default]["key"]
 
     while True:
         try:
             raw = input(f"\nChoose [1-{len(options)}] (default {default + 1}): ").strip()
             if not raw:
+                if _explicit is not None:
+                    _explicit[0] = True
                 return options[default]["key"]
             idx = int(raw) - 1
             if 0 <= idx < len(options):
+                if _explicit is not None:
+                    _explicit[0] = True
                 return options[idx]["key"]
             print(f"  Please enter a number between 1 and {len(options)}")
         except (ValueError, EOFError):
+            if _explicit is not None:
+                _explicit[0] = False
             return options[default]["key"]
 
 
@@ -220,6 +246,7 @@ def run_onboarding_wizard(brain_path: str = ".brain") -> dict:
             "project_description": str,
             "languages": [str],
             "auto_setup_ide": bool,
+            "auto_setup_ide_explicit": bool,
         }
     """
     print()
@@ -261,6 +288,7 @@ def run_onboarding_wizard(brain_path: str = ".brain") -> dict:
     )
 
     # Step 4: IDE auto-configuration
+    ide_explicit = [False]
     ide_choice = _ask_choice(
         "Auto-configure your AI IDEs (Claude Desktop, Cursor, Windsurf)?",
         [
@@ -268,6 +296,7 @@ def run_onboarding_wizard(brain_path: str = ".brain") -> dict:
             {"key": "no", "label": "No", "description": "I'll configure manually"},
         ],
         default=0,
+        _explicit=ide_explicit,
     )
 
     config = {
@@ -279,6 +308,7 @@ def run_onboarding_wizard(brain_path: str = ".brain") -> dict:
         "project_description": project_desc,
         "languages": project["languages"],
         "auto_setup_ide": ide_choice == "yes",
+        "auto_setup_ide_explicit": ide_explicit[0],
         "git": project["git"],
         "git_remote": project.get("git_remote"),
     }
@@ -328,6 +358,7 @@ def seed_project_context(brain_path: Path, config: dict):
         try:
             engrams = json.loads(engrams_file.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Swallowed exception in seed_project_context", exc_info=True)
             pass
 
     project_engram = {
@@ -344,7 +375,7 @@ def seed_project_context(brain_path: Path, config: dict):
     engrams_file.write_text(json.dumps(engrams, indent=2), encoding="utf-8")
 
 
-def print_post_init_summary(config: dict):
+def print_post_init_summary(config: dict, *, patched_count: Optional[int] = None):
     """Print a persona-tailored 'what to do next' section."""
     persona_key = config.get("persona", "developer")
 
@@ -354,7 +385,12 @@ def print_post_init_summary(config: dict):
 
     # Universal first step
     if config.get("auto_setup_ide"):
-        print("\n① Restart your AI client to pick up the new config")
+        if patched_count is None:
+            print("\n① Add the MCP config to your AI client (printed above)")
+        elif patched_count == 0:
+            print("\n① No existing IDE config files were found; no AI IDE config was written")
+        else:
+            print("\n① Restart your AI client to pick up the new config")
     else:
         print("\n① Add the MCP config to your AI client (printed above)")
 
@@ -383,5 +419,5 @@ def print_post_init_summary(config: dict):
     print("   nucleus doctor          → Diagnose setup")
     print("   nucleus recipe list     → Browse workflow packs")
 
-    print(f"\n📚 Docs: https://github.com/eidetic-works/nucleus-mcp")
+    print(f"\n📚 Docs: https://nucleusos.dev")
     print()

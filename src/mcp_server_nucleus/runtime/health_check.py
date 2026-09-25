@@ -167,13 +167,40 @@ def check_hardening() -> Dict[str, Any]:
     try:
         from .hardening import get_hardening_status
         status = get_hardening_status()
-        
+
+        # DERIVE the verdict from the status instead of hardcoding HEALTHY.
+        # This function already read `components` and `enterprise_ready` and
+        # then returned HEALTHY regardless, so the only thing that could make it
+        # non-healthy was an ImportError -- a health check that cannot report
+        # ill-health from the data it just fetched.
+        #
+        # It surfaces, among others, C30_utf8_encoding = "PARTIAL", which was
+        # being reported as HEALTHY.
+        # Healthy component values, enumerated explicitly. The first version of
+        # this check assumed "active" was the only healthy value and flagged
+        # file_lock="robust" as degraded -- which is that field's BEST state
+        # ("robust" > "basic" > "unavailable"). A health check that reports the
+        # healthiest possible reading as a problem is the same defect as one
+        # that reports everything healthy, wearing the opposite sign.
+        _HEALTHY_COMPONENT_VALUES = {"active", "robust"}
+        components = status.get("components", {}) or {}
+        fixes = status.get("critical_fixes", {}) or {}
+        degraded = [f"{k}={v}" for k, v in components.items()
+                    if v not in _HEALTHY_COMPONENT_VALUES]
+        degraded += [f"{k}={v}" for k, v in fixes.items() if v != "FIXED"]
+        if not status.get("enterprise_ready", False):
+            degraded.append("enterprise_ready=False")
+
         return {
             "component": "hardening",
-            "status": HealthStatus.HEALTHY,
+            "status": HealthStatus.HEALTHY if not degraded else HealthStatus.DEGRADED,
             "version": status.get("hardening_version", "unknown"),
-            "components": status.get("components", {}),
+            "components": components,
+            "critical_fixes": fixes,
             "enterprise_ready": status.get("enterprise_ready", False),
+            # Named, not just counted: "degraded" with no reason is only
+            # marginally better than a false HEALTHY.
+            "degraded_reasons": degraded,
         }
     except ImportError:
         return {

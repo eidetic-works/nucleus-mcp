@@ -107,7 +107,7 @@ def query_shell_exec(
     brain_path: Optional[str] = None,
     agent_id: Optional[str] = None,
     since_timestamp: Optional[float] = None,
-) -> bool:
+) -> Optional[bool]:
     """Query the witness log for a matching shell execution.
 
     Returns True if any logged execution contains the query command as a
@@ -121,7 +121,17 @@ def query_shell_exec(
     """
     path = _witness_path(brain_path)
     if not path.exists():
-        return False
+        # NO LOG IS NOT "NO". Returning False here answers "that never
+        # happened" when the truth is "nothing was ever recorded" -- a
+        # definitive negative manufactured from absent data. The witness log is
+        # written only by scripts/witness_bridge.py, which nothing currently
+        # invokes, so in the live system this branch is the ONLY branch: every
+        # query returned a confident False.
+        #
+        # None is the third state (INSUFFICIENT). Callers that do `if found:`
+        # are unaffected -- None is falsy -- but a caller that cares can now
+        # tell "not found" from "cannot know".
+        return None
 
     query_lower = command.lower().strip()
     if not query_lower:

@@ -705,6 +705,23 @@ async def post_relay(request: Request) -> JSONResponse:
     return JSONResponse(response, status_code=202, headers=rate_headers)
 
 
+def _owns_inbox(token_owner: str, recipient: str) -> bool:
+    """Whether this token's owner may read or mutate this mailbox.
+
+    post_relay has always compared the envelope's sender against the token owner
+    (see the 403 below it), but the read, ack and status handlers only checked
+    that the token existed in the map. Any valid token could therefore read any
+    other agent's inbox, ack their messages out from under them, or enumerate
+    their traffic — and docs/relay_bus_contract.md publishes the recipient names
+    in use on a shared deployment, so there was nothing to guess
+    (audit ledger RL-1).
+
+    Canonicalised on both sides so the alias forms that post_relay already
+    tolerates behave the same way here.
+    """
+    return resolve_canonical_inbox_name(recipient) == resolve_canonical_inbox_name(token_owner)
+
+
 async def get_relay(request: Request) -> JSONResponse:
     """GET /relay/{recipient} — fetch inbox for recipient."""
     now = time.time()
@@ -726,6 +743,13 @@ async def get_relay(request: Request) -> JSONResponse:
         return _err(400, "invalid_recipient", str(e), rate_headers=rate_headers)
 
     rate_headers = get_rate_limit_headers(token, recipient, now)
+
+    if not _owns_inbox(token_map[token], recipient):
+        return _err(
+            403, "forbidden",
+            f"token owner={token_map[token]!r} may not access inbox {recipient!r}",
+            rate_headers=rate_headers,
+        )
 
     try:
         limit = int(request.query_params.get("limit", "50"))
@@ -779,6 +803,13 @@ async def ack_relay(request: Request) -> JSONResponse:
 
     rate_headers = get_rate_limit_headers(token, recipient, now)
 
+    if not _owns_inbox(token_map[token], recipient):
+        return _err(
+            403, "forbidden",
+            f"token owner={token_map[token]!r} may not access inbox {recipient!r}",
+            rate_headers=rate_headers,
+        )
+
     raw = await request.body()
     try:
         payload = json.loads(raw or b"{}")
@@ -811,6 +842,7 @@ async def ack_relay(request: Request) -> JSONResponse:
             else:
                 failed += 1
         except Exception:
+            logger.debug("Swallowed exception in ack_relay", exc_info=True)
             failed += 1
 
     return JSONResponse({"acked": acked, "failed": failed}, status_code=200, headers=rate_headers)
@@ -838,6 +870,13 @@ async def get_relay_status(request: Request) -> JSONResponse:
 
     rate_headers = get_rate_limit_headers(token, recipient, now)
 
+    if not _owns_inbox(token_map[token], recipient):
+        return _err(
+            403, "forbidden",
+            f"token owner={token_map[token]!r} may not access inbox {recipient!r}",
+            rate_headers=rate_headers,
+        )
+
     try:
         # force_fs=True: server-side self-recursion guard (see post handler).
         # Without it relay_status() returns the v0.1 HTTP-mode stub
@@ -864,6 +903,7 @@ async def get_relay_status(request: Request) -> JSONResponse:
                         dt = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
                         last_interaction_at = dt.timestamp()
                     except Exception:
+                        logger.debug("Swallowed exception in get_relay_status", exc_info=True)
                         pass
                 
                 marketplace_data = {

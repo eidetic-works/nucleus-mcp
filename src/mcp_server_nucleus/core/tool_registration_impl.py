@@ -16,7 +16,20 @@ _original_mcp_tool = None
 _rpc_firewall_hook = None
 
 def default_rpc_firewall_hook(tool_name: str, args: tuple, kwargs: dict):
-    """Layer 3: Pre-execution validation of JSON-RPC tool calls."""
+    """Layer 3: Pre-execution validation of JSON-RPC tool calls.
+
+    DEAD AS WRITTEN, and kept only so an out-of-tree caller passing its own hook
+    still has the wrapper. The tool names below (`nucleus_delete_file`,
+    `brain_fix_code`, …) and the flat `kwargs["path"]` lookup describe the
+    pre-facade call shape. Every call now arrives as
+    `nucleus_governance(action="delete_file", params={"path": ...})`, so the
+    name check never matches and the path is one level deeper than this looks
+    for. It has not fired since the facade migration (audit ledger CP-2).
+
+    The live check is `tools/_dispatch.py::check_protected_path`, called from
+    both `dispatch` and `async_dispatch` on the unpacked
+    `(module_name, action, params)` shape. Change that one, not this one.
+    """
     if tool_name in ["write_to_file", "replace_file_content", "multi_replace_file_content", "nucleus_delete_file", "brain_fix_code"]:
         target_path = kwargs.get("TargetFile") or kwargs.get("target_file") or kwargs.get("AbsolutePath") or kwargs.get("path") or kwargs.get("file_path")
         if target_path:

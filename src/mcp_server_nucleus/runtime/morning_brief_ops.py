@@ -121,6 +121,7 @@ def _morning_brief_impl() -> Dict:
         ap = ArchivePipeline(brain_path=brain)
         brief["sections"]["training"] = ap.should_retrain()
     except Exception:
+        logger.debug("Swallowed exception in _morning_brief_impl", exc_info=True)
         brief["sections"]["training"] = {}
 
     # ── SECTION 7: GROWTH (Phase 4 — Business Functions) ─────
@@ -134,6 +135,7 @@ def _morning_brief_impl() -> Dict:
         from .relay_ops import get_relay_brief_section
         brief["sections"]["relay"] = get_relay_brief_section()
     except Exception:
+        logger.debug("Swallowed exception in _morning_brief_impl", exc_info=True)
         brief["sections"]["relay"] = {"has_messages": False, "summary": "Relay unavailable"}
 
     # ── SECTION 9: RECOMMENDATION ──────────────────────────────
@@ -172,6 +174,7 @@ def _morning_brief_impl() -> Dict:
                     "delta": "ALIGNED" if followed else "DIVERGED",
                 }
         except Exception:
+            logger.debug("Swallowed exception in _morning_brief_impl", exc_info=True)
             pass  # Never let recommendation persistence break the brief
 
     # ── META ────────────────────────────────────────────────────
@@ -192,6 +195,7 @@ def _morning_brief_impl() -> Dict:
             "generation_time_ms": brief["meta"]["generation_time_ms"],
         })
     except Exception:
+        logger.debug("Swallowed exception in _morning_brief_impl", exc_info=True)
         pass  # Never let event emission break the brief
 
     return brief
@@ -203,6 +207,7 @@ def _retrieve_hook_health(brain: Path) -> Dict:
         from .engram_hooks import get_hook_metrics_summary
         return get_hook_metrics_summary(brain)
     except Exception:
+        logger.debug("Swallowed exception in _retrieve_hook_health", exc_info=True)
         return {"total_executions": 0, "message": "Hook metrics unavailable"}
 
 
@@ -224,6 +229,7 @@ def _retrieve_adhd_status() -> Dict:
             "recommendation": context_status.get("recommendation", ""),
         }
     except Exception:
+        logger.debug("Swallowed exception in _retrieve_adhd_status", exc_info=True)
         return {"focus_status": "🟢 FOCUSED", "switch_count": 0, "message": "ADHD metrics unavailable"}
 
 
@@ -300,6 +306,7 @@ def _retrieve_frontier_health(brain: Path) -> Dict:
                     "compound_rate": patterns.get("compound_rate", 0),
                 }
         except Exception:
+            logger.debug("Swallowed exception in _retrieve_frontier_health", exc_info=True)
             pass
 
         return result if result else {"message": "No frontier data yet"}

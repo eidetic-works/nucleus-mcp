@@ -73,6 +73,7 @@ def _get_code_file(tb: Optional[types.TracebackType] = None) -> Dict[str, Any]:
                 for i in range(start, end)
             ]
         except Exception:
+            logger.debug("Swallowed exception in _get_code_file", exc_info=True)
             pass
         return {
             "available": True,
@@ -82,6 +83,7 @@ def _get_code_file(tb: Optional[types.TracebackType] = None) -> Dict[str, Any]:
             "source_lines": source_lines,
         }
     except Exception:
+        logger.debug("Swallowed exception in _get_code_file", exc_info=True)
         return {"available": False}
 
 
@@ -123,8 +125,10 @@ def _get_intent_context(brain_path: Path) -> Dict[str, Any]:
             try:
                 intent["active_session"] = json.loads(active_path.read_text(encoding="utf-8"))
             except Exception:
+                logger.debug("Swallowed exception in _get_intent_context", exc_info=True)
                 pass
     except Exception as e:
+        logger.debug("Swallowed exception in _get_intent_context", exc_info=True)
         intent["capture_error"] = str(e)
     return intent
 
@@ -159,6 +163,7 @@ def _get_recent_history() -> Dict[str, Any]:
             history["uncommitted"] = status.stdout.strip()
             history["dirty"] = bool(status.stdout.strip())
     except Exception:
+        logger.debug("Swallowed exception in _get_recent_history", exc_info=True)
         pass
     return history
 
@@ -230,6 +235,7 @@ def _collect_recent_commits(repo_path: Path, max_count: int = 15,
             items.append(info)
         return items
     except Exception:
+        logger.debug("Swallowed exception in _collect_recent_commits", exc_info=True)
         return None
 
 
@@ -308,6 +314,7 @@ def attempt_deterministic_fix(error_info: Dict[str, Any], classification: Dict[s
                 result["fixed"] = True
                 result["action"] = "Fixed permissions on brain directory"
         except Exception as e:
+            logger.debug("Swallowed exception in attempt_deterministic_fix", exc_info=True)
             result["action"] = f"Permission fix failed: {e}"
             result["suggestions"] = ["Run: chmod -R 755 <brain_path>"]
 
@@ -334,6 +341,7 @@ def attempt_deterministic_fix(error_info: Dict[str, Any], classification: Dict[s
                 result["fixed"] = True
                 result["action"] = f"Created missing directory: {brain_path}"
             except Exception as e:
+                logger.debug("Swallowed exception in attempt_deterministic_fix", exc_info=True)
                 result["action"] = f"Directory creation failed: {e}"
         else:
             result["suggestions"] = [f"Missing file: {msg}", "Check if file was moved or deleted"]
@@ -455,11 +463,13 @@ class SelfHealer:
             try:
                 self.brain_path = get_brain_path()
             except Exception:
+                logger.debug("Swallowed exception in __init__", exc_info=True)
                 self.brain_path = Path.cwd() / ".brain"
         self.error_log_path = self.brain_path / "ledger" / "selfheal_log.jsonl"
         try:
             self.error_log_path.parent.mkdir(parents=True, exist_ok=True)
         except Exception:
+            logger.debug("Swallowed exception in __init__", exc_info=True)
             pass
 
     def handle_error(self, exc: Exception, command: str = "",
@@ -544,6 +554,7 @@ class SelfHealer:
             with open(self.error_log_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(incident, default=str) + "\n")
         except Exception:
+            logger.debug("Swallowed exception in _log_incident", exc_info=True)
             pass
 
 

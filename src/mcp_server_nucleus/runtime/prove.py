@@ -204,6 +204,7 @@ def changed_line_ranges(repo: Path, base: Optional[str] = None) -> Dict[str, Set
             try:
                 n = len(p.read_text(encoding="utf-8").splitlines())
             except Exception:  # noqa: BLE001
+                logger.debug("Swallowed exception in changed_line_ranges", exc_info=True)
                 continue
             ranges.setdefault(rel, set()).update(range(1, n + 1))
 
@@ -374,6 +375,7 @@ def prove_diff(repo: Optional[Path] = None, base: Optional[str] = None,
         try:
             by_rel[str(Path(abs_path).resolve().relative_to(repo.resolve()))] = lines
         except Exception:  # noqa: BLE001 — file outside the repo (site-packages etc.)
+            logger.debug("Swallowed exception in prove_diff", exc_info=True)
             continue
 
     # UNMEASURED IS NOT NEVER-EXECUTED. If coverage never instrumented a file
@@ -573,6 +575,7 @@ def prove_tests(repo: Optional[Path] = None,
             p = Path(fname).resolve()
             rel = str(p.relative_to(repo_abs))
         except (ValueError, Exception):
+            logger.debug("Swallowed exception in prove_tests", exc_info=True)
             continue
         if p.exists() and cov_mtime < p.stat().st_mtime:
             stale_files.append(rel)
@@ -592,6 +595,7 @@ def prove_tests(repo: Optional[Path] = None,
             try:
                 rel = str(Path(fname).resolve().relative_to(repo.resolve()))
             except Exception:  # noqa: BLE001 — outside the repo
+                logger.debug("Swallowed exception in prove_tests", exc_info=True)
                 continue
             if _is_test_path(rel):
                 continue  # a test executing its own lines proves nothing
@@ -601,6 +605,7 @@ def prove_tests(repo: Optional[Path] = None,
                     touched_product += 1
                     break
             except Exception:  # noqa: BLE001
+                logger.debug("Swallowed exception in prove_tests", exc_info=True)
                 continue
         if touched_product == 0:
             zero.append(ctx)

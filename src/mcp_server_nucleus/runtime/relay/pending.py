@@ -89,6 +89,7 @@ def relay_consolidate_pending() -> Dict[str, Any]:
                             "to": recipient,
                         })
             except Exception:
+                logger.debug("Swallowed exception in relay_consolidate_pending", exc_info=True)
                 continue
 
         if unread_msgs:
@@ -128,6 +129,7 @@ def relay_read_pending() -> Dict[str, Any]:
                 if age < 60:
                     return data
         except Exception:
+            logger.debug("Swallowed exception in relay_read_pending", exc_info=True)
             pass
     # Stale or missing — refresh
     return relay_consolidate_pending()

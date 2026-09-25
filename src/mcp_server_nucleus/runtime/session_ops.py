@@ -3,6 +3,8 @@ Nucleus Runtime - Session Operations
 ====================================
 Core logic for session management (Save, Resume, Context switching).
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -103,6 +105,7 @@ def _get_depth_state_safe() -> Dict:
             with open(depth_path, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception:
+        logger.debug("Swallowed exception in _get_depth_state_safe", exc_info=True)
         pass
     return {"current_depth": 0, "levels": []}
 
@@ -182,8 +185,10 @@ def _prune_old_sessions(max_sessions: int = 10) -> None:
             try:
                 old_session.unlink()
             except Exception:
+                logger.debug("Swallowed exception in _prune_old_sessions", exc_info=True)
                 pass
     except Exception:
+        logger.debug("Swallowed exception in _prune_old_sessions", exc_info=True)
         pass
 
 def _get_session(session_id: str) -> Dict[str, Any]:
@@ -236,6 +241,7 @@ def _resume_session(session_id: Optional[str] = None) -> Dict[str, Any]:
                  # Very basic check
                  pass
         except Exception:
+             logger.debug("Swallowed exception in _resume_session", exc_info=True)
              pass
 
         return {
@@ -273,6 +279,7 @@ def _list_sessions() -> Dict[str, Any]:
                     "created_at": session.get("created_at")
                 })
             except Exception:
+                logger.debug("Swallowed exception in _list_sessions", exc_info=True)
                 continue
                 
         return {"sessions": sessions, "total": len(sessions)}
@@ -290,6 +297,7 @@ def _check_for_recent_session() -> Dict[str, Any]:
                 return {"exists": True, "session_id": sid, "message": "Resumable session found."}
         return {"exists": False}
     except Exception:
+        logger.debug("Swallowed exception in _check_for_recent_session", exc_info=True)
         return {"exists": False}
 
 # ── Session Start (workflow enforcement dashboard) ───────────
@@ -312,6 +320,7 @@ def _brain_session_start_impl() -> str:
                 with open(depth_path, "r", encoding="utf-8") as f:
                     depth_data = json.load(f)
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass
             
         depth_current = depth_data.get("current_depth", 0)
@@ -327,6 +336,7 @@ def _brain_session_start_impl() -> str:
                     all_tasks = json.load(f)
                     pending_tasks = [t for t in all_tasks if t.get("status") == "PENDING"]
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass
             
         # Sort by priority - safely handle string priorities
@@ -354,6 +364,7 @@ def _brain_session_start_impl() -> str:
                         active_context = session.get("context", "Unknown")
                         active_task = session.get("active_task", "None")
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass
 
         # 4. Get Engrams
@@ -368,6 +379,7 @@ def _brain_session_start_impl() -> str:
                     for line in reversed(lines[-2:]):
                         recent_engrams.append(json.loads(line))
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass
                 
         # 5. Get Mounts
@@ -379,6 +391,7 @@ def _brain_session_start_impl() -> str:
                     mounts_data = json.load(f)
                     active_mounts = list(mounts_data.keys())
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass
 
         # Build Report
@@ -445,6 +458,7 @@ def _brain_session_start_impl() -> str:
                     all_handoffs = json.load(f)
                     pending_handoffs = [h for h in all_handoffs if h.get("status") == "pending"]
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass
         
         if pending_handoffs:
@@ -470,6 +484,7 @@ def _brain_session_start_impl() -> str:
                     output.append(f"🎯 TODAY'S FOCUS: {arc['todays_focus'][:100]}")
                     output.append("")
             except Exception:
+                logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
                 pass  # Never let session arc break session start
 
         # Recommendations
@@ -495,6 +510,7 @@ def _brain_session_start_impl() -> str:
         try:
              _emit_event("session_started", "brain", {"task_count": len(sorted_tasks)})
         except Exception:
+            logger.debug("Swallowed exception in _brain_session_start_impl", exc_info=True)
             pass
         
         return "\n".join(output)
@@ -584,6 +600,7 @@ def _brain_session_end_impl(summary: str = "", learnings: str = "",
                 key=f"session_{int(time.time()) % 100000}",
             )
         except Exception as e:
+            logger.debug("Swallowed exception in _brain_session_end_impl", exc_info=True)
             engram_result = {"error": str(e)}
 
         # Emit session_ended event (triggers auto-hook for SECOND engram)

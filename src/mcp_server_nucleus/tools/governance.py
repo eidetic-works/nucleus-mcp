@@ -15,6 +15,8 @@ Super-Tools Facade: 19 governance actions exposed via a single
 
 See the `nucleus_governance` tool docstring below for per-action params.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -106,6 +108,7 @@ def register(mcp, helpers):
         try:
             _emit_event(event_type, "nucleus_governance", data or {}, description=description)
         except Exception:
+            logger.debug("Swallowed exception in register", exc_info=True)
             pass  # Event emission failure must never break governance actions
 
     def _auto_fix_loop(file_path, verification_command):
@@ -194,6 +197,7 @@ def register(mcp, helpers):
             parsed = urlparse(url or "")
             host_summary = f"{parsed.scheme}://{parsed.hostname}" if parsed.scheme and parsed.hostname else (url or "")[:120]
         except Exception:
+            logger.debug("Swallowed exception in register", exc_info=True)
             host_summary = (url or "")[:120]
         _safe_emit(
             "governance_egress_curl",

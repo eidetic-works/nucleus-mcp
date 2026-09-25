@@ -115,6 +115,29 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             streak      TEXT    NOT NULL DEFAULT '[]',
             updated_at  TEXT    NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS focus_contracts (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id       TEXT NOT NULL,
+            question         TEXT NOT NULL,
+            deliverable      TEXT NOT NULL,
+            evidence_budget  INTEGER NOT NULL,
+            evidence_used    INTEGER NOT NULL DEFAULT 0,
+            depth_budget     INTEGER NOT NULL,
+            exit_condition   TEXT NOT NULL,
+            status           TEXT NOT NULL DEFAULT 'active',
+            outcome          TEXT,
+            evidence         TEXT,
+            trigger          TEXT,
+            owner            TEXT,
+            missing_fact     TEXT,
+            created_at       TEXT NOT NULL,
+            updated_at       TEXT NOT NULL,
+            resolved_at      TEXT
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS focus_contracts_one_active_session
+        ON focus_contracts(session_id) WHERE status = 'active';
         """
     )
     conn.commit()
@@ -540,6 +563,27 @@ def weekly_review(conn: sqlite3.Connection, days: int = 7) -> Dict[str, Any]:
         (cutoff,),
     ).fetchone()["c"]
 
+    focus = conn.execute(
+        "SELECT COUNT(*) AS total, "
+        "SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) AS resolved, "
+        "SUM(CASE WHEN outcome = 'ACT' THEN 1 ELSE 0 END) AS acted, "
+        "SUM(CASE WHEN outcome = 'DEFER_WITH_TRIGGER' THEN 1 ELSE 0 END) AS deferred, "
+        "SUM(CASE WHEN outcome = 'STOP_INSUFFICIENT' THEN 1 ELSE 0 END) AS insufficient "
+        "FROM focus_contracts WHERE created_at >= ?",
+        (cutoff,),
+    ).fetchone()
+    focus_total = focus["total"] or 0
+    focus_resolved = focus["resolved"] or 0
+    focus_acted = focus["acted"] or 0
+    focus_deferred = focus["deferred"] or 0
+    focus_insufficient = focus["insufficient"] or 0
+    focus_active = conn.execute(
+        "SELECT COUNT(*) AS c FROM focus_contracts WHERE status = 'active'"
+    ).fetchone()["c"]
+    action_conversion_rate = (
+        focus_acted / focus_resolved if focus_resolved else 0.0
+    )
+
     active = _active_frames(conn)
 
     # ---- compose narrative ----
@@ -580,6 +624,15 @@ def weekly_review(conn: sqlite3.Connection, days: int = 7) -> Dict[str, Any]:
 
     parts.append(f"Closed {closed_count} loop(s) this week.")
 
+    if focus_total:
+        parts.append(
+            f"Focus contracts: {focus_resolved}/{focus_total} resolved; "
+            f"ACT {focus_acted}, deferred {focus_deferred}, "
+            f"insufficient {focus_insufficient}."
+        )
+    if focus_active:
+        parts.append(f"Active focus contracts still open: {focus_active}.")
+
     if active:
         parts.append(
             "Heads up: you have an unfinished dive still on the stack: "
@@ -596,8 +649,204 @@ def weekly_review(conn: sqlite3.Connection, days: int = 7) -> Dict[str, Any]:
         ],
         "closed_this_week": closed_count,
         "active_stack": [f["topic"] for f in active],
+        "focus_contracts": {
+            "total": focus_total,
+            "resolved": focus_resolved,
+            "acted": focus_acted,
+            "deferred": focus_deferred,
+            "insufficient": focus_insufficient,
+            "active": focus_active,
+            "action_conversion_rate": action_conversion_rate,
+        },
         "narrative": "\n".join(parts),
     }
+
+
+# ---------------------------------------------------------------------------
+# Focus contracts
+# ---------------------------------------------------------------------------
+
+FOCUS_OUTCOMES = frozenset({"ACT", "DEFER_WITH_TRIGGER", "STOP_INSUFFICIENT"})
+
+
+def _focus_session(conn: sqlite3.Connection, session_id: Optional[str]) -> str:
+    return (session_id or "").strip() or current_session(conn)
+
+
+def _focus_contract(row: sqlite3.Row) -> Dict[str, Any]:
+    contract = dict(row)
+    contract["remaining_evidence_budget"] = max(
+        0, contract["evidence_budget"] - contract["evidence_used"]
+    )
+    contract["active"] = contract["status"] == "active"
+    return contract
+
+
+def focus_start(
+    conn: sqlite3.Connection,
+    question: str,
+    deliverable: str,
+    evidence_budget: int,
+    depth_budget: int,
+    exit_condition: str,
+    session_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Start the only active focus contract for a session."""
+    values = {
+        "question": (question or "").strip(),
+        "deliverable": (deliverable or "").strip(),
+        "exit_condition": (exit_condition or "").strip(),
+    }
+    for name, value in values.items():
+        if not value:
+            return {"error": f"{name} must be a non-empty string"}
+
+    budgets: Dict[str, int] = {}
+    for name, value in (
+        ("evidence_budget", evidence_budget),
+        ("depth_budget", depth_budget),
+    ):
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return {"error": f"{name} must be a positive integer"}
+        if parsed < 1:
+            return {"error": f"{name} must be a positive integer"}
+        budgets[name] = parsed
+
+    sid = _focus_session(conn, session_id)
+    active = conn.execute(
+        "SELECT id FROM focus_contracts "
+        "WHERE session_id = ? AND status = 'active'",
+        (sid,),
+    ).fetchone()
+    if active:
+        return {
+            "error": (
+                f"session {sid} already has active focus contract #{active['id']}; "
+                "resolve it explicitly before starting another"
+            )
+        }
+
+    now = _iso(_now())
+    cur = conn.execute(
+        "INSERT INTO focus_contracts("
+        "session_id, question, deliverable, evidence_budget, depth_budget, "
+        "exit_condition, status, created_at, updated_at"
+        ") VALUES(?, ?, ?, ?, ?, ?, 'active', ?, ?)",
+        (
+            sid,
+            values["question"],
+            values["deliverable"],
+            budgets["evidence_budget"],
+            budgets["depth_budget"],
+            values["exit_condition"],
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM focus_contracts WHERE id = ?", (cur.lastrowid,)
+    ).fetchone()
+    return _focus_contract(row)
+
+
+def focus_status(
+    conn: sqlite3.Connection, session_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Return the active focus contract for a session, if any."""
+    sid = _focus_session(conn, session_id)
+    row = conn.execute(
+        "SELECT * FROM focus_contracts "
+        "WHERE session_id = ? AND status = 'active' "
+        "ORDER BY id DESC LIMIT 1",
+        (sid,),
+    ).fetchone()
+    if row is None:
+        return {"session_id": sid, "active": False, "contract": None}
+    contract = _focus_contract(row)
+    return {"session_id": sid, "active": True, "contract": contract}
+
+
+def focus_record_read(
+    conn: sqlite3.Connection, session_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Consume one evidence-budget unit without changing contract status."""
+    status = focus_status(conn, session_id)
+    if not status["active"]:
+        return status
+    contract = status["contract"]
+    now = _iso(_now())
+    conn.execute(
+        "UPDATE focus_contracts SET evidence_used = evidence_used + 1, updated_at = ? "
+        "WHERE id = ? AND status = 'active'",
+        (now, contract["id"]),
+    )
+    conn.commit()
+    return focus_status(conn, status["session_id"])
+
+
+def focus_resolve(
+    conn: sqlite3.Connection,
+    outcome: str,
+    evidence: str,
+    trigger: Optional[str] = None,
+    owner: Optional[str] = None,
+    missing_fact: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Explicitly resolve the active focus contract with a validated outcome."""
+    normalized_outcome = (outcome or "").strip().upper()
+    if normalized_outcome not in FOCUS_OUTCOMES:
+        allowed = ", ".join(sorted(FOCUS_OUTCOMES))
+        return {"error": f"outcome must be one of: {allowed}"}
+
+    values = {
+        "evidence": (evidence or "").strip(),
+        "trigger": (trigger or "").strip(),
+        "owner": (owner or "").strip(),
+        "missing_fact": (missing_fact or "").strip(),
+    }
+    if not values["evidence"]:
+        return {"error": f"{normalized_outcome} requires evidence"}
+    if normalized_outcome == "DEFER_WITH_TRIGGER":
+        missing = [name for name in ("trigger", "owner") if not values[name]]
+        if missing:
+            return {
+                "error": (
+                    "DEFER_WITH_TRIGGER requires evidence, trigger, and owner; "
+                    f"missing {', '.join(missing)}"
+                )
+            }
+    if normalized_outcome == "STOP_INSUFFICIENT" and not values["missing_fact"]:
+        return {"error": "STOP_INSUFFICIENT requires evidence and missing_fact"}
+
+    status = focus_status(conn, session_id)
+    if not status["active"]:
+        return {"error": f"no active focus contract for session {status['session_id']}"}
+    contract = status["contract"]
+    now = _iso(_now())
+    conn.execute(
+        "UPDATE focus_contracts SET status = 'resolved', outcome = ?, evidence = ?, "
+        "trigger = ?, owner = ?, missing_fact = ?, updated_at = ?, resolved_at = ? "
+        "WHERE id = ? AND status = 'active'",
+        (
+            normalized_outcome,
+            values["evidence"],
+            values["trigger"] or None,
+            values["owner"] or None,
+            values["missing_fact"] or None,
+            now,
+            now,
+            contract["id"],
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM focus_contracts WHERE id = ?", (contract["id"],)
+    ).fetchone()
+    return _focus_contract(row)
 
 
 # ---------------------------------------------------------------------------

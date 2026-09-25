@@ -1,0 +1,31 @@
+{
+  "_comment": "Ratchet ledger for lazy (function-local) core->periphery imports (ADR-0043 W1). Each entry is a module pair mapped to the allowed number of import sites. check_boundary.py fails if any pair grows beyond its allowance or a new pair appears. Regenerate with `python scripts/check_boundary.py --generate` only to RATCHET DOWN.",
+  "total_lazy_edges": 38,
+  "edges": {
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.anon_telemetry": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.context_ops": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.depth_ops": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.event_ops": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.orchestrator_unified": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.relay_notification_middleware": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.runtime.trigger_ops": 1,
+    "mcp_server_nucleus -> mcp_server_nucleus.tools": 1,
+    "mcp_server_nucleus.core.tool_registration_impl -> mcp_server_nucleus.runtime.hypervisor_ops": 1,
+    "mcp_server_nucleus.runtime.common -> mcp_server_nucleus.runtime.sync_ops": 2,
+    "mcp_server_nucleus.runtime.relay.bridge -> mcp_server_nucleus.sync": 1,
+    "mcp_server_nucleus.runtime.relay.core -> mcp_server_nucleus.runtime.marketplace": 1,
+    "mcp_server_nucleus.runtime.relay.core -> mcp_server_nucleus.runtime.prometheus": 2,
+    "mcp_server_nucleus.runtime.relay.core -> mcp_server_nucleus.runtime.verify_gate": 1,
+    "mcp_server_nucleus.runtime.relay.session -> mcp_server_nucleus.sessions.registry": 2,
+    "mcp_server_nucleus.runtime.relay_transport -> mcp_server_nucleus.sessions.relay_sender_anchor": 1,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.flywheel": 3,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.anon_telemetry": 3,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.engram_ops": 1,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.event_bus": 2,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.event_ops": 2,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.file_monitor": 1,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.hardening": 5,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.session_ops": 1,
+    "mcp_server_nucleus.server -> mcp_server_nucleus.runtime.stdio_server": 1
+  }
+}

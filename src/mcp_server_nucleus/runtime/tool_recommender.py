@@ -185,6 +185,7 @@ class ToolRecommender:
             if isinstance(data, dict):
                 self._usage_counts = data
         except Exception:
+            logger.debug("Swallowed exception in _load_usage", exc_info=True)
             pass
     
     def _save_usage(self):

@@ -44,7 +44,7 @@ _MAX_ROUNDS_DEFAULT = int(os.environ.get("NUCLEUS_PLAN_REVIEW_MAX_ROUNDS", "5"))
 _DEFAULT_COST_BUDGET = 2.0
 _SEVERITY_WEIGHTS = {"CRITICAL": 10, "MAJOR": 5, "MINOR": 2, "NITPICK": 1}
 _CONVERGENCE_ROUNDS_REQUIRED = 3  # need ≥3 rounds of data to detect convergence
-_STALE_ROUNDS_REQUIRED = 2  # ≥2 consecutive non-decreasing rounds → early-exit
+_STALE_ROUNDS_REQUIRED_DEFAULT = 3  # was 2 — too aggressive, fired before author engaged
 
 # Reviewer defaults — configurable via env so model updates don't require code changes
 _DEFAULT_REVIEWER_VENDOR = os.environ.get("NUCLEUS_PLAN_REVIEW_REVIEWER_VENDOR", "agy")
@@ -271,6 +271,7 @@ def _get_brain_path() -> Path:
         return get_brain_path()
     except Exception:
         # Fallback: CWD/.brain
+        logger.debug("Swallowed exception in _get_brain_path", exc_info=True)
         return Path.cwd() / ".brain"
 
 
@@ -284,6 +285,7 @@ def _get_git_head_sha() -> Optional[str]:
         if result.returncode == 0:
             return result.stdout.strip()
     except Exception:
+        logger.debug("Swallowed exception in _get_git_head_sha", exc_info=True)
         pass
     return None
 
@@ -301,6 +303,7 @@ def _read_json(path: Path) -> dict:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
+        logger.debug("Swallowed exception in _read_json", exc_info=True)
         return {}
 
 
@@ -334,6 +337,7 @@ def _load_context_files(files: List[str], max_chars: int = 16000) -> str:
             parts.append(f"\n--- {fpath} ---\n{content}\n")
             total += len(content)
         except Exception as exc:
+            logger.debug("Swallowed exception in _load_context_files", exc_info=True)
             parts.append(f"\n--- {fpath} (ERROR: {exc}) ---\n")
     return "".join(parts)
 
@@ -663,21 +667,23 @@ def _is_oscillating(severity_history: List[Dict[str, int]]) -> bool:
     return weights[0] == weights[2] and weights[0] != weights[1]
 
 
-def _is_stale(severity_history: List[Dict[str, int]]) -> bool:
-    """Detect non-convergence: severity weight not decreasing for ≥2 consecutive rounds.
+def _is_stale(severity_history: List[Dict[str, int]], stale_rounds_required: int = _STALE_ROUNDS_REQUIRED_DEFAULT) -> bool:
+    """Detect non-convergence: severity weight not decreasing for ≥N consecutive rounds.
 
-    Returns True if the last ≥_STALE_ROUNDS_REQUIRED rounds show no improvement
-    (weight flat or increasing) AND there are still CRITICAL/MAJOR issues.
-    This prevents wasting vendor budget on plans that aren't converging.
+    ``stale_rounds_required`` defaults to 3 (raised from 2 in v3.1 — the old
+    threshold fired before the author vendor had a chance to engage with
+    reviewer feedback, producing STALE_NON_CONVERGENT on loops that would
+    have converged on round 3). Configurable per-loop via the
+    ``stale_rounds_required`` param on execute_plan_review_loop.
     """
-    if len(severity_history) < _STALE_ROUNDS_REQUIRED + 1:
+    if len(severity_history) < stale_rounds_required + 1:
         return False
     latest = severity_history[-1]
     if latest.get("CRITICAL", 0) == 0 and latest.get("MAJOR", 0) == 0:
         return False  # only MINOR/NITPICK — let convergence handler deal with it
     weights = [_severity_weight(s) for s in severity_history]
     # Stale = weight NOT decreasing (flat or increasing) for N+1 consecutive rounds
-    recent = weights[-(_STALE_ROUNDS_REQUIRED + 1):]
+    recent = weights[-(stale_rounds_required + 1):]
     return all(recent[i] <= recent[i + 1] for i in range(len(recent) - 1))
 
 
@@ -785,6 +791,7 @@ def _make_initial_state(plan_id: str, params: dict, pinned_sha: str) -> dict:
         "current_round": 0,
         "max_rounds": min(max(int(params.get("max_rounds", _MAX_ROUNDS_DEFAULT)),
                                _MAX_ROUNDS_MIN), _MAX_ROUNDS_MAX),
+        "stale_rounds_required": max(2, int(params.get("stale_rounds_required", _STALE_ROUNDS_REQUIRED_DEFAULT))),
         "author_vendor": author_vendor,
         "reviewer_vendor": reviewer_vendor,
         "author_model": author_model,
@@ -882,6 +889,264 @@ def _finalize_loop(
     )
 
 
+def _create_escalation_task(
+    plan_id: str,
+    terminal_status: str,
+    state: dict,
+    plan_dir: Path,
+) -> Optional[str]:
+    """Create a nucleus_tasks escalation task for a terminal-state plan loop.
+
+    Returns the created task_id on success, None on failure (non-fatal — the
+    loop has already finalized; escalation is a best-effort side effect).
+
+    The task is created PENDING via _add_task, then immediately escalated via
+    _escalate_task so it surfaces with status=ESCALATED and a 'chief judgment
+    required' reason. The chief sees it in their task list and can either
+    fix the plan directly (plan_review_chief_amend) or close it as won't-fix.
+    """
+    try:
+        from ..runtime.task_ops import _add_task, _escalate_task
+    except ImportError as exc:
+        logger.warning(
+            "plan_review_loop %s: cannot import task_ops for escalation: %s",
+            plan_id, exc,
+        )
+        return None
+
+    # Summarize blocking issues from the review trail
+    review_trail = state.get("review_trail", [])
+    blocking_summary_lines = []
+    last_review = review_trail[-1] if review_trail else {}
+    for iss in (last_review.get("blocking_issues") or [])[:10]:  # cap at 10
+        sev = iss.get("severity", "MAJOR")
+        iid = iss.get("id", "?")
+        desc = iss.get("issue", iss.get("remediation", ""))[:200]
+        blocking_summary_lines.append(f"  [{sev}] {iid}: {desc}")
+    blocking_summary = "\n".join(blocking_summary_lines) or "  (no blocking issues recorded in last review)"
+
+    rounds = state.get("current_round", 0)
+    cost = state.get("estimated_cost_usd", 0.0)
+    plan_dir_str = str(plan_dir)
+
+    description = (
+        f"[PLAN REVIEW ESCALATION] plan_id={plan_id}\n"
+        f"Terminal status: {terminal_status}\n"
+        f"Rounds completed: {rounds}\n"
+        f"Cost: ${cost:.4f}\n"
+        f"Plan dir: {plan_dir_str}\n\n"
+        f"CHIEF JUDGMENT REQUIRED — the plan review loop could not converge.\n"
+        f"Last review blocking issues:\n{blocking_summary}\n\n"
+        f"Next steps: see {plan_dir_str}/next_steps.md\n"
+        f"To fix directly: nucleus_delegate(action='plan_review_chief_amend', "
+        f"params={{'plan_id': '{plan_id}', 'amended_plan': '<fixed plan text>'}})"
+    )
+
+    add_result = _add_task(
+        description=description,
+        priority=1,  # high — chief attention
+        source="plan_review_loop",
+        plan_ref=f"plans/{plan_id}",
+        required_role="",  # chief is any agent with judgment authority
+        task_type="llm",
+    )
+    if not add_result.get("success"):
+        logger.warning(
+            "plan_review_loop %s: _add_task for escalation failed: %s",
+            plan_id, add_result.get("error"),
+        )
+        return None
+
+    task_id = add_result["task"]["id"]
+    esc_reason = (
+        f"plan_review_loop terminal={terminal_status} plan_id={plan_id} "
+        f"rounds={rounds} — chief judgment required"
+    )
+    _escalate_task(task_id, esc_reason)
+    logger.info(
+        "plan_review_loop %s: escalation task %s created (status=ESCALATED)",
+        plan_id, task_id,
+    )
+    return task_id
+
+
+def _write_next_steps(
+    plan_dir: Path,
+    plan_id: str,
+    terminal_status: str,
+    state: dict,
+    escalation_task_id: Optional[str],
+) -> None:
+    """Write next_steps.md with concrete guidance for the chief.
+
+    The content is tailored to the terminal status. The file lives in
+    plan_dir so it persists alongside state.json and the review trail.
+    """
+    review_trail = state.get("review_trail", [])
+    rounds = state.get("current_round", 0)
+    cost = state.get("estimated_cost_usd", 0.0)
+    last_review = review_trail[-1] if review_trail else {}
+    blocking = last_review.get("blocking_issues") or []
+
+    lines = [
+        f"# Next Steps — plan_review_loop {plan_id}",
+        "",
+        f"**Terminal status:** {terminal_status}",
+        f"**Rounds completed:** {rounds}",
+        f"**Cost:** ${cost:.4f}",
+        f"**Escalation task:** {escalation_task_id or '(creation failed — see logs)'}",
+        "",
+        "## Situation",
+        "",
+    ]
+
+    if terminal_status == "STALE_NON_CONVERGENT":
+        lines += [
+            "The author vendor did not resolve the reviewer's CRITICAL/MAJOR issues",
+            f"over {rounds} rounds. The reviewer's findings are likely real (the tiebreaker,",
+            "if invoked, could not resolve the deadlock either).",
+            "",
+            "## Recommended action",
+            "",
+            "1. Read the last review: `review_v{round}.json` in this directory.",
+            "2. Read the current plan: `plan_v{round}.md` in this directory.".format(round=rounds),
+            "3. Fix the blocking issues directly in the plan text.",
+            "4. Submit the fix via chief-amend:",
+            f"   nucleus_delegate(action='plan_review_chief_amend', params={{",
+            f"     'plan_id': '{plan_id}',",
+            "     'amended_plan': '<your fixed plan>'",
+            "   })",
+            "5. The chief-amend action runs ONLY a reviewer check on the diff —",
+            "   not a full re-review — so it is fast and cheap.",
+        ]
+    elif terminal_status == "OSCILLATING":
+        lines += [
+            "The severity weight flapped in an A-B-A pattern for 3 rounds — the author",
+            "and reviewer are cycling between two states without progress.",
+            "",
+            "## Recommended action",
+            "",
+            "1. Read the review trail to identify the flapping issue(s).",
+            "2. The oscillation usually means the author is fixing X by breaking Y,",
+            "   then fixing Y by breaking X. Break the cycle with a direct edit.",
+            "3. Submit the fix via chief-amend (same invocation as STALE above).",
+        ]
+    elif terminal_status == "BUDGET_EXCEEDED":
+        lines += [
+            f"The loop spent ${cost:.4f} (budget ${state.get('max_cost_usd', 0):.2f})",
+            "before converging. The plan may be close — or the vendors may be",
+            "talking past each other.",
+            "",
+            "## Recommended action",
+            "",
+            "1. Read the last review and plan draft.",
+            "2. If the plan is close: fix the remaining issues directly via chief-amend.",
+            "3. If the plan is not close: raise max_cost_usd and re-run, OR fix directly.",
+        ]
+    elif terminal_status == "MAX_ROUNDS_EXHAUSTED":
+        lines += [
+            f"The loop ran all {rounds} rounds without APPROVED or a convergence cutoff.",
+            "The plan may have been improving slowly but not fast enough.",
+            "",
+            "## Recommended action",
+            "",
+            "1. Check the severity history in state.json — is it trending down?",
+            "2. If trending down: raise max_rounds and re-run, OR fix directly.",
+            "3. If flat: fix directly via chief-amend.",
+        ]
+    else:
+        lines += [
+            "Unexpected terminal status. Read state.json and the review trail.",
+        ]
+
+    lines += [
+        "",
+        "## Blocking issues from last review",
+        "",
+    ]
+    if blocking:
+        for iss in blocking:
+            sev = iss.get("severity", "MAJOR")
+            iid = iss.get("id", "?")
+            desc = iss.get("issue", "")
+            rem = iss.get("remediation", "")
+            lines.append(f"- [{sev}] {iid}: {desc}")
+            if rem:
+                lines.append(f"  Fix: {rem}")
+    else:
+        lines.append("(none recorded)")
+
+    lines += [
+        "",
+        "## Files in this directory",
+        "",
+        "- `state.json` — full loop state, severity history, review trail",
+        # `{r}` is meant to stay literal here — these lines document the filename
+        # pattern, they do not name one file. The `.format(round=rounds)` that used
+        # to be appended raised KeyError: 'r' on every call, because the only
+        # placeholder is `{r}` and the only argument supplied was `round` (F522/F524).
+        "- `plan_v{r}.md` — plan draft from round r (r=1..rounds)",
+        "- `review_v{r}.json` — reviewer verdict from round r",
+        "- `metadata.json` — original params",
+        "- `unconverged_plan.md` — last plan draft (if unconverged)",
+        "",
+    ]
+
+    _save_text(plan_dir / "next_steps.md", "\n".join(lines))
+
+
+# Terminal states that warrant HITL escalation + next_steps.md
+_TERMINAL_ESCALATION_STATES = frozenset({
+    "STALE_NON_CONVERGENT",
+    "OSCILLATING",
+    "BUDGET_EXCEEDED",
+    "MAX_ROUNDS_EXHAUSTED",
+})
+
+
+def _handle_terminal_state(
+    plan_dir: Path,
+    state: dict,
+    params: dict,
+    current_plan: str,
+) -> None:
+    """Post-finalize terminal-state actions: escalation task + next_steps.md.
+
+    Called AFTER _finalize_loop has written state.json and the plan file.
+    Does NOT modify state.json (the finalized status is the source of truth);
+    only adds side artifacts (escalation task, next_steps.md).
+
+    The plan_dir is left accessible so the chief can run a chief-amend round
+    against it (fix #5). Nothing is deleted or archived.
+
+    Non-fatal: any failure in escalation/next-steps is logged and swallowed —
+    the loop has already finalized successfully.
+    """
+    terminal_status = state.get("status", "")
+    if terminal_status not in _TERMINAL_ESCALATION_STATES:
+        return  # APPROVED, CONVERGED_WITH_MINOR_ISSUES, etc. — no escalation
+
+    plan_id = state.get("plan_id", "")
+
+    # (a) Create escalation task
+    escalation_task_id = _create_escalation_task(
+        plan_id, terminal_status, state, plan_dir,
+    )
+
+    # (b) Write next_steps.md
+    _write_next_steps(plan_dir, plan_id, terminal_status, state, escalation_task_id)
+
+    # (c) plan_dir is already left in place — nothing to do.
+    #     Document this in the relay event for observability.
+    _relay_event(
+        "PLAN_LOOP_ESCALATED",
+        plan_id,
+        terminal_status=terminal_status,
+        escalation_task_id=escalation_task_id,
+        next_steps_path=str(plan_dir / "next_steps.md"),
+    )
+
+
 # ── Vendor dispatch wrapper ──────────────────────────────────────────────────
 
 
@@ -939,6 +1204,7 @@ def _dispatch_vendor(
         except ImportError:
             pass
         except Exception:
+            logger.debug("Swallowed exception in _dispatch_vendor", exc_info=True)
             pass  # registry feedback is best-effort
         # SURFACE THE ACTUAL STATUS AS ERROR (2026-08-04, flywheel #92).
         # When the vendor returns "empty_output" or "timed_out", the old code
@@ -1140,6 +1406,100 @@ Provide your verdict as JSON:
     return False, "Tiebreaker rejected (heuristic)."
 
 
+def _invoke_tiebreaker_on_deadlock(
+    vendor: str,
+    plan_text: str,
+    base_prompt: str,
+    accepted_tradeoffs: List[str],
+    criteria: str,
+    review_trail: List[dict],
+    stale_rounds_required: int,
+) -> Tuple[str, Optional[str], List[dict], str]:
+    """Invoke a 3rd vendor to break a non-convergence deadlock.
+
+    Unlike _invoke_tiebreaker (which fires on AGREEMENT for final sign-off),
+    this fires on DEADLOCK: the author and reviewer have been stuck for
+    ``stale_rounds_required`` rounds with CRITICAL/MAJOR issues not decreasing.
+
+    Returns (outcome, reason, injected_issues, raw_output):
+      - ("APPROVED", reason, [], raw_output)  — tiebreaker sides with author, plan is sound
+      - ("REJECT_AUTHOR", reason, issues, raw_output) — tiebreaker sides with reviewer,
+        issues to inject as feedback for the next author round
+      - ("NO_HELP", reason, [], raw_output)  — tiebreaker cannot resolve (dispatch failed,
+        output unparseable, or it declines to rule). Caller proceeds to STALE.
+    """
+    if not vendor:
+        return "NO_HELP", "no tiebreaker_vendor configured", [], ""
+
+    # Summarize the deadlock for the tiebreaker
+    last_review = review_trail[-1] if review_trail else {}
+    blocking = last_review.get("blocking_issues", [])
+    blocking_summary = _format_issues_delta(blocking) if blocking else "(none recorded)"
+
+    prompt = f"""You are a TIEBREAKER arbitrator — a third independent architect
+from a different model family. The primary author and reviewer have been DEADLOCKED
+for {stale_rounds_required} consecutive rounds: the reviewer keeps raising the same
+CRITICAL/MAJOR issues and the author is not resolving them.
+
+## ORIGINAL TASK
+{base_prompt}
+
+## APPROVAL CRITERIA
+{criteria or "(none specified)"}
+
+## ACCEPTED TRADEOFFS (do not flag)
+{_format_tradeoffs(accepted_tradeoffs)}
+
+## CURRENT PLAN DRAFT
+{plan_text}
+
+## REVIEWER'S LAST BLOCKING ISSUES (not being resolved)
+{blocking_summary}
+
+## YOUR JOB
+Decide ONE of:
+1. The reviewer's issues are NOT real blocking defects (overly strict, stylistic,
+   or already covered by accepted tradeoffs) → verdict APPROVED.
+2. The reviewer's issues ARE real and the author must fix them → verdict REJECTED,
+   and list the issues the author MUST address, distilled to the essential ones.
+
+Do NOT punt. You are the deadlock-breaker. Pick a side.
+
+## OUTPUT
+```json
+{{
+  "verdict": "APPROVED" | "REJECTED",
+  "summary": "one-line explanation of your ruling",
+  "issues": [
+    {{"id": "TB1", "severity": "CRITICAL|MAJOR|MINOR", "issue": "...", "remediation": "..."}}
+  ]
+}}
+```
+If APPROVED, issues MUST be empty.
+"""
+    out = _dispatch_vendor(vendor, prompt, artifact_ref="tiebreaker_deadlock", mode="read")
+    if not out["success"]:
+        return "NO_HELP", f"Tiebreaker dispatch failed: {out['error']}", [], ""
+
+    parsed = _extract_json_block(out["output"])
+    if parsed and "verdict" in parsed:
+        verdict = str(parsed.get("verdict", "")).upper()
+        issues = parsed.get("issues", []) or []
+        if not isinstance(issues, list):
+            issues = []
+        summary = str(parsed.get("summary", ""))
+        if "APPROVED" in verdict:
+            return "APPROVED", summary or "Tiebreaker ruled plan is sound.", [], out["output"]
+        return "REJECT_AUTHOR", summary or "Tiebreaker sided with reviewer.", issues, out["output"]
+
+    # Heuristic fallback
+    if re.search(r"\bAPPROVED\b", out["output"].upper()):
+        return "APPROVED", "Tiebreaker approved (heuristic).", [], out["output"]
+    if re.search(r"\bREJECT", out["output"].upper()):
+        return "REJECT_AUTHOR", "Tiebreaker rejected (heuristic).", [], out["output"]
+    return "NO_HELP", "Tiebreaker output unparseable — no ruling.", [], out["output"]
+
+
 # ── Main loop worker ─────────────────────────────────────────────────────────
 
 
@@ -1215,6 +1575,7 @@ def _run_loop_worker(plan_id: str, params: dict, plan_dir: Path) -> None:
     severity_history: List[Dict[str, int]] = []
 
     max_rounds = state["max_rounds"]
+    stale_rounds_required = state.get("stale_rounds_required", _STALE_ROUNDS_REQUIRED_DEFAULT)
 
     for r in range(1, max_rounds + 1):
         # Check for cancellation before each round
@@ -1564,7 +1925,9 @@ def cancel_plan_review_loop(plan_id: str, make_response) -> str:
     if state.get("status") in ("APPROVED", "MAX_ROUNDS_EXHAUSTED",
                                 "BUDGET_EXCEEDED", "CANCELLED", "ERROR",
                                 "OSCILLATING", "CONVERGED_WITH_MINOR_ISSUES",
-                                "SINGLE_VENDOR_PLAN", "STALE_NON_CONVERGENT"):
+                                "SINGLE_VENDOR_PLAN", "STALE_NON_CONVERGENT",
+                                "CHIEF_AMENDED_APPROVED", "CHIEF_AMENDED_REJECTED",
+                                "CHIEF_AMENDED_ERROR"):
         return make_response(True, data={
             "plan_id": plan_id,
             "status": state["status"],
@@ -1579,3 +1942,202 @@ def cancel_plan_review_loop(plan_id: str, make_response) -> str:
         "status": "CANCEL_REQUESTED",
         "message": "Cancellation request registered. Worker will abort before next execution phase.",
     })
+
+
+def execute_plan_review_chief_amend(params: dict, make_response) -> str:
+    """Entry point for the plan_review_chief_amend action.
+
+    Lets the chief submit a direct fix to a plan that reached a terminal
+    state (STALE_NON_CONVERGENT, OSCILLATING, BUDGET_EXCEEDED,
+    MAX_ROUNDS_EXHAUSTED). Runs ONLY a reviewer check on the amended plan —
+    not a full re-review, not a multi-round loop.
+
+    This is the pattern that worked on the growth-engine incident
+    (2026-08-11): the chief fixed the issues directly and the reviewer
+    verified only the fix, bypassing the non-responsive author vendor.
+
+    Params:
+        plan_id (str, required): the terminal-state plan loop to amend
+        amended_plan (str, required): the chief's fixed plan text
+        chief_note (str, optional): explanation of what was fixed and why
+
+    Returns: JSON response with the reviewer's verdict on the amended plan.
+    On APPROVED: updates state.json status to CHIEF_AMENDED_APPROVED and
+    writes final_plan.md. On REJECTED: updates state.json with the reviewer's
+    issues and creates a follow-up escalation task.
+    """
+    plan_id = params.get("plan_id", "")
+    if not plan_id:
+        return make_response(False, error="plan_review_chief_amend requires 'plan_id'")
+    if not _validate_plan_id(plan_id):
+        return make_response(False, error=(
+            f"Invalid plan_id format {plan_id!r}. "
+            "Expected plan_YYYYMMDD_HHMMSS_<6hex>."
+        ))
+
+    amended_plan = params.get("amended_plan", "")
+    if not amended_plan or not amended_plan.strip():
+        return make_response(False, error="plan_review_chief_amend requires non-empty 'amended_plan'")
+
+    chief_note = params.get("chief_note", "")
+
+    brain = _get_brain_path()
+    plan_dir = brain / "plans" / plan_id
+    state_path = plan_dir / "state.json"
+    if not state_path.exists():
+        return make_response(False, error=(
+            f"No plan loop found with plan_id={plan_id!r}."
+        ))
+
+    state = _read_json(state_path)
+    current_status = state.get("status", "")
+
+    # Allow chief-amend from any terminal state (including APPROVED — the
+    # chief may want to fix a CONVERGED_WITH_MINOR_ISSUES plan). Do NOT
+    # allow from IN_PROGRESS/QUEUED — that would race the worker.
+    _ALLOWED_AMEND_STATUSES = _TERMINAL_ESCALATION_STATES | {
+        "APPROVED", "CONVERGED_WITH_MINOR_ISSUES", "SINGLE_VENDOR_PLAN",
+        "CHIEF_AMENDED_APPROVED", "CHIEF_AMENDED_REJECTED",
+    }
+    if current_status not in _ALLOWED_AMEND_STATUSES:
+        return make_response(False, error=(
+            f"Cannot chief-amend a loop in status {current_status!r}. "
+            f"Allowed: {sorted(_ALLOWED_AMEND_STATUSES)}."
+        ))
+
+    # Load the original params from metadata.json (for reviewer config,
+    # accepted_tradeoffs, criteria, context)
+    metadata = _read_json(plan_dir / "metadata.json")
+    orig_params = metadata.get("params", {})
+
+    reviewer_vendor = state.get("reviewer_vendor", _resolve_reviewer_vendor(orig_params))
+    reviewer_model = state.get("reviewer_model")
+    accepted_tradeoffs = orig_params.get("accepted_tradeoffs", [])
+    criteria = orig_params.get("approval_criteria", "")
+    context_files = orig_params.get("context_files", [])
+    pinned_sha = state.get("pinned_sha", "no-sha")
+
+    context_text = _load_context_files(context_files)
+
+    # Write the amended plan
+    amend_round = state.get("current_round", 0) + 1
+    amended_plan_path = plan_dir / f"plan_chief_amend_v{amend_round}.md"
+    _save_text(amended_plan_path, amended_plan)
+
+    # Build a FOCUSED reviewer prompt: review only the chief's amendments,
+    # not the whole plan from scratch. Include the chief's note + the
+    # previous blocking issues so the reviewer knows what was supposed to
+    # change.
+    review_trail = state.get("review_trail", [])
+    last_blocking = review_trail[-1].get("blocking_issues", []) if review_trail else []
+    last_blocking_text = _format_issues_delta(last_blocking) if last_blocking else "(none)"
+
+    reviewer_prompt = build_reviewer_prompt(
+        base_prompt=orig_params.get("prompt", ""),
+        context_text=context_text,
+        plan_text=amended_plan,
+        accepted_tradeoffs=accepted_tradeoffs,
+        sandbox_evidence="",  # chief-amend doesn't re-run sandbox by default
+        criteria=criteria,
+        pinned_sha=pinned_sha,
+        round_num=amend_round,
+    )
+    # Prepend chief-amend context so the reviewer knows this is a fix pass
+    chief_amend_preamble = (
+        "## CHIEF-AMEND REVIEW PASS\n"
+        "The plan below was fixed directly by the chief (not the original author)\n"
+        "after the review loop reached a terminal state. Your job is to verify\n"
+        "ONLY whether the previously-blocking issues are now resolved. Do NOT\n"
+        "re-raise issues that were already accepted as tradeoffs or that were\n"
+        "not in the previous blocking list.\n\n"
+        f"## CHIEF'S NOTE\n{chief_note or '(none)'}\n\n"
+        f"## PREVIOUSLY BLOCKING ISSUES (verify these are fixed)\n{last_blocking_text}\n\n"
+    )
+    reviewer_prompt = reviewer_prompt.replace(
+        "## ORIGINAL TASK",
+        chief_amend_preamble + "## ORIGINAL TASK",
+        1,
+    )
+
+    # Dispatch reviewer (single pass, with retry)
+    reviewer_out = _dispatch_vendor(
+        vendor=reviewer_vendor,
+        prompt=reviewer_prompt,
+        artifact_ref=pinned_sha,
+        model=reviewer_model,
+        mode="read",
+        task_type="plan_reviewer",
+    )
+
+    if not reviewer_out["success"]:
+        state["status"] = "CHIEF_AMENDED_ERROR"
+        state["error"] = f"Chief-amend reviewer failed: {reviewer_out['error']}"
+        _atomic_write_json(plan_dir / 'state.json', state)
+        return make_response(False, error=reviewer_out["error"], data=state)
+
+    review_raw = reviewer_out["output"]
+    verdict, issues, inspected_files, summary = classify_review_verdict(review_raw)
+
+    # Record the chief-amend review in the trail
+    amend_entry = {
+        "round": amend_round,
+        "type": "chief_amend",
+        "verdict": verdict,
+        "inspected_files": inspected_files,
+        "blocking_issues": issues,
+        "summary": summary,
+        "chief_note": chief_note,
+        "raw_review_path": str(plan_dir / f"review_chief_amend_v{amend_round}.json"),
+        "amended_plan_path": str(amended_plan_path),
+        "timestamp": _utc_now(),
+    }
+    _save_text(
+        plan_dir / f"review_chief_amend_v{amend_round}.json",
+        json.dumps(amend_entry, indent=2, default=str),
+    )
+    state["review_trail"].append(amend_entry)
+    state["latest_plan_path"] = str(amended_plan_path)
+    state["latest_review_path"] = str(plan_dir / f"review_chief_amend_v{amend_round}.json")
+    state["current_round"] = amend_round
+
+    if verdict == "APPROVED":
+        state["status"] = "CHIEF_AMENDED_APPROVED"
+        state["error"] = None
+        # Write final_plan.md (the amended plan IS the final plan now)
+        _save_text(plan_dir / "final_plan.md", amended_plan)
+        state["final_plan_path"] = str(plan_dir / "final_plan.md")
+        _atomic_write_json(plan_dir / 'state.json', state)
+        _relay_event("CHIEF_AMEND_APPROVED", plan_id, round=amend_round)
+        return make_response(True, data={
+            "plan_id": plan_id,
+            "status": "CHIEF_AMENDED_APPROVED",
+            "verdict": verdict,
+            "summary": summary,
+            "final_plan_path": state["final_plan_path"],
+            "review_path": amend_entry["raw_review_path"],
+        })
+    else:
+        # REJECTED — the chief's fix didn't satisfy the reviewer.
+        # Create a follow-up escalation task with the new issues.
+        state["status"] = "CHIEF_AMENDED_REJECTED"
+        state["error"] = f"Chief-amend rejected: {summary}"
+        _atomic_write_json(plan_dir / 'state.json', state)
+        _create_escalation_task(
+            plan_id, "CHIEF_AMENDED_REJECTED", state, plan_dir,
+        )
+        _write_next_steps(
+            plan_dir, plan_id, "CHIEF_AMENDED_REJECTED", state, None,
+        )
+        _relay_event("CHIEF_AMEND_REJECTED", plan_id, round=amend_round)
+        return make_response(True, data={
+            "plan_id": plan_id,
+            "status": "CHIEF_AMENDED_REJECTED",
+            "verdict": verdict,
+            "summary": summary,
+            "blocking_issues": issues,
+            "review_path": amend_entry["raw_review_path"],
+            "message": (
+                "Chief-amend rejected by reviewer. Escalation task created. "
+                "See next_steps.md. The chief may submit another amend."
+            ),
+        })

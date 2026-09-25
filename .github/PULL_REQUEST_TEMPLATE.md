@@ -1,25 +1,22 @@
-## Description
-Brief description of changes.
+## What this changes
 
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Other (describe)
+<!-- One or two sentences. What behaviour is different after this PR? -->
 
-## Testing
-- [ ] Tests pass locally
-- [ ] New tests added (if applicable)
-- [ ] Smoke test passes (130 tools)
+## Why
+
+<!-- The problem. Link an issue if there is one. -->
+
+## How it was verified
+
+<!-- Commands you ran and what they printed. "Tests pass" on its own is not evidence —
+     paste the counts, or the before/after. If you fixed a bug, show the failing case first. -->
+
+```
+$ pytest -q
+```
 
 ## Checklist
-- [ ] Code follows project style
-- [ ] Documentation updated
-- [ ] CHANGELOG updated (if user-facing)
-- [ ] No sensitive data exposed
 
-## Related Issues
-Fixes #
-
-## Screenshots (if applicable)
+- [ ] Tests cover the change, including the failure case where that applies
+- [ ] No absolute paths, usernames or machine-specific assumptions in shipped code
+- [ ] Docs/CHANGELOG updated if behaviour or configuration changed

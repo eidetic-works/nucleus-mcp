@@ -6,9 +6,19 @@ NUCLEAR_BRAIN_PATH into the request state before any MCP tool runs.
 
 Tenant resolution order (first match wins):
   1. Authorization: Bearer <token>  →  looked up in NUCLEUS_TENANT_MAP
-  2. X-Nucleus-Tenant-ID header     →  used directly as tenant slug
+  2. X-Nucleus-Tenant-ID header     →  ONLY from a verified internal hop (see below)
   3. NUCLEUS_TENANT_ID env var      →  static single-tenant fallback
-  4. "default"                       →  solo-user fallback (no auth)
+  4. "default"                       →  solo-user fallback, permissive mode only
+
+Security posture (audit ledger AU-1, TN-1, TN-2, HS-1, 2026-09-11):
+  Step 2 used to accept X-Nucleus-Tenant-ID from any caller with no credential
+  at all, which made every tenant's brain readable and writable by anyone who
+  could reach the port, and bypassed NUCLEUS_REQUIRE_AUTH entirely because that
+  gate only fired when a token was presented AND failed. The header is now
+  honoured only when the request also proves it came from a trusted internal
+  hop, and a request that reaches step 4 with no credential is rejected when
+  NUCLEUS_REQUIRE_AUTH is set. Tenant slugs are validated against a strict
+  pattern before they are ever joined into a filesystem path.
 
 Token security:
   - Tokens can carry optional expiry: {"tok": {"tenant": "acme", "expires": "2026-12-31T00:00:00Z"}}
@@ -25,11 +35,24 @@ Environment variables:
                           Value can be inline JSON or a path to a JSON file.
   NUCLEUS_REVOKED_TOKENS  Comma-separated list of revoked tokens, or JSON array string.
                           Checked on every request — update without restart.
-  NUCLEUS_REQUIRE_AUTH    Set to "true" to reject requests with no valid token (enterprise)
+  NUCLEUS_REQUIRE_AUTH    Set to "true" to reject requests with no valid token (enterprise).
+                          This now also rejects a request carrying NO credential at all,
+                          which is the case it was always documented to cover.
+  NUCLEUS_INTERNAL_ROUTING_SECRET
+                          Shared secret proving a request came from a trusted internal hop
+                          (gateway, sidecar). When set, X-Nucleus-Tenant-ID is honoured only
+                          if the request also carries a matching X-Nucleus-Internal-Auth.
+  NUCLEUS_TRUST_TENANT_HEADER
+                          Escape hatch for deployments that terminate authentication at a
+                          trusted gateway and cannot pass a shared secret. "true" restores
+                          the old behaviour of honouring X-Nucleus-Tenant-ID unconditionally.
+                          Do not set this on a service reachable from an untrusted network.
 """
 
 import os
+import re
 import json
+import hmac
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -87,6 +110,43 @@ def _require_auth() -> bool:
     return os.environ.get("NUCLEUS_REQUIRE_AUTH", "false").lower() == "true"
 
 
+def _internal_routing_secret() -> str:
+    return os.environ.get("NUCLEUS_INTERNAL_ROUTING_SECRET", "").strip()
+
+
+def _trust_tenant_header() -> bool:
+    return os.environ.get("NUCLEUS_TRUST_TENANT_HEADER", "false").lower() == "true"
+
+
+# A tenant slug becomes one path segment under NUCLEUS_BRAIN_ROOT, so it must
+# never contain a separator, a drive letter, or a parent reference. Everything
+# this codebase actually mints already fits: "default", "oauth", the OAuth
+# flow's "tenant_<16 hex>", and hand-written slugs in NUCLEUS_TENANT_MAP.
+_TENANT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
+def _is_valid_tenant_id(tenant_id) -> bool:
+    """True if this slug is safe to use as a single filesystem path segment."""
+    if not isinstance(tenant_id, str):
+        return False
+    if not _TENANT_ID_RE.match(tenant_id):
+        return False
+    # The pattern already excludes separators and a leading dot, but spell the
+    # traversal case out so a future widening of the pattern cannot reintroduce it.
+    if ".." in tenant_id or "/" in tenant_id or "\\" in tenant_id:
+        return False
+    return True
+
+
+def _checked(tenant_id: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    """Gate every resolution path through slug validation."""
+    if not _is_valid_tenant_id(tenant_id):
+        logger.warning("[tenant] Rejected malformed tenant identifier (%d chars)",
+                       len(tenant_id) if isinstance(tenant_id, str) else -1)
+        return None, "Invalid tenant identifier"
+    return tenant_id, None
+
+
 # ---------------------------------------------------------------------------
 # Token validation
 # ---------------------------------------------------------------------------
@@ -138,7 +198,7 @@ def _validate_token(token: str, tenant_map: dict, revoked: set) -> Tuple[Optiona
     return None, f"Unexpected token map entry type: {type(entry)}"
 
 
-def _validate_oauth_token(token: str) -> Optional[str]:
+def _validate_oauth_token(token: str, request: Optional[Request] = None) -> Optional[str]:
     """Validate an OAuth-issued bearer token (nucleus_at_*).
 
     Returns tenant_id on success, None on failure.
@@ -151,11 +211,21 @@ def _validate_oauth_token(token: str) -> Optional[str]:
     issued before per-user routing), falls back to the static
     NUCLEUS_TENANT_ID env var or "oauth" — the original single-tenant
     demo behavior.
+
+    When ``request`` is given, the token's granted scope is recorded on
+    ``request.state.nucleus_oauth_scopes`` for the middleware to enforce. The
+    scope was previously read off the validation result and thrown away, which
+    is what made the consent screen's permission list decorative (ledger AU-3):
+    a user could grant ``mcp:resources`` alone and the token still reached
+    every tool.
     """
     try:
         from mcp_server_nucleus.http_transport.oauth_server import validate_bearer
         result = validate_bearer(token)
         if result:
+            if request is not None:
+                raw_scope = result.get("scope") or ""
+                request.state.nucleus_oauth_scopes = frozenset(raw_scope.split())
             # Per-user tenant routing (new path)
             tenant_id = result.get("tenant_id")
             if tenant_id:
@@ -165,6 +235,83 @@ def _validate_oauth_token(token: str) -> Optional[str]:
     except Exception as e:
         logger.debug(f"[tenant] OAuth token validation failed: {e}")
     return None
+
+
+# ---------------------------------------------------------------------------
+# OAuth scope enforcement (ledger AU-3)
+# ---------------------------------------------------------------------------
+#
+# Which granted scope each HTTP surface requires. A request needs ANY one of
+# the listed scopes, not all of them.
+#
+# `mcp:tools` appears alongside `mcp:relay` on the relay routes deliberately.
+# Relay send/receive is also exposed as MCP tools, so a token holding the
+# default `mcp:tools` scope can already do over /mcp everything the relay
+# routes do. Rejecting it here would constrain nothing and break existing
+# clients. What this map does stop is a token deliberately narrowed to, say,
+# `mcp:resources` reaching the tool surface.
+_SCOPE_REQUIREMENTS: Tuple[Tuple[str, frozenset], ...] = (
+    ("/relay", frozenset({"mcp:relay", "mcp:tools"})),
+    ("/mcp-readonly", frozenset({"mcp:resources", "mcp:tools"})),
+    ("/mcp", frozenset({"mcp:tools"})),
+    ("/sse", frozenset({"mcp:tools"})),
+)
+
+
+def _scope_enforced() -> bool:
+    """Whether a scope violation is a 403 or a log line.
+
+    Default OFF, and that is not timidity — it is the same lesson AU-2 taught.
+    Tokens already issued carry whatever scope their client requested, and this
+    process cannot enumerate them. Turning enforcement on blind would reject
+    live clients for a permission model that has never been enforced, so the
+    default records violations instead. Every one is logged with the path and
+    the scopes actually held, which is exactly the evidence needed to decide
+    whether flipping this on is safe.
+
+    Set NUCLEUS_OAUTH_SCOPE_ENFORCE=true once those logs are quiet.
+    """
+    return os.environ.get("NUCLEUS_OAUTH_SCOPE_ENFORCE", "false").lower() in (
+        "1", "true", "yes", "on",
+    )
+
+
+def required_scopes_for_path(path: str) -> Optional[frozenset]:
+    """The scopes that satisfy ``path``, or None if the path is unscoped."""
+    for prefix, scopes in _SCOPE_REQUIREMENTS:
+        if path == prefix or path.startswith(prefix + "/"):
+            return scopes
+    return None
+
+
+def check_scope(request: Request) -> Optional[str]:
+    """Return an error message if the request's token lacks the needed scope.
+
+    Returns None when the request is allowed — which includes every request
+    that did not arrive on an OAuth token, since scope is an OAuth concept and
+    a static map token has no scope to check.
+    """
+    granted = getattr(request.state, "nucleus_oauth_scopes", None)
+    if granted is None:
+        return None
+    required = required_scopes_for_path(request.url.path)
+    if required is None or granted & required:
+        return None
+
+    logger.warning(
+        "[tenant] OAuth scope violation on %s: token holds {%s}, needs one of {%s}%s",
+        request.url.path,
+        " ".join(sorted(granted)) or "none",
+        " ".join(sorted(required)),
+        "" if _scope_enforced() else " — allowed, NUCLEUS_OAUTH_SCOPE_ENFORCE is off",
+    )
+    if not _scope_enforced():
+        return None
+    return (
+        f"Token scope does not permit {request.url.path}. "
+        f"Granted: {' '.join(sorted(granted)) or 'none'}. "
+        f"Required: one of {' '.join(sorted(required))}."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -188,34 +335,70 @@ def resolve_tenant(request: Request) -> Tuple[Optional[str], Optional[str]]:
         token = auth_header[7:].strip()
         tenant_id, error = _validate_token(token, tenant_map, revoked)
         if error:
-            if tenant_map:
-                # Map exists — token failure is a hard rejection, UNLESS this
-                # is an OAuth-issued token (nucleus_at_*) — try OAuth validation
-                if token.startswith("nucleus_at_"):
-                    oauth_result = _validate_oauth_token(token)
-                    if oauth_result:
-                        return oauth_result, None
-                return None, error
-            # No map — unknown token is ignored, fall through to OAuth check
-            # (enables OAuth without a static tenant map)
+            # An OAuth-issued token never appears in the static map, so try it
+            # before treating the map miss as a failure.
             if token.startswith("nucleus_at_"):
-                oauth_result = _validate_oauth_token(token)
+                oauth_result = _validate_oauth_token(token, request)
                 if oauth_result:
-                    return oauth_result, None
+                    return _checked(oauth_result)
+            if tenant_map or _require_auth():
+                # A real isolation boundary exists here, so a token that does
+                # not validate is a hard rejection. It previously fell through
+                # to the header/env/default path whenever no map was configured.
+                return None, error
+            # Solo, permissive deployment: one brain, no boundary to breach.
+            # Keep the old lenient behaviour so a local user who sends a stray
+            # Authorization header is not locked out of their own machine.
+            logger.warning(
+                "[tenant] Ignoring unrecognised bearer token in solo permissive mode. "
+                "Configure NUCLEUS_TENANT_MAP or NUCLEUS_REQUIRE_AUTH to reject it."
+            )
         else:
-            return tenant_id, None
+            return _checked(tenant_id)
 
-    # 2. Explicit tenant header (trusted internal routing)
+    # 2. Explicit tenant header — a routing hint from a trusted internal hop,
+    #    never an identity claim from an arbitrary caller.
     tenant_header = request.headers.get("X-Nucleus-Tenant-ID", "").strip()
     if tenant_header:
-        return tenant_header, None
+        secret = _internal_routing_secret()
+        if secret:
+            presented = request.headers.get("X-Nucleus-Internal-Auth", "")
+            if hmac.compare_digest(presented, secret):
+                return _checked(tenant_header)
+            logger.warning("[tenant] X-Nucleus-Tenant-ID presented with a bad internal credential")
+            return None, "Invalid internal routing credential"
+        if _trust_tenant_header():
+            return _checked(tenant_header)
+        # Fail closed rather than silently dropping the caller into "default".
+        # Silently ignoring the header would merge every tenant of a gateway
+        # deployment into one brain, which is worse than a visible 401.
+        logger.warning(
+            "[tenant] Rejected X-Nucleus-Tenant-ID: no internal routing credential configured"
+        )
+        return None, (
+            "X-Nucleus-Tenant-ID is not honoured without proof the request came from a "
+            "trusted internal hop. Set NUCLEUS_INTERNAL_ROUTING_SECRET and send a matching "
+            "X-Nucleus-Internal-Auth header, or set NUCLEUS_TRUST_TENANT_HEADER=true if this "
+            "deployment terminates authentication at a gateway you control."
+        )
 
     # 3. Static env override
     env_tenant = os.environ.get("NUCLEUS_TENANT_ID", "").strip()
     if env_tenant:
-        return env_tenant, None
+        return _checked(env_tenant)
 
-    # 4. Solo fallback
+    # 4. Solo fallback — only for a deployment with no isolation boundary at all.
+    #
+    # A configured NUCLEUS_TENANT_MAP is proof the deployment is multi-tenant, so
+    # a request carrying no credential must not land in the shared "default" brain
+    # just because NUCLEUS_REQUIRE_AUTH happens to be unset. That was the residual
+    # hole behind RL-2: /engrams/sync and the other data routes trust the tenant the
+    # middleware resolves, and an anonymous caller was resolving to a real one.
+    #
+    # Solo deployments — no map, no required auth — keep working untouched. There is
+    # one brain and no boundary to breach.
+    if _require_auth() or tenant_map:
+        return None, "Authentication required"
     return "default", None
 
 
@@ -266,7 +449,19 @@ def brain_path_for_tenant(tenant_id: str) -> Path:
     search_engrams call returns a meaningful result (per
     CHATGPT_FIRST_RUN_ONBOARDING.md Mitigation 2).
     """
-    brain = _brain_root() / tenant_id / ".brain"
+    if not _is_valid_tenant_id(tenant_id):
+        raise ValueError("Refusing to build a brain path for an invalid tenant identifier")
+
+    root = _brain_root().resolve()
+    brain = (root / tenant_id / ".brain")
+
+    # Defence in depth. The slug pattern already forbids separators and parent
+    # references, so this can only fire if that pattern is ever widened — which
+    # is exactly when a traversal would otherwise come back unnoticed.
+    resolved = brain.resolve()
+    if root != resolved and root not in resolved.parents:
+        raise ValueError("Refusing to build a brain path outside the tenant root")
+
     if not brain.exists():
         brain.mkdir(parents=True, exist_ok=True)
         for subdir in [
@@ -327,16 +522,33 @@ class NucleusTenantMiddleware(BaseHTTPMiddleware):
 
         tenant_id, error = resolve_tenant(request)
 
+        # Any resolution error is a rejection, in permissive mode too. Falling
+        # back to "default" here was how a bad credential, or an untrusted
+        # tenant header, quietly became access to the default brain.
         if tenant_id is None:
-            if _require_auth():
-                return JSONResponse(
-                    {"error": "Unauthorized", "detail": error or "Valid Bearer token required"},
-                    status_code=401,
-                )
-            # Permissive mode — fall back to default
-            tenant_id = "default"
+            return JSONResponse(
+                {"error": "Unauthorized", "detail": error or "Valid credentials required"},
+                status_code=401,
+            )
 
-        brain = brain_path_for_tenant(tenant_id)
+        # Scope is checked after identity and before any brain is resolved:
+        # an insufficiently-scoped token is authenticated but not authorised,
+        # so it gets 403, not 401, and never reaches a brain path (AU-3).
+        scope_error = check_scope(request)
+        if scope_error is not None:
+            return JSONResponse(
+                {"error": "Forbidden", "detail": scope_error},
+                status_code=403,
+            )
+
+        try:
+            brain = brain_path_for_tenant(tenant_id)
+        except ValueError as e:
+            logger.warning("[tenant] Refused brain path for resolved tenant: %s", e)
+            return JSONResponse(
+                {"error": "Bad Request", "detail": "Invalid tenant identifier"},
+                status_code=400,
+            )
 
         # Primary: async-safe contextvar (checked first by get_brain_path)
         from mcp_server_nucleus.runtime.common import set_tenant_brain_path
@@ -351,6 +563,14 @@ class NucleusTenantMiddleware(BaseHTTPMiddleware):
         # the legacy name was the root cause of a cross-tenant data leak: the
         # tenant middleware pointed at tenant B's brain, but get_brain_path()
         # fell back to the dev's ~/.brain because the canonical var was unset.
+        # Saved so the finally block can put them back. Leaving the last
+        # request's tenant path in the process environment after the response
+        # meant any later code path that read os.environ instead of
+        # get_brain_path() saw a stale tenant's brain (ledger TN-5).
+        _prev_env = {
+            "NUCLEUS_BRAIN_PATH": os.environ.get("NUCLEUS_BRAIN_PATH"),
+            "NUCLEAR_BRAIN_PATH": os.environ.get("NUCLEAR_BRAIN_PATH"),
+        }
         os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
         os.environ["NUCLEAR_BRAIN_PATH"] = str(brain)
 
@@ -372,3 +592,12 @@ class NucleusTenantMiddleware(BaseHTTPMiddleware):
             # middleware (e.g. a public endpoint) could inherit the
             # previous tenant's brain path.
             set_tenant_brain_path(None)
+            # Same reasoning for the process-wide fallbacks. These still race
+            # under concurrent multi-tenant load — the contextvar is the real
+            # isolation mechanism — but a stale value must not outlive the
+            # request that set it.
+            for _key, _prev in _prev_env.items():
+                if _prev is None:
+                    os.environ.pop(_key, None)
+                else:
+                    os.environ[_key] = _prev

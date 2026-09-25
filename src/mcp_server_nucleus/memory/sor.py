@@ -11,7 +11,12 @@ Design provenance (see ``scratchpad/move2_manifest.md`` Part B / Batch 0):
     optional_date, source, kind`` …) — that store is already the WAL-hardened
     read-model rebuilt from a log; Move 2 promotes the same shape into the SoR.
     Extended with ``key``, ``surface``, ``meta`` for the facade's ``capture`` API.
-  - FTS5 shadow powers ranked ``recall`` (the "beats grep" product gate). Literal
+  - FTS5 shadow powers ranked ``recall``. This used to be called "the beats grep
+    product gate", which described a bar the shipped product does not clear: the
+    store is built only when ``NUCLEUS_MEMORY_SOR`` is on, and that is off by
+    default, so a fresh install's ``engram search`` never reaches this code
+    (ledger CL-4). Ranked recall is a flag-gated capability, not the out-of-box
+    behaviour, and the name should not say otherwise. Literal
     tokens containing ``.`` / ``/`` / ``-`` make FTS5 raise ``fts5: syntax
     error``; ``_fts_match`` applies the documented try-then-quote retry
     (ref: eidetic-daemon internal/store/store.go Search() PR #77, and the

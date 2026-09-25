@@ -377,6 +377,7 @@ def _notify_macos(title: str, message: str) -> None:
             capture_output=True,
         )
     except Exception:
+        LOG.debug("Swallowed exception in _notify_macos", exc_info=True)
         pass
 
 
@@ -493,6 +494,7 @@ async def run(lane: str) -> int:
         try:
             await t
         except (asyncio.CancelledError, Exception):
+            LOG.debug("Swallowed exception in run", exc_info=True)
             pass
 
     LOG.info("sonnet_pair_%s exited", lane)
@@ -530,6 +532,7 @@ async def _run_operator_assistant() -> int:
     try:
         await poll_task
     except (asyncio.CancelledError, Exception):
+        LOG.debug("Swallowed exception in _run_operator_assistant", exc_info=True)
         pass
 
     LOG.info("sonnet_pair_operator_assistant exited")

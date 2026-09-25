@@ -1,0 +1,26 @@
+{
+  "version": 3,
+  "requesterUsername": "test-user",
+  "responderUsername": "Test Assistant",
+  "initialLocation": "panel",
+  "sessionId": "00000000-0000-0000-0000-000000000001",
+  "creationDate": 1716000000000,
+  "lastMessageDate": 1716000010000,
+  "isImported": false,
+  "customTitle": "fixture-single",
+  "requests": [
+    {
+      "requestId": "request_aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "message": {
+        "text": "what is 2+2",
+        "parts": [
+          {"text": "what is 2+2", "kind": "text"}
+        ]
+      },
+      "response": [
+        {"value": "It is "},
+        {"value": "four."}
+      ]
+    }
+  ]
+}

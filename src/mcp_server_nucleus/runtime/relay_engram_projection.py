@@ -189,6 +189,7 @@ def backfill_recent_relays(
         try:
             msg = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Swallowed exception in backfill_recent_relays", exc_info=True)
             errors += 1
             continue
         result = project_relay_to_engram(msg, source_agent=resolved_source, brain_path=brain)

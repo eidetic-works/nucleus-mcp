@@ -3,6 +3,8 @@ Nucleus Runtime - Event Operations
 ==================================
 Core logic for event stream management.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -85,6 +87,7 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             with open(summary_path, "w", encoding="utf-8") as f:
                 json.dump(summary, f, indent=2, ensure_ascii=False)
         except Exception:
+            logger.debug("Swallowed exception in _emit_event", exc_info=True)
             pass  # Don't fail event emit if summary update fails
 
         # MDR_016: Auto-write engram hook
@@ -93,6 +96,7 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             from .engram_hooks import process_event_for_engram
             process_event_for_engram(event_type, data)
         except Exception:
+            logger.debug("Swallowed exception in _emit_event", exc_info=True)
             pass  # Never let auto-engram break event emission
 
         # Proactive hook: signal ChangeLedger immediately (bypasses Watchdog latency)
@@ -100,6 +104,7 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             from .event_bus import get_change_ledger
             get_change_ledger().record_change("events.jsonl", event_type)
         except Exception:
+            logger.debug("Swallowed exception in _emit_event", exc_info=True)
             pass  # Never let ledger updates break event emission
 
         # Evaluate triggers for this event (Artery 4: alive nervous system)
@@ -123,8 +128,10 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
                             with open(summary_path, "w") as f:
                                 json.dump(summary, f, indent=2)
                     except Exception:
+                        logger.debug("Swallowed exception in _emit_event", exc_info=True)
                         pass
             except Exception:
+                logger.debug("Swallowed exception in _emit_event", exc_info=True)
                 pass  # Never let trigger evaluation break event emission
 
         # Artery 5: Fire registered event hooks
@@ -132,6 +139,7 @@ def _emit_event(event_type: str, emitter: str, data: Dict[str, Any], description
             try:
                 hook(event_type, emitter, data)
             except Exception:
+                logger.debug("Swallowed exception in _emit_event", exc_info=True)
                 pass  # Never let hooks break event emission
 
         # Substrate auto-wiring: make the organism REACT to its own events
@@ -152,6 +160,7 @@ def _substrate_react(event_type: str, data: Dict[str, Any]):
         from .growth_ops import process_event_for_growth
         process_event_for_growth(event_type, data)
     except Exception:
+        logger.debug("Swallowed exception in _substrate_react", exc_info=True)
         pass
 
     # Cycle bootstrap: ensure compounding_cycle.json exists on session start
@@ -164,6 +173,7 @@ def _substrate_react(event_type: str, data: Dict[str, Any]):
                 cycle = _load_or_create_cycle(brain, cycle_path)
                 _save_cycle(cycle, cycle_path)
         except Exception:
+            logger.debug("Swallowed exception in _substrate_react", exc_info=True)
             pass
 
     # EOD capture: persist learnings when session ends
@@ -173,6 +183,7 @@ def _substrate_react(event_type: str, data: Dict[str, Any]):
             summary = data.get("summary", "Session ended")
             _end_of_day_capture_impl(summary=summary)
         except Exception:
+            logger.debug("Swallowed exception in _substrate_react", exc_info=True)
             pass
 
     # Weekly consolidation: auto-run on Sunday morning brief
@@ -188,6 +199,7 @@ def _substrate_react(event_type: str, data: Dict[str, Any]):
                     lock.parent.mkdir(parents=True, exist_ok=True)
                     lock.write_text(week_str)
         except Exception:
+            logger.debug("Swallowed exception in _substrate_react", exc_info=True)
             pass
 
 

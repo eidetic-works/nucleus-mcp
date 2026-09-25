@@ -131,6 +131,7 @@ def _receipts_path(brain_path: Optional[Path] = None) -> Path:
             resolved = get_brain_path()
             brain_path = Path(resolved) if resolved else Path.cwd() / ".brain"
         except Exception:  # noqa: BLE001 — never let path resolution break a check
+            logger.debug("Swallowed exception in _receipts_path", exc_info=True)
             brain_path = Path.cwd() / ".brain"
     d = Path(brain_path) / "receipts"
     try:
@@ -171,6 +172,7 @@ def read_all(brain_path: Optional[Path] = None) -> List[Receipt]:
             try:
                 out.append(Receipt(**json.loads(line)))
             except Exception:  # noqa: BLE001 — one bad row must not lose the corpus
+                logger.debug("Swallowed exception in read_all", exc_info=True)
                 continue
     except Exception as exc:  # noqa: BLE001
         logger.warning("receipts read failed: %s", exc)

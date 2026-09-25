@@ -1,12 +1,15 @@
 """Cryptographic Task Signing and Verification Guard."""
 import hashlib
 import hmac
+import logging
 import os
 import json
 import secrets
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from mcp_server_nucleus.runtime.common import get_brain_path
+
+logger = logging.getLogger("nucleus.auth.signature")
 
 class SignatureGuard:
     """
@@ -55,9 +58,25 @@ class SignatureGuard:
         return self._compute_hmac(message)
 
     def _compute_hmac(self, message: str) -> str:
-        """Internal HMAC computation (32-character hex)."""
+        """Internal HMAC computation (32-character hex).
+
+        Raises when there is no key. This used to return the fixed string
+        "unsigned-placeholder", which made the whole guard fail OPEN: verify_dict
+        and verify_payload compute the expected value by calling sign_*, so with a
+        falsy key both sides became that same constant and
+        `hmac.compare_digest("unsigned-placeholder", "unsigned-placeholder")`
+        returned True. Anyone who sent that literal string as the signature
+        validated against ANY payload (audit ledger AU-6).
+
+        A falsy key is reachable: this file's own comment describes a 0-byte
+        secrets/.ipc_secret left by a racing first-mint.
+        """
         if not self._secret_key:
-            return "unsigned-placeholder"
+            raise RuntimeError(
+                "SignatureGuard has no HMAC secret — refusing to produce a signature. "
+                "Check that the secret file exists and is non-empty; a 0-byte file from "
+                "a racing first-mint will land here."
+            )
         signature = hmac.new(
             self._secret_key,
             message.encode('utf-8'),
@@ -66,17 +85,30 @@ class SignatureGuard:
         return signature[:32]
 
     def verify_dict(self, data: Dict[str, Any], signature: str) -> bool:
-        """Verify the signature of a dictionary."""
+        """Verify the signature of a dictionary. Fails closed with no key."""
         if not signature:
             return False
-        expected = self.sign_dict(data)
+        try:
+            expected = self.sign_dict(data)
+        except RuntimeError:
+            logger.error(
+                "signature verification failed closed: no HMAC secret available. "
+                "Nothing can be verified until the secret is restored."
+            )
+            return False
         return hmac.compare_digest(expected, signature)
 
     def verify_payload(self, task_id: str, description: str, signature: str) -> bool:
-        """Verify that a task was signed by a trusted internal source."""
+        """Verify a task was signed by a trusted source. Fails closed with no key."""
         if not signature:
             return False
-        expected = self.sign_payload(task_id, description)
+        try:
+            expected = self.sign_payload(task_id, description)
+        except RuntimeError:
+            logger.error(
+                "task signature verification failed closed: no HMAC secret available."
+            )
+            return False
         return hmac.compare_digest(expected, signature)
 
     # ── Cross-vendor dispatch signing (census crit-4 v2.1) ──────────────────

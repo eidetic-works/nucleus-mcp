@@ -1,0 +1,37 @@
+# Modules that must not reach a public surface — the ONE list, read by everything.
+#
+# Why one file: for 33 releases scripts/validate_public_surface.sh designated 21
+# paths SOVEREIGN while pyproject.toml shipped eight of them in every wheel. The
+# gate and the package disagreed because each held its own copy of the answer.
+# Three consumers now read THIS file and nothing else:
+#
+#   pyproject.toml                      excludes these from wheel + sdist
+#   scripts/sovereign_surface_gate.py   fails a built artifact that contains one
+#   scripts/validate_public_surface.sh  archive-side check
+#
+# A path here must ALSO be safe to remove: every importer guarded with
+# try/except ImportError and a message saying the feature is not in this build.
+# tests/test_packaging_excludes.py asserts that, so adding a line here without
+# guarding its importers fails the suite rather than breaking `pip install`.
+#
+# What is NOT here, and why — decided 2026-09-19 on import evidence, ADR-0060:
+#   runtime/token_budget.py      11+ importers, several UNGUARDED on the
+#                                generate_content hot path
+#   runtime/archive_pipeline.py  11 importers, four unguarded (skill_extractor,
+#                                conversation_ops x2, agent_os/boot)
+#   runtime/firestore_bridge.py  withholdable but pointless; infrastructure,
+#                                not secret-bearing
+# They were on the old SOVEREIGN list and shipped anyway. Listing something that
+# cannot actually be withheld is what made the previous gate a lie.
+
+# Family Architecture / Third Brother. sovereign/__init__.py states the contract:
+# "On public builds, any `from .sovereign import X` hits ImportError and
+# gracefully degrades." Every importer is already guarded.
+src/mcp_server_nucleus/sovereign/
+
+# Leaf CLI verbs. Guarded in cli.py as of 2026-09-19 so an excluded build prints
+# "not available in this build" instead of a traceback.
+src/mcp_server_nucleus/siphon.py
+src/mcp_server_nucleus/distill.py
+src/mcp_server_nucleus/replay.py
+src/mcp_server_nucleus/validate.py

@@ -70,8 +70,13 @@ from typing import Any, Dict, List, Optional
 
 logger = __import__("logging").getLogger("nucleus.build_and_merge")
 
-# Default repo for the merge gate. Overridable via --repo on the CLI.
-_DEFAULT_REPO = "eidetic-works/mcp-server-nucleus"
+# Default repo for the merge gate. Read from the environment; there is NO
+# built-in fallback on purpose. This used to ship a hardcoded owner/name from
+# an org whose repos 404 — so the pipeline ran to completion and then failed at
+# the GitHub call, for everyone including its author. A default that cannot
+# succeed is worse than no default: it hides the missing configuration until
+# after the work is done. Set NUCLEUS_BUILD_REPO or pass --repo.
+_DEFAULT_REPO = __import__("os").environ.get("NUCLEUS_BUILD_REPO", "")
 
 
 # ── Git / GitHub helpers (each is a monkeypatchable seam for tests) ───────────
@@ -93,20 +98,56 @@ def _create_branch(branch_name: str) -> bool:
 
 
 def _commit_changed_files(changed_files: List[str], message: str) -> bool:
-    """Stage and commit the given changed files. Returns True on success."""
+    """Stage and commit the given changed files. Returns True on success.
+
+    fw-1786271303 / fw-1786271394 ("capture-at-the-commit"): this bare
+    ``git commit`` used to be invisible to the artifact-attribution
+    instrument — it is the build's ONLY commit, made outside
+    :func:`dispatch_and_capture` (the sole code path that had ever written a
+    capture envelope), so a plain ``nucleus build`` could never produce a
+    QUALIFYING artifact_ref envelope (proven live: 18/18 write dispatches
+    read ``head_unchanged`` because vendor dispatches never commit their own
+    work). On a SUCCESSFUL commit, emit ONE capture envelope through
+    ``vendor_dispatch.capture_machinery_commit`` — the same envelope-writer
+    machinery ``dispatch_and_capture`` uses, reused rather than forked —
+    labelled ``machinery_derived`` (never ``vendor_derived``: no vendor CLI
+    ran here). Capture is fault-isolated: a capture failure is logged and
+    swallowed, never turning a successful commit into a failed one. On a
+    FAILED commit no capture is attempted at all — no envelope, qualifying or
+    otherwise.
+    """
     if not changed_files:
         print("[build_and_merge] no changed files to commit", file=sys.stderr)
         return False
+
+    # Lazy import (see module-level comment: merge_gate.py evicts
+    # mcp_server_nucleus.* from sys.modules at import time).
+    from .vendor_dispatch import _read_worktree_head_sha, capture_machinery_commit
+
+    pre_head = _read_worktree_head_sha()
     try:
         subprocess.run(["git", "add", "--"] + changed_files, check=True,
                        capture_output=True, text=True)
         subprocess.run(["git", "commit", "-m", message], check=True,
                        capture_output=True, text=True)
-        return True
     except (subprocess.CalledProcessError, OSError) as exc:
         detail = getattr(exc, "stderr", str(exc))
         print(f"[build_and_merge] git commit failed: {detail}", file=sys.stderr)
         return False
+
+    post_head = _read_worktree_head_sha()
+    try:
+        capture_machinery_commit(
+            producer="build_and_merge",
+            changed_files=changed_files,
+            pre_head=pre_head,
+            post_head=post_head,
+            commit_message=message,
+        )
+    except Exception as exc:  # noqa: BLE001 — capture must never break a real commit
+        print(f"[build_and_merge] capture-at-the-commit failed (commit itself "
+              f"succeeded): {exc}", file=sys.stderr)
+    return True
 
 
 def _push_branch(branch_name: str) -> bool:
@@ -234,6 +275,7 @@ def _build_plan_context(task_prompt: str, final_plan_path: Path,
         plan_text = final_plan_path.read_text(encoding="utf-8").strip()
         parts.append(plan_text if plan_text else "(empty plan file)")
     except Exception as exc:  # noqa: BLE001
+        logger.debug("Swallowed exception in _build_plan_context", exc_info=True)
         parts.append(f"(could not read plan file: {exc})")
     return "\n".join(parts)
 
@@ -274,6 +316,7 @@ def _cwd_origin_repo() -> Optional[str]:
             return None
         url = result.stdout.strip()
     except Exception:
+        logger.debug("Swallowed exception in _cwd_origin_repo", exc_info=True)
         return None
     import re
     m = re.search(r"[:/]([\w.-]+/[\w.-]+?)(?:\.git)?$", url)
@@ -285,7 +328,7 @@ def _cwd_origin_repo() -> Optional[str]:
 def run_build_and_merge_pipeline(
     task_prompt: str,
     *,
-    repo: str = _DEFAULT_REPO,
+    repo: str | None = None,
     review_vendor: str = "devin",
     base_branch: str = "main",
     dry_run: bool = False,
@@ -300,6 +343,20 @@ def run_build_and_merge_pipeline(
     Returns a process exit code (``0`` = success through the merge gate,
     non-zero = failure at any stage).
     """
+    # Read the env at CALL time, not only at import: a caller (or a test
+    # fixture) that sets NUCLEUS_BUILD_REPO after this module was imported
+    # must still be honoured.
+    repo = repo or os.environ.get("NUCLEUS_BUILD_REPO", "") or _DEFAULT_REPO
+    if not repo:
+        print(
+            "refusing: no target repo. Pass --repo <owner>/<name> or set "
+            "NUCLEUS_BUILD_REPO. There is no built-in default — the one that "
+            "used to ship pointed at a repository that does not exist, so the "
+            "pipeline only failed after doing all the work.",
+            file=__import__("sys").stderr,
+        )
+        return 2
+
     if not task_prompt or not task_prompt.strip():
         print("build --merge: empty task prompt", flush=True)
         return 2

@@ -95,6 +95,7 @@ def brain_synthesize_status_report(
         cron_output = subprocess.check_output(['crontab', '-l'], stderr=subprocess.STDOUT).decode('utf-8')
         context['cron'] = cron_output
     except Exception:
+        logger.debug("Swallowed exception in brain_synthesize_status_report", exc_info=True)
         context['cron'] = "No crontab accessible."
         
     # Logs (Last 20 lines of key logs)
@@ -110,6 +111,7 @@ def brain_synthesize_status_report(
                 tail = subprocess.check_output(['tail', '-n', '10', str(log_p)]).decode('utf-8')
                 logs_summary += f"\n--- {log_p.name} ---\n{tail}\n"
             except Exception:
+                logger.debug("Swallowed exception in brain_synthesize_status_report", exc_info=True)
                 pass
     context['logs'] = logs_summary
 

@@ -22,6 +22,7 @@ Record shape (matches ``auto_hook`` writers so both can coexist):
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -34,6 +35,71 @@ from typing import Iterator
 from nucleus_wedge.role_normalize import _normalize_role
 
 logger = logging.getLogger("nucleus_wedge.store")
+
+# ── Compare-and-swap write gate ────────────────────────────────────────────
+# history.jsonl is append-only, which made concurrent edits silent: two agents
+# both read a memory, both append, and the second simply becomes the head. The
+# first agent's reasoning is gone and nothing anywhere reports it. The cure is
+# the standard optimistic-concurrency round trip — hash before the edit, pass
+# that hash back at write time, refuse if the head moved underneath.
+#
+# Opt-in by construction: ``expected_hash=None`` is the pre-existing behaviour
+# exactly, so no existing caller changes. Only a caller that asks to be guarded
+# can be refused.
+
+#: ``head_hash`` result for a key that has no live record, and the value to pass
+#: as ``expected_hash`` to assert "I am creating this, it must not exist yet".
+ABSENT = "absent"
+
+#: Snapshot fields the hash covers. Deliberately the fields a competing writer
+#: would change — not ``signature`` (derived) or ``origin`` (writer identity,
+#: which differs between two agents making the *same* edit).
+_CAS_FIELDS = ("key", "value", "context", "intensity", "op_type", "timestamp", "deleted")
+
+
+#: Write tiers. The talk's prescription: org-wide context read-only to agents,
+#: a scratchpad writable. Reads are NEVER gated -- org context exists to be read
+#: by everyone; it is the WRITE that scales a mistake to every agent.
+SCOPE_ORG = "org"
+SCOPE_AGENT = "agent"
+_SCOPES = (SCOPE_ORG, SCOPE_AGENT)
+
+#: Writers permitted to create or modify an org-scoped memory.
+_ORG_WRITERS = ("operator", "unrestricted")
+
+
+class PermissionDenied(RuntimeError):
+    """Raised when a writer may not write at a memory's scope.
+
+    Names the scope, the writer and the key, because a refusal nobody can
+    diagnose is a refusal that gets switched off.
+    """
+
+    def __init__(self, key: str, scope: str, writer: str, detail: str = ""):
+        self.key, self.scope, self.writer = key, scope, writer
+        super().__init__(
+            f"write refused: {key!r} is {scope!r}-scoped and the writer is "
+            f"{writer!r}. {detail}".strip()
+        )
+
+
+class MemoryConflict(RuntimeError):
+    """Raised when a guarded write finds the head moved since it was read.
+
+    Carries both hashes: a refusal a human cannot diagnose is a refusal that
+    gets switched off.
+    """
+
+    def __init__(self, key: str, expected: str, actual: str):
+        self.key = key
+        self.expected = expected
+        self.actual = actual
+        super().__init__(
+            f"memory write refused: key {key!r} changed since it was read "
+            f"(expected head {expected}, found {actual}). Re-read the memory, "
+            f"re-apply the edit on top of the current value, and retry."
+        )
+
 
 # --- Move 2 batch 2: dual-write shim (wedge append -> unified SoR facade) -----
 # Flag-gated on NUCLEUS_MEMORY_SOR. Kept as a self-contained env check (no import
@@ -145,7 +211,78 @@ def _iso_now() -> str:
 _ORIGIN_CACHE: dict | None = None
 
 
-def _origin() -> dict:
+_TRUSTWORTHY = "explicit"
+_ENV_DERIVED = "env"
+
+# Whether this process is a server that outlives the session which spawned it.
+# A short-lived process -- a CLI invocation from a tool call -- inherits a
+# CURRENT environment, so its ``CLAUDE_CODE_SESSION_ID`` is the session that is
+# really writing. A long-lived server inherited its environment once, possibly
+# days ago, and then went on serving other sessions; measured 2026-09-20, the
+# running MCP server held an id 8.6h stale. Servers set this at startup via
+# :func:`mark_long_lived` and thereby give up env attribution.
+_LONG_LIVED = False
+
+
+def mark_long_lived() -> None:
+    """Declare that this process outlives the session that spawned it.
+
+    Called by any server whose environment is frozen at startup. After this,
+    an env-derived session id is recorded but never presented as trustworthy,
+    so a consumer counting distinct sessions reports INSUFFICIENT instead of
+    collapsing every row onto one stale id.
+    """
+    global _LONG_LIVED
+    _LONG_LIVED = True
+
+
+def _resolve_session(origin: dict, session: str | None) -> dict:
+    """Attach the session half of an origin, and say where it came from.
+
+    Two sources, and they are NOT interchangeable:
+
+    ``explicit``
+        The caller named the session for THIS write. Trustworthy, because a
+        per-call value cannot go stale.
+    ``env``
+        Read from the environment of whatever process happens to be writing.
+        Recorded, but marked, because a long-lived writer's environment was
+        frozen when it spawned. Measured 2026-09-20: the live MCP server was
+        8.6 hours old and carried a *different* session's id, while two others
+        were 3 days old and carried none. Stamping every row with that one id
+        would collapse a distinct-session count to 1 -- a confident wrong
+        number in place of an honest blank. Consumers decide whether to count
+        it; :mod:`mcp_server_nucleus.flywheel.prevalence` refuses to.
+
+    This is never cached. The session is a property of the call, not of the
+    process.
+    """
+    if session:
+        origin["session"] = session
+        origin["session_source"] = _TRUSTWORTHY
+        return origin
+    env = (
+        # The variable Claude Code actually exports. The old code read
+        # ``CLAUDE_SESSION_ID``, which nothing sets -- which is why 30,787 of
+        # 30,813 rows in the live corpus carry no session at all.
+        os.environ.get("CLAUDE_CODE_SESSION_ID")
+        or os.environ.get("NUCLEUS_SESSION_ID")
+        or os.environ.get("CLAUDE_SESSION_ID")
+        or None
+    )
+    origin["session"] = env or None
+    if not env:
+        origin["session_source"] = None
+    elif _LONG_LIVED:
+        origin["session_source"] = _ENV_DERIVED
+    else:
+        # Short-lived writer: the environment was handed to it by the session
+        # that is writing right now, so this id is as good as an explicit one.
+        origin["session_source"] = _TRUSTWORTHY
+    return origin
+
+
+def _origin(session: str | None = None) -> dict:
     """Best-effort ``{repo, session}`` for the current writer.
 
     ``repo`` is the basename of the git top-level containing the CWD, so
@@ -159,7 +296,10 @@ def _origin() -> dict:
     """
     global _ORIGIN_CACHE
     if _ORIGIN_CACHE is not None:
-        return dict(_ORIGIN_CACHE)
+        # Only ``repo`` is cached -- it costs a subprocess and cannot change
+        # for the life of the process. The session must not be cached: see
+        # ``_resolve_session``.
+        return _resolve_session(dict(_ORIGIN_CACHE), session)
 
     repo = None
     try:
@@ -172,13 +312,8 @@ def _origin() -> dict:
     except Exception:  # noqa: BLE001 — origin is never worth failing a write over
         repo = None
 
-    session = (
-        os.environ.get("CLAUDE_SESSION_ID")
-        or os.environ.get("NUCLEUS_SESSION_ID")
-        or None
-    )
-    _ORIGIN_CACHE = {"repo": repo, "session": session}
-    return dict(_ORIGIN_CACHE)
+    _ORIGIN_CACHE = {"repo": repo}
+    return _resolve_session(dict(_ORIGIN_CACHE), session)
 
 
 def _normalize_tags(tags: list[str] | None) -> list[str] | None:
@@ -204,11 +339,21 @@ def _normalize_tags(tags: list[str] | None) -> list[str] | None:
 class Store:
     """Append-only reader/writer over ``.brain/engrams/history.jsonl``."""
 
-    def __init__(self, brain_path: Path | None = None):
+    def __init__(self, brain_path: Path | None = None, writer: str = "unrestricted"):
+        # ``writer`` defaults to "unrestricted" so every existing caller -- and
+        # the 30,744 records already on disk -- behaves exactly as before. A
+        # guard that breaks the existing corpus gets deleted, and then there is
+        # no guard. Callers that want the tiers opt in by naming themselves.
+        self._writer = writer
         self._brain_path = Path(brain_path) if brain_path else self.brain_path()
         self._history = self._brain_path / "engrams" / "history.jsonl"
-        self._history.parent.mkdir(parents=True, exist_ok=True)
-        self._history.touch(exist_ok=True)
+        # Deliberately does NOT create anything. This used to mkdir+touch, so
+        # merely constructing a Store to READ materialised an empty store
+        # wherever the process was standing — and since .brain/engrams/ is
+        # gitignored, the created file never showed up in `git status` to give
+        # the game away. The caller then got zero rows and could not tell
+        # "this brain has no store" from "this store is empty". Creation now
+        # happens on the write path only (see ``append``).
         # Lazy MemoryFacade for the SoR dual-write mirror (Move 2 batch 2). Never
         # constructed while NUCLEUS_MEMORY_SOR is off — keeps flag-OFF a true no-op.
         self._sor_facade = None
@@ -247,8 +392,26 @@ class Store:
     def history_file(self) -> Path:
         return self._history
 
+    @property
+    def exists(self) -> bool:
+        """Whether an engram store is actually present.
+
+        The distinction this restores: ``exists is False`` means ABSENT (no
+        store here — most likely the wrong brain), while ``exists is True`` with
+        no rows means EMPTY (a real store, nothing written yet). Both read as
+        zero rows, and conflating them is how a recall against the wrong
+        directory reports "no memories" instead of "no memory store".
+        """
+        return self._history.exists()
+
     def rows(self) -> Iterator[dict]:
-        """Stream raw records from history.jsonl."""
+        """Stream raw records from history.jsonl.
+
+        Yields nothing when the store is absent rather than raising — but see
+        :attr:`exists` before treating that emptiness as an answer.
+        """
+        if not self._history.exists():
+            return
         with self._history.open("r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -263,6 +426,87 @@ class Store:
         """Top-level keys currently in history — used by ``seed.ensure_seeds`` for idempotence."""
         return {r.get("key") for r in self.rows() if r.get("key")}
 
+    def head_hash(self, key: str) -> str:
+        """Hash of the current head record for ``key``, or :data:`ABSENT`.
+
+        This is the read half of the compare-and-swap round trip: take it
+        before editing, hand it back to :meth:`append` as ``expected_hash``.
+        Stable across repeated reads while nothing writes; different after any
+        write to that key.
+        """
+        head = None
+        for row in self.rows():
+            if row.get("key") == key:
+                head = row
+        if head is None:
+            return ABSENT
+        snap = head.get("snapshot") or {}
+        if snap.get("deleted"):
+            return ABSENT
+        payload = json.dumps(
+            {f: snap.get(f) for f in _CAS_FIELDS}, sort_keys=True, ensure_ascii=False
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def _records_for(self, key: str) -> list:
+        """Every record written under ``key``, oldest first."""
+        return [r for r in self.rows() if r.get("key") == key]
+
+    def _scope_of(self, key: str) -> str | None:
+        """The scope this key was created at, or None if it has never been
+        written. A record with no ``scope`` field predates tiers entirely and
+        reads as permissive -- the same way a missing ``origin`` means unknown,
+        not "other repo"."""
+        for r in self._records_for(key):
+            sc = (r.get("snapshot") or {}).get("scope")
+            if sc:
+                return sc
+        return None
+
+    def _next_version(self, key: str) -> int:
+        return len(self._records_for(key)) + 1
+
+    def head_value(self, key: str):
+        """Value of the most recent record for ``key``, or None."""
+        recs = self._records_for(key)
+        return (recs[-1].get("snapshot") or {}).get("value") if recs else None
+
+    def rollback(self, key: str, to_version: int) -> dict:
+        """Restore an earlier value for ``key`` by APPENDING it again.
+
+        Deliberately not a deletion. History is the evidence; an undo that
+        erases the mistake erases the record of the mistake, which is the
+        opposite of an audit trail. The restored value therefore arrives as a
+        new record with ``op_type="ROLLBACK"`` and the next version number, so
+        the undo is itself auditable and can itself be rolled back.
+        """
+        recs = self._records_for(key)
+        if not recs:
+            raise ValueError(
+                f"cannot roll back {key!r}: no record of it. A rollback to a key "
+                "that was never written would invent history."
+            )
+        match = next(
+            (r for r in recs if (r.get("snapshot") or {}).get("version") == to_version),
+            None,
+        )
+        if match is None:
+            seen = sorted(
+                v for v in ((r.get("snapshot") or {}).get("version") for r in recs)
+                if v is not None
+            )
+            raise ValueError(
+                f"cannot roll back {key!r} to version {to_version}: no such version. "
+                f"Versions on record: {seen}."
+            )
+        snap = match.get("snapshot") or {}
+        return self.append(
+            value=snap.get("value", ""),
+            kind=(snap.get("context") or "note").split(" [#")[0],
+            key=key,
+            op_type="ROLLBACK",
+        )
+
     def append(
         self,
         value: str,
@@ -272,11 +516,71 @@ class Store:
         source_agent: str = "nucleus-wedge",
         key: str | None = None,
         op_type: str = "ADD",
+        expected_hash: str | None = None,
+        scope: str | None = None,
+        session: str | None = None,
     ) -> dict:
-        """Append one record. Returns ``{key, timestamp}``."""
+        """Append one record. Returns ``{key, timestamp}``.
+
+        ``expected_hash`` opts this write into the compare-and-swap gate: pass
+        the :meth:`head_hash` taken before the edit and the append is refused
+        with :class:`MemoryConflict` if the head moved in the meantime. Pass
+        :data:`ABSENT` to assert the key must not exist yet. Omit it and the
+        write behaves exactly as it always has.
+        """
+        if expected_hash is not None and not key:
+            raise ValueError(
+                "expected_hash requires an explicit key — a compare-and-swap "
+                "over a key the caller has not named cannot refer to anything."
+            )
         ts = _iso_now()
+        caller_key = key or None
         if not key:
             key = f"remember_{ts.replace(':', '').replace('-', '').replace('.', '')[:19]}_{uuid.uuid4().hex[:8]}"
+        # ── write scope ────────────────────────────────────────────────
+        # The scope is FIXED AT KEY CREATION and inherited by every later write.
+        # If a writer could choose the scope per write, the guard would be
+        # theatre: an agent would simply relabel an org key as its own, or
+        # declare a new key org-scoped. So an agent can neither escalate nor
+        # downgrade, and only an org-writer may create an org key.
+        existing_scope = self._scope_of(key)
+        if existing_scope is None:
+            effective = (scope or SCOPE_AGENT).lower()
+            if effective not in _SCOPES:
+                raise ValueError(f"unknown scope {scope!r}; expected one of {_SCOPES}")
+            if effective == SCOPE_ORG and self._writer not in _ORG_WRITERS:
+                raise PermissionDenied(
+                    key, SCOPE_ORG, self._writer,
+                    "Only an org writer may create org-wide context.",
+                )
+        else:
+            effective = existing_scope
+            if scope is not None and scope.lower() != existing_scope:
+                raise PermissionDenied(
+                    key, existing_scope, self._writer,
+                    f"its scope is fixed at {existing_scope!r} and cannot be "
+                    f"changed to {scope!r} by a write.",
+                )
+            if existing_scope == SCOPE_ORG and self._writer not in _ORG_WRITERS:
+                raise PermissionDenied(
+                    key, SCOPE_ORG, self._writer,
+                    "Org-wide context is read-only to agents: an incorrect "
+                    "write here reaches every agent that reads it.",
+                )
+
+        if expected_hash is not None:
+            actual = self.head_hash(key)
+            if actual != expected_hash:
+                raise MemoryConflict(key, expected_hash, actual)
+        # `version` used to be the literal 1 on every record, forever -- a field
+        # the record shape advertises and never maintained, which is worse than
+        # no field at all: an absent field prompts a question, a field that is
+        # always 1 answers it wrongly. The history was never missing, only
+        # unnumbered: this log is append-only, so every write for a key is
+        # already a row in order. Numbering costs one scan, and only for an
+        # explicit key -- an auto-generated key is unique by construction and is
+        # always version 1, which keeps the common `remember` path free.
+        version = 1 if caller_key is None else self._next_version(key)
         tags = _normalize_tags(tags)
         if _provenance_anchor_flag_on():
             source_agent, tags = self._anchor_stamp(source_agent, tags)
@@ -290,7 +594,8 @@ class Store:
                 "value": value,
                 "context": context,
                 "intensity": intensity,
-                "version": 1,
+                "version": version,
+                "scope": effective,
                 "source_agent": source_agent,
                 "op_type": op_type,
                 "timestamp": ts,
@@ -304,11 +609,15 @@ class Store:
                 # Rows written before this exist with no origin at all; readers
                 # must treat a missing origin as UNKNOWN and therefore
                 # permissive, never as a reason to exclude.
-                "origin": _origin(),
+                "origin": _origin(session),
             },
         }
         if _provenance_anchor_flag_on():
             record["snapshot"]["signature"] = self._sign_snapshot(record["snapshot"])
+        # Lazy creation: the store comes into being on first write, never on a
+        # read. Greenfield init still works — this is the only place that makes
+        # the file.
+        self._history.parent.mkdir(parents=True, exist_ok=True)
         with self._history.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
         # Dual-write: after the authoritative history.jsonl append, ALSO mirror

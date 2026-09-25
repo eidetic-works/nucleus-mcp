@@ -3,6 +3,8 @@
 Super-Tools Facade: All 16 task/depth/context actions exposed via a single
 `nucleus_tasks(action, params)` MCP tool.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 from typing import Dict, List, Any, Optional
@@ -73,6 +75,7 @@ def register(mcp, helpers):
                 else:
                     result["next_message"] = None
             except Exception as e:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 result["next_message"] = None
                 result["next_message_error"] = str(e)
 

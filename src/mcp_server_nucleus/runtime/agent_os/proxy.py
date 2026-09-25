@@ -139,6 +139,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length) if length else b"{}"
             body = json.loads(raw)
         except Exception as exc:
+            logger.debug("Swallowed exception in do_POST", exc_info=True)
             self._send_json(400, {"error": {"message": f"invalid JSON: {exc}"}})
             return
 

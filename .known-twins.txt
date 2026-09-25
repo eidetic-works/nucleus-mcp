@@ -1,0 +1,50 @@
+# Byte-identical files that exist in BOTH this repo and a sibling, as of 2026-09-18.
+# Each is a divergence waiting to happen: providers/brain_rag.py was on this list
+# in spirit before it became 1,926 lines here and 3,921 there.
+#
+# The test fails on any twin NOT listed here. Shrinking this list is the work;
+# growing it silently is the failure. Recorded rather than fixed because deciding
+# which repo owns providers/ is an architecture decision, not a test fix.
+#
+# Ownership, decided 2026-09-18: providers/ stays in BOTH repos on purpose.
+# GentleQuest's served app imports its own providers/* copies (app.py,
+# routes/assessment.py, routes/crisis.py, routes/analytics_routes.py), and
+# nucleus core imports providers.brain_rag by path. Merging them is a live
+# deploy change, not a cleanup. What is guarded instead is DRIFT:
+#     python3 scripts/twin_drift.py [--strict]
+# reports any recorded twin that has stopped being identical, with line
+# counts on both sides — while the diff is still one commit wide.
+documentation.md
+list_models.py
+providers/agent_tools.py
+providers/alert_manager.py
+providers/analytics.py
+providers/brain_state.py
+providers/clinical_assessments.py
+providers/correction_detector.py
+providers/embeddings.py
+providers/memory.py
+providers/openai.py
+providers/perplexity.py
+providers/quest_engine.py
+providers/quest_generator.py
+providers/reranker.py
+providers/safety.py
+providers/session_memory.py
+providers/tools.py
+providers/twilio_client.py
+ruff.toml
+scripts/get_drive_token.py
+scripts/providers/gemini.py
+scripts/verify_ghostdiary_api.py
+scripts/verify_prod_e2e.py
+scripts/verify_task_continuity.py
+
+# Vendored on purpose, 2026-09-18: every sibling repo ships this so a contributor
+# who clones only that repo still gets working guards. Identical across nucleus,
+# tb, ranit, nucleus-scan and nucleus-nar today, and that is the intent — a
+# security fix to one MUST reach all five, which is exactly what drift detection
+# is for. (The `\b` anchor fix to secret-scan on 2026-09-18 had to be propagated
+# to five copies by hand; this line is so the next one is noticed, not remembered.)
+scripts/install_hooks.sh
+.githooks/secret-scan

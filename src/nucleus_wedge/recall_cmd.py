@@ -75,6 +75,93 @@ def _sor_flag_on() -> bool:
     return os.environ.get(_SOR_FLAG, "").strip().lower() in _SOR_TRUTHY
 
 
+# --- flywheel<->recall bridge -------------------------------------------------
+# flywheel.core.file_ticket writes failure tickets to
+# .brain/flywheel/pending_issues.jsonl, but recall only reads memories.db
+# (projected from history.jsonl). Without a read-side bridge, flywheel-filed
+# tickets are invisible to the recall that gates every read. This reader folds
+# those rows into the recall candidate pool — purely additive, read fresh each
+# call (no index staleness), no schema rewrite. Rows carry a distinct source
+# and kind so callers that do not ask for them are unaffected.
+FLYWHEEL_PENDING_SOURCE = "flywheel:pending_issues"
+FLYWHEEL_PENDING_KIND = "flywheel_ticket"
+
+
+def _flywheel_pending_rows(
+    brain_path_arg: Optional[str],
+    kind: Optional[str],
+    tags: Optional[list[str]],
+    since: Optional[str],
+    source_filter: Optional[str],
+) -> list[dict]:
+    """Read .brain/flywheel/pending_issues.jsonl and map rows into the recall
+    row shape ``{text, tags, created_at, source, kind}``.
+
+    Read fresh on every call — there is no projection to keep stale. A missing
+    file returns ``[]`` (flywheel never ran). Malformed lines are skipped.
+
+    Each ticket is projected so its ``step`` text is searchable: ``text`` carries
+    ``[flywheel:<closed>] <step>: <error>``. ``closed`` is ``"closed"`` when the
+    row has a non-empty ``fix_description`` (the only closure signal present in
+    the jsonl itself) and ``"open"`` otherwise — matching flywheel.core's own
+    closure derivation (fix_description => fixed/closed). ``phase`` populates
+    ``tags`` so tag-substring filters work.
+
+    The same structured filters the SQL path applies (kind / tags / since /
+    source_filter) are applied here in Python so flywheel rows respect them.
+    ``repo`` is intentionally NOT filtered: flywheel rows carry no origin_repo,
+    and the SQL path includes NULL/unknown origin deliberately (see the repo
+    comment in ``_do_recall_query``) — excluding them here would diverge.
+    """
+    brain = Path(brain_path_arg).expanduser() if brain_path_arg else None
+    pending = memories_db_path(brain).parent / "flywheel" / "pending_issues.jsonl"
+    if not pending.exists():
+        return []
+    # kind filter: flywheel rows are a distinct kind; a caller asking for a
+    # different kind must not see them.
+    if kind is not None and kind != FLYWHEEL_PENDING_KIND:
+        return []
+    rows: list[dict] = []
+    try:
+        with open(pending, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    t = json.loads(line)
+                except (json.JSONDecodeError, ValueError):
+                    continue
+                step = str(t.get("step") or "")
+                error = str(t.get("error") or "")
+                phase = str(t.get("phase") or "")
+                at = str(t.get("at") or "")
+                fix = str(t.get("fix_description") or "").strip()
+                closed = "closed" if fix else "open"
+                text = f"[flywheel:{closed}] {step}: {error}".strip()
+                tags_str = phase
+                if tags and not all(tag in tags_str for tag in tags):
+                    continue
+                if since and at and at < since:
+                    continue
+                if source_filter:
+                    # source_filter is a SQL LIKE pattern; approximate with a
+                    # substring check on the stripped literal.
+                    literal = source_filter.replace("%", "")
+                    if literal and literal not in FLYWHEEL_PENDING_SOURCE:
+                        continue
+                rows.append({
+                    "text": text,
+                    "tags": tags_str,
+                    "created_at": at,
+                    "source": FLYWHEEL_PENDING_SOURCE,
+                    "kind": FLYWHEEL_PENDING_KIND,
+                })
+    except OSError:
+        return []
+    return rows
+
+
 def _ensure_populated(brain_path_arg: str | None) -> Path:
     """Return the memories.db path, rebuilding the projection if stale.
 
@@ -237,11 +324,28 @@ def _do_recall_query(
         conn.row_factory = sqlite3.Row
         rows = conn.execute(sql, params).fetchall()
     legacy_rows = [dict(r) for r in rows]
+    # flywheel<->recall bridge: fold pending_issues.jsonl rows into the candidate
+    # pool so flywheel-filed tickets surface in recall. Read fresh each call;
+    # rows respect the same structured filters as the SQL path. When the file
+    # is absent or no rows pass the filters, fw_rows is [] and the path below
+    # is byte-identical to the pre-bridge behavior.
+    fw_rows = _flywheel_pending_rows(
+        brain_path_arg, kind, tags, since, source_filter,
+    )
+    if fw_rows:
+        legacy_rows = legacy_rows + fw_rows
     if q and len(legacy_rows) > limit:
         legacy_rows = bm25.rank_candidates(
             legacy_rows, query=q, limit=limit,
             text_key="text", ts_key="created_at", kind_key="kind",
         )
+    elif not q and fw_rows:
+        # No query: preserve recency order across the merged pool and cap.
+        # (Only needed when fw_rows are present; otherwise the SQL ORDER BY
+        # DESC + LIMIT already produced the capped recency-ordered result.)
+        legacy_rows = sorted(
+            legacy_rows, key=lambda r: (r.get("created_at") or ""), reverse=True
+        )[:limit]
 
     # Flag-OFF (default): byte-for-byte the pre-batch-4 path — return the legacy
     # memories.db result unchanged; nothing from the SoR layer is imported.
@@ -251,7 +355,12 @@ def _do_recall_query(
     # Flag-ON: UNION-READ. Layer the unified SoR (FTS5) candidates on top of the
     # legacy read-model, dedup, then rank with bm25.py (hybrid). The legacy rows
     # keep historical completeness (pre-shim included); the SoR adds FTS5 recall
-    # power (the "beats grep" gate) + post-shim captures. Never worse than OFF.
+    # power + post-shim captures. Never worse than OFF.
+    #
+    # This comment used to call FTS5 recall "the beats grep gate". Dropped: the
+    # flag is off by default, so that named a bar the default path is not even
+    # asked to clear (ledger CL-4). Ranked recall is what this branch adds when
+    # the flag is on, which is all the comment should claim.
     sor_rows = _recall_from_sor(
         query=query,
         limit=limit,

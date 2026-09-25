@@ -25,6 +25,9 @@ report is the load-bearing artifact; commit it under
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import argparse
 import json
 import os
@@ -166,9 +169,56 @@ def _iter_relay_files(relay_root: Path) -> Iterable[Tuple[str, Path]]:
             yield bucket, f
 
 
+def _dispatch_sig_state(msg: dict) -> str:
+    """Classify an envelope's dispatch signature: verified / unverified / unsigned.
+
+    Three states, deliberately. "unsigned" is not the same as "failed
+    verification": the first means no claim was made, the second means a claim
+    was made and does not hold. Collapsing them would hide forgery inside
+    ordinary absence.
+    """
+    # The envelope body is stored as a JSON STRING, not a nested dict. The
+    # first version of this function only handled the dict case and classified
+    # all 336 genuinely-signed envelopes as "unsigned" -- a checker reporting a
+    # confident zero because it was reading the wrong shape. Caught by running
+    # it against real data instead of trusting it, which is the only reason it
+    # is not still wrong.
+    body = msg.get("body")
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except (ValueError, TypeError):
+            body = None
+    if not isinstance(body, dict):
+        body = msg
+    sig = body.get("dispatch_sig")
+    if not sig:
+        return "unsigned"
+    try:
+        from .auth.signature_guard import get_signature_guard
+
+        ok = get_signature_guard().verify_vendor_dispatch(
+            vendor=body.get("vendor", ""),
+            model=body.get("model", ""),
+            prompt_digest=body.get("prompt_digest", ""),
+            artifact_refs=body.get("artifact_refs", []) or [],
+            result_sha256=body.get("result_sha256", ""),
+            status=body.get("status", ""),
+            ts=int(body.get("ts", 0) or 0),
+            signature=sig,
+        )
+    except Exception:
+        # A verifier that cannot RUN says nothing about the envelope. Reporting
+        # "unverified" here would blame the data for a broken checker.
+        logger.debug("Swallowed exception in _dispatch_sig_state", exc_info=True)
+        return "unverifiable"
+    return "verified" if ok else "unverified"
+
+
 def _scan_relays(relay_root: Path) -> Dict[str, Any]:
     """Scan all relay buckets; count envelopes by vendor surface + bucket."""
     by_surface: Counter = Counter()
+    sig_state: Counter = Counter()
     by_bucket: Counter = Counter()
     by_surface_bucket: Dict[str, Counter] = defaultdict(Counter)
     by_from_provider: Counter = Counter()
@@ -183,10 +233,26 @@ def _scan_relays(relay_root: Path) -> Dict[str, Any]:
         try:
             msg = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Swallowed exception in _scan_relays", exc_info=True)
             errors += 1
             continue
         total += 1
         by_bucket[bucket] += 1
+        # SIGNATURE STATE. vendor_dispatch stamps `dispatch_sig` on every
+        # envelope and its docstring promises the envelope "will not count in
+        # the census (fail-closed at the census, not at dispatch)". That promise
+        # was never implemented: this module had zero references to signatures,
+        # so every envelope counted regardless, and `verify_vendor_dispatch` --
+        # fully written and constant-time in signature_guard.py -- had zero
+        # callers anywhere in the repo. A forged envelope could not be detected,
+        # because nothing read the field.
+        #
+        # This COUNTS the three states rather than dropping envelopes. Going
+        # fail-closed on a metric before knowing what it reads is how a census
+        # silently reports zero; the exclusion is a follow-on once these numbers
+        # are observed in the wild.
+        sig_state[_dispatch_sig_state(msg)] += 1
+
         surface = _classify_vendor_surface(bucket, msg)
         by_surface[surface] += 1
         by_surface_bucket[surface][bucket] += 1
@@ -208,6 +274,11 @@ def _scan_relays(relay_root: Path) -> Dict[str, Any]:
     return {
         "total_envelopes": total,
         "by_vendor_surface": dict(by_surface.most_common()),
+        # verified / unverified / unsigned / unverifiable -- see
+        # _dispatch_sig_state. Reported, not enforced: a census that starts
+        # dropping envelopes before anyone has seen these numbers is how a
+        # metric silently reports zero.
+        "dispatch_signature_state": dict(sig_state.most_common()),
         "by_bucket": dict(by_bucket.most_common()),
         "by_surface_bucket": {s: dict(c.most_common()) for s, c in by_surface_bucket.items()},
         "by_from_provider": dict(by_from_provider.most_common()),
@@ -261,6 +332,7 @@ def _scan_engrams(engram_dir: Path, relay_id_to_surfaces: Dict[str, Set[str]]) -
                 try:
                     d = json.loads(line)
                 except Exception:
+                    logger.debug("Swallowed exception in _scan_engrams", exc_info=True)
                     errors += 1
                     continue
                 snap = d.get("snapshot", d)
@@ -293,6 +365,7 @@ def _scan_engrams(engram_dir: Path, relay_id_to_surfaces: Dict[str, Set[str]]) -
                 # human, morning_brief, ...) are operation-type attribution and
                 # are NOT counted as vendor capture (counted in by_source_agent).
     except Exception as exc:
+        logger.debug("Swallowed exception in _scan_engrams", exc_info=True)
         errors += 1
 
     return {

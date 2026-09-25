@@ -71,7 +71,27 @@ def isolate_brain(
     for subdir in ["state", "logs", "relay", "plans", "engrams"]:
         (brain / subdir).mkdir(parents=True, exist_ok=True)
 
-    # Set the env var so nucleus runtime picks it up
+    # Set the env var so nucleus runtime picks it up.
+    #
+    # This repoints the WHOLE PROCESS, permanently, and it is reachable from the
+    # MCP tool `nucleus_lane_init` — not just the CLI. On a stdio session that
+    # means every later memory, task and relay call in that session resolves to
+    # this lane's brain rather than the one the session started with. Neither
+    # the tool's docstring nor docs/autonomous-lane.md said so (ledger DS-8).
+    #
+    # Left as-is rather than wrapped in a restore, deliberately. For `nucleus
+    # lane init` the process exits immediately, so a restore would change
+    # nothing; for the MCP tool, switching the session to the lane you just
+    # asked to initialise is a defensible reading of what the caller wanted, and
+    # guessing the other way would break the workflow silently. What was missing
+    # is that nobody was told — so it is documented at both ends instead.
+    #
+    # The HTTP transport is unaffected either way: get_brain_path checks the
+    # per-request contextvar first, and the tenant middleware restores this
+    # variable when the request ends (TN-5).
+    #
+    # If this ever needs to stop being process-wide, the fix is a contextvar,
+    # not a try/finally — the value is meant to outlive this call.
     os.environ["NUCLEUS_BRAIN_PATH"] = str(brain)
 
     return brain

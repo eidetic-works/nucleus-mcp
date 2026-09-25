@@ -3,6 +3,8 @@
 Commitment Ledger - Core module for PEFS Phase 2
 Tracks all commitments, aging, context, and closure methods
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import subprocess
@@ -232,6 +234,7 @@ def add_commitment(
             patterns = load_patterns(brain_path)
             pattern_suggestion = suggest_pattern_action(commitment, patterns)
         except Exception:
+            logger.debug("Swallowed exception in add_commitment", exc_info=True)
             pattern_suggestion = None
         
         if pattern_suggestion:

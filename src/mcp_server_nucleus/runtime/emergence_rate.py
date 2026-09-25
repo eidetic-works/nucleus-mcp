@@ -82,6 +82,7 @@ class PatternCollector:
                 from .common import get_brain_path
                 self._brain_path = get_brain_path()
             except Exception:
+                logger.debug("Swallowed exception in __init__", exc_info=True)
                 self._brain_path = Path.cwd() / ".brain"
 
     @staticmethod
@@ -245,6 +246,7 @@ class PatternAggregator:
                 from .common import get_brain_path
                 self._brain_path = get_brain_path()
             except Exception:
+                logger.debug("Swallowed exception in __init__", exc_info=True)
                 self._brain_path = Path.cwd() / ".brain"
         self._store_path = self._brain_path / "emergence"
         self._patterns_file = self._store_path / "patterns.json"

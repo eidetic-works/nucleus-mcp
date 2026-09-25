@@ -1,3 +1,4 @@
+import logging
 
 
 # =============================================================================
@@ -16,6 +17,7 @@ except Exception:
         _pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
         __version__ = re.search(r'version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8")).group(1)
     except Exception:
+        logging.getLogger(__name__).debug("Swallowed exception in <module>", exc_info=True)
         __version__ = "unknown"
 
 import os
@@ -29,6 +31,7 @@ from pathlib import Path
 import sys
 import warnings
 from importlib import import_module as _import_module
+import threading as _threading
 
 # CRITICAL: Suppress output pollution to protect JSON-RPC (Stdio)
 # Verify urllib3 doesn't leak OpenSSL warnings to stderr which might break some strict MCP clients
@@ -57,6 +60,7 @@ def _fire_install_telemetry() -> None:
 try:
     _fire_install_telemetry()
 except Exception:
+    logging.getLogger(__name__).debug("Swallowed exception in <module>", exc_info=True)
     pass  # Never let telemetry break import
 
 # v0.6.0 Tool Tier System - Solves Registry Bloat
@@ -120,23 +124,54 @@ except AttributeError:
 logger = logging.getLogger("nucleus")
 logger.setLevel(logging.WARNING)
 
-# Initialize FastMCP Server
-# Global flag for fallback mode
-USE_STDIO_FALLBACK = False
+_MCP_SINGLETON_LOCK = _threading.Lock()
 
-# Initialize FastMCP Server with fallback
-try:
-    from fastmcp import FastMCP
-    mcp = FastMCP("Nucleus Brain")
-except ImportError:
-    USE_STDIO_FALLBACK = True
-    from .runtime.common import MockMCP
-    import sys
 
-    # CRITICAL: Use direct stderr write to ensure NO stdout pollution
-    sys.stderr.write("[Nucleus Init] WARNING: FastMCP not installed. Running in standalone/verification mode.\\n")
-    sys.stderr.flush()
-    mcp = MockMCP()
+def _resolve_mcp_singleton():
+    """Create and cache the FastMCP singleton (or MockMCP fallback) on first access.
+
+    mcp and USE_STDIO_FALLBACK are intentionally not module-level globals until
+    this function runs, so bare `import mcp_server_nucleus` does not drag in the
+    MCP server stack.  They are cached into globals() exactly like the other
+    __getattr__ resolutions.
+
+    Locked, double-checked. This used to run at import, where Python's import
+    lock made "exactly one instance" free. Resolving lazily gives that guarantee
+    up: two threads reaching a bare `if "mcp" in globals()` together would each
+    build a FastMCP and the losing one would register its tools onto an object
+    nothing serves. That failure is silent -- a half-empty tool registry, no
+    error anywhere -- so it is worth a lock even though first access is usually
+    single-threaded.
+    """
+    cached = globals().get("mcp")
+    if cached is not None:
+        return cached
+
+    with _MCP_SINGLETON_LOCK:
+        cached = globals().get("mcp")
+        if cached is not None:
+            return cached
+        return _build_mcp_singleton()
+
+
+def _build_mcp_singleton():
+    """Construct the singleton. Callers must hold _MCP_SINGLETON_LOCK."""
+    use_stdio_fallback = False
+    try:
+        from fastmcp import FastMCP
+        mcp_instance = FastMCP("Nucleus Brain", version=__version__)
+    except ImportError:
+        use_stdio_fallback = True
+        from .runtime.common import MockMCP
+
+        # CRITICAL: Use direct stderr write to ensure NO stdout pollution
+        sys.stderr.write("[Nucleus Init] WARNING: FastMCP not installed. Running in standalone/verification mode.\n")
+        sys.stderr.flush()
+        mcp_instance = MockMCP()
+
+    globals()["mcp"] = mcp_instance
+    globals()["USE_STDIO_FALLBACK"] = use_stdio_fallback
+    return mcp_instance
 
 # Log tier info to stderr only when NUCLEUS_DEBUG is set
 try:
@@ -154,6 +189,7 @@ try:
         _sys.stderr.write("\n")
         _sys.stderr.flush()
 except Exception:
+    logging.getLogger(__name__).debug("Swallowed exception in <module>", exc_info=True)
     pass
 
 
@@ -296,7 +332,8 @@ def _ensure_initialized():
     # Deferred here (was an import-time side effect) so a bare package import
     # does not pull core.tool_registration_impl -> core.__init__ -> orchestrator.
     from .core.tool_registration_impl import configure_tiered_tool_registration
-    configure_tiered_tool_registration(mcp)
+    _mcp = _resolve_mcp_singleton()
+    configure_tiered_tool_registration(_mcp)
 
     # Relay notification middleware — auto-surfaces unread relays on every
     # tool call via ctx.info(). This is the client-agnostic replacement for
@@ -304,7 +341,7 @@ def _ensure_initialized():
     # relay notifications without needing client-side hooks or .md instructions.
     try:
         from .runtime.relay_notification_middleware import RelayNotificationMiddleware
-        mcp.add_middleware(RelayNotificationMiddleware())
+        _mcp.add_middleware(RelayNotificationMiddleware())
     except Exception as exc:
         import sys as _sys
         _sys.stderr.write(f"[Nucleus] WARNING: relay notification middleware not loaded: {exc}\n")
@@ -336,9 +373,9 @@ def _ensure_initialized():
         "cold_start_prompt": _cold_start_prompt,
     }
 
-    _tools_pkg.register_all(mcp, _tool_helpers)
-    _server_pkg.register_resources(mcp, _tool_helpers)
-    _server_pkg.register_prompts(mcp, _tool_helpers)
+    _tools_pkg.register_all(_mcp, _tool_helpers)
+    _server_pkg.register_resources(_mcp, _tool_helpers)
+    _server_pkg.register_prompts(_mcp, _tool_helpers)
 
 
 # Backward-compat alias: the HTTP/SSE/cloud transports and external callers
@@ -351,13 +388,19 @@ _ensure_registered = _ensure_initialized
 def __getattr__(name):
     """PEP 562 lazy attribute resolution for the package.
 
-    Order: (1) lazily re-exported runtime helper symbols, (2) lazily bound
-    submodules, (3) registration-injected tool symbols — trigger registration
-    once, then retry.
+    Order: (1) mcp singleton + USE_STDIO_FALLBACK, (2) lazily re-exported
+    runtime helper symbols, (3) lazily bound submodules, (4) registration-
+    injected tool symbols — trigger registration once, then retry.
     """
     if name.startswith("__") and name.endswith("__"):
         # Never trigger registration for dunder/introspection probes.
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    if name == "mcp":
+        return _resolve_mcp_singleton()
+    if name == "USE_STDIO_FALLBACK":
+        _resolve_mcp_singleton()
+        return globals()["USE_STDIO_FALLBACK"]
 
     entry = _LAZY_MAP.get(name)
     if entry is not None:
@@ -384,7 +427,7 @@ def __getattr__(name):
 
 
 def __dir__():
-    return sorted(set(list(globals().keys()) + list(_LAZY_MAP) + list(_LAZY_SUBMODULES)))
+    return sorted(set(list(globals().keys()) + list(_LAZY_MAP) + list(_LAZY_SUBMODULES) + ["mcp", "USE_STDIO_FALLBACK"]))
 
 
 def main():

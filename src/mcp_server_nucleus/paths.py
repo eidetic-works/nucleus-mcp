@@ -27,15 +27,34 @@ def _env_path(key: str) -> Path | None:
     return Path(val) if val else None
 
 
+def _discover_root(start: Path | None = None) -> Path | None:
+    """Nearest ancestor of `start` (default: cwd) that holds a .brain directory."""
+    here = (start or Path.cwd()).resolve()
+    for candidate in (here, *here.parents):
+        if (candidate / ".brain").is_dir():
+            return candidate
+    return None
+
+
 def nucleus_root(strict: bool = False) -> Path:
+    """Repo root: NUCLEUS_ROOT, else the nearest ancestor holding .brain, else cwd.
+
+    There is no hard-coded fallback directory — where nucleus is installed is a property of
+    the installation, not of the package.
+    """
     env = _env_path("NUCLEUS_ROOT")
     if env is not None:
         return env
+    discovered = _discover_root()
+    if discovered is not None:
+        return discovered
     if strict:
         raise NucleusPathError(
-            "NUCLEUS_ROOT is not set. Export NUCLEUS_ROOT to the repo root."
+            "NUCLEUS_ROOT is not set and no .brain directory was found in the current "
+            "directory or its parents. Export NUCLEUS_ROOT to the repo root, or run "
+            "`nucleus init` to create one here."
         )
-    return Path.home() / "ai-mvp-backend"
+    return Path.cwd()
 
 
 def brain_path(strict: bool = False) -> Path:

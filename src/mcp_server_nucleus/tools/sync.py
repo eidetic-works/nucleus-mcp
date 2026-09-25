@@ -105,6 +105,7 @@ def register(mcp, helpers):
                 warning = f"WARNING: Agent ID '{collision_key}' is already active on another host."
                 logging.getLogger("nucleus").warning(warning)
         except Exception:
+            logging.getLogger(__name__).debug("Swallowed exception in register", exc_info=True)
             collision_detected = False
             warning = ""
 
@@ -175,6 +176,7 @@ def register(mcp, helpers):
                             f.write(ignore_block)
                         result["gitignore_patched"] = True
             except Exception:
+                logging.getLogger(__name__).debug("Swallowed exception in register", exc_info=True)
                 pass
         else:
             result = stop_file_watcher()

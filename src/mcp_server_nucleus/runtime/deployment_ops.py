@@ -23,6 +23,7 @@ def _get_render_config() -> Dict:
         render_config = state.get("render", {})
         return render_config
     except Exception:
+        logger.debug("Swallowed exception in _get_render_config", exc_info=True)
         return {}
 
 
@@ -199,6 +200,7 @@ def _check_deploy_status(service_id: str) -> Dict:
                 start_time = time.mktime(time.strptime(started_at[:19], "%Y-%m-%dT%H:%M:%S"))
                 elapsed_minutes = (time.time() - start_time) / 60
             except Exception:
+                logger.debug("Swallowed exception in _check_deploy_status", exc_info=True)
                 pass
         
         return {

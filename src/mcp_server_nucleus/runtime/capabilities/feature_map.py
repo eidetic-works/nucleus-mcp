@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from typing import List, Dict, Any, Optional
 import json
 import os
@@ -137,6 +139,7 @@ class FeatureMap(Capability):
         try:
             return json.loads(path.read_text())
         except Exception:
+            logger.debug("Swallowed exception in _load_store", exc_info=True)
             return {"product": product, "features": []}
 
     def _save_store(self, product: str, data: Dict):
@@ -217,6 +220,7 @@ class FeatureMap(Capability):
             if features_dir.exists():
                 return [f.stem for f in features_dir.glob("*.json")]
         except Exception:
+            logger.debug("Swallowed exception in _discover_products", exc_info=True)
             pass
         return ["nucleus"]
 

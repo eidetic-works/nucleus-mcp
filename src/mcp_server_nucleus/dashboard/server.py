@@ -7,6 +7,8 @@ as JSON API endpoints, plus serving a single-page dashboard UI.
 
 Zero external dependencies. Uses only Python stdlib http.server.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 import json
@@ -97,6 +99,7 @@ class GovernanceDashboardHandler(SimpleHTTPRequestHandler):
                 self._send_json(404, {"error": "Unknown API endpoint"})
 
         except Exception as exc:
+            logger.debug("Swallowed exception in _handle_api_get", exc_info=True)
             self._send_json(500, {"error": str(exc)})
 
     def _handle_kyc_post(self, parsed):
@@ -109,6 +112,7 @@ class GovernanceDashboardHandler(SimpleHTTPRequestHandler):
             review = run_kyc_review(app_id, brain, write_dsor=True)
             self._send_json(200, review)
         except Exception as exc:
+            logger.debug("Swallowed exception in _handle_kyc_post", exc_info=True)
             self._send_json(500, {"error": str(exc)})
 
     # ------------------------------------------------------------------

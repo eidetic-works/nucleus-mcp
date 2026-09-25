@@ -60,6 +60,7 @@ def _build_hostname_pattern(hostname: Optional[str] = None) -> "re.Pattern[str]"
         try:
             hostname = socket.gethostname() or ""
         except Exception:  # pragma: no cover — defensive
+            logger.debug("Swallowed exception in _build_hostname_pattern", exc_info=True)
             hostname = ""
     base = hostname.split(".")[0].strip()
     if len(base) >= 3:

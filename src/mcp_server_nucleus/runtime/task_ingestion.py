@@ -15,6 +15,8 @@ Features:
 Scales: 1 → 1000 sources, 10K tasks/sec
 
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import re
@@ -825,6 +827,7 @@ class TaskIngestionEngine:
                             })
                     
                 except Exception as e:
+                    logger.debug("Swallowed exception in _process_tasks", exc_info=True)
                     batch.record_failure(task.get("description", "")[:100], str(e))
                     result.tasks_failed += 1
                     result.errors.append(str(e))

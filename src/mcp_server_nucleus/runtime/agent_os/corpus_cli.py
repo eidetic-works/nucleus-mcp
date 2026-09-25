@@ -32,6 +32,9 @@ STRICTLY ADDITIVE. No .sh / settings.json / live-hook edits.
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import os
 from pathlib import Path
@@ -64,6 +67,7 @@ def _resolve_turns_path(brain_path: Optional[str] = None) -> Path:
 
                 root = Path(get_brain_path())
             except Exception:  # noqa: BLE001 — cold brain, no daemon scaffold
+                logger.debug("Swallowed exception in _resolve_turns_path", exc_info=True)
                 root = Path(".brain")
     return root / "training" / "loop_turns.jsonl"
 

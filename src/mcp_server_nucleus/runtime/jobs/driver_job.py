@@ -7,6 +7,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from ..sibling_repos import require_script
+
 logger = logging.getLogger("NucleusJobs.driver")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
@@ -14,9 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.paren
 
 def _load_driver():
     """Import the driver module without modifying global sys.path."""
-    driver_path = PROJECT_ROOT / "scripts" / "third_brother_driver.py"
-    if not driver_path.exists():
-        raise FileNotFoundError(f"Driver not found: {driver_path}")
+    driver_path = require_script("scripts/third_brother_driver.py")
     spec = importlib.util.spec_from_file_location("third_brother_driver", driver_path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -31,6 +31,7 @@ def check_requirements() -> tuple:
     try:
         subprocess.run(["ollama", "list"], capture_output=True, timeout=5, check=True)
     except Exception:
+        logger.debug("Swallowed exception in check_requirements", exc_info=True)
         return True, "degraded: ollama unavailable, training captures will be limited"
     return True, "ok"
 

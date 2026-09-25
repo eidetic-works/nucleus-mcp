@@ -1,4 +1,6 @@
 """Project Management View Operations — High-level HUD and Gantt rendering."""
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 from datetime import datetime, timezone
@@ -26,6 +28,7 @@ def _brain_pm_summary_impl() -> str:
             health_json = _brain_health_impl()
             health_data = json.loads(health_json)
         except Exception:
+            logger.debug("Swallowed exception in _brain_pm_summary_impl", exc_info=True)
             health_data = {"status": "DEGRADED", "version": "0.5.x"}
             
         health_status = health_data.get("status", "unknown").upper()
@@ -36,6 +39,7 @@ def _brain_pm_summary_impl() -> str:
             fed_status_json = _brain_federation_status_json_impl()
             fed_data = json.loads(fed_status_json)
         except Exception:
+            logger.debug("Swallowed exception in _brain_pm_summary_impl", exc_info=True)
             fed_data = {"peers": {}, "sovereign_mode": False}
             
         peers_info = fed_data.get("peers", {})

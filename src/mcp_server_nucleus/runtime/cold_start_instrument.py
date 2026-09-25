@@ -230,32 +230,41 @@ def run_cold_start_instrument(
         fresh_brain = project_dir / ".brain"
 
         # Point the runtime at the fresh brain for the engram ops.
-        os.environ["NUCLEUS_BRAIN_PATH"] = str(fresh_brain.absolute())
+        #
+        # Through temporary_env, so the process is put back on the way out.
+        # This was a bare assignment with no finally anywhere in the function,
+        # so once this weekly job had run inside the scheduler process, every
+        # job scheduled after it resolved its brain from a temp directory that
+        # had since been deleted. get_brain_path creates what is missing, so
+        # they did not fail — they operated on an empty brain (ledger DS-7).
+        from .common import temporary_env
 
-        # ── 1. init_brain_default (EXISTING scaffold) ──
-        try:
-            init_brain_default(fresh_brain)
-        except Exception as e:
-            init_error = f"init_brain_default crashed: {e}"
+        with temporary_env(NUCLEUS_BRAIN_PATH=str(fresh_brain.absolute())):
 
-        # ── 2. write project .mcp.json (EXISTING pattern) ──
-        config_written = False
-        config_detail: Dict[str, Any] = {}
-        if init_error is None:
+            # ── 1. init_brain_default (EXISTING scaffold) ──
             try:
-                _write_project_mcp_config(project_dir)
-                config_detail = _verify_project_mcp_config(project_dir)
-                config_written = config_detail.get("nucleus_entry_present", False)
+                init_brain_default(fresh_brain)
             except Exception as e:
-                config_detail = {"error": f"config write/verify crashed: {e}"}
+                init_error = f"init_brain_default crashed: {e}"
 
-        # ── 3. seed engram write + recall (EXISTING engram_ops) ──
-        recall: Dict[str, Any] = {}
-        if init_error is None and config_written:
-            try:
-                recall = _recall_seed_engram(fresh_brain, project_slug)
-            except Exception as e:
-                recall = {"written": False, "recalled": False, "error": f"recall crashed: {e}"}
+            # ── 2. write project .mcp.json (EXISTING pattern) ──
+            config_written = False
+            config_detail: Dict[str, Any] = {}
+            if init_error is None:
+                try:
+                    _write_project_mcp_config(project_dir)
+                    config_detail = _verify_project_mcp_config(project_dir)
+                    config_written = config_detail.get("nucleus_entry_present", False)
+                except Exception as e:
+                    config_detail = {"error": f"config write/verify crashed: {e}"}
+
+            # ── 3. seed engram write + recall (EXISTING engram_ops) ──
+            recall: Dict[str, Any] = {}
+            if init_error is None and config_written:
+                try:
+                    recall = _recall_seed_engram(fresh_brain, project_slug)
+                except Exception as e:
+                    recall = {"written": False, "recalled": False, "error": f"recall crashed: {e}"}
 
     wall_seconds = round(time.perf_counter() - wall_t0, 3)
 

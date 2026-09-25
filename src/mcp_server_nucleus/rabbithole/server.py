@@ -17,9 +17,24 @@ even if the rest of the nucleus-mcp package is broken or absent.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+import sys
+from importlib.metadata import version as _pkg_version
+
 from mcp.server.fastmcp import FastMCP
 
 from . import store
+
+
+def _version() -> str:
+    try:
+        return _pkg_version("nucleus-mcp")
+    except Exception:
+        logger.debug("Swallowed exception in _version", exc_info=True)
+        return "1.16.5"
+
 
 mcp = FastMCP("nucleus-rabbithole")
 
@@ -173,6 +188,91 @@ def close_loop(id: int) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Focus contracts
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def focus_start(
+    question: str,
+    deliverable: str,
+    evidence_budget: int,
+    depth_budget: int,
+    exit_condition: str,
+    session_id: str = "",
+) -> str:
+    """Start an advisory focus contract for a session."""
+    conn = _conn()
+    try:
+        r = store.focus_start(
+            conn,
+            question,
+            deliverable,
+            evidence_budget,
+            depth_budget,
+            exit_condition,
+            session_id or None,
+        )
+    finally:
+        conn.close()
+    if "error" in r:
+        return f"Error: {r['error']}"
+    return (
+        f"Focus contract #{r['id']} active: {r['question']}\n"
+        f"Deliverable: {r['deliverable']} | evidence {r['evidence_budget']} | "
+        f"depth {r['depth_budget']} | exit: {r['exit_condition']}"
+    )
+
+
+@mcp.tool()
+def focus_status(session_id: str = "") -> str:
+    """Show the active advisory focus contract for a session."""
+    conn = _conn()
+    try:
+        r = store.focus_status(conn, session_id or None)
+    finally:
+        conn.close()
+    if "error" in r:
+        return f"Error: {r['error']}"
+    if not r["active"]:
+        return f"No active focus contract for session {r['session_id']}."
+    contract = r["contract"]
+    return (
+        f"Focus contract #{contract['id']} active: {contract['question']}\n"
+        f"Deliverable: {contract['deliverable']} | evidence remaining "
+        f"{contract['remaining_evidence_budget']}/{contract['evidence_budget']} | "
+        f"depth budget {contract['depth_budget']} | exit: {contract['exit_condition']}"
+    )
+
+
+@mcp.tool()
+def focus_resolve(
+    outcome: str,
+    evidence: str,
+    trigger: str = "",
+    owner: str = "",
+    missing_fact: str = "",
+    session_id: str = "",
+) -> str:
+    """Explicitly resolve the active focus contract with a valid outcome."""
+    conn = _conn()
+    try:
+        r = store.focus_resolve(
+            conn,
+            outcome,
+            evidence,
+            trigger or None,
+            owner or None,
+            missing_fact or None,
+            session_id or None,
+        )
+    finally:
+        conn.close()
+    if "error" in r:
+        return f"Error: {r['error']}"
+    return f"Focus contract #{r['id']} resolved: {r['outcome']}."
+
+
+# ---------------------------------------------------------------------------
 # Weekly review
 # ---------------------------------------------------------------------------
 
@@ -191,6 +291,27 @@ def weekly_review(days: int = 7) -> str:
 
 def main() -> None:
     """Console-script / module entry point: run the stdio server."""
+    args = sys.argv[1:]
+    if "--help" in args or "-h" in args:
+        print(
+            "rabbithole -- MCP stdio server\n"
+            "\n"
+            "Launched by an MCP client. Example client configuration:\n"
+            "\n"
+            '    {"mcpServers":{"rabbithole":{"command":"nucleus-rabbithole"}}}\n'
+            "\n"
+            "Options:\n"
+            "  -h, --help  show this help message and exit\n"
+            "  --version   print the version and exit"
+        )
+        sys.exit(0)
+    elif args and args[0] == "--version":
+        print(_version())
+        sys.exit(0)
+    elif args:
+        bad = next(a for a in args if a not in {"--help", "-h", "--version"})
+        print(f"error: unknown argument '{bad}'", file=sys.stderr)
+        sys.exit(2)
     mcp.run()
 
 

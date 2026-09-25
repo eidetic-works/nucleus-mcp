@@ -20,8 +20,22 @@ Design choices for v1:
     registration auth for multi-tenant deployments
   - Scopes: mcp:tools (default), mcp:resources, mcp:prompts, mcp:relay
 
+Tenancy, decided (audit ledger AU-2): the self-hosted consent path is
+SINGLE-TENANT. It does not verify email and will not be taught to — everyone
+who completes it reaches the same brain. Verified per-user tenants require
+Clerk. An operator on a closed network who wants the old email-keyed routing
+can set NUCLEUS_OAUTH_ALLOW_UNVERIFIED_EMAIL=true and gets a consent screen
+that says the address is unverified.
+
 Env contract:
-  NUCLEUS_OAUTH_ENABLED       "true" to enable OAuth on the MCP endpoint
+  NUCLEUS_OAUTH_ENABLED       Three states. "false" CLOSES the endpoints below
+                              (404) — a kill switch this server did not
+                              previously have. "true" serves them. Unset
+                              serves them and logs one warning per process,
+                              because a deployment that never set it is
+                              already relying on them and must not be broken
+                              by an upgrade. It previously changed nothing but
+                              what the `/` endpoint reported.
   NUCLEUS_OAUTH_ISSUER        Base URL of the auth server (e.g. https://relay.nucleusos.dev)
   NUCLEUS_OAUTH_STORE_PATH    Optional file path for persistent token store
   NUCLEUS_OAUTH_ACCESS_TTL    Access token TTL in seconds (default: 3600)
@@ -46,7 +60,10 @@ Emails from Clerk are never logged — only the derived tenant_id hash.
 """
 from __future__ import annotations
 
+import functools
+import base64
 import hashlib
+import hmac
 import json
 import logging
 import os
@@ -94,12 +111,180 @@ def _store_path() -> Optional[Path]:
     return Path(p) if p else None
 
 
+def _oauth_enabled() -> bool:
+    """Whether the OAuth endpoints are served. Three states, not two.
+
+    ``True``/``False`` when the operator set the variable, ``None`` when they
+    never did. The third state matters — see ``_gated``.
+
+    Read per request, not at import, so a deployment can flip it without a
+    rebuild and so tests can exercise every side.
+    """
+    raw = os.environ.get("NUCLEUS_OAUTH_ENABLED")
+    if raw is None or not raw.strip():
+        return None
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _gated(handler):
+    """Gate ``handler`` on NUCLEUS_OAUTH_ENABLED, honouring "never set" as its own case.
+
+    The flag used to control nothing but what the ``/`` root endpoint reported
+    (app.py:118). The routes themselves were inserted unconditionally, so
+    /register, /authorize and /token answered on every deployment — including
+    ones whose operator had read the env contract ("true" to enable OAuth on the
+    MCP endpoint) and believed OAuth was off. Dynamic client registration takes
+    no auth, so a caller could self-register a client, consent to themselves and
+    walk out with a bearer token for the default brain (audit ledger AU-2).
+
+    The obvious fix — serve only when the variable is true — would have been a
+    production outage. Checked against the live relay on 2026-09-11: ``GET /``
+    returns ``"oauth_enabled": false`` while ``/.well-known/oauth-protected-resource``
+    and ``/.well-known/oauth-authorization-server`` both return 200. The variable
+    is not set there, and Connector sign-in works *because* of the bug. Two
+    submission docs claimed the opposite; they have been corrected. A two-state
+    gate would have 404'd ChatGPT and Claude.ai sign-in the moment it shipped.
+
+    So the variable is read as three states:
+
+    ``false`` (explicit)
+        404. A real kill switch, which this deployment never had — an operator
+        who wants the surface closed can now close it.
+    ``true`` (explicit)
+        Served, silently. The documented contract, unchanged.
+    unset
+        Served, with a warning logged once per process naming the variable.
+        A deployment that never expressed an intent is not one whose intent we
+        can infer, and silently breaking it is worse than the gap being closed.
+        The warning is what makes this state non-silent, which was the actual
+        complaint in AU-2: an operator could not tell the surface was live.
+
+    Gating here rather than at insertion time in app.py keeps the route-index
+    arithmetic in that module untouched; an unreachable endpoint and a 404 are
+    the same thing to a caller. The 404 body names the variable so the closed
+    state is diagnosable rather than mysterious.
+    """
+
+    @functools.wraps(handler)
+    async def _guarded(request: Request) -> Any:
+        state = _oauth_enabled()
+        if state is False:
+            return JSONResponse(
+                {
+                    "error": "oauth_disabled",
+                    "error_description": (
+                        "OAuth is disabled on this deployment "
+                        "(NUCLEUS_OAUTH_ENABLED is set to a false value). "
+                        "Set NUCLEUS_OAUTH_ENABLED=true to serve these endpoints."
+                    ),
+                },
+                status_code=404,
+            )
+        if state is None:
+            _warn_oauth_unconfigured()
+        return await handler(request)
+
+    return _guarded
+
+
+_warned_oauth_unconfigured = False
+
+
+def _warn_oauth_unconfigured() -> None:
+    """Say once per process that the OAuth surface is live but never configured.
+
+    Once, not per request: this is a deployment fact, and a public endpoint
+    would otherwise let any caller drive the log volume.
+    """
+    global _warned_oauth_unconfigured
+    if _warned_oauth_unconfigured:
+        return
+    _warned_oauth_unconfigured = True
+    logger.warning(
+        "[oauth] The OAuth endpoints (/register, /authorize, /token) are being served, "
+        "but NUCLEUS_OAUTH_ENABLED is not set. Dynamic client registration takes no auth, "
+        "so any caller who can reach this deployment can register a client and obtain a "
+        "token. Set NUCLEUS_OAUTH_ENABLED=true to confirm this is intended, or =false to "
+        "close the surface."
+    )
+
+
+def _require_pkce() -> bool:
+    """Whether an authorization code must be bound to a PKCE challenge.
+
+    Default off. Turning it on rejects any client that does not send a
+    ``code_challenge``, and this server has been accepting such clients since it
+    shipped, so requiring it by default would break them. With it off, a client
+    that *does* use PKCE now gets the protection it asked for — which is the
+    actual defect: the challenge was accepted, advertised as supported, and then
+    never checked (ledger AU-5).
+    """
+    return os.environ.get("NUCLEUS_OAUTH_REQUIRE_PKCE", "false").lower() in (
+        "1", "true", "yes", "on",
+    )
+
+
+def _check_pkce(entry: Dict[str, Any], code_verifier: str) -> Optional[str]:
+    """Verify a PKCE code_verifier against a stored challenge.
+
+    Returns an error string to reject with, or None to allow.
+
+    Only S256 is accepted, which is exactly what
+    ``/.well-known/oauth-authorization-server`` advertises. ``plain`` is
+    deliberately not supported: it offers no protection against an attacker who
+    can read the authorization request, and advertising S256 while honouring
+    plain would let a downgrade undo the whole mechanism.
+    """
+    challenge = entry.get("code_challenge") or ""
+    method = (entry.get("code_challenge_method") or "").upper()
+
+    if not challenge:
+        if _require_pkce():
+            return (
+                "PKCE is required on this deployment: the authorization request "
+                "carried no code_challenge."
+            )
+        # No challenge was ever supplied, so there is nothing to bind to. This
+        # is the pre-existing behaviour for clients that do not use PKCE.
+        return None
+
+    if not code_verifier:
+        return "code_verifier is required because the authorization request used PKCE."
+
+    # RFC 7636 §4.1 — the verifier is 43-128 characters from an unreserved set.
+    if not (43 <= len(code_verifier) <= 128):
+        return "code_verifier must be 43-128 characters."
+
+    if method and method != "S256":
+        return f"Unsupported code_challenge_method {method!r}; only S256 is supported."
+
+    expected = base64.urlsafe_b64encode(
+        hashlib.sha256(code_verifier.encode("ascii")).digest()
+    ).rstrip(b"=").decode("ascii")
+
+    if not hmac.compare_digest(expected, challenge):
+        return "code_verifier does not match the code_challenge."
+    return None
+
+
 def _clerk_enabled() -> bool:
     return os.environ.get("NUCLEUS_CLERK_ENABLED", "false").lower() == "true"
 
 
 def _clerk_issuer() -> str:
     return os.environ.get("NUCLEUS_CLERK_ISSUER", "").rstrip("/")
+
+
+def _allow_unverified_email_tenants() -> bool:
+    """Whether /authorize may bind a tenant to a self-asserted email address.
+
+    Default off. The self-hosted consent screen takes an email from a plain
+    text input with, in its own words, "no password needed", so honouring it
+    as a tenant claim hands any caller a token for any address they can type.
+    Operators who genuinely want the old behaviour on a closed network can
+    set NUCLEUS_OAUTH_ALLOW_UNVERIFIED_EMAIL=true.
+    """
+    return os.environ.get("NUCLEUS_OAUTH_ALLOW_UNVERIFIED_EMAIL", "false").lower() == "true"
 
 
 def _derive_tenant_id_from_email(email: str) -> str:
@@ -109,9 +294,18 @@ def _derive_tenant_id_from_email(email: str) -> str:
     lands in the same brain.  No PII in the slug — just the first 16 hex
     chars of the SHA-256 hash.
 
-    This is an identity *claim*, not a verified identity.  v2 should add
-    email verification (magic link) before trusting the tenant mapping
-    for sensitive operations.
+    This is an identity *claim*, not a verified identity. The old TODO here
+    asked for a magic-link verifier on the self-hosted path; that is not being
+    built. Clerk already verifies the address and calls this from
+    /auth/clerk/callback, and a second home-grown verifier would be a second
+    thing to get wrong for a deployment shape (self-hosted multi-tenant) that
+    the rest of this module does not support anyway — DCR takes no auth, and
+    the store is in-process. The supported answers are: Clerk for verified
+    per-user tenants, or a single shared brain (audit ledger AU-2).
+
+    So the only callers that may reach this are ones holding a *verified*
+    address: the Clerk callback, or the self-hosted path when an operator has
+    explicitly set NUCLEUS_OAUTH_ALLOW_UNVERIFIED_EMAIL on a closed network.
     """
     normalized = email.strip().lower()
     digest = hashlib.sha256(normalized.encode()).hexdigest()[:16]
@@ -200,7 +394,19 @@ class _OAuthStore:
         redirect_uri: str,
         user: str = "operator",
         tenant_id: Optional[str] = None,
+        code_challenge: str = "",
+        code_challenge_method: str = "",
     ) -> str:
+        """Mint an authorization code, binding it to a PKCE challenge if given.
+
+        The challenge used to be read at /authorize and dropped on the floor —
+        never stored, never checked at /token (ledger AU-5). The metadata
+        endpoint advertised S256 support the whole time. An intercepted code
+        could therefore be redeemed by anyone, which is the exact attack PKCE
+        exists to stop, and open dynamic client registration meant the
+        client_secret check on /token did not distinguish a real app from an
+        attacker who had just registered one.
+        """
         code = secrets.token_urlsafe(32)
         self.codes[code] = {
             "client_id": client_id,
@@ -208,6 +414,8 @@ class _OAuthStore:
             "redirect_uri": redirect_uri,
             "user": user,
             "tenant_id": tenant_id,
+            "code_challenge": code_challenge or "",
+            "code_challenge_method": (code_challenge_method or "").upper(),
             "expires": int(time.time()) + 600,  # 10 min
         }
         return code
@@ -347,6 +555,7 @@ async def register(request: Request) -> JSONResponse:
     try:
         body = await request.json()
     except Exception:
+        logger.debug("Swallowed exception in register", exc_info=True)
         return JSONResponse({"error": "invalid_request", "error_description": "JSON body required"}, status_code=400)
 
     client_name = body.get("client_name", "")
@@ -398,6 +607,14 @@ async def authorize(request: Request) -> Any:
         response_type = form.get("response_type", "") or response_type
         scope = form.get("scope", "") or scope
         state = form.get("state", "") or state
+        # Carried as hidden fields by the consent form. Without these the
+        # challenge a client sent to GET /authorize would be lost across the
+        # consent POST, and the code would be minted unbound — PKCE silently
+        # dropped on exactly the path most users take (ledger AU-5).
+        code_challenge = form.get("code_challenge", "") or code_challenge
+        code_challenge_method = (
+            form.get("code_challenge_method", "") or code_challenge_method
+        )
         action = form.get("action", "")
         user_email = form.get("user_email", "")
     else:
@@ -459,9 +676,38 @@ async def authorize(request: Request) -> Any:
                 return RedirectResponse(f"{redirect_uri}?{urlencode(error_params)}", status_code=302)
             return JSONResponse(error_params, status_code=403)
 
-        # User consented — derive per-user tenant_id from email and issue code
-        tenant_id = _derive_tenant_id_from_email(user_email) if user_email else None
-        code = store.create_code(client_id, scope, redirect_uri, tenant_id=tenant_id)
+        # User consented — derive per-user tenant_id from email and issue code.
+        #
+        # The email here is typed into an unauthenticated form; nothing has
+        # verified the caller owns it. Binding a tenant to it let anyone mint a
+        # standing token for any victim's brain by typing their address
+        # (audit ledger AU-2). The Clerk path at /auth/clerk/callback does
+        # verify the address and still binds a tenant; this self-hosted path
+        # now refuses to unless the operator has explicitly accepted the risk.
+        #
+        # With no binding the code carries tenant_id=None, and _validate_oauth_token
+        # falls back to the documented single-tenant behaviour (NUCLEUS_TENANT_ID,
+        # else "oauth") — so the flow keeps working, it just stops handing out
+        # other people's tenants.
+        tenant_id = None
+        if user_email:
+            if _allow_unverified_email_tenants():
+                tenant_id = _derive_tenant_id_from_email(user_email)
+                logger.warning(
+                    "[oauth] Bound tenant from an UNVERIFIED email claim because "
+                    "NUCLEUS_OAUTH_ALLOW_UNVERIFIED_EMAIL is set. Anyone who can reach "
+                    "/authorize can claim any address. Enable Clerk for verified sign-in."
+                )
+            else:
+                logger.info(
+                    "[oauth] Ignoring self-asserted email for tenant routing; issuing a "
+                    "single-tenant code. Enable Clerk for verified per-user tenants."
+                )
+        code = store.create_code(
+            client_id, scope, redirect_uri, tenant_id=tenant_id,
+            code_challenge=code_challenge,
+            code_challenge_method=code_challenge_method,
+        )
         callback_params = {"code": code}
         if state:
             callback_params["state"] = state
@@ -483,6 +729,35 @@ async def authorize(request: Request) -> Any:
         for s in scopes_list
     )
     client_name = client.get("client_name", "Unknown app")
+
+    # The email field used to promise "Same email = same memory. No password
+    # needed." That promise is now only true on the path that honours the claim,
+    # and that path is off by default (AU-2). Saying it anyway would be a false
+    # statement on the screen a user reads before granting access, so the field
+    # is only rendered when the deployment actually routes on it — and when it
+    # does, the screen says plainly that nothing verifies the address.
+    #
+    # With the field absent the POST handler sees user_email="" and issues a
+    # single-tenant code, which is what this deployment shape means: one brain,
+    # shared by everyone who can complete the flow. Clerk is the supported way
+    # to get verified per-user tenants; see the module docstring.
+    if _allow_unverified_email_tenants():
+        email_field = """
+  <div class="email-field">
+    <label for="user_email">Your email</label>
+    <input type="email" id="user_email" name="user_email" placeholder="you@example.com" required>
+    <div class="hint"><strong>Not verified.</strong> This deployment routes you to a
+    Brain based on whatever address you type here, and nothing checks that it is
+    yours. Only use this on a network where you trust every caller.</div>
+  </div>"""
+    else:
+        email_field = """
+  <div class="email-field">
+    <div class="hint">This deployment serves a <strong>single shared Brain</strong>.
+    Everyone who completes this flow reaches the same memory. Per-user Brains
+    require verified sign-in (Clerk).</div>
+  </div>"""
+
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Nucleus — Authorize {client_name}</title>
 <style>
@@ -502,16 +777,13 @@ button {{ padding: 10px 24px; margin-right: 12px; font-size: 1em; border: none; 
 <h1>Authorize <em>{client_name}</em></h1>
 <p><strong>{client_name}</strong> wants to access your Nucleus Brain with these permissions:</p>
 <div class="scopes"><ul>{scope_items}</ul></div>
-<form method="POST">
-  <div class="email-field">
-    <label for="user_email">Your email</label>
-    <input type="email" id="user_email" name="user_email" placeholder="you@example.com" required>
-    <div class="hint">Determines which Brain you access. Same email = same memory. No password needed.</div>
-  </div>
+<form method="POST">{email_field}
   <input type="hidden" name="client_id" value="{client_id}">
   <input type="hidden" name="redirect_uri" value="{redirect_uri}">
   <input type="hidden" name="scope" value="{scope}">
   <input type="hidden" name="state" value="{state}">
+  <input type="hidden" name="code_challenge" value="{code_challenge}">
+  <input type="hidden" name="code_challenge_method" value="{code_challenge_method}">
   <button type="submit" name="action" value="allow" class="allow">Allow</button>
   <button type="submit" name="action" value="deny" class="deny">Deny</button>
 </form>
@@ -543,6 +815,13 @@ async def token(request: Request) -> JSONResponse:
 
         if entry["client_id"] != client_id:
             return JSONResponse({"error": "invalid_grant", "error_description": "Client mismatch"}, status_code=400)
+
+        pkce_error = _check_pkce(entry, form.get("code_verifier", ""))
+        if pkce_error:
+            return JSONResponse(
+                {"error": "invalid_grant", "error_description": pkce_error},
+                status_code=400,
+            )
 
         access, refresh, expires_in = store.issue_token(
             client_id, entry["scope"], tenant_id=entry.get("tenant_id")
@@ -655,6 +934,11 @@ async def clerk_callback(request: Request) -> Any:
         client_id, scope, redirect_uri,
         user=claims.get("sub", "clerk_user"),
         tenant_id=tenant_id,
+        # Round-tripped through the Clerk redirect as callback params, so the
+        # verified-sign-in path binds the code the same way the self-hosted one
+        # does. Dropping it here would leave Clerk users with unbound codes.
+        code_challenge=code_challenge,
+        code_challenge_method=code_challenge_method,
     )
 
     callback_params = {"code": code}
@@ -672,12 +956,15 @@ async def clerk_callback(request: Request) -> Any:
 
 # ── Route list for wiring into app.py ────────────────────────────────────
 
+# Every one of these goes through _gated: with NUCLEUS_OAUTH_ENABLED unset the
+# whole surface answers 404, including the discovery metadata, so a disabled
+# deployment does not advertise an authorization server it will not honour.
 oauth_routes = [
-    Route("/.well-known/oauth-protected-resource", protected_resource_metadata),
-    Route("/.well-known/oauth-authorization-server", authorization_server_metadata),
-    Route("/register", register, methods=["POST"]),
-    Route("/authorize", authorize, methods=["GET", "POST"]),
-    Route("/auth/clerk/callback", clerk_callback, methods=["GET"]),
-    Route("/token", token, methods=["POST"]),
-    Route("/revoke", revoke, methods=["POST"]),
+    Route("/.well-known/oauth-protected-resource", _gated(protected_resource_metadata)),
+    Route("/.well-known/oauth-authorization-server", _gated(authorization_server_metadata)),
+    Route("/register", _gated(register), methods=["POST"]),
+    Route("/authorize", _gated(authorize), methods=["GET", "POST"]),
+    Route("/auth/clerk/callback", _gated(clerk_callback), methods=["GET"]),
+    Route("/token", _gated(token), methods=["POST"]),
+    Route("/revoke", _gated(revoke), methods=["POST"]),
 ]

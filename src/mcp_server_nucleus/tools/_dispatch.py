@@ -228,6 +228,7 @@ def _ambient_health_line() -> str:
         _health_cache["expires"] = now + _HEALTH_CACHE_TTL
         return line
     except Exception:
+        logger.debug("Swallowed exception in _ambient_health_line", exc_info=True)
         return ""
 
 
@@ -561,6 +562,7 @@ def _record_orchestration_demand(
                 try:
                     sanitize_params(params, facade, action_str)
                 except Exception:
+                    logger.debug("Swallowed exception in _record_orchestration_demand", exc_info=True)
                     well_formed = False
 
         # SYNTHETIC MARKING — without this the instrument reports its own tests
@@ -606,6 +608,7 @@ def _record_orchestration_demand(
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
     except Exception:
+        logger.debug("Swallowed exception in _record_orchestration_demand", exc_info=True)
         pass
 
 
@@ -660,11 +663,60 @@ def _maybe_wrap_response(
     return json.dumps(envelope, indent=2, default=str)
 
 
+# Keys a facade action might carry a filesystem path under. The pre-facade
+# firewall looked for these at the top level of **kwargs; under the facade
+# pattern they arrive inside `params`.
+_PATH_PARAM_KEYS = ("path", "file_path", "target_file", "TargetFile",
+                    "AbsolutePath", "dest", "destination")
+
+# Actions that modify what they point at. Reading a protected path is not the
+# threat the watchdog exists to stop; writing to one is.
+_MUTATING_ACTION_HINTS = ("write", "delete", "remove", "fix", "patch", "edit",
+                          "move", "rename", "truncate", "overwrite", "install")
+
+
+def check_protected_path(module_name: str, action: str, params: dict) -> Optional[str]:
+    """Return a refusal message if this call would modify a watchdog-protected path.
+
+    The original guard lived in the pre-facade `CallableTool` wrapper
+    (core/tool_registration_impl.py) and was keyed to a flat shape that the facade
+    migration eliminated: it matched tool names like `nucleus_delete_file` and read
+    `kwargs["path"]`. Every real call now arrives as
+    `nucleus_governance(action="delete_file", params={"path": ...})`, so the tool
+    name never matched, and even if it had, the path was one level deeper than it
+    looked. The check could not fire (audit ledger CP-2).
+
+    Here it sits on the shape dispatch has already unpacked.
+    """
+    if not isinstance(params, dict):
+        return None
+    if not any(hint in action.lower() for hint in _MUTATING_ACTION_HINTS):
+        return None
+
+    raw = next((params[k] for k in _PATH_PARAM_KEYS if params.get(k)), None)
+    if not raw:
+        return None
+
+    try:
+        from pathlib import Path as _Path
+        target = str(_Path(str(raw)).resolve())
+        from ..runtime.hypervisor_ops import _watchdog
+        for protected in getattr(_watchdog, "protected_paths", []) or []:
+            protected = str(protected)
+            if target == protected or target.startswith(protected.rstrip("/") + "/"):
+                return (f"Nucleus RPC firewall: {module_name}.{action} refused — "
+                        f"{raw!r} is inside the watchdog-protected path {protected!r}")
+    except Exception as e:
+        # A firewall that cannot evaluate must say so rather than silently
+        # allowing. It still allows — failing closed here would brick every
+        # write when the watchdog is simply not running — but it is now visible.
+        logger.warning("protected-path check could not run for %s.%s: %s",
+                       module_name, action, e)
+    return None
+
+
 def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name: str) -> str:
     """Synchronous action dispatcher for facade tools.
-
-    if module_name in _ORCHESTRATION_FACADES:
-        _record_orchestration_demand(module_name, action, params, router)
 
     Args:
         action: The action name to execute.
@@ -694,6 +746,18 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
             "available_actions": sorted(router.keys()),
         }, indent=2)
         return _maybe_wrap_response(raw, ok=False, module_name=module_name, action="_none", error_type="validation_error")
+
+    # Protected-path firewall (CP-2). Runs before the handler, on the unpacked
+    # (module, action, params) shape rather than the pre-facade kwargs shape the
+    # old hook expected and could never match. Both dispatchers carry it: most
+    # facades route through async_dispatch, so guarding only the sync one would
+    # have left the majority of the surface open.
+    refusal = check_protected_path(module_name, action, params)
+    if refusal:
+        logger.warning("%s", refusal)
+        raw = json.dumps({"error": refusal}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name,
+                                    action=action, error_type="permission_error")
 
     # Rate limit check
     rate_error = _rate_limiter.check(module_name)
@@ -770,6 +834,7 @@ def dispatch(action: str, params: dict, router: Dict[str, Callable], module_name
         }, indent=2)
         return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
     except Exception as e:
+        logger.debug("Swallowed exception in dispatch", exc_info=True)
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
         raw = json.dumps({
@@ -815,6 +880,18 @@ async def async_dispatch(action: str, params: dict, router: Dict[str, Callable],
             "available_actions": sorted(router.keys()),
         }, indent=2)
         return _maybe_wrap_response(raw, ok=False, module_name=module_name, action="_none", error_type="validation_error")
+
+    # Protected-path firewall (CP-2). Runs before the handler, on the unpacked
+    # (module, action, params) shape rather than the pre-facade kwargs shape the
+    # old hook expected and could never match. Both dispatchers carry it: most
+    # facades route through async_dispatch, so guarding only the sync one would
+    # have left the majority of the surface open.
+    refusal = check_protected_path(module_name, action, params)
+    if refusal:
+        logger.warning("%s", refusal)
+        raw = json.dumps({"error": refusal}, indent=2)
+        return _maybe_wrap_response(raw, ok=False, module_name=module_name,
+                                    action=action, error_type="permission_error")
 
     # Rate limit check
     rate_error = _rate_limiter.check(module_name)
@@ -895,6 +972,7 @@ async def async_dispatch(action: str, params: dict, router: Dict[str, Callable],
         }, indent=2)
         return _maybe_wrap_response(raw, ok=False, module_name=module_name, action=action, error_type="validation_error")
     except Exception as e:
+        logger.debug("Swallowed exception in async_dispatch", exc_info=True)
         duration_ms = (time.perf_counter() - t0) * 1000
         _telemetry.record(module_name, action, duration_ms, str(e))
         raw = json.dumps({

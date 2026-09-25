@@ -15,6 +15,7 @@ Super-Tools Facade: 71 orchestration tools split into 5 sub-facades:
 """
 
 import json
+import logging
 import os
 import time
 from datetime import datetime
@@ -22,6 +23,8 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from ._dispatch import async_dispatch
+
+logger = logging.getLogger("nucleus.tools.orchestration")
 
 _VALID_TIERS = {"opus", "sonnet", "haiku"}
 
@@ -120,6 +123,28 @@ def register(mcp, helpers):
     """Register 5 orchestration sub-facade tools with the MCP server."""
     make_response = helpers["make_response"]
     _emit_event = helpers["emit_event"]
+
+    def _emit_telemetry(event, *args, **kwargs):
+        """Emit a telemetry event; log a failure instead of swallowing it.
+
+        Every call site in this module used to be an inline
+        ``try: _emit_event(...) except Exception: pass`` — 27 of them, in a file
+        with no logging of any kind (ledger QG-4). Telemetry must not break the
+        operation that emitted it, so the exception is still absorbed; what
+        changes is that it stops being invisible. A brain:// event stream that
+        had quietly stopped receiving writes was indistinguishable from a quiet
+        system.
+
+        Mirrors what tools/_dispatch.py already does for handler exceptions, so
+        both halves of the tool path now report a failure the same way.
+        """
+        try:
+            _emit_event(event, *args, **kwargs)
+        except Exception:
+            logger.warning(
+                "telemetry event %r was not emitted; brain:// event streams will "
+                "be missing it", event, exc_info=True,
+            )
     get_brain_path = helpers["get_brain_path"]
     get_orch = helpers["get_orch"]
 
@@ -169,12 +194,9 @@ def register(mcp, helpers):
         try:
             brain = get_brain_path()
             count = commitment_ledger.auto_archive_stale(brain)
-            try:
-                _emit_event("commitments_archived", "nucleus_orchestration",
+            _emit_telemetry("commitments_archived", "nucleus_orchestration",
                             {"action": "archive_stale", "archived_count": count},
                             description=f"Archived {count} stale commitments")
-            except Exception:
-                pass
             return f"✅ Archive complete. Archived {count} stale items."
         except Exception as e:
             return make_response(False, error=str(e))
@@ -277,10 +299,7 @@ def register(mcp, helpers):
         try:
             brain = get_brain_path()
             commitment = commitment_ledger.add_commitment(brain, source_file="manual", source_line=0, description=description, comm_type=loop_type, source="manual", priority=priority)
-            try:
-                _emit_event("commitment_created", "brain_add_loop", {"commitment_id": commitment['id'], "type": loop_type, "description": description[:60], "priority": priority}, description=f"New {loop_type}: {description[:40]}")
-            except Exception:
-                pass
+            _emit_telemetry("commitment_created", "brain_add_loop", {"commitment_id": commitment['id'], "type": loop_type, "description": description[:60], "priority": priority}, description=f"New {loop_type}: {description[:40]}")
             return f"✅ Loop created!\n\n**ID:** `{commitment['id']}`\n**Type:** {loop_type}\n**Description:** {description}\n**Priority:** {priority}\n**Suggested:** {commitment['suggested_action']} - {commitment['suggested_reason']}"
         except Exception as e:
             return f"Error: {e}"
@@ -304,13 +323,10 @@ def register(mcp, helpers):
                 selected["started_at"] = datetime.now().isoformat()
                 selected["status"] = "active"
                 commitment_ledger.set_challenge(brain, selected)
-                try:
-                    _emit_event("weekly_challenge_set", "nucleus_orchestration",
+                _emit_telemetry("weekly_challenge_set", "nucleus_orchestration",
                                 {"action": "weekly_challenge", "challenge_id": challenge_id,
                                  "title": selected.get('title')},
                                 description=f"Set weekly challenge: {selected.get('title', challenge_id)}")
-                except Exception:
-                    pass
                 return f"✅ **Challenge Accepted: {selected['title']}**\n\nGoal: {selected['description']}\nGo get it!"
             challenge = commitment_ledger.load_challenge(brain)
             if not challenge:
@@ -405,12 +421,9 @@ Actions:
         if tier.lower() not in valid_tiers:
             return f"❌ Invalid tier '{tier}'. Valid tiers: {', '.join(valid_tiers)}"
         os.environ["NUCLEUS_LLM_TIER"] = tier.lower()
-        try:
-            _emit_event("llm_tier_set", "nucleus_telemetry",
+        _emit_telemetry("llm_tier_set", "nucleus_telemetry",
                         {"action": "set_llm_tier", "tier": tier.lower()},
                         description=f"LLM tier changed to {tier.lower()}")
-        except Exception:
-            pass
         return f"✅ LLM tier set to '{tier}'."
 
     def _h_get_llm_status():
@@ -432,6 +445,7 @@ Actions:
                     output += f"| {tier_name} | {result.get('model', 'unknown')} | {se} {result.get('status')} | {lat} |\n"
                 output += f"\n**Recommended:** {status.get('recommended_tier', 'standard')}\n"
             except Exception as e:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 output += f"Could not load tier status: {e}\n"
         else:
             output += "No benchmark data available.\n"
@@ -444,14 +458,11 @@ Actions:
     def _h_request_handoff(to_agent, context, request, priority=3, artifacts=None):
         from ..runtime.slot_ops import _brain_request_handoff_impl
         result = _brain_request_handoff_impl(to_agent, context, request, priority, artifacts)
-        try:
-            _emit_event("handoff_requested", "nucleus_telemetry",
+        _emit_telemetry("handoff_requested", "nucleus_telemetry",
                         {"action": "request_handoff", "to_agent": to_agent,
                          "priority": priority,
                          "context_preview": (context or "")[:80]},
                         description=f"Handoff requested to {to_agent} (priority={priority})")
-        except Exception:
-            pass
         return result
 
     def _h_get_handoffs(agent_id=None):
@@ -465,13 +476,10 @@ Actions:
     def _h_dispatch_metrics():
         from ._dispatch import get_dispatch_telemetry
         metrics = get_dispatch_telemetry().get_metrics()
-        try:
-            _emit_event("dispatch_metrics_queried", "nucleus_telemetry",
+        _emit_telemetry("dispatch_metrics_queried", "nucleus_telemetry",
                         {"action": "dispatch_metrics",
                          "metric_count": len(metrics) if isinstance(metrics, (dict, list)) else 0},
                         description="Dispatch telemetry snapshot taken")
-        except Exception:
-            pass
         return json.dumps(metrics, indent=2, default=str)
 
     def _h_rate_limit_status():
@@ -526,13 +534,10 @@ Actions:
     def _h_slot_complete(slot_id, task_id, outcome="success", notes=None):
         from ..runtime.slot_ops import _brain_slot_complete_impl
         result = _brain_slot_complete_impl(slot_id, task_id, outcome, verification_notes=notes)
-        try:
-            _emit_event("slot_completed", "nucleus_slots",
+        _emit_telemetry("slot_completed", "nucleus_slots",
                         {"action": "slot_complete", "slot_id": slot_id,
                          "task_id": task_id, "outcome": outcome},
                         description=f"Slot {slot_id} completed task {task_id} ({outcome})")
-        except Exception:
-            pass
         next_task = _brain_orchestrate_impl(slot_id=slot_id, mode="auto")
         return f"{result}\n\nNext Task:\n{next_task}"
 
@@ -545,84 +550,63 @@ Actions:
         reset_at = time.time() + (reset_hours * 3600)
         reset_at_str = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(reset_at))
         result = _brain_slot_exhaust_impl(slot_id, reason="Model usage limit", reset_at=reset_at_str)
-        try:
-            _emit_event("slot_exhausted", "nucleus_slots",
+        _emit_telemetry("slot_exhausted", "nucleus_slots",
                         {"action": "slot_exhaust", "slot_id": slot_id,
                          "reset_hours": reset_hours, "reset_at": reset_at_str},
                         description=f"Slot {slot_id} exhausted; reset in {reset_hours}h")
-        except Exception:
-            pass
         return result
 
     def _h_autopilot_sprint(slots=None, mode="auto", halt_on_blocker=True, halt_on_tier_mismatch=False, max_tasks_per_slot=10, budget_limit=None, dry_run=False):
         from ..runtime.slot_ops import _brain_autopilot_sprint_impl
         result = _brain_autopilot_sprint_impl(slots, mode, halt_on_blocker, halt_on_tier_mismatch, max_tasks_per_slot, budget_limit, dry_run)
-        try:
-            _emit_event("autopilot_sprint_started", "nucleus_slots",
+        _emit_telemetry("autopilot_sprint_started", "nucleus_slots",
                         {"action": "autopilot_sprint", "slots": slots, "mode": mode,
                          "max_tasks_per_slot": max_tasks_per_slot,
                          "budget_limit": budget_limit, "dry_run": dry_run},
                         description=f"Autopilot sprint fired (mode={mode}, dry_run={dry_run})")
-        except Exception:
-            pass
         return result
 
     def _h_force_assign(slot_id, task_id, acknowledge_risk=False):
         from ..runtime.slot_ops import _brain_force_assign_impl
         result = _brain_force_assign_impl(slot_id, task_id, acknowledge_risk)
-        try:
-            _emit_event("slot_force_assigned", "nucleus_slots",
+        _emit_telemetry("slot_force_assigned", "nucleus_slots",
                         {"action": "force_assign", "slot_id": slot_id,
                          "task_id": task_id, "acknowledge_risk": acknowledge_risk},
                         description=f"Force-assigned task {task_id} → slot {slot_id}")
-        except Exception:
-            pass
         return result
 
     def _h_autopilot_sprint_v2(slots=None, mode="auto", halt_on_blocker=True, halt_on_tier_mismatch=False, max_tasks_per_slot=10, budget_limit=None, time_limit_hours=None, dry_run=False):
         result = _brain_autopilot_sprint_v2_impl(slots, mode, halt_on_blocker, halt_on_tier_mismatch, max_tasks_per_slot, budget_limit, time_limit_hours, dry_run)
-        try:
-            _emit_event("autopilot_sprint_v2_started", "nucleus_slots",
+        _emit_telemetry("autopilot_sprint_v2_started", "nucleus_slots",
                         {"action": "autopilot_sprint_v2", "slots": slots, "mode": mode,
                          "max_tasks_per_slot": max_tasks_per_slot,
                          "budget_limit": budget_limit,
                          "time_limit_hours": time_limit_hours, "dry_run": dry_run},
                         description=f"Autopilot sprint v2 fired (mode={mode}, dry_run={dry_run})")
-        except Exception:
-            pass
         return result
 
     def _h_start_mission(name, goal, task_ids, slot_ids=None, budget_limit=10.0, time_limit_hours=4.0, success_criteria=None):
         result = _brain_start_mission_impl(name, goal, task_ids, slot_ids, budget_limit, time_limit_hours, success_criteria)
-        try:
-            _emit_event("mission_started", "nucleus_slots",
+        _emit_telemetry("mission_started", "nucleus_slots",
                         {"action": "start_mission", "name": name,
                          "task_count": len(task_ids) if hasattr(task_ids, '__len__') else 0,
                          "slot_ids": slot_ids, "budget_limit": budget_limit,
                          "time_limit_hours": time_limit_hours},
                         description=f"Mission started: {name}")
-        except Exception:
-            pass
         return result
 
     def _h_halt_sprint(reason="User requested halt"):
         result = _brain_halt_sprint_impl(reason)
-        try:
-            _emit_event("sprint_halted", "nucleus_slots",
+        _emit_telemetry("sprint_halted", "nucleus_slots",
                         {"action": "halt_sprint", "reason": reason},
                         description=f"Sprint halted: {reason[:60]}")
-        except Exception:
-            pass
         return result
 
     def _h_resume_sprint(sprint_id=None):
         result = _brain_resume_sprint_impl(sprint_id)
-        try:
-            _emit_event("sprint_resumed", "nucleus_slots",
+        _emit_telemetry("sprint_resumed", "nucleus_slots",
                         {"action": "resume_sprint", "sprint_id": sprint_id},
                         description=f"Sprint resumed (id={sprint_id})")
-        except Exception:
-            pass
         return result
 
     SLOTS_ROUTER = {
@@ -733,15 +717,12 @@ Actions:
         try:
             from mcp_server_nucleus.runtime.capabilities.marketing_engine import brain_synthesize_strategy as _impl
             result = _impl(project_root=str(Path.cwd()), focus_topic=focus_topic)
-            try:
-                _emit_event("strategy_synthesized", "nucleus_infra",
+            _emit_telemetry("strategy_synthesized", "nucleus_infra",
                             {"action": "synthesize_strategy",
                              "focus_topic": focus_topic,
                              "status": result.get("status"),
                              "path": result.get("path")},
                             description=f"Strategy synthesis: {result.get('status', 'unknown')}")
-            except Exception:
-                pass
             return f"✅ Strategy Updated.\nPath: {result.get('path')}" if result.get("status") == "success" else f"❌ Failed: {result.get('message')}"
         except Exception as e:
             return f"❌ Error: {e}"
@@ -758,13 +739,10 @@ Actions:
         try:
             from mcp_server_nucleus.runtime.capabilities.marketing_engine import brain_optimize_workflow as _impl
             result = _impl(project_root=str(Path.cwd()))
-            try:
-                _emit_event("workflow_optimized", "nucleus_infra",
+            _emit_telemetry("workflow_optimized", "nucleus_infra",
                             {"action": "optimize_workflow",
                              "status": result.get("status")},
                             description=f"Workflow optimization: {result.get('status', 'unknown')}")
-            except Exception:
-                pass
             if result.get("status") == "success":
                 return f"✅ Workflow Optimized."
             elif result.get("status") == "skipped":
@@ -777,14 +755,11 @@ Actions:
         try:
             from ..runtime.strategy import _manage_strategy
             result = _manage_strategy(action, content)
-            try:
-                _emit_event("strategy_managed", "nucleus_infra",
+            _emit_telemetry("strategy_managed", "nucleus_infra",
                             {"action": "manage_strategy",
                              "sub_action": action,
                              "has_content": content is not None},
                             description=f"Strategy {action} executed")
-            except Exception:
-                pass
             return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
         except Exception as e:
             return json.dumps({"error": f"Tool execution failed: {str(e)}"})
@@ -793,14 +768,11 @@ Actions:
         try:
             from ..runtime.strategy import _update_roadmap
             result = _update_roadmap(action, item)
-            try:
-                _emit_event("roadmap_updated", "nucleus_infra",
+            _emit_telemetry("roadmap_updated", "nucleus_infra",
                             {"action": "update_roadmap",
                              "sub_action": action,
                              "has_item": item is not None},
                             description=f"Roadmap {action} executed")
-            except Exception:
-                pass
             return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
         except Exception as e:
             return json.dumps({"error": f"Tool execution failed: {str(e)}"})
@@ -809,13 +781,10 @@ Actions:
         try:
             from ..runtime.growth_ops import growth_pulse
             result = growth_pulse(write_engrams=write_engrams)
-            try:
-                _emit_event("growth_pulse_run", "nucleus_infra",
+            _emit_telemetry("growth_pulse_run", "nucleus_infra",
                             {"action": "growth_pulse",
                              "write_engrams": write_engrams},
                             description="Growth pulse pipeline executed")
-            except Exception:
-                pass
             return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
         except Exception as e:
             return json.dumps({"error": f"Growth pulse failed: {str(e)}"})
@@ -824,13 +793,10 @@ Actions:
         try:
             from ..runtime.growth_ops import capture_metrics
             result = capture_metrics(write_engram=write_engram)
-            try:
-                _emit_event("metrics_captured", "nucleus_infra",
+            _emit_telemetry("metrics_captured", "nucleus_infra",
                             {"action": "capture_metrics",
                              "write_engram": write_engram},
                             description="Growth metrics captured")
-            except Exception:
-                pass
             return json.dumps(result, indent=2, default=str) if isinstance(result, dict) else str(result)
         except Exception as e:
             return json.dumps({"error": f"Capture metrics failed: {str(e)}"})
@@ -922,8 +888,7 @@ Actions:
             cost = exec_mgr.complete_execution(agent_id, "completed")
             if cost:
                 output += f"\n--- Cost ---\n**Tokens:** {cost.total_tokens} | **Est. Cost:** ${cost.estimated_cost_usd:.6f}\n"
-            try:
-                _emit_event("agent_spawned", "nucleus_agents",
+            _emit_telemetry("agent_spawned", "nucleus_agents",
                             {"action": "spawn_agent", "agent_id": agent_id,
                              "persona": persona or "default",
                              "intent_preview": (intent or "")[:80],
@@ -931,8 +896,6 @@ Actions:
                              "tokens": getattr(cost, 'total_tokens', None) if cost else None,
                              "cost_usd": getattr(cost, 'estimated_cost_usd', None) if cost else None},
                             description=f"Spawned agent {agent_id} (persona={persona or 'default'})")
-            except Exception:
-                pass
             return output
         except Exception as e:
             exec_mgr.complete_execution(agent_id, "error")
@@ -956,15 +919,12 @@ Actions:
             for i in issues:
                 description += f"- [{i.get('severity')}] {i.get('description')}\n"
             result = _trigger_agent_impl(agent="developer", task_description=description, context_files=[path_str, target])
-            try:
-                _emit_event("critique_applied", "nucleus_agents",
+            _emit_telemetry("critique_applied", "nucleus_agents",
                             {"action": "apply_critique",
                              "target": target,
                              "issue_count": len(issues),
                              "review_path": path_str},
                             description=f"Applied {len(issues)} critique fixes to {target}")
-            except Exception:
-                pass
             return json.dumps({"success": True, "message": result}, default=str)
         except Exception as e:
             return json.dumps({"error": f"Failed: {str(e)}"})
@@ -973,14 +933,11 @@ Actions:
         try:
             orch = get_orch()
             result = await orch.start_mission(mission, agents=agents)
-            try:
-                _emit_event("swarm_orchestrated", "nucleus_agents",
+            _emit_telemetry("swarm_orchestrated", "nucleus_agents",
                             {"action": "orchestrate_swarm",
                              "mission_preview": (mission or "")[:80],
                              "agent_count": len(agents) if agents else 0},
                             description=f"Swarm mission started ({len(agents) if agents else 0} agents)")
-            except Exception:
-                pass
             return result
         except Exception as e:
             return make_response(False, error=f"Swarm failed: {str(e)}")
@@ -1013,6 +970,7 @@ Actions:
             try:
                 critique = json.loads(text)
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 critique = {"status": "WARN", "score": 0, "summary": text, "issues": []}
             _emit_event("code_critiqued", "critic", {"file": file_path, "status": critique.get("status"), "score": critique.get("score")})
             return json.dumps(critique, indent=2)
@@ -1036,6 +994,7 @@ Actions:
                                 lines += [f"### 🪪 Your Identity", f"- **Thread:** `{conversation_id[:12]}...`", f"- **Role:** {parts[3]}", f"- **Focus:** {parts[2]}", ""]
                                 break
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 pass
         try:
             from ..runtime.common import get_brain_path as _gbp2
@@ -1050,6 +1009,7 @@ Actions:
                         lines.append(f"- `{sid[:8]}`: {info.get('focus', 'Unknown')}")
                     lines.append("")
         except Exception:
+            logger.debug("Swallowed exception in register", exc_info=True)
             pass
         in_progress = _list_tasks(status="IN_PROGRESS")
         if in_progress:
@@ -1103,18 +1063,16 @@ Actions:
                 with open(handoffs_path, "w", encoding='utf-8') as f:
                     json.dump(handoffs, f, indent=2, ensure_ascii=False)
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 pass
             target_msg = f"for session {target_session_id[:8]}" if target_session_id else "to shared queue"
-            try:
-                _emit_event("task_handed_off", "nucleus_agents",
+            _emit_telemetry("task_handed_off", "nucleus_agents",
                             {"action": "handoff_task",
                              "task_id": task.get("id"),
                              "target_session_id": target_session_id,
                              "priority": priority,
                              "description_preview": (task_description or "")[:80]},
                             description=f"Task {task.get('id')} handed off {target_msg}")
-            except Exception:
-                pass
             return f"✅ Task handed off {target_msg}. ID: {task.get('id')}"
         except Exception as e:
             return f"Error: {e}"
@@ -1126,13 +1084,20 @@ Actions:
             try:
                 status = json.loads(result).get("status")
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 pass
-            _emit_event("code_fixed", "nucleus_agents",
-                        {"action": "fix_code", "file": file_path,
-                         "status": status,
-                         "issues_preview": (issues_context or "")[:80]},
-                        description=f"Auto-fix applied to {file_path} (status={status})")
+            # Routed through the helper even though the enclosing try would also
+            # absorb it: that outer handler guards several statements and ends in
+            # a bare pass, so a telemetry failure here was silent in exactly the
+            # way QG-4 describes. The helper never raises, so the outer guard is
+            # left alone for the statements it actually needs to cover.
+            _emit_telemetry("code_fixed", "nucleus_agents",
+                            {"action": "fix_code", "file": file_path,
+                             "status": status,
+                             "issues_preview": (issues_context or "")[:80]},
+                            description=f"Auto-fix applied to {file_path} (status={status})")
         except Exception:
+            logger.debug("Swallowed exception in register", exc_info=True)
             pass
         return result
 
@@ -1140,8 +1105,7 @@ Actions:
                         auto_assign=False, skip_dedup=False, dry_run=False):
         result = _brain_ingest_tasks_impl(source, source_type, session_id,
                                           auto_assign, skip_dedup, dry_run)
-        try:
-            _emit_event("tasks_ingested", "nucleus_agents",
+        _emit_telemetry("tasks_ingested", "nucleus_agents",
                         {"action": "ingest_tasks",
                          "source_preview": str(source)[:80],
                          "source_type": source_type,
@@ -1149,31 +1113,23 @@ Actions:
                          "auto_assign": auto_assign,
                          "dry_run": dry_run},
                         description=f"Ingest tasks (type={source_type}, dry_run={dry_run})")
-        except Exception:
-            pass
         return result
 
     def _h_rollback_ingestion(batch_id, reason=None):
         result = _brain_rollback_ingestion_impl(batch_id, reason)
-        try:
-            _emit_event("ingestion_rolled_back", "nucleus_agents",
+        _emit_telemetry("ingestion_rolled_back", "nucleus_agents",
                         {"action": "rollback_ingestion",
                          "batch_id": batch_id,
                          "reason": (reason or "")[:80]},
                         description=f"Rolled back ingestion batch {batch_id}")
-        except Exception:
-            pass
         return result
 
     def _h_set_alert_threshold(metric, level, value):
         result = _brain_set_alert_threshold_impl(metric, level, value)
-        try:
-            _emit_event("alert_threshold_set", "nucleus_agents",
+        _emit_telemetry("alert_threshold_set", "nucleus_agents",
                         {"action": "set_alert_threshold",
                          "metric": metric, "level": level, "value": value},
                         description=f"Alert threshold {metric}/{level} = {value}")
-        except Exception:
-            pass
         return result
 
     AGENTS_ROUTER = {

@@ -4,6 +4,8 @@ Extracted from __init__.py (brain_orchestrate).
 Contains:
 - _brain_orchestrate_impl (278 lines — the largest single _impl function)
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -295,6 +297,7 @@ def _brain_orchestrate_impl(
                         if boost > 0:
                             task['_strategy_boost'] = round(boost, 2)
             except Exception:
+                logger.debug("Swallowed exception in _brain_orchestrate_impl", exc_info=True)
                 pass  # Fall back to raw priority
         available.sort(key=lambda t: t.get("_effective_priority", t.get("priority", 99)))
         if strategy_engrams:

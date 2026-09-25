@@ -124,6 +124,7 @@ def _archive_resolved_files() -> Dict:
                     f.rename(dest)
                     moved_files.append(f.name)
                 except Exception as e:
+                    logger.debug("Swallowed exception in _archive_resolved_files", exc_info=True)
                     skipped_files.append({"file": f.name, "error": str(e)})
         
         # Also check for metadata.json files (Antigravity auto-generated)
@@ -142,6 +143,7 @@ def _archive_resolved_files() -> Dict:
                     f.rename(dest)
                     moved_files.append(f.name)
                 except Exception as e:
+                    logger.debug("Swallowed exception in _archive_resolved_files", exc_info=True)
                     skipped_files.append({"file": f.name, "error": str(e)})
         
         # Log the consolidation event

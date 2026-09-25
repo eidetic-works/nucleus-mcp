@@ -46,6 +46,9 @@ tamper-evidence (same convention as capture_census).
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import argparse
 import json
 import sys
@@ -129,6 +132,7 @@ def _scan_qualifying_envelopes(
         try:
             msg = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Swallowed exception in _scan_qualifying_envelopes", exc_info=True)
             errors += 1
             continue
         total += 1

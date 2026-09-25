@@ -38,6 +38,7 @@ class LifecycleManager:
                 try:
                     return json.loads(self.ledger_path.read_text())
                 except Exception:
+                    logger.debug("Swallowed exception in _load_ledger", exc_info=True)
                     pass
             return {}
 

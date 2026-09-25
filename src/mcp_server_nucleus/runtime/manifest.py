@@ -7,9 +7,9 @@ so consumers cannot misattribute state.
 
 Schema (v2):
     brain_id: nucleus-primary
-    brain_owner: eidetic-works/mcp-server-nucleus
+    brain_owner: your-org/your-repo
     tracks_projects:
-      - eidetic-works/mcp-server-nucleus
+      - your-org/your-repo
     primary_brain: true
     schema_version: 2
     created_at: 2026-04-20T12:00:00Z

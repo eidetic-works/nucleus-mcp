@@ -1,0 +1,66 @@
+{
+  "$comment": "Operator-pain fixtures extracted from cc-peer + cc-main dogfood loops 2026-06-02 + 2026-06-03. Each fixture captures a query that EMPIRICALLY surfaced #440 temporal-relevance bug. expected_top_keys left empty as MARKER — populated when running against operator brain via a follow-up corpus-curation pass (operator-keyboard or guided extraction). Today's value: baseline_bm25 returns ~0 hits for these; candidate rankers tested whether they meaningfully improve the position of recent relevant content even when we don't know exact keys.",
+  "version": "1.0.0",
+  "fixtures": [
+    {
+      "fixture_id": "pain_cc_peer_20260602_scrubber_consolidation",
+      "query": "scrubber consolidation HARD_BLOCK_FLOOR brand_identity_routing",
+      "expected_top_keys": [],
+      "description": "cc-peer 2026-06-02 06:00Z mandatory pre-review consumption query during PR #438 verdict. Returned 5 hits ALL from 2026-04-21/22 about decomposer/cache_control — zero relevance. Filed as Bug #2 #440."
+    },
+    {
+      "fixture_id": "pain_cc_main_20260602_fts5_temporal",
+      "query": "FTS5 temporal-relevance ranking quality recall",
+      "expected_top_keys": [],
+      "description": "cc-main 2026-06-02 04:10Z finding — recall returned 2-month-old generic task above week-old relevant feedback memory file. Original finding that confirmed cross-surface 2-of-2 reproduction with cc-peer 06:00Z."
+    },
+    {
+      "fixture_id": "pain_cc_main_loop6_recall_activity_role_main",
+      "query": "role main activity since 24h",
+      "expected_top_keys": [],
+      "description": "cc-main Loop #6 2026-06-03 08:05Z — recall_activity returned only ≤22h-old items despite 4 today's remember() writes. Direct file check confirmed history.jsonl had new writes but memories.db was stale (fixed via #447 wedge mtime hardening). #440 is the secondary issue: even when projection IS fresh, ranking quality means recent specific content competes against ancient generic content."
+    },
+    {
+      "fixture_id": "pain_specific_recent_topic_w0",
+      "query": "CCR W0 subscription nag PreToolUse hook",
+      "expected_top_keys": [],
+      "description": "Highly-specific recent-day query (CCR W0 work shipped 2026-06-03). Today's recall should surface PR #454 / W0 spec / hook design relays at top; baseline likely returns older generic 'hook' or 'subscription' content."
+    },
+    {
+      "fixture_id": "pain_specific_recent_topic_phase_2",
+      "query": "Phase 2 scrubber consolidation cross-surface harness",
+      "expected_top_keys": [],
+      "description": "Highly-specific Phase 2 (2026-06-02) work query. Recent relevant: PR #438 inventory + PR #441-#451 phase 2 artifacts. Baseline likely buries them under older scrubber-related decomposer content."
+    },
+    {
+      "fixture_id": "pain_specific_recent_topic_bug_4",
+      "query": "search_engrams OOB drop e.payload Direction A",
+      "expected_top_keys": [],
+      "description": "Bug #4 work (2026-06-02 PR #75). Recent relevant: cc-main diagnosis + my fix verdict + cc-peer retro-concur. Baseline may surface unrelated 'search' content from months ago."
+    },
+    {
+      "fixture_id": "pain_specific_recent_topic_adr_0034",
+      "query": "ADR-0034 CCR coordination runtime fleet wake",
+      "expected_top_keys": [],
+      "description": "ADR-0034 work (2026-06-03 cc-main draft + my review + agy uptake). Recent relevant: cc-peer pre-mortem + my CONCUR-WITH-4-AMENDMENTS verdict + agy ACK + adapter contract spec."
+    },
+    {
+      "fixture_id": "pain_agy_uptake_pattern",
+      "query": "agy ghost timeout PR_C lane takeover",
+      "expected_top_keys": [],
+      "description": "agy PR_C precedent (2026-06-02 17h ghost → op-assistant lane takeover). Recent relevant: my W3-4 invitation + ghost-timeout-honest-correction relay where I admitted treating agy as auto-polling."
+    },
+    {
+      "fixture_id": "pain_pseudonymity_guard_443",
+      "query": "pseudonymity guard empty file silent exit",
+      "expected_top_keys": [],
+      "description": "#443 fix (2026-06-03 PR #451). Recent relevant: my diagnosis + 2-line fix + 7-test regression suite. Baseline may rank pre-#443 pseudonymity-guard discussion above the actual fix work."
+    },
+    {
+      "fixture_id": "pain_w1_2_perf_basename",
+      "query": "W1-2 v1.1 perf bug basename subprocess",
+      "expected_top_keys": [],
+      "description": "CCR W1-2 v1.1 perf-fix (2026-06-03 PR #456). Recent relevant: my dogfood-discovery + diagnosis + ${f##*/} fix + cc-peer ACK as loop-7. Baseline may bury under generic 'perf' or 'basename' content."
+    }
+  ]
+}

@@ -12,6 +12,50 @@ Nucleus is fully open source under the MIT license. We welcome contributions of 
 - ✅ **Documentation**: Improvements always welcome
 - ✅ **Integrations**: Add support for new AI tools
 
+## Start here: two commands
+
+Run these from the **repository root** (one level above this package — the
+scripts live there because they cover the whole repo, not just this directory):
+
+```bash
+bash scripts/verify.sh          # where does this repo stand, right now?
+bash scripts/install_hooks.sh   # enable the commit guards (run once after cloning)
+```
+
+`verify.sh` needs nothing but this repo — no other checkout, no shared config, no
+prior knowledge. It builds a clean virtualenv, installs the package, runs the
+suite, and reports:
+
+* the branch and commit it examined, so a result can never be about a tree you
+  did not mean to test
+* the interpreter it used, and whether it satisfies `requires-python` — it will
+  look for a newer Python on your PATH before telling you to install one
+* failures that are **new**, measured against `.known-failures.txt`, so you can
+  tell your breakage from the ones you inherited
+* three outcomes, not two: `OK`, `NOT OK`, and `INSUFFICIENT` (exit 3) when the
+  environment — usually no network — stopped the run before anything was checked.
+  A red result you cannot act on is worse than an honest "nothing was verified".
+
+`install_hooks.sh` points git at this repo's own `.githooks/`. The secret scan
+lives in the repo and runs for everyone. The identity scan is personal to the
+maintainer and loads from outside it, so you do not need it and will not be asked
+for it — the hook says so and carries on.
+
+## Before you open a pull request
+
+```bash
+bash scripts/verify.sh                                   # must not add new failures
+python3 -m pytest tests/test_split_regression_guards.py   # no absolute home paths, no sibling-repo literals
+```
+
+Two rules the tests here enforce, both learned the hard way:
+
+* **No absolute home-directory paths in shipped code.** A clone must
+  not carry paths that exist on one machine.
+* **Every gate ships with the input that makes it fail.** A check that has never
+  been observed failing is not known to work; roughly a third of this project's
+  accumulated postmortems are a correct check pointed at the wrong object.
+
 ## How to Contribute
 
 ### 1. Bug Reports
@@ -153,3 +197,17 @@ By contributing to Nucleus, you agree that your contributions will be licensed u
 *Thank you for helping make Nucleus better!*
 
 *— The Nucleus Team*
+
+## Sign your work (DCO)
+
+Every commit in a pull request needs a `Signed-off-by` line certifying the
+Developer Certificate of Origin. Add it with:
+
+```bash
+git commit -s -m "your message"
+```
+
+This appends `Signed-off-by: Your Name <you@example.com>` using the name and
+email in your git config. The full certificate text is in [DCO.md](../DCO.md).
+
+A pull request whose commits are not signed off cannot be merged.

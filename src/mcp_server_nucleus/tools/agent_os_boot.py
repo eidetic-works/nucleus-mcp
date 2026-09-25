@@ -115,6 +115,10 @@ def register(mcp, helpers):
             "The OS recalls memory, mediates the model call, labels the response "
             "with a referee verdict, and records the turn. Stage 4 platform primitive."
         ),
+        # NOT read-only: this boots the agent OS, mediates a model call and
+        # RECORDS the turn, so it writes. destructiveHint stays False because it
+        # appends rather than removing or overwriting anything.
+        annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
     )
     def nucleus_agent_os_boot(
         prompt: str,

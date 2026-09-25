@@ -1,0 +1,3 @@
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"valid"}]}}
+not json
+{"type":"user","message":{"content":"empty role still ok"}}

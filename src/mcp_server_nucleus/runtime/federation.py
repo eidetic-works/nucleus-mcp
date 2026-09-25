@@ -442,6 +442,7 @@ class NetworkManager:
             try:
                 await writer.wait_closed()
             except Exception:
+                logger.debug("Swallowed exception in _handle_connection", exc_info=True)
                 pass
     
     def _stamp_federation_token(self, message: Dict[str, Any]) -> None:
@@ -500,6 +501,7 @@ class NetworkManager:
                     writer.close()
                     await writer.wait_closed()
             except Exception:
+                logger.debug("Swallowed exception in send_message", exc_info=True)
                 pass
 
 
@@ -1381,6 +1383,7 @@ class FederationEngine:
                     context_hash, _components = self._context_manager.compute_world_state_hash()
                 except Exception:
                     # Fall back to merkle root if context-manager hash fails.
+                    logger.debug("Swallowed exception in record_decision", exc_info=True)
                     context_hash = self.sync.merkle_tree.get_root() or ""
             metadata = {
                 "event_type": event_type,

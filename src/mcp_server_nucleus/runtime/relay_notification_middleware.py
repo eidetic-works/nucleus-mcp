@@ -173,6 +173,7 @@ def _get_session_id(context: MiddlewareContext[Any]) -> str:
         if ctx and hasattr(ctx, "session_id") and ctx.session_id:
             return str(ctx.session_id)
     except Exception:
+        logger.debug("Swallowed exception in _get_session_id", exc_info=True)
         pass
     return "default"
 
@@ -189,6 +190,7 @@ def _resolve_inbox(ctx: Any) -> str | None:
             if agent_id:
                 return resolve_canonical_inbox_name(agent_id)
     except Exception:
+        logger.debug("Swallowed exception in _resolve_inbox", exc_info=True)
         pass
 
     # Fall back to session role detection
@@ -208,6 +210,7 @@ def _resolve_inbox(ctx: Any) -> str | None:
             }
             return role_map.get(role, f"claude_code_{role}")
     except Exception:
+        logger.debug("Swallowed exception in _resolve_inbox", exc_info=True)
         pass
 
     return None

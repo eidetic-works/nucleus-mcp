@@ -26,6 +26,9 @@ Net new logic is plumbing only.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 import os
 import shutil
@@ -117,6 +120,7 @@ def _pid_create_time(pid: int) -> Optional[str]:
     except ImportError:
         pass
     except Exception:
+        logger.debug("Swallowed exception in _pid_create_time", exc_info=True)
         return None
     try:
         proc = subprocess.run(
@@ -126,6 +130,7 @@ def _pid_create_time(pid: int) -> Optional[str]:
         val = proc.stdout.strip()
         return val or None
     except Exception:
+        logger.debug("Swallowed exception in _pid_create_time", exc_info=True)
         return None
 
 
@@ -281,6 +286,7 @@ def _latest_heartbeat(lane: str, max_age_s: int = 600) -> Optional[Dict[str, Any
         with open(p, "r", encoding="utf-8") as f:
             tail = f.readlines()[-2000:]  # only walk last 2000 lines
     except Exception:
+        logger.debug("Swallowed exception in _latest_heartbeat", exc_info=True)
         return None
     for raw in reversed(tail):
         raw = raw.strip()

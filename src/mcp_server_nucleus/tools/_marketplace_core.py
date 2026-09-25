@@ -4,6 +4,8 @@ Factory: call ``register(emit_event, get_brain_path)`` to obtain a dict
 mapping action-name → handler callable suitable for splicing into the
 ROUTER in sync.py.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import json
 
@@ -272,6 +274,7 @@ def register(emit_event, get_brain_path):
                         if action_time < since_time:
                             continue
                     except Exception:
+                        logger.debug("Swallowed exception in register", exc_info=True)
                         continue
 
                 actions.append(action)
@@ -306,10 +309,12 @@ def register(emit_event, get_brain_path):
         try:
             rep_a = ReputationSignals.compute_signals(a)
         except Exception:
+            logger.debug("Swallowed exception in register", exc_info=True)
             pass
         try:
             rep_b = ReputationSignals.compute_signals(b)
         except Exception:
+            logger.debug("Swallowed exception in register", exc_info=True)
             pass
 
         return json.dumps({
@@ -442,6 +447,7 @@ def register(emit_event, get_brain_path):
                     try:
                         tier_name = TrustTier(tier_val).name.lower()
                     except Exception:
+                        logger.debug("Swallowed exception in register", exc_info=True)
                         tier_name = "unverified"
                     tier_counts[tier_name] = tier_counts.get(tier_name, 0) + 1
 
@@ -513,6 +519,7 @@ def register(emit_event, get_brain_path):
             try:
                 rep = ReputationSignals.compute_signals(address)
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 pass
             snapshot.append({**card, "reputation": rep})
 
@@ -536,6 +543,7 @@ def register(emit_event, get_brain_path):
             try:
                 tier_name = TrustTier(tier_val).name.lower()
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 tier_name = "unverified"
             tier_counts[tier_name] = tier_counts.get(tier_name, 0) + 1
             if card.get("inactive", False):
@@ -586,6 +594,7 @@ def register(emit_event, get_brain_path):
                             if ev.get("to_address") == address:
                                 events.append(ev)
                         except Exception:
+                            logger.debug("Swallowed exception in register", exc_info=True)
                             continue
         except Exception as exc:
             return json.dumps({"error": f"failed to read telemetry: {exc}"}, indent=2)
@@ -683,6 +692,7 @@ def register(emit_event, get_brain_path):
             try:
                 rec = json.loads(line)
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 kept.append(line)
                 continue
             if rec.get("subscriber") == subscriber and rec.get("target") == target:
@@ -706,6 +716,7 @@ def register(emit_event, get_brain_path):
             try:
                 rec = json.loads(line)
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 continue
             if subscriber and rec.get("subscriber") != subscriber:
                 continue
@@ -858,6 +869,7 @@ def register(emit_event, get_brain_path):
                 broadcast_count = len(peers)
                 loop.close()
             except Exception:
+                logger.debug("Swallowed exception in register", exc_info=True)
                 pass
 
         return json.dumps({

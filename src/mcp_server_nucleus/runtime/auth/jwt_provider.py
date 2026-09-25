@@ -1,6 +1,22 @@
 """
 JWT Authentication Provider (Phase 2)
 
+NOT WIRED — nothing in the shipping HTTP path calls this module (ledger AU-4).
+``auth_manager.get_auth_provider`` returns this for the http/sse transports, but
+nothing calls ``get_auth_provider`` with either of them, and ``http_transport/``
+imports nothing from ``runtime.auth`` at all. The network authentication that
+actually runs is ``http_transport/tenant.py`` (bearer token → tenant, per-request
+brain isolation) plus ``http_transport/oauth_server.py`` (opaque tokens, not
+JWTs). See ``docs/AUTH_ARCHITECTURE.md``.
+
+This module is reachable by import — ``runtime/auth/__init__.py`` pulls in
+``auth_manager``, which imports this — so it does not screen as dead code even
+though no code path uses it. Dead by use, live by import graph. Before extending
+anything here, decide whether it is being wired up or removed; right now the
+rigorous implementation (RS256, deny-list, refresh-token-family theft detection,
+issuer/audience/scope checks) is strictly better than what ships and is on the
+shelf.
+
 Implements AuthProvider for HTTP/SSE transports using RS256 JWTs.
 Designed for "Nucleus Cloud" readiness while maintaining zero-friction
 for local STDIO users (who never touch this code path).
@@ -24,6 +40,7 @@ Author: Nucleus Team
 import base64
 import hashlib
 import json
+import logging
 import os
 import secrets
 import time
@@ -37,6 +54,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 from .base import AuthProvider, AuthToken, AuthResult
+
+logger = logging.getLogger("nucleus.auth.jwt")
 
 
 # ============================================================
@@ -110,6 +129,7 @@ def _verify_jwt(token: str, public_key) -> Tuple[bool, dict, str]:
     try:
         header = json.loads(_b64url_decode(header_b64))
     except Exception:
+        logger.debug("Swallowed exception in _verify_jwt", exc_info=True)
         return False, {}, "Invalid JWT header"
 
     if header.get("alg") != "RS256":
@@ -126,12 +146,14 @@ def _verify_jwt(token: str, public_key) -> Tuple[bool, dict, str]:
             hashes.SHA256(),
         )
     except Exception:
+        logger.debug("Swallowed exception in _verify_jwt", exc_info=True)
         return False, {}, "Invalid JWT signature"
 
     # Decode payload
     try:
         payload = json.loads(_b64url_decode(payload_b64))
     except Exception:
+        logger.debug("Swallowed exception in _verify_jwt", exc_info=True)
         return False, {}, "Invalid JWT payload"
 
     # Check expiration
@@ -526,6 +548,7 @@ class JWTAuthProvider(AuthProvider):
                 payload = json.loads(_b64url_decode(parts[1]))
                 jti = payload.get("jti", token_id)
             except Exception:
+                logger.debug("Swallowed exception in revoke_token", exc_info=True)
                 pass
 
         with self._lock:
@@ -611,6 +634,7 @@ class JWTAuthProvider(AuthProvider):
                         entries.append(json.loads(line))
             return entries[-limit:]
         except Exception:
+            logger.debug("Swallowed exception in get_audit_log", exc_info=True)
             return []
 
     def _log_event(self, event_type: str, jti: str, subject: str, scope: str) -> None:
@@ -629,4 +653,12 @@ class JWTAuthProvider(AuthProvider):
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(event, ensure_ascii=False) + "\n")
         except Exception:
-            pass
+            # Still swallowed on purpose: a failed audit write must not break the
+            # auth call that triggered it. But it must not be invisible either —
+            # this ledger is the evidence trail for the compliance features, and a
+            # full disk silently turning it off is exactly the failure the trail
+            # exists to rule out (audit ledger QG-3).
+            logger.warning(
+                "auth audit write failed for %s event; the JWT event ledger is "
+                "incomplete from this point", event_type, exc_info=True,
+            )

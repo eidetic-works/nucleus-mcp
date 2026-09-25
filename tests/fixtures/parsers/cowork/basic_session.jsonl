@@ -1,0 +1,4 @@
+{"type":"user","timestamp":"2026-05-21T14:00:00Z","message":{"role":"user","content":"cowork user prompt"}}
+{"type":"assistant","timestamp":"2026-05-21T14:00:01Z","message":{"role":"assistant","content":[{"type":"text","text":"cowork assistant reply"}]}}
+{"type":"user","timestamp":"2026-05-21T14:00:02Z","message":{"role":"user","content":[{"type":"text","text":"second user message"}]}}
+{"type":"assistant","timestamp":"2026-05-21T14:00:03Z","message":{"role":"assistant","content":"plain string reply"}}

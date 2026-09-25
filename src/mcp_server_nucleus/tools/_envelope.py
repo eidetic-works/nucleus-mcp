@@ -1,7 +1,9 @@
 """Response envelope for facade tool dispatch.
 
-Every facade response (when NUCLEUS_ENVELOPE != 'off') is wrapped in a
-stable envelope so consumers can:
+Envelope wrapping is OFF by default. A facade response is wrapped only when
+NUCLEUS_ENVELOPE is set to the literal string 'on' (case-insensitive); every
+other value, including 'true' and '1', leaves it off. When it is on, the
+envelope lets consumers:
   - Identify which brain served the response (`brain_id`)
   - Detect schema version for safe migration (`schema_version`)
   - Surface non-fatal warnings without tripping ok=False (`warnings`)
@@ -16,8 +18,17 @@ through `wrap()` / `error_envelope()` / `unwrap()` — never build dicts
 by hand.
 
 Design notes:
-  - Opt-in via default-on, opt-OUT via NUCLEUS_ENVELOPE=off (keeps the
-    1,327 existing tests green until codemod lands).
+  - Default OFF; opt IN with NUCLEUS_ENVELOPE=on. It stays off until a
+    test-fixture codemod migrates the existing assertions, which read raw
+    handler payloads and would break under wrapping.
+
+    This note used to read "Opt-in via default-on, opt-OUT via
+    NUCLEUS_ENVELOPE=off", which is the exact opposite of what `is_enabled`
+    sixty lines below has always done, and the summary line at the top of this
+    file agreed with the wrong version (ledger CP-6). The contradiction was
+    inside one file, and it propagated: CLAUDE.md had picked up the wrong
+    default too. If you change the default, change it here, in `is_enabled`,
+    and in CLAUDE.md together.
   - `brain_id` resolution is best-effort; failures degrade to "unknown"
     rather than raising, because an envelope that fails to build would
     mask the underlying response.

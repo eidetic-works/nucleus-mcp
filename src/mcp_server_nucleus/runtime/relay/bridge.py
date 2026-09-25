@@ -151,6 +151,7 @@ def _http(
         try:
             payload = json.loads(e.read().decode("utf-8") or "{}")
         except Exception:
+            logger.debug("Swallowed exception in _http", exc_info=True)
             payload = {}
         return e.code, payload
     except Exception as e:
@@ -168,6 +169,7 @@ def _load_state(inbox: str) -> Dict[str, Any]:
         if isinstance(data, dict):
             return data
     except Exception:
+        logger.debug("Swallowed exception in _load_state", exc_info=True)
         pass
     return {"pushed_ids": [], "acked_to_server": [], "acked_sessions": {}}
 
@@ -195,6 +197,7 @@ def _local_messages(inbox: str) -> Dict[str, Tuple[Path, Dict[str, Any]]]:
         try:
             msg = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Swallowed exception in _local_messages", exc_info=True)
             continue
         if isinstance(msg, dict) and msg.get("id"):
             out[str(msg["id"])] = (f, msg)

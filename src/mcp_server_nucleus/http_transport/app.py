@@ -115,7 +115,16 @@ async def root(request: Request):
     tenant_map_configured = bool(os.environ.get("NUCLEUS_TENANT_MAP"))
     tenant_id = os.environ.get("NUCLEUS_TENANT_ID")
     mode = "multi-tenant" if tenant_map_configured else ("single-tenant" if tenant_id else "solo")
-    oauth_enabled = os.environ.get("NUCLEUS_OAUTH_ENABLED", "false").lower() == "true"
+    # Report what is actually served, not what the variable literally says.
+    # This endpoint used to answer "oauth_enabled": false on a deployment whose
+    # OAuth routes were answering 200 — which is how the live relay looked when
+    # AU-2 was checked. The single source of truth is oauth_server._oauth_enabled,
+    # whose unset state means "served, but never configured".
+    from mcp_server_nucleus.http_transport.oauth_server import _oauth_enabled
+
+    _oauth_state = _oauth_enabled()
+    oauth_enabled = _oauth_state is not False
+    oauth_configured = _oauth_state is not None
     return JSONResponse({
         "name": "Nucleus Sovereign Agent OS",
         "version": __version__,
@@ -126,6 +135,10 @@ async def root(request: Request):
         "jurisdiction": os.environ.get("NUCLEUS_JURISDICTION", "global-default"),
         "auth_required": os.environ.get("NUCLEUS_REQUIRE_AUTH", "false").lower() == "true",
         "oauth_enabled": oauth_enabled,
+        # False means the surface is live but NUCLEUS_OAUTH_ENABLED was never
+        # set, so nobody has confirmed it is meant to be. Distinct from
+        # oauth_enabled, which says whether the routes answer.
+        "oauth_configured": oauth_configured,
         "oauth_endpoints": {
             "protected_resource": "/.well-known/oauth-protected-resource",
             "authorization_server": "/.well-known/oauth-authorization-server",
@@ -134,7 +147,7 @@ async def root(request: Request):
             "token": "/token",
             "revoke": "/revoke",
         } if oauth_enabled else None,
-        "docs": "https://github.com/eidetic-works/nucleus-mcp",
+        "docs": "https://nucleusos.dev",
     })
 
 
@@ -150,14 +163,31 @@ async def health(request: Request):
 
 
 async def ready(request: Request):
+    """Readiness probe. Deliberately says nothing but ready or not ready.
+
+    This endpoint is exempt from tenant resolution and auth (see the skip list
+    in tenant.py), so whatever it returns is returned to anybody who can reach
+    the service. It used to answer with the absolute brain path on success and
+    ``str(e)`` on failure — a filesystem layout and a raw exception message,
+    handed to unauthenticated callers (ledger HS-5).
+
+    A probe needs a status code, not a story. Kubernetes, Cloud Run and every
+    other orchestrator read the code; the body is for humans, and the humans who
+    need the detail can read the logs, which now carry it.
+    """
     try:
         from mcp_server_nucleus.runtime.common import get_brain_path
         brain = get_brain_path()
         if not brain.exists():
-            return JSONResponse({"status": "not_ready", "detail": "Brain path not accessible"}, status_code=503)
-    except Exception as e:
-        return JSONResponse({"status": "not_ready", "error": str(e)}, status_code=503)
-    return JSONResponse({"status": "ready", "brain": str(brain)})
+            logger.warning("[ready] Brain path does not exist: %s", brain)
+            return JSONResponse({"status": "not_ready"}, status_code=503)
+    except Exception:
+        # Logged with the traceback; not returned. An exception string from a
+        # path resolver names directories, environment variables and sometimes
+        # a username.
+        logger.exception("[ready] Readiness check failed")
+        return JSONResponse({"status": "not_ready"}, status_code=503)
+    return JSONResponse({"status": "ready"})
 
 
 async def metrics_handler(request: Request):

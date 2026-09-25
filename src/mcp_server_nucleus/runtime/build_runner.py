@@ -423,9 +423,21 @@ def _parse_task_checkboxes(final_plan_path: Path) -> List[Tuple[int, str]]:
     Returns a list of ``(task_number, description)`` tuples in document order.
     Only unchecked tasks (``- [ ]``) are returned — checked tasks are skipped
     (treated as already done).
+
+    Tolerates the plan-authoring model wrapping the "Task N:" label in
+    markdown bold/italic (``**Task 0:**``, ``_Task 0:_``) — confirmed live
+    output from devin's plan-author stage, and the exact cause of four
+    consecutive "no unchecked Task N: checkboxes found" false-negative
+    EXECUTE-stage failures (fw-1786416289-1-5e94 and this session's repro):
+    the strict-plaintext version of this regex requires the literal string
+    "Task" immediately after "[ ]", so a single stray ``**`` silently zeroed
+    every task in an otherwise well-formed 19-task plan.
     """
     tasks: List[Tuple[int, str]] = []
-    pattern = re.compile(r"^\s*-\s*\[\s*\]\s*Task\s+(\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE)
+    pattern = re.compile(
+        r"^\s*-\s*\[\s*\]\s*[*_]{0,2}\s*Task\s+(\d+)\s*:\s*[*_]{0,2}\s*(.+?)\s*$",
+        re.IGNORECASE,
+    )
     try:
         text = final_plan_path.read_text(encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
@@ -436,6 +448,71 @@ def _parse_task_checkboxes(final_plan_path: Path) -> List[Tuple[int, str]]:
         if m:
             tasks.append((int(m.group(1)), m.group(2).strip()))
     return tasks
+
+
+def _mark_task_done(final_plan_path: Path, task_num: int) -> bool:
+    """Mark task ``task_num`` as done in *final_plan_path* (``- [ ]`` → ``- [x]``).
+
+    On resume, :func:`_parse_task_checkboxes` only returns unchecked tasks,
+    so a task flipped to ``- [x]`` here is naturally skipped without any
+    separate completion tracking. Atomic write (temp + rename) so a crash
+    mid-edit cannot leave a truncated plan file — same discipline as
+    :func:`_write_state`.
+
+    Returns ``True`` iff the line was found and updated.
+    """
+    try:
+        text = final_plan_path.read_text(encoding="utf-8")
+    except Exception as exc:  # noqa: BLE001 — best-effort
+        logger.warning("final_plan.md read failed for task-done mark: %s", exc)
+        return False
+    # Match the same flexible label format as _parse_task_checkboxes, scoped
+    # to the specific task_num, and flip the checkbox to [x]. re.MULTILINE so
+    # ^ and $ anchor per line (the plan file is multi-line; without it the
+    # pattern could only match a single-line file).
+    pattern = re.compile(
+        r"^(\s*-\s*\[)\s*(\]\s*[*_]{0,2}\s*Task\s+"
+        + re.escape(str(task_num))
+        + r"\s*:\s*[*_]{0,2}\s*.+?\s*)$",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    new_text, count = pattern.subn(r"\1x\2", text)
+    if count == 0:
+        return False
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(final_plan_path.parent), suffix=".md.tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(new_text)
+        os.replace(tmp, str(final_plan_path))
+    except Exception as exc:  # noqa: BLE001 — best-effort, same as _write_state
+        logger.warning("final_plan.md atomic write failed for task-done mark: %s", exc)
+        final_plan_path.write_text(new_text, encoding="utf-8")
+    return True
+
+
+def _record_task_completed(
+    plan_id: Optional[str], final_plan_path: Path, task_num: int,
+) -> None:
+    """Record task completion for resume: mark ``- [x]`` in final_plan.md and
+    append *task_num* to ``completed_tasks`` in state.json.
+
+    No-op when *plan_id* is ``None`` (a non-resumable run that did not
+    persist a plan_id). Best-effort: a state.json write failure does not
+    block the build — the ``- [x]`` in final_plan.md is the primary resume
+    signal, and state.json's ``completed_tasks`` is observability.
+    """
+    if plan_id is None:
+        return
+    _mark_task_done(final_plan_path, task_num)
+    state = _read_state(plan_id)
+    if not state:
+        return
+    completed = state.get("completed_tasks", [])
+    if task_num not in completed:
+        completed.append(task_num)
+        state["completed_tasks"] = completed
+        state["updated_at"] = int(time.time())
+        _write_state(plan_id, state)
 
 
 # ── Single-vendor lane selection ─────────────────────────────────────────────
@@ -533,7 +610,7 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
     res = dispatch_and_capture(
         plan_vendor, plan_prompt,
         artifact_ref=str(plan_dir),
-        mode="read",
+        mode="write",
     )
     if not (res.get("status") == "ok" and res.get("produced_output") is True):
         return (
@@ -564,10 +641,29 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
         "final_plan_path": str(final_plan_path),
         "execution_mode": _MODE_SINGLE_VENDOR,
         "vendor": plan_vendor,
+        "task_prompt": task_prompt,
         "created_at": int(time.time()),
     }
     _write_state(plan_id, state)
     return True, _SINGLE_VENDOR_PLAN_STATUS, final_plan_path
+
+
+def _persist_task_prompt(plan_id: str, state: Dict[str, Any], task_prompt: str) -> None:
+    """Augment *state* with ``task_prompt`` if absent, so resume can rebuild
+    the verify stage's provenance scope.
+
+    The dual-vendor plan state is written by ``execute_plan_review_loop``,
+    not by this module, so ``task_prompt`` is not in it by default.
+    Best-effort: a write failure does not block the build — resume falls
+    back to an empty prompt (permissive scope).
+    """
+    if not task_prompt or state.get("task_prompt"):
+        return
+    try:
+        state["task_prompt"] = task_prompt
+        _write_state(plan_id, state)
+    except Exception as exc:  # noqa: BLE001 — best-effort
+        logger.debug("could not persist task_prompt for plan %s: %s", plan_id, exc)
 
 
 def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
@@ -613,7 +709,7 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
     # Anthropic-only model id and is applied unconditionally regardless of
     # reviewer_vendor, so overriding reviewer_vendor alone still sends an
     # invalid model to devin. Passing None here makes vendor_dispatch fall
-    # back to devin's own default model (glm-5.2).
+    # back to devin's own default model (swe-2-max).
     # max_rounds: ENV-SELECTABLE. Default raised from 3 to 5 after
     # fw-1785862863 — a well-scoped 6-step deploy_blog.sh task hit
     # MAX_ROUNDS_EXHAUSTED at round 3. The tool's own default is 5; the
@@ -734,6 +830,7 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
                 fp = _resolve_final_plan_path(plan_id, state)
                 if fp is None:
                     return False, "APPROVED but final_plan_path missing on disk", None, _MODE_DUAL_VENDOR
+                _persist_task_prompt(plan_id, state, task_prompt)
                 return True, "APPROVED", fp, _MODE_DUAL_VENDOR
             if status == "SINGLE_VENDOR_PLAN":
                 # fw-1786036802: tool produced a single-vendor fallback plan
@@ -741,6 +838,7 @@ def _run_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path], str]:
                 fp = _resolve_final_plan_path(plan_id, state)
                 if fp is None:
                     return False, "SINGLE_VENDOR_PLAN but final_plan_path missing on disk", None, _MODE_SINGLE_VENDOR
+                _persist_task_prompt(plan_id, state, task_prompt)
                 return True, "SINGLE_VENDOR_PLAN", fp, _MODE_SINGLE_VENDOR
             if status in _ABORT_STATUSES:
                 return False, f"plan review aborted: status={status}", None, _MODE_DUAL_VENDOR
@@ -797,6 +895,30 @@ def _declared_scope(task_prompt: str) -> set[str]:
             target = denied if _SCOPE_NEGATIVE_RE.search(segment) else allowed
             target.update(found)
     return allowed - denied
+
+
+def _resolve_expect_paths(declared: set[str]) -> Optional[list[str]]:
+    """Keep only *declared* tokens that resolve to an existing path.
+
+    Each token is resolved relative to :func:`Path.cwd`, or used as-is when it
+    is already absolute and exists. Tokens that do not resolve are dropped.
+    Returns the survivors as a sorted list of absolute path strings, or
+    ``None`` when nothing resolves (so callers can distinguish "no constraint"
+    from "constraint present but unresolvable").
+
+    This helper does NOT stat the repo root or invent paths — it only checks
+    what was explicitly declared.
+    """
+    resolved: list[str] = []
+    for token in declared:
+        p = Path(token)
+        if not p.is_absolute():
+            p = Path.cwd() / token
+        if p.exists():
+            resolved.append(str(p.resolve()))
+    if not resolved:
+        return None
+    return sorted(resolved)
 
 
 def _scope_violations(changed_files, declared) -> list[str]:
@@ -938,6 +1060,7 @@ def _run_execute_stage(
     task_prompt: str,
     final_plan_path: Path,
     execution_mode: str = _MODE_DUAL_VENDOR,
+    plan_id: Optional[str] = None,
 ) -> Tuple[bool, str, str, str, List[Dict[str, Any]]]:
     """Dispatch each parsed task checkbox to a vendor (write mode), fail-stop.
 
@@ -947,6 +1070,12 @@ def _run_execute_stage(
     cross-vendor gate). Both paths reuse the SAME :func:`dispatch_and_capture`
     subprocess dispatch, so pre_head/post_head git-diff provenance and the
     verify-stage machinery work completely unchanged.
+
+    When *plan_id* is non-None, each successfully dispatched task is marked
+    ``- [x]`` in *final_plan_path* (via :func:`_record_task_completed`) so
+    that :func:`resume_build_pipeline` can re-parse the plan and skip
+    already-completed tasks. When *plan_id* is ``None`` (the default), no
+    progress is persisted — byte-identical to prior behavior.
 
     Returns ``(ok, message, pre_head, post_head, dispatch_results)``.
     *pre_head* is captured before the first dispatch; *post_head* after the
@@ -994,21 +1123,33 @@ def _run_execute_stage(
     scope_mode = _scope_mode()
     # Snapshot once before the loop; _enforce_scope returns the next snapshot.
     scope_before = _working_tree_files() if scope_mode != "off" else set()
+    # Target-file-presence check: always snapshot, regardless of scope mode.
+    # The check that declared target files were actually modified is
+    # independent of scope enforcement (which checks the opposite — that
+    # the vendor didn't touch files OUTSIDE scope).
+    target_before = _working_tree_files()
     for task_num, task_desc in tasks:
         logger.info("dispatching task %d (%s): %s", task_num, vendor, task_desc)
+        # Compute declared scope ONCE per task, before dispatch, so the
+        # dispatch evidence (expect_paths) and the scope post-condition
+        # cannot disagree. Falls back to the overall prompt when the task
+        # names no paths — an empty declared set is permissive, never
+        # restrictive.
+        declared = _declared_scope(task_desc) or _declared_scope(task_prompt)
+        expect_paths = _resolve_expect_paths(declared)
         res = dispatch_and_capture(
             vendor, task_desc,
             artifact_ref=str(final_plan_path),
             mode="write",
+            expect_paths=expect_paths,
         )
         results.append({"task_num": task_num, "task_desc": task_desc, "result": res, "vendor": vendor})
 
         # Scope post-condition (fw-1786125011). The preamble ASKS a vendor to
-        # stay in scope; this CHECKS it. Declared scope comes from the task
-        # text, falling back to the overall prompt when the task names no
-        # paths — an empty declared set is permissive, never restrictive.
+        # stay in scope; this CHECKS it. Reuses the SAME `declared` set
+        # computed before dispatch above — no recomputation, so dispatch
+        # evidence and scope check cannot diverge.
         if scope_mode != "off":
-            declared = _declared_scope(task_desc) or _declared_scope(task_prompt)
             scope_before, scope_blocked, scope_msg = _enforce_scope(
                 scope_before, declared, task_num, mode=scope_mode,
             )
@@ -1028,19 +1169,47 @@ def _run_execute_stage(
             # vendor_dispatch.py, so the fallback chain will skip the
             # failed model and try the next-best one for this task type.
             fallback = _try_model_fallback(
-                vendor, task_desc, final_plan_path, results, task_num,
+                vendor, task_desc, task_prompt, final_plan_path, results, task_num,
             )
-            if fallback is not None:
-                # Fallback succeeded — continue to next task
-                continue
+            if fallback is None:
+                return (
+                    False,
+                    f"fail-stop at task {task_num}: status={res.get('status')!r} "
+                    f"produced_output={res.get('produced_output')!r}",
+                    pre_head,
+                    pre_head,
+                    results,
+                )
+            # Fallback succeeded — fall through to the target-file check
+            # below (the fallback's output needs the same verification as
+            # the primary dispatch).
+
+        # Target-file presence check: verify that each declared target file
+        # was actually modified (or confirmed absent-for-reason) before this
+        # task counts as passed. Closes the defect where a vendor reports
+        # success without touching its tasked target files — the fail-stop
+        # predicate above only checks status/produced_output, neither of
+        # which proves the declared target files were touched.
+        target_after = _working_tree_files()
+        target_touched = target_after - target_before
+        from . import execution_verifier
+        target_sig = execution_verifier.verify_target_files_present(
+            declared, sorted(target_touched), Path.cwd(),
+        )
+        results[-1]["target_files_check"] = target_sig
+        target_before = target_after
+        if not target_sig["passed"]:
             return (
                 False,
-                f"fail-stop at task {task_num}: status={res.get('status')!r} "
-                f"produced_output={res.get('produced_output')!r}",
+                f"fail-stop at task {task_num}: declared target files not "
+                f"modified: {', '.join(target_sig['not_modified'][:5])}",
                 pre_head,
                 pre_head,
                 results,
             )
+        # Dispatch succeeded (primary or fallback) and target files verified —
+        # record progress for resume.
+        _record_task_completed(plan_id, final_plan_path, task_num)
 
     post_head = _git_head()
     return True, f"executed {len(tasks)} task(s) via {vendor}", pre_head, post_head, results
@@ -1049,6 +1218,7 @@ def _run_execute_stage(
 def _try_model_fallback(
     failed_vendor: str,
     task_desc: str,
+    task_prompt: str,
     final_plan_path: Path,
     results: List[Dict[str, Any]],
     task_num: int,
@@ -1071,6 +1241,15 @@ def _try_model_fallback(
     except ImportError:
         logger.debug("model_registry not available for fallback")
         return None
+
+    # Compute declared scope the same way as the primary dispatch path
+    # (see _run_execute_stage): task_desc first, then the overall prompt as
+    # a permissive fallback. The fallback shares task_desc and final_plan_path
+    # from the caller; the prompt context is the same, so the same resolution
+    # applies and the fallback's expect_paths cannot disagree with the
+    # primary dispatch's evidence.
+    declared = _declared_scope(task_desc) or _declared_scope(task_prompt)
+    expect_paths = _resolve_expect_paths(declared)
 
     # Determine task type from the task description (simple heuristic)
     task_type = "code_executor"  # execute stage is always code execution
@@ -1102,6 +1281,7 @@ def _try_model_fallback(
             artifact_ref=str(final_plan_path),
             mode="write",
             model=next_model.model_id,
+            expect_paths=expect_paths,
         )
         results.append({
             "task_num": task_num,
@@ -1124,6 +1304,179 @@ def _try_model_fallback(
         failed_model = next_model.model_id
 
     return None
+
+
+# ── Pseudonymity preflight (fw-1786120486) ──────────────────────────────────
+#
+# The build pipeline has verification tiers for diff, syntax, imports and
+# tests, but none for the guards that actually gate landing. A build can
+# report a clean verdict on work that cannot enter the repo because the
+# pre-commit pseudonymity-guard rejects it. This scan surfaces blocked
+# terms in the build's changed files BEFORE the verdict card, so the
+# vendor spend is not wasted on uncommittable output.
+
+# Blocked terms are NOT stored here. They are LOADED AT RUNTIME from the
+# canonical guard, .githooks/pre-commit-pseudonymity-guard, which lives outside
+# the packaged tree.
+#
+# WHY: this module ships to PyPI. A previous version hardcoded the operator's
+# real name, two email addresses, employer, company and three absolute home
+# paths as its blocklist -- so the guard built to stop identity reaching public
+# artifacts would have published the complete set. Caught by scanning a built
+# artifact, not by any check on the source.
+#
+#     A DETECTOR MAY CONTAIN PATTERNS OF WHAT IT DETECTS.
+#     IT MAY NEVER CONTAIN INSTANCES.
+#
+# If the canonical guard cannot be read, this returns INSUFFICIENT rather than
+# an empty list. An empty blocklist would make every scan pass, silently, which
+# is the failure this whole mechanism exists to prevent.
+
+_PSEUDONYMITY_GUARD_REL = ".githooks/pre-commit-pseudonymity-guard"
+
+
+def _load_pseudonymity_terms(project_root) -> tuple[list[str], list[str], str | None]:
+    """Return (terms, ci_terms, error). A non-None error means INSUFFICIENT.
+
+    Never returns empty lists with error=None -- that would read as 'clean'.
+    """
+    import os
+    from pathlib import Path
+
+    override = os.environ.get("NUCLEUS_PSEUDONYMITY_TERMS_FILE")
+    candidates = [Path(override)] if override else []
+    if project_root:
+        candidates.append(Path(project_root) / _PSEUDONYMITY_GUARD_REL)
+
+    for path in candidates:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        terms = sorted({
+            m for m in re.findall(r'"([^"\n]{4,60})"', text) + re.findall(r"'([^'\n]{4,60})'", text)
+            if any(c.isalpha() for c in m)
+        })
+        if terms:
+            return terms, [t.lower() for t in terms], None
+    return [], [], (
+        f"pseudonymity blocklist unavailable (looked for {_PSEUDONYMITY_GUARD_REL}); "
+        "scan is INSUFFICIENT, not clean"
+    )
+
+
+def _pseudonymity_scan(changed_files: list[str], project_root) -> list[dict]:
+    """Scan changed files' diffs for pseudonymity-blocked terms.
+
+    Returns a list of violation dicts: ``{file, term, line}``. Empty list
+    means no violations. Only checks ADDED lines (lines starting with '+'
+    in the diff), matching the guard's additions-only policy.
+    """
+    import subprocess
+    violations = []
+
+    # The blocklist is LOADED, not hardcoded (see _load_pseudonymity_terms above).
+    # If it cannot be read, say so LOUDLY -- returning [] here would read as
+    # "no violations" and make this preflight silently useless, which is the
+    # exact failure this mechanism exists to prevent.
+    terms, ci_terms, load_error = _load_pseudonymity_terms(project_root)
+    if load_error:
+        return [{
+            "file": "<blocklist>",
+            "term": "<INSUFFICIENT>",
+            "line": load_error,
+        }]
+    all_terms = terms + ci_terms
+    for relpath in changed_files:
+        try:
+            r = subprocess.run(
+                ["git", "diff", "--unified=0", "--", relpath],
+                capture_output=True, text=True, timeout=5,
+                cwd=str(project_root),
+            )
+        except Exception:
+            logger.debug("Swallowed exception in _pseudonymity_scan", exc_info=True)
+            continue
+        if r.returncode != 0:
+            continue
+        for line_num, line in enumerate(r.stdout.splitlines(), 1):
+            if not line.startswith("+") or line.startswith("+++"):
+                continue
+            line_lower = line.lower()
+            for term in all_terms:
+                if term.lower() in line_lower:
+                    violations.append({
+                        "file": relpath,
+                        "term": term,
+                        "line": line.strip()[:120],
+                    })
+                    break  # one violation per line is enough
+    return violations
+
+
+# ── Comment-to-code ratio check (fw-1786154034) ──────────────────────────────
+#
+# A vendor shipped a 158-line deploy script with 36 code lines where the
+# comments described features the code did not implement. Every keyword-
+# based check passed because every missing feature was named in a comment.
+# This check surfaces the code-vs-total ratio as a warning signal.
+
+# Threshold: if code lines < 40% of total non-blank lines, flag the file.
+# 40% catches the 4:1 comment-to-code ratio (36/158 = 23%) while allowing
+# well-documented modules (typically 60-70% code).
+_CODE_RATIO_THRESHOLD = 0.40
+
+
+def _comment_code_ratio_check(changed_files: list[str], project_root) -> list[dict]:
+    """Check comment-to-code ratio of changed script files.
+
+    Returns a list of warning dicts: ``{file, total_lines, code_lines,
+    code_ratio}``. Empty list means no warnings. Only checks .sh, .py,
+    .js, .ts files. A file with <40% code lines (by the threshold above)
+    is flagged — a large gap between prose and code is the smell.
+    """
+    import subprocess
+    warnings = []
+    checkable_exts = (".sh", ".py", ".js", ".ts")
+    for relpath in changed_files:
+        if not relpath.endswith(checkable_exts):
+            continue
+        fpath = project_root / relpath
+        if not fpath.exists():
+            continue
+        try:
+            content = fpath.read_text(errors="replace")
+        except Exception:
+            logger.debug("Swallowed exception in _comment_code_ratio_check", exc_info=True)
+            continue
+        lines = content.splitlines()
+        total = 0
+        code = 0
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            total += 1
+            # Count as comment if the line starts with # (after strip)
+            # or is inside a /* */ block (simplified: single-line /* ... */)
+            if stripped.startswith("#"):
+                continue
+            if stripped.startswith("//"):
+                continue
+            if stripped.startswith("/*") and stripped.endswith("*/"):
+                continue
+            code += 1
+        if total == 0:
+            continue
+        ratio = code / total
+        if ratio < _CODE_RATIO_THRESHOLD:
+            warnings.append({
+                "file": relpath,
+                "total_lines": total,
+                "code_lines": code,
+                "code_ratio": round(ratio, 2),
+            })
+    return warnings
 
 
 # ── VERIFY stage ─────────────────────────────────────────────────────────────
@@ -1194,7 +1547,10 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     ``unattributed_files`` (outside). Only attributed files are verified by
     tiers 1–3; unattributed files are reported in the details but do not
     participate in verification. When the declared scope is empty
-    (permissive — no paths declared), all files are attributed.
+    (deny-by-default — no paths declared), no files are attributed and
+    tier 0 fails: a build that declares no scope provably changed
+    nothing in scope, so concurrent same-worktree commits cannot sneak
+    in as attributed build output.
 
     Tier 2 is Python-only: when no ``.py`` files are present it is reported
     SKIPPED without invoking the import checker. For all tiers, an empty
@@ -1246,14 +1602,15 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
     # unattributed (concurrent commits from the same working tree). Only
     # attributed files are verified; unattributed files are reported but
     # do not participate in tier 1–3 verification. An empty declared scope
-    # is permissive — all files are attributed.
+    # is deny-by-default — no files are claimed, so every changed file is
+    # unattributed and tier 0 fails (the build provably changed nothing in
+    # scope). Empty scope must NOT be permissive: treating "no files
+    # claimed" as "everything allowed" lets concurrent same-worktree
+    # commits be attributed as build output, which is the exact failure
+    # provenance isolation exists to prevent.
     declared = _declared_scope(task_prompt)
-    if declared:
-        attributed_files = [f for f in all_changed_files if f in declared]
-        unattributed_files = [f for f in all_changed_files if f not in declared]
-    else:
-        attributed_files = all_changed_files
-        unattributed_files = []
+    attributed_files = [f for f in all_changed_files if f in declared]
+    unattributed_files = [f for f in all_changed_files if f not in declared]
 
     # Tier 0 checks the ATTRIBUTED set, not the raw diff. A build that
     # produced no attributed files but has unattributed ones (concurrent
@@ -1280,6 +1637,26 @@ def _run_verify_stage(task_prompt: str, pre_head: str, post_head: str) -> Tuple[
         details["skipped_count"] = 3
         return False, details
     details["tier0"] = {"status": "PASSED", "files_count": len(changed_files)}
+
+    # ── Pseudonymity preflight (fw-1786120486) ─────────────────────────────
+    # Scan changed files for blocked terms BEFORE spending tier 1-3 budget.
+    # Violations are reported in the details but do not block verification
+    # — the build may still produce correct code that just needs a term
+    # scrubbed before commit. The verdict card surfaces them prominently.
+    pseudo_violations = _pseudonymity_scan(changed_files, project_root)
+    if pseudo_violations:
+        details["pseudonymity_violations"] = pseudo_violations
+
+    # ── Comment-to-code ratio check (fw-1786154034) ───────────────────────
+    # A vendor once shipped a 158-line deploy script with 36 code lines
+    # (4:1 comment-to-code ratio) where the comments described features
+    # the code did not implement. Every keyword-based check passed because
+    # every missing feature was named in a comment. This check surfaces
+    # the ratio as a warning so the verdict card distinguishes "all code"
+    # from "all prose."
+    ratio_warnings = _comment_code_ratio_check(changed_files, project_root)
+    if ratio_warnings:
+        details["comment_code_ratio_warnings"] = ratio_warnings
 
     # ── Tier 1: syntax check ────────────────────────────────────────────────
     tier1_signals = execution_verifier._tier1_syntax_check(
@@ -1460,6 +1837,16 @@ def _render_verdict_card(
         print(f"  UNATTRIBUTED ({len(unattributed_files)}) — concurrent commits, NOT build output:", flush=True)
         for f in unattributed_files:
             print(f"    - {f}", flush=True)
+    pseudo_violations = verify_details.get("pseudonymity_violations", [])
+    if pseudo_violations:
+        print(f"  PSEUDONYMITY WARN ({len(pseudo_violations)}) — blocked terms in build output, will fail commit:", flush=True)
+        for v in pseudo_violations:
+            print(f"    - {v['file']}: term '{v['term']}' in: {v['line'][:80]}", flush=True)
+    ratio_warnings = verify_details.get("comment_code_ratio_warnings", [])
+    if ratio_warnings:
+        print(f"  CODE RATIO WARN ({len(ratio_warnings)}) — low code-to-comment ratio, comments may describe unimplemented features:", flush=True)
+        for w in ratio_warnings:
+            print(f"    - {w['file']}: {w['code_lines']}/{w['total_lines']} code lines ({w['code_ratio']:.0%})", flush=True)
     print("  VERIFICATION STATUS:", flush=True)
 
     def _print_tier_line(tier_num: int, desc: str, tier: Dict[str, Any]) -> None:
@@ -1531,9 +1918,16 @@ def run_build_pipeline(task_prompt: str) -> int:
         print(f"build: PLAN stage failed — {msg}", flush=True)
         return 1
 
+    # Derive the plan_id from the final_plan_path's parent directory name
+    # (.brain/plans/<plan_id>/final_plan.md) so the execute stage can
+    # persist per-task completion for resume. This is the standard layout
+    # for both single-vendor and dual-vendor paths.
+    plan_id = final_plan_path.parent.name
+
     # ── EXECUTE ──────────────────────────────────────────────────────────────
     ok, msg, pre_head, post_head, results = _run_execute_stage(
         task_prompt, final_plan_path, execution_mode=execution_mode,
+        plan_id=plan_id,
     )
     if not ok:
         print(f"build: EXECUTE stage failed — {msg}", flush=True)
@@ -1562,3 +1956,124 @@ def run_build_pipeline(task_prompt: str) -> int:
         execution_mode=execution_mode,
         single_vendor=single_vendor,
     )
+
+
+def resume_build_pipeline(plan_id: str) -> int:
+    """Resume an ORPHANED plan from its persisted state (EXECUTE → VERIFY → VERDICT).
+
+    The defect this fixes: when the build process exits (timeout, Ctrl-C,
+    crash) while a plan is IN_PROGRESS, :func:`_mark_plan_orphaned`
+    stamps the plan ORPHANED — a terminal status with no resume path.
+    The completed plan-authoring work (the approved ``final_plan.md``)
+    and any partially-completed execute-stage tasks were unrecoverable;
+    the only option was to start a fresh build with a new plan_id.
+
+    This entry point reloads the ORPHANED plan's persisted state and
+    re-enters the pipeline at the EXECUTE stage. Tasks already completed
+    during the prior run were marked ``- [x]`` in ``final_plan.md`` (by
+    :func:`_record_task_completed`), so :func:`_parse_task_checkboxes`
+    naturally skips them — execution continues from the first unchecked
+    task instead of restarting from task 0.
+
+    Only ORPHANED plans are resumable. APPROVED / SINGLE_VENDOR_PLAN are
+    success (use :func:`run_build_pipeline` for a fresh run); ERROR is
+    for stale-plan sweeps and is not resumable (re-run the build instead).
+
+    Returns a process exit code (``0`` = success, non-zero = failure/abort).
+    """
+    if not plan_id or not plan_id.strip():
+        print("resume: empty plan_id", flush=True)
+        return 2
+
+    state = _read_state(plan_id)
+    if not state:
+        print(f"resume: no state found for plan {plan_id}", flush=True)
+        return 2
+
+    if state.get("status") != "ORPHANED":
+        print(
+            f"resume: plan {plan_id} is not ORPHANED (status={state.get('status')}) "
+            "— only ORPHANED plans can be resumed",
+            flush=True,
+        )
+        return 2
+
+    final_plan_path = _resolve_final_plan_path(plan_id, state)
+    if final_plan_path is None:
+        print(f"resume: plan {plan_id} has no final_plan.md on disk", flush=True)
+        return 2
+
+    execution_mode = state.get("execution_mode", _MODE_DUAL_VENDOR)
+    task_prompt = state.get("task_prompt", "")
+
+    # Transition ORPHANED → IN_PROGRESS (resuming) and claim ownership so
+    # a concurrent build's stale sweep can tell this plan is alive.
+    state["status"] = "IN_PROGRESS"
+    state["resumed_at"] = int(time.time())
+    state["owner_pid"] = os.getpid()
+    _write_state(plan_id, state)
+
+    # Register orphan cleanup so that if THIS process exits while the
+    # resumed execute stage is running, the plan is re-stamped ORPHANED
+    # (resumable again) rather than left IN_PROGRESS for the stale sweep
+    # to mark ERROR (not resumable). Mirrors the plan-stage cleanup in
+    # _run_plan_stage.
+    _active_plan_id: Optional[str] = None
+
+    def _orphan_cleanup(*_args: Any) -> None:
+        if _active_plan_id:
+            _mark_plan_orphaned(_active_plan_id)
+
+    atexit.register(_orphan_cleanup)
+    old_sigterm = signal.getsignal(signal.SIGTERM)
+    old_sigint = signal.getsignal(signal.SIGINT)
+
+    def _signal_handler(signum: int, frame: Any) -> None:
+        _orphan_cleanup()
+        signal.signal(signum, old_sigterm if signum == signal.SIGTERM else old_sigint)
+        if signum == signal.SIGTERM:
+            raise SystemExit(143)
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, _signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
+
+    _active_plan_id = plan_id
+    try:
+        # ── EXECUTE (resume) ───────────────────────────────────────────────
+        # _parse_task_checkboxes only returns unchecked tasks, so tasks
+        # already marked - [x] by the prior run are skipped automatically.
+        ok, msg, pre_head, post_head, results = _run_execute_stage(
+            task_prompt, final_plan_path, execution_mode=execution_mode,
+            plan_id=plan_id,
+        )
+        if not ok:
+            print(f"resume: EXECUTE stage failed — {msg}", flush=True)
+            return 1
+
+        # ── VERIFY ─────────────────────────────────────────────────────────
+        verification_passed, verify_details = _run_verify_stage(
+            task_prompt, pre_head, post_head,
+        )
+
+        # ── VERDICT ────────────────────────────────────────────────────────
+        single_vendor = (
+            results[0]["vendor"]
+            if execution_mode == _MODE_SINGLE_VENDOR and results
+            else None
+        )
+        return _render_verdict_card(
+            task_prompt=task_prompt,
+            final_plan_path=final_plan_path,
+            pre_head=pre_head,
+            post_head=post_head,
+            results=results,
+            verification_passed=verification_passed,
+            verify_details=verify_details,
+            execution_mode=execution_mode,
+            single_vendor=single_vendor,
+        )
+    finally:
+        _active_plan_id = None
+        signal.signal(signal.SIGTERM, old_sigterm)
+        signal.signal(signal.SIGINT, old_sigint)

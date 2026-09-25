@@ -48,6 +48,7 @@ def _get_relay_token_for_sender(sender: str) -> Optional[str]:
     try:
         return token_path.read_text().strip()
     except Exception:
+        logger.debug("Swallowed exception in _get_relay_token_for_sender", exc_info=True)
         return None
 
 
@@ -174,6 +175,7 @@ def _find_message_by_id(recipient: str, msg_id: str, force_fs: bool = False) -> 
     try:
         relay_dir = _get_relay_dir(recipient, force_fs=force_fs)
     except Exception:
+        logger.debug("Swallowed exception in _find_message_by_id", exc_info=True)
         return None
     if not relay_dir.exists():
         return None
@@ -185,12 +187,14 @@ def _find_message_by_id(recipient: str, msg_id: str, force_fs: bool = False) -> 
             if json.loads(path.read_text(encoding="utf-8")).get("id") == msg_id:
                 return path
         except Exception:
+            logger.debug("Swallowed exception in _find_message_by_id", exc_info=True)
             continue
     for path in relay_dir.glob("*.json"):
         try:
             if json.loads(path.read_text(encoding="utf-8")).get("id") == msg_id:
                 return path
         except Exception:
+            logger.debug("Swallowed exception in _find_message_by_id", exc_info=True)
             continue
     return None
 
@@ -576,6 +580,7 @@ def relay_post(
         from ..prometheus import inc_relay_message
         inc_relay_message("queued")
     except Exception:
+        logger.debug("Swallowed exception in relay_post", exc_info=True)
         pass
 
     # Write to recipient's mailbox. force_fs threads through so the server
@@ -614,7 +619,9 @@ def relay_post(
     if in_reply_to:
         try:
             relay_ack(in_reply_to, recipient=sender, session_id=from_session_id)
-        except Exception: pass
+        except Exception:
+            logger.debug("Swallowed exception in relay_post", exc_info=True)
+            pass
 
     # Coord-event capture (Phase B). Best-effort; never breaks relay flow.
     try:
@@ -628,6 +635,7 @@ def relay_post(
             tags=[priority] if priority else [],
         )
     except Exception:
+        logger.debug("Swallowed exception in relay_post", exc_info=True)
         pass
 
     # Marketplace reputation capture (Atom 1). Best-effort — never blocks relay.
@@ -707,6 +715,7 @@ def relay_inbox(
                 msg["_file"] = f.name
                 messages.append(msg)
             except Exception:
+                logger.debug("Swallowed exception in relay_inbox", exc_info=True)
                 continue
         return {
             "messages": messages,
@@ -783,6 +792,7 @@ def relay_inbox(
             msg["_file"] = f.name
             messages.append(msg)
         except Exception:
+            logger.debug("Swallowed exception in relay_inbox", exc_info=True)
             continue
 
     return {
@@ -911,6 +921,7 @@ def relay_context_sync(
                 recent_history.append(msg)
             
         except Exception:
+            logger.debug("Swallowed exception in relay_context_sync", exc_info=True)
             continue
 
     return {
@@ -987,7 +998,9 @@ def relay_read(
                     try:
                         from .relay_engram_projection import project_relay_to_engram
                         project_relay_to_engram(msg)
-                    except Exception: pass
+                    except Exception:
+                        logger.debug("Swallowed exception in relay_read", exc_info=True)
+                        pass
 
                     # Coord-event capture (Phase B receive-side). Closes ack-latency loop
                     # for cross-trio observability dashboard. Best-effort.
@@ -1001,7 +1014,9 @@ def relay_read(
                             chosen_option=message_id,
                             tags=["read_message"],
                         )
-                    except Exception: pass
+                    except Exception:
+                        logger.debug("Swallowed exception in relay_read", exc_info=True)
+                        pass
 
                     return {
                         "success": True,
@@ -1009,6 +1024,7 @@ def relay_read(
                         "acknowledged": True
                     }
             except Exception:
+                logger.debug("Swallowed exception in relay_read", exc_info=True)
                 continue
 
     return {"success": False, "error": f"Message {message_id} not found in {me} inbox"}
@@ -1083,6 +1099,7 @@ def relay_ack(
                         from ..prometheus import inc_relay_message
                         inc_relay_message("acked")
                     except Exception:
+                        logger.debug("Swallowed exception in relay_ack", exc_info=True)
                         pass
                     try:
                         from .relay_engram_projection import project_relay_to_engram
@@ -1101,7 +1118,9 @@ def relay_ack(
                             chosen_option=message_id,
                             tags=["relay_ack"],
                         )
-                    except Exception: pass
+                    except Exception:
+                        logger.debug("Swallowed exception in relay_ack", exc_info=True)
+                        pass
 
                     return {
                         "acknowledged": True,
@@ -1110,6 +1129,7 @@ def relay_ack(
                         "session_id": session_id,
                     }
             except Exception:
+                logger.debug("Swallowed exception in relay_ack", exc_info=True)
                 continue
 
     return {
@@ -1218,6 +1238,7 @@ def relay_status(force_fs: bool = False) -> Dict[str, Any]:
                 if latest is None or created > latest:
                     latest = created
             except Exception:
+                logger.debug("Swallowed exception in relay_status", exc_info=True)
                 total += 1  # count but can't parse
 
         status["mailboxes"][recipient] = {
@@ -1262,6 +1283,7 @@ def relay_clear(
                         f.unlink()
                         deleted += 1
             except Exception:
+                logger.debug("Swallowed exception in relay_clear", exc_info=True)
                 errors += 1
 
     return {

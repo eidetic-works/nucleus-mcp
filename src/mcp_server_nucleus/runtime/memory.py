@@ -106,6 +106,7 @@ def _search_memory(query: str, mode: str = "auto") -> Dict:
                             if lowered in line.lower():
                                 snippets.append(f"{file_path}:{line}")
                     except Exception:
+                        logger.debug("Swallowed exception in _search_memory", exc_info=True)
                         continue
 
         # Flag-OFF (default) or explicit grep mode: byte-for-byte the pre-batch-5

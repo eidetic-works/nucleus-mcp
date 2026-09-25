@@ -7,6 +7,8 @@ integrity and detect unauthorized mutations.
 
 Part of the Decision System of Record (DSoR) initiative.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import hashlib
 import json
@@ -74,6 +76,7 @@ class ContextManager:
                 content = file_path.read_bytes()
                 return hashlib.sha256(content).hexdigest()[:16]
         except Exception:
+            logger.debug("Swallowed exception in _hash_file", exc_info=True)
             pass
         return None
     
@@ -133,6 +136,7 @@ class ContextManager:
                     mounts = json.load(f)
                     state["mount_count"] = len(mounts.get("servers", []))
             except Exception:
+                logger.debug("Swallowed exception in _collect_mounts_state", exc_info=True)
                 pass
         
         return state
@@ -294,6 +298,7 @@ class ContextManager:
                 data = json.loads(snapshot_file.read_text())
                 return ContextSnapshot.from_dict(data)
             except Exception:
+                logger.debug("Swallowed exception in load_snapshot", exc_info=True)
                 pass
         
         return None

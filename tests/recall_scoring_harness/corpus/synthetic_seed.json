@@ -1,0 +1,36 @@
+{
+  "$comment": "Synthetic seed corpus for #440 scoring harness PR_A. 5 procedurally-generated fixtures exercising harness mechanics. Operator-pain fixtures (the valuable corpus) come in PR_B / follow-up authoring per corpus/README.md.",
+  "version": "1.0.0",
+  "fixtures": [
+    {
+      "fixture_id": "seed_001_exact_phrase",
+      "query": "scrubber substrate consolidation",
+      "expected_top_keys": [],
+      "description": "Exact phrase from PR #438 work; expected_top_keys empty in seed (real keys depend on operator brain). Run against operator brain to populate."
+    },
+    {
+      "fixture_id": "seed_002_temporal_specific",
+      "query": "today activity engram cc-main",
+      "expected_top_keys": [],
+      "description": "Temporal-specific query that surfaces #440 bug — current BM25 may rank old generic activity above today's relevant ones."
+    },
+    {
+      "fixture_id": "seed_003_hardblock_floor_pain",
+      "query": "HARD_BLOCK_FLOOR identity_strict severity map fail-closed ADR-003",
+      "expected_top_keys": [],
+      "description": "cc-peer's exact 2026-06-02 06:00Z dogfood query that surfaced Bug #2 — returned 6-week-old decomposer content. Real expected_top_keys: today's scrubber-consolidation engrams."
+    },
+    {
+      "fixture_id": "seed_004_fts5_temporal_relevance",
+      "query": "FTS5 temporal-relevance recall",
+      "expected_top_keys": [],
+      "description": "cc-main 2026-06-02 04:10Z pain query — returned 2-month-old generic content."
+    },
+    {
+      "fixture_id": "seed_005_loop_6_recall_activity",
+      "query": "role main activity since 24h",
+      "expected_top_keys": [],
+      "description": "cc-main Loop #6 pain — recall returned only ≤22h-old items despite 4 today's writes; expected_top_keys = today's activity engrams from cc-main role."
+    }
+  ]
+}

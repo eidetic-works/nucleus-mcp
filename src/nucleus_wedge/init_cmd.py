@@ -35,7 +35,7 @@ This project uses Nucleus wedge for persistent agent memory (`remember` / `recal
 - HANDOFF.md is sovereign per ADR-0003 — gitignored, written by your CC session, not by `nucleus init`.
 - On a fresh clone, HANDOFF.md will be absent. This is expected. Run a single CC session to seed it; cross-machine HANDOFF sync is out of cycle-1 scope.
 
-See https://github.com/eidetic-works/nucleus-mcp for full docs.
+See https://nucleusos.dev for full docs.
 """
 
 
@@ -85,12 +85,28 @@ def do_init(brain_path_arg: str | None, seeds_mode: str, force: bool) -> int:
     else:
         store = Store(brain_path=brain)
         written = ensure_seeds(store)
-        if not written:
-            seeds_status = f"{len(SEED_KEYS)} skipped (already present)"
-        elif len(written) == len(SEED_KEYS):
+        # An empty ``written`` has two causes and they are not the same news:
+        # every seed was already in the store, or the file the seeds are copied
+        # FROM does not exist so there was nothing to copy. ``ensure_seeds``
+        # ``continue``s past a missing entry silently, collapsing both to [].
+        # Reporting "already present" for the second is a success line printed
+        # over an empty brain, on the first command a new user runs.
+        seed_source = brain / "memory" / "engrams.json"
+        missing = [k for k in SEED_KEYS if k not in store.keys_present()]
+        if written and len(written) == len(SEED_KEYS):
             seeds_status = f"{len(SEED_KEYS)} added"
+        elif written:
+            seeds_status = (
+                f"{len(written)} added, {len(missing)} unavailable "
+                f"(not in seed source {seed_source})"
+            )
+        elif missing:
+            seeds_status = (
+                f"0 added — seed source absent ({seed_source}); "
+                f"{len(missing)} seeds unavailable, brain is empty"
+            )
         else:
-            seeds_status = f"{len(written)} added ({len(SEED_KEYS) - len(written)} skipped)"
+            seeds_status = f"{len(SEED_KEYS)} skipped (already present)"
 
     _ensure_gitignore(brain)
     _ensure_agents(brain, force=force)

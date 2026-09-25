@@ -222,6 +222,7 @@ class EnvironmentDetector:
                         if sig():
                             return host
                     except Exception:
+                        logger.debug("Swallowed exception in _detect_mcp_host", exc_info=True)
                         continue
                 elif isinstance(sig, str):
                     if os.environ.get(sig):
@@ -236,6 +237,7 @@ class EnvironmentDetector:
                 if host.value in pname:
                     return host
         except (ImportError, Exception):
+            logger.debug("Swallowed exception in _detect_mcp_host", exc_info=True)
             pass
 
         # Fallback: check if running as MCP server (stdio mode)
@@ -275,6 +277,7 @@ class EnvironmentDetector:
                 parent = parent.parent
             return os.access(str(parent), os.W_OK)
         except Exception:
+            logger.debug("Swallowed exception in _check_writable", exc_info=True)
             return False
 
     def _check_network(self) -> bool:
@@ -296,6 +299,7 @@ class EnvironmentDetector:
             usage = shutil.disk_usage(str(check_path))
             return usage.free / (1024 * 1024)
         except Exception:
+            logger.debug("Swallowed exception in _check_disk_space", exc_info=True)
             return float('inf')  # Assume enough if check fails
 
     def _check_env_vars(self) -> tuple:
@@ -320,6 +324,7 @@ class EnvironmentDetector:
         try:
             return str(Path(path).resolve())
         except Exception:
+            logger.debug("Swallowed exception in normalize_path", exc_info=True)
             return path
 
     def get_safe_brain_path(self) -> Path:
@@ -365,6 +370,7 @@ def _check_process(name: str) -> bool:
             )
             return result.returncode == 0
     except Exception:
+        logger.debug("Swallowed exception in _check_process", exc_info=True)
         return False
 
 
@@ -378,6 +384,7 @@ def _check_path_exists(path: str) -> bool:
     try:
         return Path(os.path.expanduser(path)).exists()
     except Exception:
+        logger.debug("Swallowed exception in _check_path_exists", exc_info=True)
         return False
 
 

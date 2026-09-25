@@ -5,13 +5,15 @@ import importlib.util
 import logging
 from pathlib import Path
 
+from ..sibling_repos import require_script
+
 logger = logging.getLogger("NucleusJobs.training")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
 
 
 def _load_module():
-    path = PROJECT_ROOT / "scripts" / "daily_data_refresh.py"
+    path = require_script("scripts/daily_data_refresh.py")
     if not path.exists():
         raise FileNotFoundError(f"daily_data_refresh not found: {path}")
     spec = importlib.util.spec_from_file_location("daily_data_refresh", path)

@@ -1,0 +1,7 @@
+{"type":"user","uuid":"u1","parentUuid":null,"sessionId":"sess-1","timestamp":"2026-05-21T10:00:00Z","message":{"role":"user","content":"hello assistant"}}
+{"type":"assistant","uuid":"a1","parentUuid":"u1","sessionId":"sess-1","timestamp":"2026-05-21T10:00:01Z","message":{"role":"assistant","model":"claude-opus-4-7","content":[{"type":"text","text":"hello user"}]}}
+{"type":"user","uuid":"u2","parentUuid":"a1","sessionId":"sess-1","timestamp":"2026-05-21T10:00:02Z","message":{"role":"user","content":[{"type":"text","text":"call a tool"}]}}
+{"type":"assistant","uuid":"a2","parentUuid":"u2","sessionId":"sess-1","timestamp":"2026-05-21T10:00:03Z","message":{"role":"assistant","model":"claude-opus-4-7","content":[{"type":"thinking","thinking":"I should use the bash tool"},{"type":"tool_use","id":"tu1","name":"Bash","input":{"command":"ls","description":"list files"}}]}}
+{"type":"user","uuid":"u3","parentUuid":"a2","sessionId":"sess-1","timestamp":"2026-05-21T10:00:04Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tu1","content":"file1.txt\nfile2.txt"}]}}
+{"type":"queue-operation","operation":"PUSH","sessionId":"sess-1","timestamp":"2026-05-21T10:00:05Z","content":"x"}
+{"type":"last-prompt","lastPrompt":"hi","leafUuid":"u3","sessionId":"sess-1"}

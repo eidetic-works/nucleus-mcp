@@ -1,0 +1,24 @@
+{
+  "version": 3,
+  "requesterUsername": "test-user",
+  "responderUsername": "Test Assistant",
+  "sessionId": "00000000-0000-0000-0000-000000000002",
+  "creationDate": 1716000000000,
+  "requests": [
+    {
+      "requestId": "request_111",
+      "message": {"text": "first prompt"},
+      "response": [{"value": "first reply"}]
+    },
+    {
+      "requestId": "request_222",
+      "message": {"text": "second prompt"},
+      "response": "second reply as string"
+    },
+    {
+      "requestId": "request_333",
+      "message": "third prompt as raw string",
+      "response": [{"value": "third "}, {"value": "reply"}]
+    }
+  ]
+}

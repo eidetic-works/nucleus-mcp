@@ -244,7 +244,13 @@ def _classify_pattern(streak: list) -> str:
 # Output builder — intelligent, zero-token
 # ---------------------------------------------------------------------------
 
-def _build_output(depth: int, streak: list, danger: int, rabbithole: int) -> dict:
+def _build_output(
+    depth: int,
+    streak: list,
+    danger: int,
+    rabbithole: int,
+    contract: dict | None = None,
+) -> dict:
     """Build the hook-output JSON dict with a contextual nudge.
 
     Two channels (per the Claude Code hook contract):
@@ -269,6 +275,11 @@ def _build_output(depth: int, streak: list, danger: int, rabbithole: int) -> dic
     # --- Model channel: imperative self-rescue instruction ---
     additional = _model_instruction(depth, level, pattern, streak)
 
+    if contract:
+        advisory = _focus_advisory(contract)
+        sys_msg = f"{sys_msg} {advisory}"
+        additional = f"{additional} {advisory}"
+
     return {
         # Top-level: shown to the HUMAN operator. Per the Claude Code hook
         # contract, ``systemMessage`` is only recognized at the top level —
@@ -281,6 +292,18 @@ def _build_output(depth: int, streak: list, danger: int, rabbithole: int) -> dic
             "additionalContext": additional,
         },
     }
+
+
+def _focus_advisory(contract: dict) -> str:
+    """Build advisory-only focus-contract context for a threshold warning."""
+    return (
+        f"Active focus question: {contract['question']} "
+        f"(evidence remaining "
+        f"{contract['remaining_evidence_budget']}/{contract['evidence_budget']}; "
+        f"depth budget {contract['depth_budget']}). "
+        "Valid exits: ACT, DEFER_WITH_TRIGGER, STOP_INSUFFICIENT. "
+        "Advisory only; only focus_resolve closes this contract."
+    )
 
 
 def _human_message(depth: int, level: str, pattern: str,
@@ -388,10 +411,25 @@ def main() -> None:
             else:
                 target = _extract_target(tool_name, tool_input)
                 result = store.hook_increment(conn, session_id, target)
+                contract = None
+                try:
+                    focus = store.focus_record_read(conn, session_id)
+                    contract = focus["contract"] if focus["active"] else None
+                except Exception as exc:  # noqa: BLE001
+                    print(
+                        f"[rabbithole hook] non-fatal focus error: {exc!r}",
+                        file=sys.stderr,
+                    )
                 danger = _env_int("RABBITHOLE_DEPTH_DANGER", _DEFAULT_DANGER)
                 rabbithole = _env_int("RABBITHOLE_DEPTH_RABBITHOLE", _DEFAULT_RABBITHOLE)
                 if _should_emit(result["depth"], danger, rabbithole):
-                    out = _build_output(result["depth"], result["streak"], danger, rabbithole)
+                    out = _build_output(
+                        result["depth"],
+                        result["streak"],
+                        danger,
+                        rabbithole,
+                        contract,
+                    )
                     sys.stdout.write(json.dumps(out) + "\n")
                     sys.stdout.flush()
         finally:

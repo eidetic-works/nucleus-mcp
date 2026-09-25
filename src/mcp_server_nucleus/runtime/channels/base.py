@@ -137,6 +137,7 @@ class ChannelRouter:
             from ..circuit_breaker import get_breaker
             return get_breaker(f"channel_{ch_name}", failure_threshold=3, recovery_timeout=60)
         except Exception:
+            logger.debug("Swallowed exception in _get_breaker", exc_info=True)
             return None
 
     def _resolve_targets(self, level: str) -> List[str]:

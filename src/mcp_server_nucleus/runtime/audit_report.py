@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+from .common import get_brain_path
+
 logger = logging.getLogger("nucleus.audit_report")
 
 # ── DSoR-Verifier gating seam (flag-gated; default OFF) — A12 ───────────────
@@ -96,6 +98,42 @@ def generate_audit_report(
         report["formatted"] = _format_text(report)
 
     return report
+
+
+def generate_audit_summary(brain_path=None, since_hours=None) -> Dict[str, Any]:
+    """Generate a compact audit summary — wrapper for generate_audit_report.
+
+    This exists so that callers (e.g. god_combos.pulse_and_polish) can import
+    ``generate_audit_summary`` from this module. It delegates to
+    ``generate_audit_report`` and returns a compact summary, not the full
+    report.
+    """
+    if brain_path is None:
+        brain_path = get_brain_path()
+    report = generate_audit_report(
+        brain_path=brain_path,
+        report_format="json",
+        since_hours=since_hours,
+        include_engrams=True,
+    )
+    sections = report.get("sections", {})
+    checklist = sections.get("compliance_checklist", {})
+    return {
+        "title": report.get("title"),
+        "generated_at": report.get("generated_at"),
+        "jurisdiction": {
+            "id": report.get("jurisdiction", {}).get("id"),
+            "name": report.get("jurisdiction", {}).get("name"),
+        },
+        "decisions": sections.get("decisions", {}).get("count", 0),
+        "events": sections.get("events", {}).get("count", 0),
+        "approvals": sections.get("approvals", {}).get("count", 0),
+        "memory_context": sections.get("memory_context", {}).get("count", 0),
+        "compliance_checklist": {
+            "passed": checklist.get("passed", 0),
+            "total": checklist.get("total", 0),
+        },
+    }
 
 
 def _collect_decisions(brain_path: Path, since_hours: Optional[float]) -> Dict[str, Any]:
@@ -268,6 +306,7 @@ def _collect_engrams(brain_path: Path) -> Dict[str, Any]:
                         "value_preview": str(data.get("value", ""))[:200],
                     })
         except (json.JSONDecodeError, Exception):
+            logger.debug("Swallowed exception in _collect_engrams", exc_info=True)
             continue
 
     # Sort by intensity (highest first)

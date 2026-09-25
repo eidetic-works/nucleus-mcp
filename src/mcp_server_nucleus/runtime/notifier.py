@@ -49,6 +49,7 @@ class Notifier:
             )
             return True
         except Exception:
+            logger.debug("Swallowed exception in macos", exc_info=True)
             return False
 
     def log(self, title: str, message: str, level: str = "info"):

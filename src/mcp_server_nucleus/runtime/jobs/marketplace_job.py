@@ -68,6 +68,7 @@ def run_tier_promotion_loop(brain_path: Optional[Path] = None) -> Dict[str, Any]
                         {"address": address, "from": str(int(current_tier)), "to": str(int(new_tier))},
                     )
                 except Exception:
+                    logger.debug("Swallowed exception in run_tier_promotion_loop", exc_info=True)
                     pass  # telemetry is supplementary — never block promotion
                 
             if old_conn_count != new_conn_count:
@@ -157,6 +158,7 @@ def run_tier_demotion_loop(brain_path: Optional[Path] = None, half_life_days: in
                         {"address": address, "from": str(int(current_tier)), "to": str(int(new_tier))},
                     )
                 except Exception:
+                    logger.debug("Swallowed exception in run_tier_demotion_loop", exc_info=True)
                     pass  # telemetry is supplementary — never block demotion
                 
             if old_conn_count != new_conn_count:

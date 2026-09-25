@@ -521,6 +521,7 @@ class ResilientLLMClient:
                     contents=prompt
                 )
             except Exception as e:
+                logger.debug("Swallowed exception in _execute_with_timeout", exc_info=True)
                 error_container[0] = e
 
         thread = threading.Thread(target=_call, daemon=True)

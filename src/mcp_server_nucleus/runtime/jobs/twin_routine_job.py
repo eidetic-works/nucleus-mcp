@@ -5,13 +5,15 @@ import importlib.util
 import logging
 from pathlib import Path
 
+from ..sibling_repos import require_script
+
 logger = logging.getLogger("NucleusJobs.twin_routine")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
 
 
 def _load_module():
-    path = PROJECT_ROOT / "scripts" / "twin_routine.py"
+    path = require_script("scripts/twin_routine.py")
     if not path.exists():
         raise FileNotFoundError(f"twin_routine.py not found: {path}")
     spec = importlib.util.spec_from_file_location("twin_routine", path)

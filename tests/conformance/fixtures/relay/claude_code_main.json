@@ -1,0 +1,17 @@
+{
+  "id": "relay_20260422_100000_claudecode01",
+  "from": "cowork",
+  "from_role": null,
+  "from_session_id": null,
+  "to": "claude_code_main",
+  "to_session_id": null,
+  "subject": "[COORD] Relay-bus conformance seed — claude_code_main",
+  "body": "{\"summary\": \"Seeded envelope for relay-bus conformance harness\", \"artifact_refs\": [\"mcp-server-nucleus/docs/relay_bus_contract.md\"]}",
+  "priority": "normal",
+  "context": {},
+  "created_at": "2026-04-22T10:00:00Z",
+  "read": false,
+  "read_at": null,
+  "read_by": null,
+  "read_by_sessions": {}
+}

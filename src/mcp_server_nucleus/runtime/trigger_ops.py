@@ -7,6 +7,8 @@ Phase 2 (this): Task-based dispatch with 3 safety layers:
   Layer 2 — Task-based dispatch: triggers create tasks (async, deduped)
   Layer 3 — Per-trigger opt-in: only triggers with "dispatch": true fire tasks
 """
+import logging
+logger = logging.getLogger(__name__)
 
 from typing import List, Dict, Optional
 import threading
@@ -222,4 +224,5 @@ def _has_pending_task(task_key: str) -> bool:
                     return True
         return False
     except Exception:
+        logger.debug("Swallowed exception in _has_pending_task", exc_info=True)
         return False  # On error, allow dispatch (fail open for liveness)

@@ -77,6 +77,50 @@ def _write_csr(brain_path: Path, state: Dict[str, Any]) -> None:
     _csr_path(brain_path).write_text(json.dumps(state, indent=2))
 
 
+def _append_survived_log(brain_path: Path, step: str, survived: bool,
+                         reason: str = "") -> None:
+    """Append one line to flywheel/survived.jsonl.
+
+    WHY THIS EXISTS (2026-08-16). `survived.jsonl` had accumulated 159 lines and
+    had ZERO code references — nothing wrote it, nothing read it. It was appended
+    by hand, by convention, while the machine-maintained metric (`csr.json`) went
+    its own way. On 2026-08-14/15 roughly twenty closures were recorded into that
+    file and the CSR never moved: ratio stayed 0.6375, last_updated frozen.
+
+    A ledger nobody writes programmatically and nobody reads is not a ledger. It
+    is a surface that LOOKS like evidence, which is strictly worse than nothing —
+    the same "reported success while doing nothing" shape this whole substrate
+    exists to name, found inside the substrate itself.
+
+    So the convention becomes a mechanism: the same call that moves the metric
+    also writes the log. Best-effort — a logging failure must never lose the
+    metric bump, which is the load-bearing half.
+
+    NOT BACKFILLED, deliberately. `bump_survived` increments BOTH claims_total
+    and claims_survived, so replaying the 159 orphans would add 159 to each and
+    push the ratio toward 1.0 — manufacturing exactly the false-green this
+    guards against — while evicting all 50 genuine entries from recent_claims.
+    The historical gap is left visible rather than papered over.
+    """
+    try:
+        fw_dir = _ensure_flywheel_dir(brain_path)
+        rec = {
+            "phase": "unknown",
+            "step": step,
+            "ts": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "survived": survived,
+            "reason": reason,
+            "source": "bump",   # distinguishes machine-written from hand-appended
+        }
+        if ":" in step:                       # callers pass "phase:step"
+            phase, _, tail = step.partition(":")
+            rec["phase"], rec["step"] = phase, tail
+        with (fw_dir / "survived.jsonl").open("a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+    except OSError:
+        pass          # never let the log cost us the metric
+
+
 def bump_survived(brain_path: Path, step: str = "unknown") -> Dict[str, Any]:
     """Record a survived claim. Returns the updated state."""
     state = read_csr(brain_path)
@@ -86,6 +130,7 @@ def bump_survived(brain_path: Path, step: str = "unknown") -> Dict[str, Any]:
     recent.append({"at": _now_iso(), "step": step, "survived": True})
     state["recent_claims"] = recent[-50:]  # cap to last 50
     _write_csr(brain_path, state)
+    _append_survived_log(brain_path, step, survived=True)
     return state
 
 
@@ -98,4 +143,5 @@ def bump_unsurvived(brain_path: Path, step: str, reason: str = "") -> Dict[str, 
     recent.append({"at": _now_iso(), "step": step, "survived": False, "reason": reason})
     state["recent_claims"] = recent[-50:]
     _write_csr(brain_path, state)
+    _append_survived_log(brain_path, step, survived=False, reason=reason)
     return state

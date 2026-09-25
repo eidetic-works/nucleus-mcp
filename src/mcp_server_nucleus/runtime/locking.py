@@ -195,6 +195,7 @@ class FileBrainLock(BrainLock):
             with open(self.lock_path, 'r', encoding='utf-8') as f:
                 data["pid"] = f.read().strip()
         except Exception:
+            logger.debug("Swallowed exception in get_metadata", exc_info=True)
             data["pid"] = "unknown"
 
         # Get xattrs
@@ -224,6 +225,7 @@ class FileBrainLock(BrainLock):
                     # For V1, we simply Log it.
                     logger.info(f"Old lock file detected: {self.lock_path} (Age: {age}s)")
         except Exception:
+            logger.debug("Swallowed exception in check_stale_locks", exc_info=True)
             pass
 
 

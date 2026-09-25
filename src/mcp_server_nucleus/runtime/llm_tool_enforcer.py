@@ -209,6 +209,7 @@ DO IT NOW.
             try:
                 _get_telemetry().record_error("E200", f"Enforcement log write: {e}", "llm_tool_enforcer")
             except Exception:
+                logger.debug("Swallowed exception in record_outcome", exc_info=True)
                 pass
             logger.warning(f"Failed to persist enforcement outcome: {e}")
     

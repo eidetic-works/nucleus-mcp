@@ -6,6 +6,8 @@ import logging
 import socket
 from pathlib import Path
 
+from ..sibling_repos import require_script
+
 logger = logging.getLogger("NucleusJobs.briefing")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
@@ -27,7 +29,7 @@ async def run_briefing() -> dict:
         return {"ok": False, "error": msg}
 
     try:
-        path = PROJECT_ROOT / "scripts" / "telegram_briefing.py"
+        path = require_script("scripts/telegram_briefing.py")
         if not path.exists():
             return {"ok": False, "error": "telegram_briefing.py not found"}
         spec = importlib.util.spec_from_file_location("telegram_briefing", path)
