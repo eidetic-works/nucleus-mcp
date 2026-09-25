@@ -44,6 +44,7 @@ F_RATE_LIMIT = "rate_limit"
 F_AUTH = "auth"
 F_TIMEOUT = "timeout"
 F_UNKNOWN = "unknown"
+F_CONFIG = "config"            # model/registry misconfig (e.g. 'Unknown model') — long cooldown
 
 # Cooldown durations (seconds)
 _COOLDOWN_QUOTA = 3600          # 1 hour (conservative; real reset is often midnight)
@@ -51,6 +52,7 @@ _COOLDOWN_RATE_LIMIT = 60       # 1 minute
 _COOLDOWN_AUTH = 86400          # 24 hours (needs operator re-auth)
 _COOLDOWN_UNKNOWN = 300         # 5 minutes (conservative)
 _COOLDOWN_INFERRED_QUOTA = 3600 # 3 consecutive empty outputs → inferred quota
+_COOLDOWN_CONFIG = 21600        # 6 hours — a misconfigured model id won't fix itself soon
 
 # stderr patterns for classification
 _QUOTA_PATTERNS = re.compile(
@@ -67,6 +69,11 @@ _AUTH_PATTERNS = re.compile(
 )
 _TIMEOUT_PATTERNS = re.compile(
     r"timeout|timed.?out|deadline.*exceeded|context.*canceled",
+    re.IGNORECASE,
+)
+_CONFIG_PATTERNS = re.compile(
+    r"unknown model|no such model|model.*not.*found|invalid.*model|"
+    r"empty model list|model.*unavailab",
     re.IGNORECASE,
 )
 
@@ -88,6 +95,8 @@ def classify_failure(
         stderr = ""
     if _AUTH_PATTERNS.search(stderr):
         return F_AUTH
+    if _CONFIG_PATTERNS.search(stderr):
+        return F_CONFIG
     if _QUOTA_PATTERNS.search(stderr):
         return F_QUOTA
     if _RATE_PATTERNS.search(stderr):
@@ -108,6 +117,7 @@ def cooldown_for(failure_type: str) -> float:
         F_AUTH: _COOLDOWN_AUTH,
         F_TIMEOUT: _COOLDOWN_UNKNOWN,
         F_UNKNOWN: _COOLDOWN_UNKNOWN,
+        F_CONFIG: _COOLDOWN_CONFIG,
     }.get(failure_type, _COOLDOWN_UNKNOWN)
 
 
