@@ -18,7 +18,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .common import cap_log_file, get_brain_path, logger
+from .common import get_brain_path, logger
 
 
 def detect_project_root(start: Path = None) -> Path:
@@ -125,7 +125,6 @@ def run_ground(project_root: str = None, python_path: str = None,
     try:
         brain = get_brain_path()
         log_path = brain / "verification_log.jsonl"
-        cap_log_file(log_path)  # EID-74: bound the receipt trail
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(log_path, "a") as f:
             f.write(json.dumps(result, default=str) + "\n")

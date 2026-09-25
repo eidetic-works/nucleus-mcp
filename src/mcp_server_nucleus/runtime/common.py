@@ -351,22 +351,6 @@ def init_project_context() -> None:
         set_current_project(proj)
 
 
-def cap_log_file(path: Union[str, Path], max_bytes: int = 32 << 20,
-                 keep_bytes: int = 8 << 20) -> bool:
-    """Tail-cap an append-only log (EID-74) — same discipline as
-    scripts/fleet/pool.py::_cap_file: over max_bytes, keep only the last
-    keep_bytes. Never raises: a logging cap must never take the writer down.
-    Returns True when the file was trimmed."""
-    try:
-        p = Path(path)
-        if p.is_file() and p.stat().st_size > max_bytes:
-            p.write_bytes(p.read_bytes()[-keep_bytes:])
-            return True
-    except Exception:
-        pass
-    return False
-
-
 def get_brain_path() -> Path:
     """Get the brain path for the current request context.
 
