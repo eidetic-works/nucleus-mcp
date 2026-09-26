@@ -69,7 +69,11 @@ def _filter_by_cooldown(triggers: List[Dict], state: Dict) -> List[Dict]:
         "STALE_BLOCKER": 48,
         "STALE_DECISION": 168, # 7 days
         "VELOCITY_DROP": 72,   # 3 days
-        "SESSION_GAP": 48
+        "SESSION_GAP": 48,
+        # fleet liveness: re-alert every 2h while still broken (plan 6b)
+        "FLEET_TICK_STALE": 2,
+        "FLEET_STEP_FAILING": 2,
+        "AGENT_OS_HEALTHCHECK_RED": 12,
     }
     
     for t in triggers:
@@ -251,6 +255,12 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
     if session_gap:
         triggers.append(session_gap)
         
+    # ── Signal 5: Fleet tick + agent-os healthcheck (plan 6b, 2026-09-26) ──
+    try:
+        triggers.extend(_check_fleet_tick(brain))
+    except Exception:
+        logger.debug("fleet tick check failed", exc_info=True)
+
     # ── Centenary State Filter (Cooldowns) ──────────────────────
     state = _load_heartbeat_state(brain)
     triggers = _filter_by_cooldown(triggers, state)
@@ -346,6 +356,55 @@ def _heartbeat_check_impl(brain_path: Optional[str] = None) -> Dict:
         result["formatted"] += f"\n🔧 Auto-created {corrective_tasks_created} corrective task(s)"
 
     return result
+
+
+FLEET_TICK_STALE_MIN = 15
+FLEET_STEP_FAIL_THRESHOLD = 3
+
+
+def _check_fleet_tick(brain: Path, healthcheck_dir: Optional[Path] = None) -> List[Dict]:
+    """Signal 5 (plan 6b): the pool tick writes agent_pool/tick_beat.json every
+    run. This runs from the separate launchd heartbeat, so a dead or repeatedly
+    failing tick surfaces without a live Claude session. Also reports the
+    agent-os healthcheck, which failed silently from 2026-09-21 (nothing read
+    its log). Quiet when healthy."""
+    out: List[Dict] = []
+    if not (brain / "agent_pool").is_dir():
+        return out  # this brain runs no fleet: nothing to watch
+    now = datetime.now(timezone.utc)
+    beat_f = brain / "agent_pool" / "tick_beat.json"
+    beat = None
+    try:
+        beat = json.loads(beat_f.read_text())
+        ts = datetime.fromisoformat(str(beat.get("ts")).replace("Z", "+00:00"))
+        age_min = (now - ts).total_seconds() / 60
+    except Exception:
+        age_min = None
+    if age_min is None or age_min > FLEET_TICK_STALE_MIN:
+        out.append({"signal": "FLEET_TICK_STALE", "key": "tick",
+                    "message": ("Fleet pool tick has not run for "
+                                + (f"{int(age_min)} min" if age_min is not None else "an unknown time (no beat)")
+                                + " — agents get no routing, wakes or reviews.")})
+    elif beat:
+        bad = {k: n for k, n in (beat.get("consecutive_failures") or {}).items()
+               if n >= FLEET_STEP_FAIL_THRESHOLD}
+        if bad:
+            out.append({"signal": "FLEET_STEP_FAILING", "key": ",".join(sorted(bad)),
+                        "message": "Fleet tick steps failing repeatedly: "
+                                   + ", ".join(f"{k} x{n}" for k, n in sorted(bad.items()))})
+    hc = healthcheck_dir or (Path.home() / ".nucleus" / "agent_os_healthcheck")
+    try:
+        lines = [l for l in (hc / "healthcheck.log").read_text().splitlines() if l.strip()]
+        last = lines[-1].split() if lines else []
+        if len(last) >= 2 and last[1] == "FAIL":
+            since = next((l.split()[0] for l in reversed(lines) if l.split()[1:2] == ["PASS"]), None)
+            out.append({"signal": "AGENT_OS_HEALTHCHECK_RED", "key": "agent-os",
+                        "message": "Agent-OS healthcheck failing"
+                                   + (f" since after {since}" if since else "")
+                                   + ": " + " ".join(last[2:])[:160]})
+    except Exception:
+        pass
+    return out
 
 
 def _check_stale_blockers(brain: Path) -> List[Dict]:
