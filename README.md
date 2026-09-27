@@ -89,6 +89,8 @@ nucleus init --recipe founder
 
 Two commands. Nucleus is running. `nucleus init` seeds `.brain/`, writes a project-local `.mcp.json`, and offers to configure every AI client you have installed. Say yes, then restart the client.
 
+`nucleus build` additionally needs a coding-agent CLI on PATH — any one of `claude` (npm i -g @anthropic-ai/claude-code), `devin`, or `agy`, already authenticated (`claude`/`devin`/`agy` login once, separately). Without one, `build` stops at the plan stage.
+
 ---
 
 ## What It Does
