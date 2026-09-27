@@ -89,7 +89,7 @@ nucleus init --recipe founder
 
 Two commands. Nucleus is running. `nucleus init` seeds `.brain/`, writes a project-local `.mcp.json`, and offers to configure every AI client you have installed. Say yes, then restart the client.
 
-`nucleus build` additionally needs a coding-agent CLI on PATH — any one of `claude` (npm i -g @anthropic-ai/claude-code), `devin`, or `agy`, already authenticated (`claude`/`devin`/`agy` login once, separately). Without one, `build` stops at the plan stage.
+`nucleus build` additionally needs a coding-agent CLI on PATH — any one of `claude` (npm i -g @anthropic-ai/claude-code), `devin`, or `agy`, already authenticated (`claude`/`devin`/`agy` login once, separately). Without one, `build` stops at the plan stage. If `build` reports `status='error'` without a clear cause, the vendor CLI's own error (e.g. an expired login) lands in `.brain/relay/cross_vendor/*.json` — check the newest file there.
 
 ---
 
@@ -143,6 +143,12 @@ nucleus audit-report --format html -o report.html   # Audit report
 pip install nucleus-mcp      # or:  uvx nucleus-mcp  ·  pipx install nucleus-mcp
 nucleus init                 # seeds .brain/, then offers to configure your AI clients
 ```
+
+Requires Python ≥3.10; on 3.14 some dependencies (e.g. `watchdog`) build from
+source — 3.11–3.13 install wheels cleanly. `init` writes whichever `nucleus`
+binary it resolves first on PATH into the config it generates — with a stale
+global install alongside a venv, `pipx`/`uvx` or `which nucleus` keeps the right
+one.
 
 `nucleus init` always does three things: seeds `.brain/`, writes a project-local
 `.mcp.json` that Claude Code reads in that folder, and runs a memory write-and-recall
@@ -199,6 +205,11 @@ Nucleus finds your `.brain` automatically:
 1. `NUCLEUS_BRAIN_PATH` environment variable (explicit)
 2. Walk up from CWD looking for `.brain/` directory
 3. Fall back to `$HOME/.nucleus/brain`
+
+This lookup order applies to the running server. `nucleus init` instead seeds
+`.brain/` in the directory you run it in (or the `path` argument) — set
+`NUCLEUS_BRAIN_PATH` afterwards if you want the server to find a brain placed
+somewhere else.
 
 ---
 
