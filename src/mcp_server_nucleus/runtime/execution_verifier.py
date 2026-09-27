@@ -147,7 +147,10 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(2)
         else:
-            _skip(2, "not enabled")
+            # Enabled but collected nothing — an empty .py diff is not a
+            # disabled tier. gt40 lever receipts mislabeled this "not enabled"
+            # for months, making a quiet-repo skip look like a config bug.
+            _skip(2, "no .py files in diff — nothing to import-check")
     elif 2 not in enabled_tiers:
         _skip(2, "not enabled")
     if 3 in enabled_tiers and remaining() <= 0:
@@ -165,7 +168,7 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(3)
         else:
-            _skip(3, "not enabled")
+            _skip(3, "no test files discovered for the changed files")
     elif 3 not in enabled_tiers:
         _skip(3, "not enabled")
     runtime_checks = config.get("execution_verification_runtime_checks", [])
@@ -179,11 +182,11 @@ def verify_execution(git_diff_text: str, pre_head: str, config: dict,
             else:
                 tiers_failed.append(4)
         else:
-            _skip(4, "not enabled")
+            _skip(4, "runtime checks configured but produced no signals")
     elif 4 not in enabled_tiers:
         _skip(4, "not enabled")
     elif not runtime_checks:
-        _skip(4, "not enabled")
+        _skip(4, "no runtime checks configured")
     if 5 in enabled_tiers and remaining() <= 0:
         # Budget expired BEFORE this tier ran. This previously fell
         # through every branch: the tier appeared in NO list —
