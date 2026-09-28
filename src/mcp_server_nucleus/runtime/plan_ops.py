@@ -94,6 +94,11 @@ def _parse_tasks_format(text: str) -> List[Dict[str, Any]]:
     return items
 
 
+_DONE_MARKER_RE = re.compile(
+    r"^\s*(?:DONE|DROPPED|SHIPPED|MERGED|CLOSED|CANCELLED)\b[\s,.:—-]",
+    re.IGNORECASE)
+
+
 def _parse_slice_format(text: str) -> List[Dict[str, Any]]:
     """Parse `### Slice N — Title (owner)` format. Returns list of items."""
     items: List[Dict[str, Any]] = []
@@ -106,6 +111,9 @@ def _parse_slice_format(text: str) -> List[Dict[str, Any]]:
         owner = (m.group(3) or "").strip() or None
         if not title:
             continue
+        if _DONE_MARKER_RE.match(title):
+            continue  # revision edits mark landed slices terminal — minting
+            # them as tasks is pure noise (EID-302/303 minted "DONE, dropped").
         items.append({"description": title, "required_role": owner})
     return items
 
