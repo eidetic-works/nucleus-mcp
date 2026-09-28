@@ -769,9 +769,11 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         # "gpt-5.6-terra"), not guessed. A guessed id fails as
         # status=not_found with rc=None in 0.0s -- it never reaches the binary,
         # so the failure looks like a dead vendor rather than a bad name.
-        # 2026-09-28: codex's config moved to gpt-6-luna (smoke: rc=0 "OK").
-        default_model="gpt-6-luna",
-        models=("gpt-6-luna", "gpt-5.6-terra"),
+        # Operator 2026-09-28: terra is the better model; luna is weaker even at
+        # 6.x. The ChatGPT account exposes gpt-5.5, gpt-5.6-luna, gpt-5.6-terra,
+        # gpt-6-luna, gpt-reserve (no sol: sol is reachable only via devin).
+        default_model="gpt-5.6-terra",
+        models=("gpt-5.6-terra", "gpt-6-luna"),
     ),
     "devin": VendorSpec(
         vendor="devin",
