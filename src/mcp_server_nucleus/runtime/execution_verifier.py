@@ -1030,6 +1030,21 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
                 sig["passed"] = False
                 sig["unrunnable"] = True
                 sig["reason"] = "pytest_not_available"
+            elif (r.returncode != 0
+                  and re.search(r"ModuleNotFoundError|ImportError", combined)
+                  and not re.search(r"\d+\s+(passed|failed|error|warning)",
+                                    combined)):
+                # Pytest died during plugin autoload/startup — before any
+                # test was collected (no result summary line was emitted).
+                # That is an environment break (e.g. a pytest11 entrypoint
+                # whose module is missing), not a verdict on the code under
+                # test: mark unrunnable so it is reported loudly but never
+                # confused with a test failure. A test module's own bad
+                # import DOES produce a summary ("1 error") and still lands
+                # as a real failure above.
+                sig["passed"] = False
+                sig["unrunnable"] = True
+                sig["reason"] = "pytest_plugin_load_failed"
 
             # Capture the REAL outcome before the relevance guard can flip
             # ``passed`` back to True — the aggregate pass gating below must
@@ -1125,8 +1140,17 @@ def _tier3_test_execution(changed_files: list[str], task: dict,
                 "python": python,
                 "collection_mode": "aggregate",
             }
+            # Same environmental break as the per-file path: plugin autoload
+            # crashed before collection — not a per-file/aggregate
+            # disagreement, an unrunnable interpreter.
+            if (not agg_passed
+                    and re.search(r"ModuleNotFoundError|ImportError", combined)
+                    and not re.search(r"\d+\s+(passed|failed|error|warning)",
+                                      combined)):
+                sig["unrunnable"] = True
+                sig["reason"] = "pytest_plugin_load_failed"
             # If per-file passed but aggregate failed, flag the disagreement
-            if not agg_passed and per_file_all_passed:
+            elif not agg_passed and per_file_all_passed:
                 sig["aggregate_disagreement"] = True
                 sig["reason"] = "per_file_passed_aggregate_failed"
             signals.append(sig)
@@ -1506,7 +1530,15 @@ def _find_venv_python(relpath: str, project_root: Path) -> str | None:
             timeout=5,
         )
         if r.returncode == 0:
-            common_dir = Path(r.stdout.strip()).resolve()
+            # ``--git-common-dir`` prints a RELATIVE path (".git") for an
+            # ordinary, non-worktree repo. Resolving it bare anchored it to
+            # the verifier process's cwd — any project verified while the
+            # caller happened to sit in a repo root with a venv silently
+            # borrowed THAT repo's Python (and its plugins, e.g. a broken
+            # editable install's pytest11 entrypoint crashing every pytest
+            # run). Anchor at project_root instead; absolute output (a real
+            # worktree's common dir) is unaffected by the join.
+            common_dir = (project_root / r.stdout.strip()).resolve()
             if common_dir.name == ".git":
                 main_checkout = common_dir.parent
             else:
