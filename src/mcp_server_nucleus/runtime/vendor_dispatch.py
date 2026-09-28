@@ -752,7 +752,11 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         to_default="cross_vendor",
         engram_tags=("vendor:gpt", "surface:codex"),
         argv_template=("codex", "exec", "-"),
-        read_flags=("--dangerously-bypass-approvals-and-sandbox",),
+        # Reviews and reads are judgment work: high reasoning effort (operator
+        # 2026-09-28: ChatGPT is the primary plan reviewer, at its top tier).
+        # Builds keep codex's own configured effort.
+        read_flags=("--dangerously-bypass-approvals-and-sandbox",
+                    "-c", "model_reasoning_effort=high"),
         write_flags=("--dangerously-bypass-approvals-and-sandbox",),
         # `codex exec -m <MODEL>`. A models tuple is required for the vendor to
         # be addressable THROUGH THE SHIM at all: vendor_shim's model regex is
@@ -765,8 +769,9 @@ VENDOR_SPECS: Dict[str, VendorSpec] = {
         # "gpt-5.6-terra"), not guessed. A guessed id fails as
         # status=not_found with rc=None in 0.0s -- it never reaches the binary,
         # so the failure looks like a dead vendor rather than a bad name.
-        default_model="gpt-5.6-terra",
-        models=("gpt-5.6-terra",),
+        # 2026-09-28: codex's config moved to gpt-6-luna (smoke: rc=0 "OK").
+        default_model="gpt-6-luna",
+        models=("gpt-6-luna", "gpt-5.6-terra"),
     ),
     "devin": VendorSpec(
         vendor="devin",
