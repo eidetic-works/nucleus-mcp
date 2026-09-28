@@ -37,7 +37,49 @@ def _default_state() -> Dict[str, Any]:
         "first_claim_at": _now_iso(),
         "last_updated": _now_iso(),
         "recent_claims": [],
+        "claims": {"founding:activation": {"survived": True, "at": _now_iso()}},
+        "claims_total_events": 1,
     }
+
+
+def _migrate_claims_map(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Derive the claim-state map for a legacy csr.json that never had one.
+
+    Events counted double — a claim that died then proved landed in
+    claims_total twice. The map keys on the claim's `step` so the LATEST
+    verdict flips the row instead. Seeded from the recent_claims ring
+    (the only recorded events available); the legacy event count is
+    preserved under claims_total_events for provenance — it is an event
+    ledger, never a claim count.
+    """
+    if "claims" in state:
+        return state
+    state["claims_total_events"] = state.get("claims_total", 0)
+    claims: Dict[str, Any] = {}
+    for rec in state.get("recent_claims") or []:
+        step = rec.get("step")
+        if not step:
+            continue
+        claims[step] = {
+            "survived": bool(rec.get("survived")),
+            "at": rec.get("at"),
+            **({"reason": rec["reason"]} if rec.get("reason") else {}),
+        }
+    if not claims:  # no ring to seed from — keep the founding claim honest
+        claims = {"founding:activation": {"survived": True, "at": state.get("first_claim_at", _now_iso())}}
+    state["claims"] = claims
+    _derive_totals(state)
+    state["ratio"] = round(
+        state["claims_survived"] / max(state["claims_total"], 1), 4)
+    return state
+
+
+def _derive_totals(state: Dict[str, Any]) -> None:
+    """Recompute counters from the claims map (distinct claims, latest wins)."""
+    claims = state.get("claims") or {}
+    state["claims_total"] = len(claims)
+    state["claims_survived"] = sum(1 for c in claims.values() if c.get("survived"))
+    state["claims_unsurvived"] = state["claims_total"] - state["claims_survived"]
 
 
 def read_csr(brain_path: Path) -> Dict[str, Any]:
@@ -49,7 +91,12 @@ def read_csr(brain_path: Path) -> Dict[str, Any]:
         p.write_text(json.dumps(state, indent=2))
         return state
     try:
-        return json.loads(p.read_text())
+        state = json.loads(p.read_text())
+        needs_migration = "claims" not in state
+        state = _migrate_claims_map(state)
+        if needs_migration:
+            _write_csr(brain_path, state)   # persist the new format once
+        return state
     except (json.JSONDecodeError, OSError):
         # Corrupted → preserve the evidence before resetting. CSR is the
         # trust scalar read before closing a session (per CLAUDE.md); a
@@ -122,13 +169,20 @@ def _append_survived_log(brain_path: Path, step: str, survived: bool,
 
 
 def bump_survived(brain_path: Path, step: str = "unknown") -> Dict[str, Any]:
-    """Record a survived claim. Returns the updated state."""
+    """Record a survived claim. Returns the updated state.
+
+    The claims map keys on `step` — a claim that was dead flips to
+    survived in place, never adding a second row to the denominator.
+    The recent_claims ring still appends every event (audit trail);
+    claims_total_events keeps the legacy event count for provenance.
+    """
     state = read_csr(brain_path)
-    state["claims_total"] = state.get("claims_total", 0) + 1
-    state["claims_survived"] = state.get("claims_survived", 0) + 1
+    state.setdefault("claims", {})[step] = {"survived": True, "at": _now_iso()}
+    state["claims_total_events"] = state.get("claims_total_events", 0) + 1
     recent = state.setdefault("recent_claims", [])
     recent.append({"at": _now_iso(), "step": step, "survived": True})
     state["recent_claims"] = recent[-50:]  # cap to last 50
+    _derive_totals(state)
     _write_csr(brain_path, state)
     _append_survived_log(brain_path, step, survived=True)
     return state
@@ -137,11 +191,15 @@ def bump_survived(brain_path: Path, step: str = "unknown") -> Dict[str, Any]:
 def bump_unsurvived(brain_path: Path, step: str, reason: str = "") -> Dict[str, Any]:
     """Record an unsurvived (failed) claim. Returns the updated state."""
     state = read_csr(brain_path)
-    state["claims_total"] = state.get("claims_total", 0) + 1
-    state["claims_unsurvived"] = state.get("claims_unsurvived", 0) + 1
+    state.setdefault("claims", {})[step] = {
+        "survived": False, "at": _now_iso(),
+        **({"reason": reason} if reason else {}),
+    }
+    state["claims_total_events"] = state.get("claims_total_events", 0) + 1
     recent = state.setdefault("recent_claims", [])
     recent.append({"at": _now_iso(), "step": step, "survived": False, "reason": reason})
     state["recent_claims"] = recent[-50:]
+    _derive_totals(state)
     _write_csr(brain_path, state)
     _append_survived_log(brain_path, step, survived=False, reason=reason)
     return state
