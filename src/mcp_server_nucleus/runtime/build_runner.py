@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .vendor_dispatch import (
+    _redact_secrets,
     cross_vendor_enabled,
     dispatch_and_capture,
     is_multi_vendor_available,
@@ -39,6 +40,9 @@ logger = logging.getLogger("nucleus.build_runner")
 
 # ── Polling constants ────────────────────────────────────────────────────────
 _PLAN_POLL_INTERVAL_S = 2
+# Vendor failure output is arbitrary CLI text — the PLAN-stage failure message
+# carries only this many chars of it (redacted), never the whole blob.
+_PLAN_FAIL_EXCERPT_MAX = 500
 # execute_plan_review_loop runs its actual work in a daemon thread inside
 # THIS process — if this poll gives up and the CLI process exits, that thread
 # dies with it and the plan is orphaned mid-round (observed live: 5 dispatch
@@ -613,10 +617,22 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
         mode="write",
     )
     if not (res.get("status") == "ok" and res.get("produced_output") is True):
+        # Surface the REAL failure reason (EID-388): rc + a bounded, redacted
+        # excerpt of the captured vendor output — the old message interpolated
+        # only status/produced_output and discarded everything diagnostic, so
+        # a stranger could not tell auth from quota from a malformed prompt.
+        # `result` is arbitrary CLI output: cap it, and re-run secret redaction
+        # at this boundary even though capture already redacts — this string
+        # reaches the user's terminal and can be copied into logs/comments.
+        raw = res.get("result") or ""
+        excerpt, _n = _redact_secrets(raw[:_PLAN_FAIL_EXCERPT_MAX])
+        detail = f" rc={res.get('rc')!r}"
+        if excerpt.strip():
+            detail += f" output={excerpt.strip()!r}"
         return (
             False,
             f"single-vendor plan dispatch failed: status={res.get('status')!r} "
-            f"produced_output={res.get('produced_output')!r}",
+            f"produced_output={res.get('produced_output')!r}{detail}",
             None,
         )
 
