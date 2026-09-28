@@ -559,16 +559,32 @@ def _pick_single_vendor(stage: str) -> Optional[str]:
     return None
 
 
+def _single_vendor_candidates() -> List[str]:
+    """All installed CLIs in cost order — the fallback pool for plan
+    dispatch. ``NUCLEUS_SINGLE_VENDOR`` narrows it to one entry when the
+    named vendor is on PATH (an explicit pick is not a fallback target).
+    """
+    forced = os.environ.get("NUCLEUS_SINGLE_VENDOR", "").strip()
+    if forced:
+        if shutil.which(forced):
+            return [forced]
+        logger.warning(
+            "NUCLEUS_SINGLE_VENDOR=%s not found on PATH, falling back to "
+            "cost order %s", forced, "/".join(_SINGLE_VENDOR_ORDER))
+    return [v for v in _SINGLE_VENDOR_ORDER if shutil.which(v)]
+
+
 # ── PLAN stage ───────────────────────────────────────────────────────────────
 
 def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional[Path]]:
-    """Single-vendor plan: ONE real dispatch to the ``claude`` vendor asking
-    for a concrete task-decomposition plan, written to ``final_plan.md`` with
-    status ``SINGLE_VENDOR_PLAN`` (NOT ``APPROVED`` — no adversarial review
-    round ran, there being no second vendor to review). Reuses the SAME
-    ``dispatch_and_capture`` subprocess path the dual-vendor execute stage
-    uses, so the plan text is a real captured vendor result, not a
-    passthrough. Returns ``(ok, message, final_plan_path)``.
+    """Single-vendor plan: one real dispatch per available vendor, in cost
+    order, until one produces a concrete task-decomposition plan — written
+    to ``final_plan.md`` with status ``SINGLE_VENDOR_PLAN`` (NOT
+    ``APPROVED`` — no adversarial review round ran, there being no second
+    vendor to review). Reuses the SAME ``dispatch_and_capture`` subprocess
+    path the dual-vendor execute stage uses, so the plan text is a real
+    captured vendor result, not a passthrough. Returns
+    ``(ok, message, final_plan_path)``.
     """
     # Detect available CLI for plan dispatch. ARBITRAGE ORDER (fw-1786104704):
     # FREE vendors first, paid `claude` only as last resort. The old order
@@ -587,6 +603,14 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
             "`agy` (pip install agy-cli)",
             None,
         )
+
+    # Vendor fallback (EID-488): the pick is the first attempt, then every
+    # remaining installed CLI in cost order. A stranger's first vendor can be
+    # quota-dead or auth-expired while another works — the old code died on
+    # the first failure even when a healthy lane was installed.
+    candidates = [plan_vendor] + [
+        v for v in _single_vendor_candidates() if v != plan_vendor
+    ]
 
     plan_id = f"build_single_{int(time.time())}"
     plan_dir = _brain_path() / "plans" / plan_id
@@ -611,28 +635,45 @@ def _run_single_vendor_plan_stage(task_prompt: str) -> Tuple[bool, str, Optional
         "build task.\n\n"
         f"BUILD TASK:\n{task_prompt}"
     )
-    res = dispatch_and_capture(
-        plan_vendor, plan_prompt,
-        artifact_ref=str(plan_dir),
-        mode="write",
+    # Each attempt's excerpt shares the excerpt budget — with N vendors the
+    # all-fail message stays bounded. Each `result` is arbitrary CLI output:
+    # cap it, and re-run secret redaction at this boundary even though capture
+    # already redacts — this string reaches the user's terminal and can be
+    # copied into logs/comments.
+    per_attempt_max = max(
+        80, _PLAN_FAIL_EXCERPT_MAX // max(1, len(candidates))
     )
-    if not (res.get("status") == "ok" and res.get("produced_output") is True):
-        # Surface the REAL failure reason (EID-388): rc + a bounded, redacted
-        # excerpt of the captured vendor output — the old message interpolated
-        # only status/produced_output and discarded everything diagnostic, so
-        # a stranger could not tell auth from quota from a malformed prompt.
-        # `result` is arbitrary CLI output: cap it, and re-run secret redaction
-        # at this boundary even though capture already redacts — this string
-        # reaches the user's terminal and can be copied into logs/comments.
+    attempts: List[str] = []
+    res: Dict[str, Any] = {}
+    for vendor in candidates:
+        res = dispatch_and_capture(
+            vendor, plan_prompt,
+            artifact_ref=str(plan_dir),
+            mode="write",
+        )
+        if res.get("status") == "ok" and res.get("produced_output") is True:
+            plan_vendor = vendor
+            break
         raw = res.get("result") or ""
-        excerpt, _n = _redact_secrets(raw[:_PLAN_FAIL_EXCERPT_MAX])
-        detail = f" rc={res.get('rc')!r}"
+        excerpt, _n = _redact_secrets(raw[:per_attempt_max])
+        detail = (
+            f"status={res.get('status')!r} "
+            f"produced_output={res.get('produced_output')!r} "
+            f"rc={res.get('rc')!r}"
+        )
         if excerpt.strip():
             detail += f" output={excerpt.strip()!r}"
+        attempts.append(f"{vendor} ({detail})")
+        logger.warning("single-vendor plan dispatch failed on %s: %s",
+                       vendor, detail[:200])
+    else:
+        # Surface EVERY attempt's real reason (EID-388 + EID-488): which
+        # vendor died and how — quota, auth, malformed output — so a stranger
+        # can tell whether to install another CLI or fix the first.
         return (
             False,
-            f"single-vendor plan dispatch failed: status={res.get('status')!r} "
-            f"produced_output={res.get('produced_output')!r}{detail}",
+            "single-vendor plan dispatch failed on "
+            + "; ".join(attempts),
             None,
         )
 
