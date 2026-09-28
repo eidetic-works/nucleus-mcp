@@ -56,8 +56,9 @@ _COOLDOWN_CONFIG = 21600        # 6 hours — a misconfigured model id won't fix
 
 # stderr patterns for classification
 _QUOTA_PATTERNS = re.compile(
-    r"quota|upgrade|billing|credit|exceeded.*limit|plan.*limit",
-    re.IGNORECASE,
+    r"quota|upgrade|billing|credit|exceeded.*limit|plan.*limit|"
+    r"resource.?exhaust",   # agy/Gemini quota wall: "429 RESOURCE_EXHAUSTED"
+    re.IGNORECASE,          # must classify quota (not rate_limit) — EID-304
 )
 _RATE_PATTERNS = re.compile(
     r"rate.?limit|too many request|429|slow.?down|throttl",
