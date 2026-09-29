@@ -64,9 +64,15 @@ _TASKS_CHECKBOX_RE = re.compile(
 # Matches `### Slice N — Title (owner)`. The em-dash may be a regular hyphen
 # in some plans; we accept both. Owner is optional in the regex (some plans
 # omit it) but the SPEC format includes it.
+# N may carry a letter or a dotted part (`1b`, `2.1`): GQ's topup7 Slices 1b/1c
+# were silently dropped on 2026-09-29 and a decided deploy-race fix never
+# reached gq-d.
 _SLICE_HEADER_RE = re.compile(
-    r"^###\s+Slice\s+(\d+)\s*[—-]\s*(.+?)(?:\s*\(([^)]+)\))?\s*$",
+    r"^###\s+Slice\s+(\d+(?:\.\d+)?[a-z]?)\s*[—-]\s*(.+?)(?:\s*\(([^)]+)\))?\s*$",
 )
+# Anything that LOOKS like a slice heading; the importer reports those it
+# could not parse instead of dropping them silently.
+SLICE_LIKE_RE = re.compile(r"^#{2,4}\s+Slice\b", re.IGNORECASE)
 
 
 def _detect_format(text: str) -> str:
